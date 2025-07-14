@@ -1,0 +1,201 @@
+// Indians in Ghana Membership System - Prisma Schema
+// Generated from Mongoose models
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserType {
+  user
+  admin
+  merchant
+}
+
+enum AdminRole {
+  superAdmin
+  userManager
+  contentManager
+  analyst
+}
+
+enum BusinessCategory {
+  restaurant
+  retail
+  services
+  healthcare
+  technology
+  education
+  entertainment
+  travel
+  other
+}
+
+enum MembershipLevel {
+  basic
+  premium
+  featured
+}
+
+enum BusinessStatus {
+  active
+  inactive
+  pending
+  suspended
+}
+
+enum DealStatus {
+  active
+  inactive
+  expired
+  scheduled
+}
+
+enum DiscountType {
+  percentage
+  fixed
+  buyOneGetOne
+  freeItem
+}
+
+enum AccessLevel {
+  basic
+  intermediate
+  full
+}
+
+enum RedemptionStatus {
+  redeemed
+  canceled
+  expired
+}
+
+model User {
+  id                String    @id @default(uuid())
+  fullName          String
+  email             String    @unique
+  password          String
+  phone             String?
+  address           String?
+  profilePicture    String?
+  userType          UserType  @default(user)
+  adminRole         AdminRole?
+  permissions       String[]  // Array of permission IDs
+  businessInfo      Business? @relation(fields: [businessInfoId], references: [id])
+  businessInfoId    String?
+  membershipType    String?
+  membershipNumber  String?   @unique
+  joinDate          DateTime? @default(now())
+  lastLogin         DateTime?
+  isActive          Boolean   @default(true)
+  preferences       Json?
+  // Relations
+  businesses        Business[] @relation("OwnerBusinesses")
+  dealRedemptions   DealRedemption[]
+}
+
+model Plan {
+  id          String   @id @default(uuid())
+  name        String
+  key         String   @unique
+  price       Float
+  currency    String   @default("GHS")
+  features    String[]
+  description String
+  isActive    Boolean  @default(true)
+  maxUsers    Int?
+  billingCycle String  @default("monthly")
+  priority    Int      @default(0)
+  metadata    Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Business {
+  id                String   @id @default(uuid())
+  businessName      String
+  ownerId           String
+  owner             User     @relation(fields: [ownerId], references: [id], name: "OwnerBusinesses")
+  ownerName         String
+  businessDescription String?
+  businessCategory  BusinessCategory
+  businessAddress   Json?
+  location          Json?
+  contactInfo       Json?
+  socialMedia       Json?
+  businessHours     Json?
+  logoUrl           String?
+  coverImageUrl     String?
+  galleryImages     String[]
+  businessLicense   String?
+  taxId             String?
+  isVerified        Boolean  @default(false)
+  verificationDate  DateTime?
+  membershipLevel   MembershipLevel @default(basic)
+  featuredUntil     DateTime?
+  ratingAverage     Float    @default(0)
+  ratingCount       Int      @default(0)
+  status            BusinessStatus @default(pending)
+  tags              String[]
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  // Relations
+  deals             Deal[]
+}
+
+model Deal {
+  id                String   @id @default(uuid())
+  title             String
+  description       String
+  businessId        String
+  business          Business @relation(fields: [businessId], references: [id])
+  businessName      String
+  discount          String?
+  discountType      DiscountType @default(percentage)
+  category          String
+  validFrom         DateTime
+  validUntil        DateTime
+  accessLevel       AccessLevel @default(basic)
+  termsConditions   String?
+  couponCode        String?
+  maxRedemptions    Int?
+  redemptionCount   Int      @default(0)
+  imageUrl          String?
+  viewCount         Int      @default(0)
+  status            DealStatus @default(active)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  // Relations
+  dealRedemptions   DealRedemption[]
+}
+
+model DealRedemption {
+  id                String   @id @default(uuid())
+  dealId            String
+  deal              Deal     @relation(fields: [dealId], references: [id])
+  userId            String
+  user              User     @relation(fields: [userId], references: [id])
+  userName          String
+  userEmail         String
+  membershipNumber  String
+  businessId        String?
+  redeemedAt        DateTime @default(now())
+  status            RedemptionStatus @default(redeemed)
+  notes             String?
+  redeemedBy        String?
+  locationData      Json?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  @@unique([dealId, userId])
+}
+
+model AdminSettings {
+  id          String   @id @default(uuid())
+  settings    Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

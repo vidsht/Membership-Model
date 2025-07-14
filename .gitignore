@@ -1,0 +1,104 @@
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Build outputs
+dist/
+build/
+*/dist/
+*/build/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Cache directories
+.cache/
+.vite/
+.next/
+.nuxt/
+.vscode/
+.idea/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Test files
+**/test*.js
+**/test*.ts
+**/test*.jsx
+**/test*.tsx
+**/*test*.js
+**/*test*.ts
+**/*test*.jsx
+**/*test*.tsx
+**/*debug*.js
+**/*debug*.ts
+**/*debug*.jsx
+**/*debug*.tsx
+**/*temp*.js
+**/*temp*.ts
+**/*temp*.jsx
+**/*temp*.tsx
+**/fix-*.js
+**/fix-*.ts
+**/create-test*.js
+**/create-test*.ts
+**/*New.js
+**/*New.jsx
+**/*New.ts
+**/*New.tsx
+**/*.new
+**/*.backup
+**/*.old
+**/*-import*.js
+**/*-import*.jsx
+**/*-import*.ts
+**/*-import*.tsx
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*~
+
+# Editor directories and files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Package manager files
+package-lock.json.bak
+yarn.lock.bak
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock

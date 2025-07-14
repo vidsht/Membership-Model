@@ -1,0 +1,494 @@
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useNotification } from '../../../contexts/NotificationContext';
+import api from '../../../services/api';
+import './DealForm.css';
+
+const DealForm = () => {
+  const { dealId } = useParams();
+  const navigate = useNavigate();
+  const { showNotification } = useNotification();
+  const isEditMode = Boolean(dealId);
+  
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [businesses, setBusinesses] = useState([]);
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    businessId: '',
+    discount: '',
+    discountType: 'percentage',
+    category: '',
+    validFrom: '',
+    validUntil: '',
+    accessLevel: 'basic',
+    termsConditions: '',
+    couponCode: '',
+    maxRedemptions: '',
+    featuredImage: null,
+    status: 'active'
+  });
+  
+  const [formErrors, setFormErrors] = useState({});
+  
+  useEffect(() => {
+    fetchBusinesses();
+    
+    if (isEditMode) {
+      fetchDealData();
+    } else {
+      // Set default dates for new deals
+      const today = new Date();
+      const nextMonth = new Date();
+      nextMonth.setMonth(nextMonth.getMonth() + 1);
+      
+      setFormData(prev => ({
+        ...prev,
+        validFrom: formatDateForInput(today),
+        validUntil: formatDateForInput(nextMonth)
+      }));
+    }
+  }, [dealId]);
+  const fetchBusinesses = async () => {
+    try {
+      const response = await api.get('/admin/businesses');
+      setBusinesses(response.data);
+      
+      // If there's at least one business and we're not in edit mode, select the first one
+      if (response.data.length > 0 && !isEditMode) {
+        setFormData(prev => ({
+          ...prev,
+          businessId: response.data[0]._id
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching businesses:', error);
+      showNotification('Could not load businesses. Please try again.', 'error');
+    }
+  };
+  
+  const fetchDealData = async () => {
+    try {
+      setIsLoading(true);
+      const response = await api.get(`/admin/deals/${dealId}`);
+      
+      // Format dates for form inputs
+      const deal = response.data;
+      deal.validFrom = formatDateForInput(new Date(deal.validFrom));
+      deal.validUntil = formatDateForInput(new Date(deal.validUntil));
+      
+      setFormData(deal);
+    } catch (error) {
+      console.error('Error fetching deal:', error);
+      showNotification('Could not load deal details. Please try again.', 'error');
+      navigate('/admin/deals');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const formatDateForInput = (date) => {
+    return date.toISOString().split('T')[0];
+  };
+  
+  const validateForm = () => {
+    const errors = {};
+    
+    if (!formData.title.trim()) errors.title = 'Title is required';
+    if (!formData.description.trim()) errors.description = 'Description is required';
+    if (!formData.businessId) errors.businessId = 'Business is required';
+    if (!formData.discount) errors.discount = 'Discount value is required';
+    if (!formData.category.trim()) errors.category = 'Category is required';
+    if (!formData.validFrom) errors.validFrom = 'Start date is required';
+    if (!formData.validUntil) errors.validUntil = 'End date is required';
+    
+    // Check if end date is after start date
+    if (formData.validFrom && formData.validUntil) {
+      const startDate = new Date(formData.validFrom);
+      const endDate = new Date(formData.validUntil);
+      
+      if (endDate <= startDate) {
+        errors.validUntil = 'End date must be after start date';
+      }
+    }
+    
+    // Validate discount based on type
+    if (formData.discountType === 'percentage') {
+      const discountValue = parseFloat(formData.discount);
+      if (isNaN(discountValue) || discountValue <= 0 || discountValue > 100) {
+        errors.discount = 'Percentage discount must be between 1 and 100';
+      }
+    } else if (formData.discountType === 'fixed') {
+      const discountValue = parseFloat(formData.discount);
+      if (isNaN(discountValue) || discountValue <= 0) {
+        errors.discount = 'Fixed discount amount must be greater than 0';
+      }
+    }
+    
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+  
+  const handleChange = (e) => {
+    const { name, value, type } = e.target;
+    
+    if (type === 'file') {
+      setFormData(prev => ({
+        ...prev,
+        [name]: e.target.files[0]
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
+    
+    // Clear error when field is edited
+    if (formErrors[name]) {
+      setFormErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
+  };
+    const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!validateForm()) {
+      showNotification('Please fix the errors in the form', 'error');
+      return;
+    }
+    
+    try {
+      setIsSaving(true);
+      
+      // Create FormData for file upload
+      const submitData = new FormData();
+      Object.keys(formData).forEach(key => {
+        if (key === 'featuredImage' && formData[key]) {
+          submitData.append(key, formData[key]);
+        } else if (key !== 'featuredImage' && formData[key] !== null && formData[key] !== undefined) {
+          submitData.append(key, formData[key]);
+        }
+      });
+        // Add debug logging (remove after testing)
+      console.log('Submitting deal data:', formData);
+      
+      if (isEditMode) {
+        await api.put(`/admin/deals/${dealId}`, submitData);
+        showNotification('Deal updated successfully', 'success');
+      } else {
+        await api.post('/admin/deals', submitData);
+        showNotification('Deal created successfully', 'success');
+      }
+      
+      navigate('/admin/deals');
+    } catch (error) {
+      console.error('Error saving deal:', error);
+      if (error.response?.data?.errors) {
+        const errorMessages = error.response.data.errors.map(err => err.msg).join(', ');
+        showNotification(`Validation errors: ${errorMessages}`, 'error');
+      } else if (error.response?.data?.message) {
+        showNotification(error.response.data.message, 'error');
+      } else {
+        showNotification('Failed to save deal. Please try again.', 'error');
+      }
+    } finally {
+      setIsSaving(false);
+    }
+  };
+  
+  const dealCategories = [
+    'Restaurant', 'Retail', 'Electronics', 'Fashion', 
+    'Health & Wellness', 'Entertainment', 'Travel',
+    'Education', 'Home & Garden', 'Services', 'Other'
+  ];
+  
+  if (isLoading) {
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner"></div>
+        <p>Loading deal data...</p>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="admin-deal-form">
+      <div className="page-header">
+        <h1>{isEditMode ? 'Edit Deal' : 'Create New Deal'}</h1>
+        <button 
+          className="btn-secondary" 
+          onClick={() => navigate('/admin/deals')}
+        >
+          <i className="fas fa-arrow-left"></i> Back to Deals
+        </button>
+      </div>
+      
+      <form className="deal-form" onSubmit={handleSubmit}>
+        <div className="form-grid">
+          <div className="form-section">
+            <h2>Basic Information</h2>
+            
+            <div className="form-group">
+              <label htmlFor="title">Deal Title <span className="required">*</span></label>
+              <input
+                type="text"
+                id="title"
+                name="title"
+                value={formData.title}
+                onChange={handleChange}
+                className={formErrors.title ? 'error' : ''}
+                placeholder="e.g., '20% Off on All Electronics'"
+              />
+              {formErrors.title && <span className="error-message">{formErrors.title}</span>}
+            </div>
+            
+            <div className="form-group">
+              <label htmlFor="businessId">Business <span className="required">*</span></label>
+              <select
+                id="businessId"
+                name="businessId"
+                value={formData.businessId}
+                onChange={handleChange}
+                className={formErrors.businessId ? 'error' : ''}              >
+                <option key="select-business" value="">Select Business</option>
+                {businesses.map(business => (
+                  <option key={business._id} value={business._id}>
+                    {business.businessName}
+                  </option>
+                ))}
+              </select>
+              {formErrors.businessId && <span className="error-message">{formErrors.businessId}</span>}
+              {businesses.length === 0 && (
+                <span className="info-message">
+                  No businesses found. <a href="/admin/partners/register">Add a business partner</a>
+                </span>
+              )}
+            </div>
+            
+            <div className="form-group">
+              <label htmlFor="category">Category <span className="required">*</span></label>
+              <select
+                id="category"
+                name="category"
+                value={formData.category}
+                onChange={handleChange}
+                className={formErrors.category ? 'error' : ''}              >
+                <option key="select-category" value="">Select Category</option>
+                {dealCategories.map(category => (
+                  <option key={category} value={category.toLowerCase()}>
+                    {category}
+                  </option>
+                ))}
+              </select>
+              {formErrors.category && <span className="error-message">{formErrors.category}</span>}
+            </div>
+            
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="discountType">Discount Type <span className="required">*</span></label>              <select
+                id="discountType"
+                name="discountType"
+                value={formData.discountType}
+                onChange={handleChange}
+              >
+                <option key="percentage" value="percentage">Percentage (%)</option>
+                <option key="fixed" value="fixed">Fixed Amount (GHS)</option>
+                <option key="buyOneGetOne" value="buyOneGetOne">Buy One Get One Free</option>
+                <option key="freeItem" value="freeItem">Free Item</option>
+              </select>
+              </div>
+              
+              <div className="form-group">
+                <label htmlFor="discount">Discount Value <span className="required">*</span></label>
+                <div className="input-with-suffix">
+                  <input
+                    type="text"
+                    id="discount"
+                    name="discount"
+                    value={formData.discount}
+                    onChange={handleChange}
+                    className={formErrors.discount ? 'error' : ''}
+                    placeholder={formData.discountType === 'percentage' ? '20' : '50'}
+                    disabled={['buyOneGetOne', 'freeItem'].includes(formData.discountType)}
+                  />
+                  <span className="input-suffix">
+                    {formData.discountType === 'percentage' ? '%' : 'GHS'}
+                  </span>
+                </div>
+                {formErrors.discount && <span className="error-message">{formErrors.discount}</span>}
+              </div>
+            </div>
+          </div>
+          
+          <div className="form-section">
+            <h2>Deal Details</h2>
+            
+            <div className="form-group">
+              <label htmlFor="description">Description <span className="required">*</span></label>
+              <textarea
+                id="description"
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                rows="4"
+                className={formErrors.description ? 'error' : ''}
+                placeholder="Provide detailed information about this deal..."
+              ></textarea>
+              {formErrors.description && <span className="error-message">{formErrors.description}</span>}
+            </div>
+            
+            <div className="form-group">
+              <label htmlFor="termsConditions">Terms & Conditions</label>
+              <textarea
+                id="termsConditions"
+                name="termsConditions"
+                value={formData.termsConditions}
+                onChange={handleChange}
+                rows="3"
+                placeholder="Any specific terms, conditions, or limitations for this deal..."
+              ></textarea>
+            </div>
+            
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="validFrom">Valid From <span className="required">*</span></label>
+                <input
+                  type="date"
+                  id="validFrom"
+                  name="validFrom"
+                  value={formData.validFrom}
+                  onChange={handleChange}
+                  className={formErrors.validFrom ? 'error' : ''}
+                />
+                {formErrors.validFrom && <span className="error-message">{formErrors.validFrom}</span>}
+              </div>
+              
+              <div className="form-group">
+                <label htmlFor="validUntil">Valid Until <span className="required">*</span></label>
+                <input
+                  type="date"
+                  id="validUntil"
+                  name="validUntil"
+                  value={formData.validUntil}
+                  onChange={handleChange}
+                  className={formErrors.validUntil ? 'error' : ''}
+                />
+                {formErrors.validUntil && <span className="error-message">{formErrors.validUntil}</span>}
+              </div>
+            </div>
+          </div>
+          
+          <div className="form-section">
+            <h2>Deal Configuration</h2>
+            
+            <div className="form-group">
+              <label htmlFor="accessLevel">Membership Access Level <span className="required">*</span></label>              <select
+                id="accessLevel"
+                name="accessLevel"
+                value={formData.accessLevel}
+                onChange={handleChange}
+              >
+                <option key="basic" value="basic">Community (Basic)</option>
+                <option key="intermediate" value="intermediate">Silver (Intermediate)</option>
+                <option key="full" value="full">Gold (Full)</option>
+              </select>
+              <span className="help-text">
+                Which membership tiers can access this deal
+              </span>
+            </div>
+            
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="couponCode">Coupon Code</label>
+                <input
+                  type="text"
+                  id="couponCode"
+                  name="couponCode"
+                  value={formData.couponCode}
+                  onChange={handleChange}
+                  placeholder="e.g., SUMMER2025"
+                />
+                <span className="help-text">Optional redemption code</span>
+              </div>
+              
+              <div className="form-group">
+                <label htmlFor="maxRedemptions">Max Redemptions</label>
+                <input
+                  type="number"
+                  id="maxRedemptions"
+                  name="maxRedemptions"
+                  value={formData.maxRedemptions}
+                  onChange={handleChange}
+                  placeholder="Leave empty for unlimited"
+                  min="0"
+                />
+              </div>
+            </div>
+            
+            <div className="form-group">
+              <label htmlFor="featuredImage">Featured Image</label>
+              <input
+                type="file"
+                id="featuredImage"
+                name="featuredImage"
+                onChange={handleChange}
+                accept="image/*"
+              />
+              <span className="help-text">
+                Recommended size: 800×450px (16:9 ratio)
+              </span>
+              
+              {formData.imageUrl && (
+                <div className="current-image">
+                  <p>Current image:</p>
+                  <img src={formData.imageUrl} alt="Deal featured image" />
+                </div>
+              )}
+            </div>
+            
+            <div className="form-group">
+              <label htmlFor="status">Status</label>              <select
+                id="status"
+                name="status"
+                value={formData.status}
+                onChange={handleChange}
+              >
+                <option key="active" value="active">Active</option>
+                <option key="inactive" value="inactive">Inactive</option>
+                <option key="scheduled" value="scheduled">Scheduled</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        
+        <div className="form-actions">
+          <button 
+            type="button" 
+            className="btn-secondary"
+            onClick={() => navigate('/admin/deals')}
+          >
+            Cancel
+          </button>
+          <button 
+            type="submit" 
+            className="btn-primary"
+            disabled={isSaving}
+          >
+            {isSaving ? (
+              <>
+                <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                <span className="sr-only">Saving...</span>
+              </>
+            ) : isEditMode ? 'Update Deal' : 'Create Deal'}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+};
+
+export default DealForm;

@@ -1,0 +1,119 @@
+.activities-container {
+  padding: 20px;
+}
+
+.activities-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.activities-title {
+  font-size: 24px;
+  font-weight: bold;
+  color: #333;
+}
+
+.activities-filters {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.activities-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.activities-table th,
+.activities-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+
+.activities-table th {
+  background-color: #f8f9fa;
+  font-weight: 600;
+  color: #555;
+}
+
+.activities-table tr:hover {
+  background-color: #f8f9fa;
+}
+
+.activity-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.activity-badge.create {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.activity-badge.update {
+  background-color: #d1ecf1;
+  color: #0c5460;
+}
+
+.activity-badge.delete {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.activity-badge.login {
+  background-color: #e2e3e5;
+  color: #383d41;
+}
+
+.no-activities {
+  text-align: center;
+  padding: 40px;
+  color: #6c757d;
+}
+
+.loading-spinner {
+  text-align: center;
+  padding: 40px;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.pagination button {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  background: white;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.pagination button:hover {
+  background: #f8f9fa;
+}
+
+.pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination .active {
+  background: #007bff;
+  color: white;
+  border-color: #007bff;
+}

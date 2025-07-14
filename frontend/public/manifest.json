@@ -1,0 +1,16 @@
+{
+  "name": "Indians in Ghana",
+  "short_name": "IIG",
+  "description": "Membership management system for the Indian community in Ghana",
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#e67e22",
+  "background_color": "#ffffff",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ]
+}
