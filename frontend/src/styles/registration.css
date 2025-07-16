@@ -1,3 +1,160 @@
+/* Unified Registration (unified-*) Styles */
+.unified-registration-card {
+  background-color: #fff;
+  border-radius: var(--border-radius-lg, 16px);
+  box-shadow: var(--shadow-lg, 0 4px 24px rgba(0,0,0,0.08));
+  overflow: hidden;
+  width: 90%;
+  max-width: 1000px;
+  margin: 40px auto;
+  display: flex;
+  flex-direction: column;
+  perspective: 1000px;
+  transform-style: preserve-3d;
+}
+
+.unified-tabs {
+  display: flex;
+  position: relative;
+  background-color: var(--neutral-lightest, #f5f7fa);
+  padding: 10px;
+  border-bottom: 1px solid var(--neutral-light, #eaeaea);
+}
+
+.unified-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 600px;
+  position: relative;
+  overflow: hidden;
+}
+
+.unified-content.member .unified-panels {
+  transform: translateX(0);
+}
+.unified-content.merchant .unified-panels {
+  transform: translateX(-50%);
+}
+
+.unified-panels {
+  display: flex;
+  width: 200%;
+  position: absolute;
+  height: 100%;
+  top: 0;
+  left: 0;
+  transition: transform 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+  will-change: transform;
+}
+
+.unified-panel {
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  width: 50%;
+  flex-shrink: 0;
+}
+
+.unified-form-header {
+  margin-bottom: 20px;
+}
+.unified-form-header h2 {
+  color: var(--primary-color, #1976d2);
+  margin-bottom: 8px;
+}
+.unified-form-header p {
+  color: var(--neutral-medium, #6c757d);
+  font-size: 14px;
+}
+
+.unified-image-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+.unified-image {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+.unified-benefits-box {
+  margin-top: 20px;
+  padding: 15px;
+  background: rgba(255,255,255,0.9);
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  border-left: 3px solid var(--primary-color, #1976d2);
+}
+.unified-benefits-box h3 {
+  color: var(--primary-color, #1976d2);
+  margin-bottom: 10px;
+  font-size: 18px;
+}
+.unified-benefits-box ul {
+  list-style: none;
+  padding: 0;
+}
+.unified-benefits-box li {
+  margin-bottom: 8px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+}
+.unified-benefits-box li i {
+  color: var(--primary-color, #1976d2);
+  margin-right: 8px;
+  font-size: 16px;
+}
+
+.unified-form-container {
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 50%;
+  height: 100%;
+  transition: transform 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55), box-shadow 0.6s ease;
+  background-color: #fff;
+  z-index: 2;
+  box-shadow: -5px 0 15px rgba(0,0,0,0.05);
+  will-change: transform;
+  overflow-y: auto;
+}
+.unified-content.member .unified-form-container {
+  transform: translateX(0);
+}
+.unified-content.merchant .unified-form-container {
+  transform: translateX(-100%);
+}
+
+@media (max-width: 768px) {
+  .unified-registration-card {
+    width: 95%;
+    margin: 20px auto;
+  }
+  .unified-tabs {
+    padding: 5px;
+  }
+  .unified-content {
+    grid-template-columns: 1fr;
+  }
+  .unified-panels {
+    display: none;
+  }
+  .unified-form-container {
+    position: relative;
+    width: 100%;
+    transform: none !important;
+    box-shadow: none;
+  }
+}
 /* Unified Registration Styles */
 .registration-card {
   background-color: #fff;

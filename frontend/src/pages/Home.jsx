@@ -74,7 +74,7 @@ const Home = () => {
           
           {!isAuthenticated && (
             <div className="hero-actions">
-              <Link to="/register" className="btn btn-primary">
+              <Link to="/unified-registration" className="btn btn-primary">
                 <i className="fas fa-user-plus"></i> Join Now
               </Link>
               <Link to="/login" className="btn btn-secondary">
@@ -115,7 +115,7 @@ const Home = () => {
               </div>
               <h3 className="feature-title">Digital Membership</h3>
               <p className="feature-description">Access your digital membership card anytime, anywhere with exclusive member benefits.</p>
-              <Link to="/register" className="feature-link">Learn More <i className="fas fa-chevron-right"></i></Link>
+              <Link to="/unified-registration" className="feature-link">Learn More <i className="fas fa-chevron-right"></i></Link>
             </div>
             
             <div className="feature-card">
@@ -124,7 +124,7 @@ const Home = () => {
               </div>
               <h3 className="feature-title">Exclusive Discounts</h3>
               <p className="feature-description">Enjoy special discounts and offers at partner businesses across Ghana.</p>
-              <Link to="/register" className="feature-link">View Offers <i className="fas fa-chevron-right"></i></Link>
+              <Link to="/unified-registration" className="feature-link">View Offers <i className="fas fa-chevron-right"></i></Link>
             </div>
             
             <div className="feature-card">
@@ -133,7 +133,7 @@ const Home = () => {
               </div>
               <h3 className="feature-title">Community Events</h3>
               <p className="feature-description">Connect with fellow community members through regular cultural and networking events.</p>
-              <Link to="/register" className="feature-link">See Calendar <i className="fas fa-chevron-right"></i></Link>
+              <Link to="/unified-registration" className="feature-link">See Calendar <i className="fas fa-chevron-right"></i></Link>
             </div>
           </div>        </div>
       </section>
@@ -160,7 +160,7 @@ const Home = () => {
                 <li><i className="fas fa-check"></i> Member directory listing</li>
                 <li><i className="fas fa-check"></i> Public event access</li>
               </ul>
-              <Link to="/register" className="plan-button">Join Free</Link>
+              <Link to="/unified-registration" className="plan-button">Join Free</Link>
             </div>
           </div>
           
@@ -176,7 +176,7 @@ const Home = () => {
                 <li><i className="fas fa-check"></i> Business directory access</li>
                 <li><i className="fas fa-check"></i> 5 exclusive deals monthly</li>
               </ul>
-              <Link to="/register" className="plan-button">Upgrade to Silver</Link>
+              <Link to="/unified-registration" className="plan-button">Upgrade to Silver</Link>
             </div>
           </div>
           
@@ -194,7 +194,7 @@ const Home = () => {
                 <li><i className="fas fa-check"></i> Business networking</li>
                 <li><i className="fas fa-check"></i> Priority customer service</li>
               </ul>
-              <Link to="/register" className="plan-button">Upgrade to Gold</Link>
+              <Link to="/unified-registration" className="plan-button">Upgrade to Gold</Link>
             </div>
           </div>
         </div>
@@ -226,7 +226,7 @@ const Home = () => {
           <h2>Join Our Community Today</h2>
           <p>Be part of a growing network of Indians in Ghana and unlock exclusive benefits</p>
           <div className="cta-buttons">
-            <Link to="/register" className="btn btn-primary">
+            <Link to="/unified-registration" className="btn btn-primary">
               <i className="fas fa-user-plus"></i> Join Now
             </Link>
             <Link to="/login" className="btn btn-secondary">
@@ -247,7 +247,7 @@ const Home = () => {
               </div>
               <h3 className="feature-title">Digital Membership Card</h3>
               <p className="feature-description">Get your digital membership card with QR code and barcode for easy verification at all community events and partner businesses.</p>
-              <a href="/register" className="feature-link">Get Your Card <i className="fas fa-arrow-right"></i></a>
+              <a href="/unified-registration" className="feature-link">Get Your Card <i className="fas fa-arrow-right"></i></a>
             </div>
             
             <div className="feature-card">
@@ -265,7 +265,7 @@ const Home = () => {
               </div>
               <h3 className="feature-title">Member Benefits</h3>
               <p className="feature-description">Access member-only events, cultural celebrations, exclusive deals with local businesses, and special community gatherings.</p>
-              <a href="/register" className="feature-link">View Benefits <i className="fas fa-arrow-right"></i></a>
+              <a href="/unified-registration" className="feature-link">View Benefits <i className="fas fa-arrow-right"></i></a>
             </div>
             
             <div className="feature-card">

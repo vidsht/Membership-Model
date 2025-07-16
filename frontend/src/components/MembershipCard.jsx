@@ -63,11 +63,11 @@ const MembershipCard = () => {
 
   return (
     <div className="membership-card-container">
-      <div className="membership-card" style={{ borderTopColor: getMembershipTypeColor(user.membershipType) }}>
+      <div className="membership-card" style={{ borderTopColor: getMembershipTypeColor(user.membership) }}>
         <div className="card-header">
           <div className="card-title">
             <h3>Indians in Ghana</h3>
-            <p className="membership-type">{getMembershipTypeName(user.membershipType)}</p>
+            <p className="membership-type">{getMembershipTypeName(user.membership)}</p>
           </div>
           <div className="card-logo">
             <i className="fas fa-id-card"></i>
@@ -88,7 +88,7 @@ const MembershipCard = () => {
             <div className="member-details">
               <h4>{user.fullName}</h4>
               <p className="member-number">#{user.membershipNumber}</p>
-              <p className="member-since">Member since {new Date(user.joinDate).getFullYear()}</p>
+              <p className="member-since">Member since {new Date(user.created_at).getFullYear()}</p>
             </div>
           </div>
 

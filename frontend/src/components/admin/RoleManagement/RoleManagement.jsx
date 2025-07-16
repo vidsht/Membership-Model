@@ -180,7 +180,7 @@ const RoleManagement = () => {
                        user.adminRole === 'analyst' ? 'Analyst' : 'Content Manager'}
                     </span>
                   </td>
-                  <td>{new Date(user.joinDate).toLocaleDateString()}</td>
+                  <td>{new Date(user.created_at).toLocaleDateString()}</td>
                   <td>
                     <button 
                       className="btn-link" 

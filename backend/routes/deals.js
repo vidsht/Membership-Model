@@ -1,376 +1,126 @@
-const express = require('express');
-const { body, validationResult } = require('express-validator');
-const mongoose = require('mongoose');
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
-const Deal = require('../models/Deal');
-const Business = require('../models/Business');
-const User = require('../models/User');
-const DealRedemption = require('../models/DealRedemption');
-const { auth, admin } = require('../middleware/auth');
+// Redeem a deal
+router.post('/:id/redeem', auth, (req, res) => {
+  const userId = req.session.userId;
+  const dealId = req.params.id;
+  if (!userId) return res.status(401).json({ message: 'Not authenticated' });
+  // Check if deal exists
+  db.query('SELECT * FROM deals WHERE id = ?', [dealId], (err, dealResults) => {
+    if (err) return res.status(500).json({ message: 'Server error' });
+    if (!dealResults.length) return res.status(404).json({ message: 'Deal not found' });
+    // Check if already redeemed
+    db.query('SELECT * FROM deal_redemptions WHERE dealId = ? AND userId = ?', [dealId, userId], (err2, redemptionResults) => {
+      if (err2) return res.status(500).json({ message: 'Server error' });
+      if (redemptionResults.length) return res.status(400).json({ message: 'Already redeemed' });
+      // Insert redemption
+      db.query('INSERT INTO deal_redemptions (dealId, userId, redeemedAt) VALUES (?, ?, NOW())', [dealId, userId], (err3) => {
+        if (err3) return res.status(500).json({ message: 'Server error' });
+        res.json({ message: 'Deal redeemed' });
+      });
+    });
+  });
+});
 
+// Get all users who redeemed a deal (for merchant dashboard)
+router.get('/:id/redemptions', auth, (req, res) => {
+  const dealId = req.params.id;
+  db.query(`
+    SELECT users.id, users.name, users.email, deal_redemptions.redeemedAt
+    FROM deal_redemptions
+    JOIN users ON deal_redemptions.userId = users.id
+    WHERE deal_redemptions.dealId = ?
+    ORDER BY deal_redemptions.redeemedAt DESC
+  `, [dealId], (err, results) => {
+    if (err) return res.status(500).json({ message: 'Server error' });
+    res.json(results);
+  });
+});
+const express = require('express');
+const db = require('../db');
+const { auth } = require('../middleware/auth');
 const router = express.Router();
 
-// Configure multer for image uploads
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    const uploadsDir = path.join(__dirname, '../uploads/deals');
-    
-    // Create directory if it doesn't exist
-    if (!fs.existsSync(uploadsDir)) {
-      fs.mkdirSync(uploadsDir, { recursive: true });
+// Get all deals (public)
+router.get('/', (req, res) => {
+  // Join deals with businesses to get business details
+  db.query(`
+    SELECT deals.*, businesses.businessName, businesses.businessDescription, businesses.businessCategory, businesses.businessAddress, businesses.businessPhone, businesses.businessEmail, businesses.website, businesses.businessLicense, businesses.taxId, businesses.isVerified, businesses.verificationDate, businesses.membershipLevel, businesses.status, businesses.created_at, businesses.socialMediaFollowed
+    FROM deals
+    LEFT JOIN businesses ON deals.businessId = businesses.businessId
+  `, (err, results) => {
+    if (err) {
+      console.error('SQL error in /api/deals:', err);
+      return res.status(500).json({ message: 'Server error', error: err.message });
     }
-    
-    cb(null, uploadsDir);
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'deal-' + uniqueSuffix + path.extname(file.originalname));
-  }
+    res.json(results);
+  });
 });
 
-const fileFilter = (req, file, cb) => {
-  const allowedFileTypes = /jpeg|jpg|png|gif|webp/;
-  const extname = allowedFileTypes.test(path.extname(file.originalname).toLowerCase());
-  const mimetype = allowedFileTypes.test(file.mimetype);
-  
-  if (mimetype && extname) {
-    return cb(null, true);
-  } else {
-    cb(new Error('Only image files are allowed!'));
-  }
-};
+// Get deal by ID
+router.get('/:id', auth, (req, res) => {
+  db.query('SELECT * FROM deals WHERE id = ?', [req.params.id], (err, results) => {
+    if (err) return res.status(500).json({ message: 'Server error' });
+    if (!results.length) return res.status(404).json({ message: 'Deal not found' });
+    res.json(results[0]);
+  });
 
-const upload = multer({ 
-  storage: storage,
-  fileFilter: fileFilter,
-  limits: {
-    fileSize: 5 * 1024 * 1024 // 5MB
-  }
+// Get business details by businessId
+router.get('/business/:businessId', auth, (req, res) => {
+  db.query('SELECT * FROM businesses WHERE businessId = ?', [req.params.businessId], (err, results) => {
+    if (err) return res.status(500).json({ message: 'Server error' });
+    if (!results.length) return res.status(404).json({ message: 'Business not found' });
+    res.json(results[0]);
+  });
+});
 });
 
-// Validation rules
-const dealValidationRules = [
-  body('title').trim().notEmpty().withMessage('Title is required'),
-  body('description').trim().notEmpty().withMessage('Description is required'),
-  body('businessId').isMongoId().withMessage('Valid business ID is required'),
-  body('discount').if(body('discountType').not().equals('buyOneGetOne').not().equals('freeItem'))
-    .notEmpty().withMessage('Discount value is required'),
-  body('category').trim().notEmpty().withMessage('Category is required'),
-  body('validFrom').isISO8601().withMessage('Valid start date is required'),
-  body('validUntil').isISO8601().withMessage('Valid end date is required')
-    .custom((value, { req }) => {
-      if (new Date(value) <= new Date(req.body.validFrom)) {
-        throw new Error('End date must be after start date');
-      }
-      return true;
-    }),
-  body('accessLevel').isIn(['basic', 'intermediate', 'full']).withMessage('Invalid access level')
-];
-
-// @route   GET /api/admin/deals
-// @desc    Get all deals with filtering and pagination
-// @access  Private (Admin only)
-router.get('/deals', auth, admin, async (req, res) => {
-  try {
-    const { status, sortBy = 'createdAt', sortOrder = 'desc', page = 1, limit = 20 } = req.query;
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-    
-    // Build query
-    const query = {};
-    if (status && status !== 'all') {
-      query.status = status;
-    }
-    
-    // Sort options
-    const sortOptions = {};
-    sortOptions[sortBy] = sortOrder === 'asc' ? 1 : -1;
-    
-    // Fetch deals and add redemption counts
-    const deals = await Deal.find(query)
-      .sort(sortOptions)
-      .skip(skip)
-      .limit(parseInt(limit));
-
-    // Get redemption counts for each deal
-    const dealIds = deals.map(d => d._id);
-    const redemptions = await DealRedemption.aggregate([
-      { $match: { dealId: { $in: dealIds } } },
-      { $group: { _id: '$dealId', count: { $sum: 1 } } }
-    ]);
-    const redemptionMap = {};
-    redemptions.forEach(r => { redemptionMap[r._id.toString()] = r.count; });
-
-    // Attach redemptionCount to each deal
-    const dealsWithStats = deals.map(deal => {
-      const d = deal.toObject();
-      d.redemptionCount = redemptionMap[deal._id.toString()] || 0;
-      return d;
-    });
-
-    // Count active deals
-    const activeDealsCount = await Deal.countDocuments({ ...query, status: 'active' });
-    const totalDeals = await Deal.countDocuments(query);
-
-    // Total redemptions for all deals in this query
-    const totalRedemptions = await DealRedemption.countDocuments(query.status ? { dealId: { $in: dealIds } } : {});
-
-    res.json({
-      deals: dealsWithStats,
-      stats: {
-        activeDeals: activeDealsCount,
-        totalDeals,
-        totalRedemptions
-      },
-      pagination: {
-        total: totalDeals,
-        page: parseInt(page),
-        limit: parseInt(limit),
-        totalPages: Math.ceil(totalDeals / parseInt(limit))
-      }
-    });
-  } catch (error) {
-    console.error('Error fetching deals:', error);
-    res.status(500).json({ message: 'Server error' });
+// Create a new deal
+router.post('/', auth, (req, res) => {
+  const { title, description, category, expiration_date, accessLevel, discount, discountType, termsConditions } = req.body;
+  // Get businessId from merchant's business
+  const userId = req.session.userId;
+  if (!userId) {
+    return res.status(401).json({ message: 'Not authenticated' });
   }
-});
-
-// @route   GET /api/admin/deals/:id
-// @desc    Get a single deal by ID
-// @access  Private (Admin only)
-router.get('/deals/:id', auth, admin, async (req, res) => {
-  try {
-    const deal = await Deal.findById(req.params.id);
-    if (!deal) {
-      return res.status(404).json({ message: 'Deal not found' });
+  db.query('SELECT businessId FROM businesses WHERE userId = ?', [userId], (err, businessResults) => {
+    if (err) return res.status(500).json({ message: 'Server error (business lookup)' });
+    if (!businessResults.length) return res.status(404).json({ message: 'Business not found for this merchant' });
+    const businessId = businessResults[0].businessId;
+    if (!title || !description || !category || !expiration_date || !accessLevel || !discount || !discountType) {
+      return res.status(400).json({ message: 'All fields are required.' });
     }
-
-    // Fetch associated business data
-    const business = await Business.findById(deal.businessId);
-    if (business) {
-      deal.businessName = business.businessName;
-    }
-
-    // Fetch redemption count for this deal
-    const redemptionCount = await DealRedemption.countDocuments({ dealId: deal._id });
-    const dealObj = deal.toObject();
-    dealObj.redemptionCount = redemptionCount;
-
-    res.json(dealObj);
-  } catch (error) {
-    console.error('Error fetching deal:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// @route   POST /api/admin/deals
-// @desc    Create a new deal
-// @access  Private (Admin only)
-router.post('/deals', auth, admin, upload.single('featuredImage'), dealValidationRules, async (req, res) => {
-  console.log('Received deal creation request');
-  console.log('Request body:', req.body);
-  console.log('Request file:', req.file);
-  
-  // Check validation results
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    console.log('Validation errors:', errors.array());
-    return res.status(400).json({ errors: errors.array() });
-  }
-    try {
-    // Verify the business exists (check in User model for merchants)
-    const business = await User.findById(req.body.businessId);
-    if (!business || business.userType !== 'merchant' || !business.businessInfo?.businessName) {
-      return res.status(400).json({ message: 'Invalid business ID or business not found' });
-    }
-    
-    // Create new deal
-    const newDeal = new Deal({
-      title: req.body.title,
-      description: req.body.description,
-      businessId: req.body.businessId,
-      businessName: business.businessInfo.businessName, // Store business name for easy reference
-      discount: req.body.discount,
-      discountType: req.body.discountType,
-      category: req.body.category,
-      validFrom: req.body.validFrom,
-      validUntil: req.body.validUntil,
-      accessLevel: req.body.accessLevel,
-      termsConditions: req.body.termsConditions,
-      couponCode: req.body.couponCode,
-      maxRedemptions: req.body.maxRedemptions || null,
-      status: req.body.status || 'active'
-    });
-    
-    // If there's an image uploaded
-    if (req.file) {
-      // Convert the file path to a URL path
-      const relativePath = path.relative(path.join(__dirname, '../uploads'), req.file.path);
-      newDeal.imageUrl = `/uploads/${relativePath.replace(/\\/g, '/')}`;
-    }
-    
-    await newDeal.save();
-    
-    res.status(201).json(newDeal);
-  } catch (error) {
-    console.error('Error creating deal:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// @route   PUT /api/admin/deals/:id
-// @desc    Update an existing deal
-// @access  Private (Admin only)
-router.put('/deals/:id', auth, admin, upload.single('featuredImage'), dealValidationRules, async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
-  
-  try {
-    // Find the deal to update
-    let deal = await Deal.findById(req.params.id);
-    
-    if (!deal) {
-      return res.status(404).json({ message: 'Deal not found' });
-    }
-      // Verify the business exists (check in User model for merchants)
-    const business = await User.findById(req.body.businessId);
-    if (!business || business.userType !== 'merchant' || !business.businessInfo?.businessName) {
-      return res.status(400).json({ message: 'Invalid business ID or business not found' });
-    }
-    
-    // Prepare update object
-    const updateData = {
-      title: req.body.title,
-      description: req.body.description,
-      businessId: req.body.businessId,
-      businessName: business.businessInfo.businessName,
-      discount: req.body.discount,
-      discountType: req.body.discountType,
-      category: req.body.category,
-      validFrom: req.body.validFrom,
-      validUntil: req.body.validUntil,
-      accessLevel: req.body.accessLevel,
-      termsConditions: req.body.termsConditions,
-      couponCode: req.body.couponCode,
-      maxRedemptions: req.body.maxRedemptions || null,
-      status: req.body.status
-    };
-    
-    // If there's a new image uploaded
-    if (req.file) {
-      // Delete old image if it exists
-      if (deal.imageUrl) {
-        const oldImagePath = path.join(__dirname, '..', deal.imageUrl);
-        if (fs.existsSync(oldImagePath)) {
-          fs.unlinkSync(oldImagePath);
+    db.query(
+      'INSERT INTO deals (title, description, category, expiration_date, businessId, accessLevel, discount, discountType, termsConditions) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [title, description, category, expiration_date, businessId, accessLevel, discount, discountType, termsConditions],
+      (err2, result) => {
+        if (err2) {
+          console.error('DB error creating deal:', err2);
+          return res.status(500).json({ message: 'Server error', error: err2.message });
         }
+        res.status(201).json({ message: 'Deal created', id: result.insertId, businessId });
       }
-      
-      // Convert the file path to a URL path
-      const relativePath = path.relative(path.join(__dirname, '../uploads'), req.file.path);
-      updateData.imageUrl = `/uploads/${relativePath.replace(/\\/g, '/')}`;
-    }
-    
-    // Update the deal
-    deal = await Deal.findByIdAndUpdate(
-      req.params.id,
-      { $set: updateData },
-      { new: true }
     );
-    
-    res.json(deal);
-  } catch (error) {
-    console.error('Error updating deal:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
+  });
 });
 
-// @route   PATCH /api/admin/deals/:id/status
-// @desc    Update deal status
-// @access  Private (Admin only)
-router.patch('/deals/:id/status', auth, admin, [
-  body('status').isIn(['active', 'inactive']).withMessage('Invalid status')
-], async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
-  
-  try {
-    const deal = await Deal.findByIdAndUpdate(
-      req.params.id,
-      { status: req.body.status },
-      { new: true }
-    );
-    
-    if (!deal) {
-      return res.status(404).json({ message: 'Deal not found' });
+// Update a deal
+router.put('/:id', auth, (req, res) => {
+  const { title, description, category, expiration_date, accessLevel, discount, discountType, termsConditions } = req.body;
+  db.query(
+    'UPDATE deals SET title=?, description=?, category=?, expiration_date=?, accessLevel=?, discount=?, discountType=?, termsConditions=? WHERE id=?',
+    [title, description, category, expiration_date, accessLevel, discount, discountType, termsConditions, req.params.id],
+    (err) => {
+      if (err) return res.status(500).json({ message: 'Server error' });
+      res.json({ message: 'Deal updated' });
     }
-    
-    res.json({ message: 'Deal status updated', deal });
-  } catch (error) {
-    console.error('Error updating deal status:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
+  );
 });
 
-// @route   DELETE /api/admin/deals/:id
-// @desc    Delete a deal
-// @access  Private (Admin only)
-router.delete('/deals/:id', auth, admin, async (req, res) => {
-  try {
-    const deal = await Deal.findById(req.params.id);
-    
-    if (!deal) {
-      return res.status(404).json({ message: 'Deal not found' });
-    }
-    
-    // Delete the deal's image if it exists
-    if (deal.imageUrl) {
-      const imagePath = path.join(__dirname, '..', deal.imageUrl);
-      if (fs.existsSync(imagePath)) {
-        fs.unlinkSync(imagePath);
-      }
-    }
-    
-    // Delete any associated redemptions
-    await DealRedemption.deleteMany({ dealId: deal._id });
-    
-    // Delete the deal
-    await Deal.findByIdAndDelete(req.params.id);
-    
-    res.json({ message: 'Deal deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting deal:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// @route   GET /api/admin/deals/:id/redemptions
-// @desc    Get all redemptions for a deal
-// @access  Private (Admin only)
-router.get('/deals/:id/redemptions', auth, admin, async (req, res) => {
-  try {
-    const dealId = req.params.id;
-    
-    // Verify deal exists
-    const dealExists = await Deal.findById(dealId);
-    if (!dealExists) {
-      return res.status(404).json({ message: 'Deal not found' });
-    }
-    
-    // Get redemptions
-    const redemptions = await DealRedemption.find({ dealId })
-      .sort({ redeemedAt: -1 });
-    
-    res.json(redemptions);
-  } catch (error) {
-    console.error('Error fetching deal redemptions:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
+// Delete a deal
+router.delete('/:id', auth, (req, res) => {
+  db.query('DELETE FROM deals WHERE id=?', [req.params.id], (err) => {
+    if (err) return res.status(500).json({ message: 'Server error' });
+    res.json({ message: 'Deal deleted' });
+  });
 });
 
 module.exports = router;

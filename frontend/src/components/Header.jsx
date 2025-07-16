@@ -60,6 +60,7 @@ const Header = () => {
         <nav className="main-nav">
           <ul>
             <li><Link to="/" className={isActive('/')}>Home</Link></li>
+            <li><Link to="/deals" className={isActive('/deals')}><i className="fas fa-tags nav-icon"></i> Deals</Link></li>
             {isAuthenticated && (
               <>
                 <li><Link to="/dashboard" className={isActive('/dashboard')}>
@@ -72,7 +73,6 @@ const Header = () => {
             )}
             <li><Link to="/about" className={isActive('/about')}>About Us</Link></li>
             <li><Link to="/contact" className={isActive('/contact')}>Contact</Link></li>
-            
             {/* Merchant dropdown */}
             {!isAuthenticated && (
               <li className="dropdown">
@@ -81,18 +81,16 @@ const Header = () => {
                 </a>
                 <ul className="dropdown-menu">
                   <li><Link to="/login"><i className="fas fa-sign-in-alt"></i> Business Login</Link></li>
-                  <li><Link to="/merchant/register"><i className="fas fa-plus-circle"></i> Register Business</Link></li>
+                  <li><Link to="/unified-registration"><i className="fas fa-plus-circle"></i> Register Business</Link></li>
                 </ul>
               </li>
             )}
-            
             {/* Admin/Merchant specific links */}
             {isAuthenticated && user?.userType === 'merchant' && (
               <li><Link to="/merchant/dashboard" className={`${isActive('/merchant/dashboard')} merchant-link`}>
                 <i className="fas fa-store-alt nav-icon"></i> Merchant Panel
               </Link></li>
             )}
-            
             {isAuthenticated && user?.userType === 'admin' && (
               <li><Link to="/admin" className={`${isActive('/admin')} admin-link`}>
                 <i className="fas fa-shield-alt nav-icon"></i> Admin Panel

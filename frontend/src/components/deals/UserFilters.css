@@ -1,0 +1,117 @@
+/* UserFilters.css (used for DealFilters as well)
+   Copy this file from admin/UserManagement/UserFilters.css for consistent styling. */
+
+.user-filters {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  font-family: 'Inter', Arial, sans-serif;
+}
+.search-container {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+.search-container input {
+  flex: 1;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  border: 1px solid #e3e3e3;
+  font-size: 1rem;
+}
+.filters-container {
+  margin-top: 1rem;
+}
+.filters-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.toggle-filters {
+  background: none;
+  border: none;
+  color: #1a237e;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+.filters-content {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  min-width: 180px;
+}
+.filter-group label {
+  font-weight: 500;
+  margin-bottom: 0.3rem;
+}
+.filter-group select,
+.filter-group input[type="date"] {
+  padding: 0.4rem 0.7rem;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+}
+.filters-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.2rem;
+}
+.btn-reset {
+  background: #e3eaff;
+  color: #1a237e;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 1.2rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+.btn-apply {
+  background: #1a237e;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 1.2rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+.active-filters {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+.filter-tag {
+  background: #e3eaff;
+  color: #1a237e;
+  border-radius: 12px;
+  padding: 0.3rem 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.97rem;
+}
+.filter-tag button {
+  background: none;
+  border: none;
+  color: #b71c1c;
+  font-size: 1rem;
+  cursor: pointer;
+}
+@media (max-width: 600px) {
+  .filters-content {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .user-filters {
+    padding: 1rem 0.2rem;
+  }
+}

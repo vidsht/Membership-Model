@@ -48,7 +48,7 @@ const UserDetail = ({ user, onClose, onApprove, onReject }) => {
     
     onReject(rejectionReason);
   };
-  const getMembershipTypeBadge = (type) => {
+  const getMembershipBadge = (membership) => {
     switch (type) {
       case 'community':
         return <span className="membership-badge community">Community</span>;
@@ -104,7 +104,7 @@ const UserDetail = ({ user, onClose, onApprove, onReject }) => {
               <h2>{user?.fullName || 'Unknown User'}</h2>
               <p className="user-email">{user?.email || 'No email'}</p>
               <div className="user-status">
-                {getMembershipTypeBadge(user?.membershipType)}
+                {getMembershipBadge(user?.membership)}
                 {getStatusBadge(user?.status)}
                 <span className="member-id">ID: {user?.membershipNumber || 'N/A'}</span>
               </div>
@@ -153,8 +153,8 @@ const UserDetail = ({ user, onClose, onApprove, onReject }) => {
               <div className="details-grid">                <div className="detail-item">
                   <span className="detail-label">Membership Type</span>
                   <span className="detail-value">
-                    {user?.membershipType ? 
-                      user.membershipType.charAt(0).toUpperCase() + user.membershipType.slice(1) :
+                    {user?.membership ? 
+                      user.membership.charAt(0).toUpperCase() + user.membership.slice(1) :
                       'Community'
                     }
                   </span>

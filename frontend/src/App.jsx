@@ -8,8 +8,11 @@ import ErrorBoundary from './components/ErrorBoundary';
 import Toast from './components/Toast';
 import Home from './pages/Home';
 import UnifiedLogin from './pages/UnifiedLogin';
-import Register from './pages/UserRegister';
-import MerchantRegister from './pages/MerchantRegister';
+import UnifiedRegistration from './pages/UnifiedRegistration';
+import Deals from './pages/Deals';
+// import Register from './pages/UserRegister';
+// import RegisterClean from './pages/RegisterClean';
+// import MerchantRegister from './pages/MerchantRegister';
 import MerchantDashboard from './pages/MerchantDashboard';
 import Dashboard from './pages/Dashboard';
 import UserSettings from './pages/UserSettings';
@@ -51,11 +54,14 @@ function App() {
                 
                 {/* Authentication Routes */}
                 <Route path="/login" element={<UnifiedLogin />} />
-                <Route path="/register" element={<Register />} />
+                <Route path="/unified-registration" element={<UnifiedRegistration />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password/:token" element={<ResetPassword />} />
                 <Route path="/merchant/login" element={<UnifiedLogin />} />
-                <Route path="/merchant/register" element={<MerchantRegister />} />
+                {/* <Route path="/merchant/register" element={<MerchantRegister />} /> */}
+
+                {/* Deals Page for Users */}
+                <Route path="/deals" element={<Deals />} />
                 
                 {/* Protected Routes */}
                 <Route path="/dashboard" element={

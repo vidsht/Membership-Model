@@ -85,10 +85,18 @@ const UserSettings = () => {
     
     try {
       const response = await api.put('/users/profile', formData);
-      updateUser(response.data.user);
-      setSuccess('Profile updated successfully! Your changes have been saved.');
-      showNotification('Profile updated successfully! Your changes have been saved.', 'success');
+      // Wait 600ms before showing notification (for toggle UX)
+      await new Promise(resolve => setTimeout(resolve, 600));
+      if (response && response.data && response.data.user) {
+        updateUser(response.data.user);
+        setSuccess('Profile updated successfully! Your changes have been saved.');
+        showNotification('Profile updated successfully! Your changes have been saved.', 'success');
+      } else {
+        setError('Failed to update profile. Please try again.');
+        showNotification('Failed to update profile. Please try again.', 'error');
+      }
     } catch (err) {
+      await new Promise(resolve => setTimeout(resolve, 600));
       const errorMessage = err.response?.data?.message || 'Failed to update profile. Please try again.';
       setError(errorMessage);
       showNotification(errorMessage, 'error');

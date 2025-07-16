@@ -454,9 +454,9 @@ const UserList = () => {
                     <td>{user.email || 'N/A'}</td>
                     <td>{user.phone || 'N/A'}</td>
                     <td>
-                      <span className={`plan-badge ${user.membershipType || 'community'}`}>
-                        {user.membershipType ? 
-                          (user.membershipType.charAt(0).toUpperCase() + user.membershipType.slice(1)) :
+                      <span className={`plan-badge ${user.membership || 'community'}`}>
+                        {user.membership ? 
+                          (user.membership.charAt(0).toUpperCase() + user.membership.slice(1)) :
                           'Community'
                         }
                       </span>
@@ -699,7 +699,7 @@ const AddUserModal = ({ onClose, onSubmit }) => {  const [formData, setFormData]
     email: '',
     phone: '',
     userType: 'user', // Changed from 'member' to 'user'
-    membershipType: 'community',
+    membership: 'community',
     address: {
       street: '',
       city: '',
@@ -798,11 +798,11 @@ const AddUserModal = ({ onClose, onSubmit }) => {  const [formData, setFormData]
             </div>
             <div className="form-row">
               <div className="form-group">
-                <label htmlFor="membershipType">Membership Type</label>
+                <label htmlFor="membership">Membership</label>
                 <select
-                  id="membershipType"
-                  name="membershipType"
-                  value={formData.membershipType}
+                  id="membership"
+                  name="membership"
+                  value={formData.membership}
                   onChange={handleChange}
                 >
                   <option value="community">Community</option>
@@ -919,7 +919,7 @@ const BulkActionModal = ({ users, onClose, onSubmit }) => {
                 <div key={user._id} className="user-item">
                   <div className="user-info">
                     <strong>{user.fullName}</strong>
-                    <span>{user.email} - {user.membershipType}</span>
+                    <span>{user.email} - {user.membership}</span>
                     <span className={`status ${user.status}`}>{user.status}</span>
                   </div>
                 </div>

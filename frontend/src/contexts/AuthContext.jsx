@@ -12,6 +12,7 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
+  const updateUser = (user) => setUser(user);
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -298,7 +299,8 @@ export const AuthProvider = ({ children }) => {
     logout,
     checkAuthStatus,
     validateSession,
-    handleSessionExpired
+    handleSessionExpired,
+    updateUser
   };
 
   return (

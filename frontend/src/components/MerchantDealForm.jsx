@@ -112,17 +112,22 @@ const MerchantDealForm = ({ onDealCreated, onClose }) => {
     try {
       setIsSaving(true);
       
-      // Create FormData for file upload
-      const submitData = new FormData();
-      Object.keys(formData).forEach(key => {
-        if (key === 'featuredImage' && formData[key]) {
-          submitData.append(key, formData[key]);
-        } else if (key !== 'featuredImage') {
-          submitData.append(key, formData[key]);
-        }
-      });
-      
-      await merchantApi.createDeal(submitData);
+
+      // Send JSON only (no file upload)
+      // Map validUntil to expiration_date and only send required fields
+      const businessId = localStorage.getItem('merchantBusinessId');
+      const dealData = {
+        title: formData.title,
+        description: formData.description,
+        category: formData.category,
+        expiration_date: formData.validUntil,
+        businessId,
+        accessLevel: formData.accessLevel,
+        discount: formData.discount,
+        discountType: formData.discountType,
+        termsConditions: formData.termsConditions
+      };
+      await merchantApi.createDeal(dealData);
       showNotification('Deal created successfully!', 'success');
       
       if (onDealCreated) {
@@ -242,9 +247,9 @@ const MerchantDealForm = ({ onDealCreated, onClose }) => {
               value={formData.accessLevel}
               onChange={handleChange}
             >
-              <option value="basic">Community (Basic)</option>
-              <option value="intermediate">Silver (Intermediate)</option>
-              <option value="full">Gold (Full)</option>
+              <option value="community">Community</option>
+              <option value="silver">Silver</option>
+              <option value="gold">Gold</option>
             </select>
           </div>
         </div>

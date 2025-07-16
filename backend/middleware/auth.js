@@ -1,19 +1,34 @@
-const User = require('../models/User');
+const db = require('../db');
 
-const auth = async (req, res, next) => {
+const auth = (req, res, next) => {
   try {
     if (!req.session || !req.session.userId) {
       return res.status(401).json({ message: 'Access denied. Please login.' });
     }
-    
-    const user = await User.findById(req.session.userId).select('-password');
-    
-    if (!user) {
-      return res.status(401).json({ message: 'User not found' });
-    }
-    
-    req.user = user;
-    next();
+
+    db.query(
+      'SELECT id, fullName, email, phone, address, profilePicture, membership, socialMediaFollowed, userType FROM users WHERE id = ?',
+      [req.session.userId],
+      (err, results) => {
+        if (err) {
+          console.error('Auth middleware SQL error:', err);
+          return res.status(500).json({ message: 'Server error', error: err.message });
+        }
+        if (!results.length) {
+          return res.status(401).json({ message: 'User not found' });
+        }
+        const user = results[0];
+        if (user.socialMediaFollowed) {
+          try {
+            user.socialMediaFollowed = JSON.parse(user.socialMediaFollowed);
+          } catch (e) {
+            user.socialMediaFollowed = {};
+          }
+        }
+        req.user = user;
+        next();
+      }
+    );
   } catch (error) {
     console.error('Auth middleware error:', error);
     res.status(401).json({ message: 'Invalid session' });

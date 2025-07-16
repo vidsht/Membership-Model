@@ -19,7 +19,8 @@
     "template"
   ],
   "author": "",
-  "license": "MIT",  "devDependencies": {
+  "license": "MIT",
+  "devDependencies": {
     "concurrently": "^8.2.2"
   }
 }

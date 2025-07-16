@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { merchantApi } from '../services/api';
 import MerchantDealForm from '../components/MerchantDealForm';
+import axios from 'axios';
 
 const MerchantDashboard = () => {
   const { user } = useAuth();
@@ -25,6 +26,10 @@ const MerchantDashboard = () => {
       if (response.data) {
         setStats(response.data.stats);
         setDeals(response.data.deals);
+        // Optionally, store businessId for use in deal creation, etc.
+        if (response.data.business) {
+          localStorage.setItem('merchantBusinessId', response.data.business.businessId);
+        }
       }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -65,6 +70,15 @@ const MerchantDashboard = () => {
   const handleDealCreated = async () => {
     setShowDealForm(false);
     await fetchDashboardData(); // Refresh the dashboard data
+  };
+
+  const fetchRedemptions = async (dealId) => {
+    try {
+      const response = await axios.get(`/api/deals/${dealId}/redemptions`, { withCredentials: true });
+      return response.data;
+    } catch (error) {
+      return [];
+    }
   };
 
   if (loading) {
@@ -184,40 +198,7 @@ const MerchantDashboard = () => {
         ) : (
           <div className="deals-grid">
             {deals.map(deal => (
-              <div key={deal.id} className="deal-card">
-                <div className="deal-header">
-                  <h3>{deal.title}</h3>
-                  <span className={`status-badge ${deal.status}`}>
-                    {deal.status}
-                  </span>
-                </div>
-                <p className="deal-description">{deal.description}</p>
-                <div className="deal-meta">
-                  <div className="deal-discount">
-                    <strong>{deal.discount} OFF</strong>
-                  </div>
-                  <div className="deal-expiry">
-                    Expires: {new Date(deal.validUntil).toLocaleDateString()}
-                  </div>
-                </div>
-                <div className="deal-stats">
-                  <div className="stat-item">
-                    <i className="fas fa-eye"></i>
-                    <span>{deal.views} views</span>
-                  </div>
-                  <div className="stat-item">
-                    <i className="fas fa-shopping-cart"></i>
-                    <span>{deal.redemptions} used</span>
-                  </div>
-                </div>
-                <div className="deal-actions">
-                  <button className="btn btn-sm btn-secondary">
-                    <i className="fas fa-edit"></i> Edit
-                  </button>
-                  <button className="btn btn-sm btn-danger">
-                    <i className="fas fa-trash"></i> Delete
-                  </button>                </div>
-              </div>
+              <DealWithRedemptions key={deal.id} deal={deal} />
             ))}
           </div>
         )}
@@ -237,5 +218,66 @@ const MerchantDashboard = () => {
     </div>
   );
 };
+
+function DealWithRedemptions({ deal }) {
+  const [redemptions, setRedemptions] = React.useState([]);
+  React.useEffect(() => {
+    fetchRedemptions(deal.id).then(setRedemptions);
+  }, [deal.id]);
+
+  return (
+    <div className="deal-card">
+      <div className="deal-header">
+        <h3>{deal.title}</h3>
+        <span className={`status-badge ${deal.status}`}>{deal.status}</span>
+      </div>
+      <p className="deal-description">{deal.description}</p>
+      <div className="deal-meta">
+        <div className="deal-discount">
+          <strong>{deal.discount} OFF</strong>
+        </div>
+        <div className="deal-expiry">
+          Expires: {deal.expiration_date ? new Date(deal.expiration_date).toLocaleDateString() : ''}
+        </div>
+      </div>
+      <div className="deal-business-id">
+        <span className="business-id-label">Business ID:</span> <span className="business-id-value">{deal.businessId}</span>
+      </div>
+      <div className="deal-stats">
+        <div className="stat-item">
+          <i className="fas fa-eye"></i>
+          <span>{deal.views} views</span>
+        </div>
+        <div className="stat-item">
+          <i className="fas fa-shopping-cart"></i>
+          <span>{deal.redemptions} used</span>
+        </div>
+      </div>
+      <div className="deal-actions">
+        <button className="btn btn-sm btn-secondary">
+          <i className="fas fa-edit"></i> Edit
+        </button>
+        <button className="btn btn-sm btn-danger">
+          <i className="fas fa-trash"></i> Delete
+        </button>
+      </div>
+      {/* Redemptions List */}
+      <div className="deal-redemptions">
+        <h4>Redeemed By:</h4>
+        {redemptions.length === 0 ? (
+          <span className="no-redemptions">No users have redeemed this deal yet.</span>
+        ) : (
+          <ul className="redemptions-list">
+            {redemptions.map(user => (
+              <li key={user.id}>
+                <span>{user.name} ({user.email})</span> <span className="redeemed-date">{new Date(user.redeemedAt).toLocaleString()}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default MerchantDashboard;

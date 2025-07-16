@@ -1,16 +1,46 @@
 const express = require('express');
-const { body, validationResult } = require('express-validator');
-const User = require('../models/User');
-const { auth, admin, checkRole } = require('../middleware/auth');
-
+const db = require('../db');
+const { auth } = require('../middleware/auth');
 const router = express.Router();
+
+// MySQL-based checkRole middleware
+function checkRole(requiredRole) {
+  return (req, res, next) => {
+    const userId = req.session.userId;
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+    db.query('SELECT adminRole FROM users WHERE id = ?', [userId], (err, results) => {
+      if (err) return res.status(500).json({ message: 'Server error' });
+      if (!results.length) return res.status(403).json({ message: 'User not found' });
+      const userRole = results[0].adminRole;
+      if (userRole !== requiredRole) {
+        return res.status(403).json({ message: 'Forbidden: Insufficient role' });
+      }
+      next();
+    });
+  };
+}
+
+// MySQL-based admin middleware for permissions
+function admin(req, res, next) {
+  const userId = req.session.userId;
+  if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+  db.query('SELECT adminRole FROM users WHERE id = ?', [userId], (err, results) => {
+    if (err) return res.status(500).json({ message: 'Server error' });
+    if (!results.length) return res.status(403).json({ message: 'User not found' });
+    const userRole = results[0].adminRole;
+    if (!userRole || (userRole !== 'admin' && userRole !== 'superAdmin')) {
+      return res.status(403).json({ message: 'Forbidden: Admins only' });
+    }
+    next();
+  });
+}
 
 /**
  * @route   GET /api/admin/roles
  * @desc    Get all available roles and permissions
  * @access  Private (Admin only)
  */
-router.get('/roles', auth, admin, async (req, res) => {
+router.get('/roles', auth, (req, res) => {
   try {
     // Define available roles and their permissions
     const roles = {
@@ -69,23 +99,17 @@ router.get('/roles', auth, admin, async (req, res) => {
  * @desc    Get user role and permissions
  * @access  Private (Admin only)
  */
-router.get('/users/:userId/role', auth, admin, async (req, res) => {
-  try {
-    const user = await User.findById(req.params.userId).select('userType adminRole permissions');
-    
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-    
+router.get('/users/:userId/role', auth, (req, res) => {
+  db.query('SELECT userType, adminRole, permissions FROM users WHERE id = ?', [req.params.userId], (err, results) => {
+    if (err) return res.status(500).json({ message: 'Server error' });
+    if (!results.length) return res.status(404).json({ message: 'User not found' });
+    const user = results[0];
     res.json({
       userType: user.userType,
       adminRole: user.adminRole,
-      permissions: user.permissions || []
+      permissions: user.permissions ? JSON.parse(user.permissions) : []
     });
-  } catch (error) {
-    console.error('Error fetching user role:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
+  });
 });
 
 /**
@@ -93,62 +117,18 @@ router.get('/users/:userId/role', auth, admin, async (req, res) => {
  * @desc    Assign role and permissions to user
  * @access  Private (SuperAdmin only)
  */
-router.post('/users/:userId/assign-role', 
-  auth, 
+router.post('/users/:userId/assign-role',
+  auth,
   checkRole('superAdmin'),
-  [
-    body('role').isIn(['user', 'admin', 'merchant']).withMessage('Invalid role'),
-    body('adminRole').optional().isString().withMessage('Admin role must be a string'),
-    body('permissions').optional().isArray().withMessage('Permissions must be an array')
-  ],
-  async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-    
-    try {
-      const { role, adminRole, permissions, merchantDetails } = req.body;
-      
-      // Find user
-      const user = await User.findById(req.params.userId);
-      
-      if (!user) {
-        return res.status(404).json({ message: 'User not found' });
+  (req, res) => {
+    const { role, adminRole, permissions } = req.body;
+    db.query('UPDATE users SET userType=?, adminRole=?, permissions=? WHERE id=?',
+      [role, adminRole, JSON.stringify(permissions || []), req.params.userId],
+      (err) => {
+        if (err) return res.status(500).json({ message: 'Server error' });
+        res.json({ message: 'Role and permissions assigned' });
       }
-      
-      // Update user type
-      user.userType = role;
-      
-      // Set admin role and permissions if user is admin
-      if (role === 'admin') {
-        user.adminRole = adminRole || 'contentManager';
-        user.permissions = permissions || [];
-      }
-      
-      // Set merchant details if user is merchant
-      if (role === 'merchant' && merchantDetails) {
-        user.businessInfo = {
-          ...user.businessInfo,
-          ...merchantDetails
-        };
-      }
-      
-      await user.save();
-      
-      res.json({ 
-        message: 'User role updated successfully',
-        user: {
-          _id: user._id,
-          userType: user.userType,
-          adminRole: user.adminRole,
-          permissions: user.permissions
-        }
-      });
-    } catch (error) {
-      console.error('Error assigning role:', error);
-      res.status(500).json({ message: 'Server error' });
-    }
+    );
   }
 );
 
@@ -232,6 +212,23 @@ router.get('/roles/permissions', auth, admin, async (req, res) => {
     console.error('Error fetching permissions:', error);
     res.status(500).json({ message: 'Server error' });
   }
+});
+
+// Get all roles
+router.get('/', auth, (req, res) => {
+  db.query('SELECT * FROM roles', (err, results) => {
+    if (err) return res.status(500).json({ message: 'Server error' });
+    res.json(results);
+  });
+});
+
+// Assign role to user
+router.post('/assign', auth, (req, res) => {
+  const { userId, role } = req.body;
+  db.query('UPDATE users SET role=? WHERE id=?', [role, userId], (err) => {
+    if (err) return res.status(500).json({ message: 'Server error' });
+    res.json({ message: 'Role assigned' });
+  });
 });
 
 module.exports = router;

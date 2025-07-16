@@ -1,14 +1,9 @@
-
 // Cleaned up: Only one set of requires and router declaration at the top
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const { body, validationResult } = require('express-validator');
-const User = require('../models/User');
-const Merchant = require('../models/Merchant');
-const Deal = require('../models/Deal');
-const Business = require('../models/Business');
-const AdminSettings = require('../models/AdminSettings');
-const Plan = require('../models/Plan');
+// Removed unused Mongoose models (migrated to MySQL)
+const db = require('../db');
 const { auth, admin } = require('../middleware/auth');
 
 const router = express.Router();
@@ -1351,37 +1346,22 @@ router.post('/partners/bulk-suspend', auth, admin, async (req, res) => {
 // @route   GET /api/admin/settings
 // @desc    Get admin settings (create defaults if not exist)
 // @access  Private (Admin only)
-router.get('/settings', auth, admin, async (req, res) => {
-  try {
-    let settings = await AdminSettings.findOne();
-    if (!settings) {
-      // Create default settings if not found
-      settings = new AdminSettings({});
-      await settings.save();
-    }
-    res.json(settings);
-  } catch (error) {
-    console.error('Error fetching admin settings:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
+router.get('/settings', auth, (req, res) => {
+  db.query('SELECT * FROM admin_settings', (err, results) => {
+    if (err) return res.status(500).json({ message: 'Server error' });
+    res.json(results);
+  });
 });
 
 // @route   PUT /api/admin/settings
 // @desc    Update admin settings
 // @access  Private (Admin only)
-router.put('/settings', auth, admin, async (req, res) => {
-  try {
-    let settings = await AdminSettings.findOne();
-    if (!settings) {
-      settings = new AdminSettings({});
-    }
-    Object.assign(settings, req.body);
-    await settings.save();
-    res.json(settings);
-  } catch (error) {
-    console.error('Error updating admin settings:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
+router.put('/settings/:key', auth, (req, res) => {
+  const { value } = req.body;
+  db.query('UPDATE admin_settings SET value=?, updated_at=NOW() WHERE key_name=?', [value, req.params.key], (err) => {
+    if (err) return res.status(500).json({ message: 'Server error' });
+    res.json({ message: 'Setting updated' });
+  });
 });
 
 module.exports = router;

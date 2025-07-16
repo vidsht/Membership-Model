@@ -1,4 +1,16 @@
+
 import axios from 'axios';
+// Get all deals (for users)
+export const getAllDeals = async () => {
+  const response = await api.get('/deals');
+  return response.data;
+};
+
+// Redeem a deal
+export const redeemDeal = async (dealId) => {
+  const response = await api.post(`/deals/${dealId}/redeem`);
+  return response.data;
+};
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -153,7 +165,13 @@ export const merchantApi = {
 
   // Create new deal
   createDeal: async (dealData) => {
+    // businessId is now included in dealData, but backend will use session to verify
     const response = await api.post('/merchant/deals', dealData);
+    return response.data;
+  },
+  // Fetch business details by businessId (for admin/customer views)
+  getBusinessById: async (businessId) => {
+    const response = await api.get(`/deals/business/${businessId}`);
     return response.data;
   },
 
