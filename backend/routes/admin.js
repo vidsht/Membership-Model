@@ -1,9 +1,14 @@
+
 // Cleaned up: Only one set of requires and router declaration at the top
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const { body, validationResult } = require('express-validator');
-// Removed unused Mongoose models (migrated to MySQL)
-const db = require('../db');
+const User = require('../models/User');
+const Merchant = require('../models/Merchant');
+const Deal = require('../models/Deal');
+const Business = require('../models/Business');
+const AdminSettings = require('../models/AdminSettings');
+const Plan = require('../models/Plan');
 const { auth, admin } = require('../middleware/auth');
 
 const router = express.Router();
@@ -13,31 +18,31 @@ const router = express.Router();
 // @access  Private (Admin only)
 router.post('/users/:id/assign-plan', auth, admin, async (req, res) => {
   try {
-    const userId = req.params.id;
+    const userId = parseInt(req.params.id);
     const { planId } = req.body;
     if (!userId || !planId) {
       return res.status(400).json({ success: false, message: 'User ID and plan ID are required.' });
     }
-    // Validate IDs
-    if (!userId.match(/^[0-9a-fA-F]{24}$/) || !planId.match(/^[0-9a-fA-F]{24}$/)) {
-      return res.status(400).json({ success: false, message: 'Invalid user or plan ID.' });
-    }
-    // Find user
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found.' });
-    }
-    // Find plan
-    const plan = await Plan.findById(planId);
-    if (!plan) {
+    // Get plan key from plans table
+    const [planRows] = await db.promise().query('SELECT `key` FROM plans WHERE id = ?', [planId]);
+    if (!planRows.length) {
       return res.status(404).json({ success: false, message: 'Plan not found.' });
     }
-    // Assign plan
-    user.membershipType = plan.key;
-    user.planAssignedAt = new Date();
-    user.planAssignedBy = req.user._id;
-    await user.save();
-    return res.json({ success: true, user });
+    const planKey = planRows[0].key;
+    // Update user with new plan
+    const [result] = await db.promise().query(
+      'UPDATE users SET membershipType = ?, planAssignedAt = NOW(), planAssignedBy = ? WHERE id = ?',
+      [planKey, req.user.id || null, userId]
+    );
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'User not found.' });
+    }
+    // Return updated user
+    const [userRows] = await db.promise().query(
+      'SELECT id, fullName, email, membershipType, planAssignedAt, planAssignedBy FROM users WHERE id = ?',
+      [userId]
+    );
+    return res.json({ success: true, user: userRows[0] });
   } catch (err) {
     console.error('Error assigning plan to user:', err);
     return res.status(500).json({ success: false, message: 'Server error assigning plan.' });
@@ -49,42 +54,45 @@ router.post('/users/:id/assign-plan', auth, admin, async (req, res) => {
 // @access  Private (Admin only)
 router.get('/stats', auth, admin, async (req, res) => {
   try {
-    // Get all plans
-    const plans = await Plan.find({});
-    // Build plan key map for user and merchant plans
-    const userPlanKeys = plans.filter(p => !p.key.includes('business')).map(p => p.key);
-    const merchantPlanKeys = plans.filter(p => p.key.includes('business')).map(p => p.key);
+    db.query('SELECT * FROM plans', async (err, plans) => {
+      if (err) {
+        console.error('Error fetching plans:', err);
+        return res.status(500).json({ message: 'Server error' });
+      }
+      const userPlanKeys = plans.filter(p => p.type === 'user').map(p => p.key);
+      const merchantPlanKeys = plans.filter(p => p.type === 'merchant').map(p => p.key);
 
-    // User stats per plan
-    const userPlanCounts = {};
-    for (const key of userPlanKeys) {
-      userPlanCounts[key] = await User.countDocuments({ membershipType: key, userType: { $ne: 'merchant' } });
-    }
-
-    // Merchant stats per plan
-    const merchantPlanCounts = {};
-    for (const key of merchantPlanKeys) {
-      merchantPlanCounts[key] = await User.countDocuments({ membershipType: key, userType: 'merchant' });
-    }
-
-    // Totals
-    const totalUsers = await User.countDocuments({ userType: { $ne: 'merchant' } });
-    const totalMerchants = await User.countDocuments({ userType: 'merchant' });
-    const pendingApprovals = await User.countDocuments({ status: 'pending' });
-    const activeBusinesses = await User.countDocuments({ userType: 'merchant', status: 'approved' });
-    const totalRevenue = 0; // Placeholder for now
-
-    const stats = {
-      totalUsers,
-      totalMerchants,
-      pendingApprovals,
-      activeBusinesses,
-      totalRevenue,
-      userPlanCounts,
-      merchantPlanCounts,
-      planKeys: plans.map(p => ({ key: p.key, name: p.name, type: p.key.includes('business') ? 'merchant' : 'user' }))
-    };
-    res.json(stats);
+      const userPlanCounts = {};
+      for (const key of userPlanKeys) {
+        const [rows] = await db.promise().query(
+          'SELECT COUNT(*) AS count FROM users WHERE membershipType = ? AND userType != "merchant"', [key]
+        );
+        userPlanCounts[key] = rows[0].count;
+      }
+      const merchantPlanCounts = {};
+      for (const key of merchantPlanKeys) {
+        const [rows] = await db.promise().query(
+          'SELECT COUNT(*) AS count FROM users WHERE membershipType = ? AND userType = "merchant"', [key]
+        );
+        merchantPlanCounts[key] = rows[0].count;
+      }
+      const [[{ count: totalUsers }]] = await db.promise().query('SELECT COUNT(*) AS count FROM users WHERE userType != "merchant"');
+      const [[{ count: totalMerchants }]] = await db.promise().query('SELECT COUNT(*) AS count FROM users WHERE userType = "merchant"');
+      const [[{ count: pendingApprovals }]] = await db.promise().query('SELECT COUNT(*) AS count FROM users WHERE status = "pending"');
+      const [[{ count: activeBusinesses }]] = await db.promise().query('SELECT COUNT(*) AS count FROM users WHERE userType = "merchant" AND status = "approved"');
+      const totalRevenue = 0; // Placeholder for now
+      const stats = {
+        totalUsers,
+        totalMerchants,
+        pendingApprovals,
+        activeBusinesses,
+        totalRevenue,
+        userPlanCounts,
+        merchantPlanCounts,
+        planKeys: plans.map(p => ({ key: p.key, name: p.name, type: p.type }))
+      };
+      res.json(stats);
+    });
   } catch (error) {
     console.error('Error fetching admin stats:', error);
     res.status(500).json({ message: 'Server error' });
@@ -1346,22 +1354,37 @@ router.post('/partners/bulk-suspend', auth, admin, async (req, res) => {
 // @route   GET /api/admin/settings
 // @desc    Get admin settings (create defaults if not exist)
 // @access  Private (Admin only)
-router.get('/settings', auth, (req, res) => {
-  db.query('SELECT * FROM admin_settings', (err, results) => {
-    if (err) return res.status(500).json({ message: 'Server error' });
-    res.json(results);
-  });
+router.get('/settings', auth, admin, async (req, res) => {
+  try {
+    let settings = await AdminSettings.findOne();
+    if (!settings) {
+      // Create default settings if not found
+      settings = new AdminSettings({});
+      await settings.save();
+    }
+    res.json(settings);
+  } catch (error) {
+    console.error('Error fetching admin settings:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
 // @route   PUT /api/admin/settings
 // @desc    Update admin settings
 // @access  Private (Admin only)
-router.put('/settings/:key', auth, (req, res) => {
-  const { value } = req.body;
-  db.query('UPDATE admin_settings SET value=?, updated_at=NOW() WHERE key_name=?', [value, req.params.key], (err) => {
-    if (err) return res.status(500).json({ message: 'Server error' });
-    res.json({ message: 'Setting updated' });
-  });
+router.put('/settings', auth, admin, async (req, res) => {
+  try {
+    let settings = await AdminSettings.findOne();
+    if (!settings) {
+      settings = new AdminSettings({});
+    }
+    Object.assign(settings, req.body);
+    await settings.save();
+    res.json(settings);
+  } catch (error) {
+    console.error('Error updating admin settings:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
 module.exports = router;
