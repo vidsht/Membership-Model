@@ -70,7 +70,7 @@ export const AuthProvider = ({ children }) => {
   
   // Use ref to prevent multiple simultaneous auth checks
   const authCheckRunning = useRef(false);
-  
+
   // Ref for refresh timer
   const refreshTimerRef = useRef(null);
   
@@ -157,7 +157,7 @@ export const AuthProvider = ({ children }) => {
       authCheckRunning.current = false;
     }
   };
-  
+
   // Run on mount and clean up on unmount
   useEffect(() => {
     checkAuthStatus();
@@ -169,7 +169,7 @@ export const AuthProvider = ({ children }) => {
       }
     };
   }, []); // Empty dependency array - runs only once
-  
+
   const login = async (credentials) => {
     try {
       setIsLoading(true);
@@ -277,6 +277,7 @@ export const AuthProvider = ({ children }) => {
       return response; // Return response so components can show the success message
     } catch (error) {
       console.error('Logout error:', error);
+    } finally {
       setUser(null);
       setIsAuthenticated(false);
       setSessionExpired(false);
@@ -287,7 +288,8 @@ export const AuthProvider = ({ children }) => {
       throw error;
     }
   };
-    const value = {
+
+  const value = {
     user,
     isAuthenticated,
     isLoading,

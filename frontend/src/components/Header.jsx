@@ -41,7 +41,7 @@ const Header = () => {
   const isActive = (path) => {
     return location.pathname === path ? 'nav-link active' : 'nav-link';
   };
-  
+
   return (
     <header className={scrolled ? 'scrolled' : ''}>
       <div className="header-content">
@@ -56,7 +56,7 @@ const Header = () => {
             <span className="logo-tagline">Community & Business Network</span>
           </div>
         </div>
-        
+            
         <nav className="main-nav">
           <ul>
             <li><Link to="/" className={isActive('/')}>Home</Link></li>
@@ -71,6 +71,7 @@ const Header = () => {
                 </Link></li>
               </>
             )}
+            
             <li><Link to="/about" className={isActive('/about')}>About Us</Link></li>
             <li><Link to="/contact" className={isActive('/contact')}>Contact</Link></li>
             {/* Merchant dropdown */}

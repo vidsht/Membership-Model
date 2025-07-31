@@ -30,10 +30,14 @@ router.post('/register', async (req, res) => {
     if (!fullName || !email || !password) {
       return res.status(400).json({ success: false, message: 'Full name, email, and password are required.' });
     }
+
+    // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return res.status(400).json({ success: false, message: 'Please enter a valid email address.' });
     }
+
+    // Password validation
     if (password.length < 6) {
       return res.status(400).json({ success: false, message: 'Password must be at least 6 characters long.' });
     }
@@ -114,9 +118,12 @@ router.post('/register', async (req, res) => {
 router.post('/login', async (req, res) => {
   try {
     const { email, password, rememberMe } = req.body;
+    // Validate input
     if (!email || !password) {
       return res.status(400).json({ message: 'Email and password are required to log in.' });
     }
+
+    // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return res.status(400).json({ message: 'Please enter a valid email address.' });
@@ -125,18 +132,27 @@ router.post('/login', async (req, res) => {
       if (err) return res.status(500).json({ message: 'Server error' });
       if (!results.length) return res.status(400).json({ message: 'Invalid email or password. Please check your credentials and try again.' });
       const user = results[0];
-      const isMatch = await bcrypt.compare(password, user.password);
-      if (!isMatch) {
-        return res.status(400).json({ message: 'Invalid email or password. Please check your credentials and try again.' });
+      
+      try {
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+          return res.status(400).json({ message: 'Invalid email or password. Please check your credentials and try again.' });
+        }
+      } catch (bcryptError) {
+        console.error('bcrypt error during login:', bcryptError);
+        return res.status(500).json({ message: 'Authentication error. Please try again.' });
       }
+
       // Update last login
       db.query('UPDATE users SET lastLogin = NOW() WHERE id = ?', [user.id], (err2) => {
         if (err2) console.error('Failed to update lastLogin:', err2);
       });
       req.session.userId = user.id;
       if (rememberMe) {
+        // Extend session to 30 days if "Remember Me" is checked
         req.session.cookie.maxAge = 1000 * 60 * 60 * 24 * 30; // 30 days
       } else {
+        // Default session length (1 day)
         req.session.cookie.maxAge = 1000 * 60 * 60 * 24; // 1 day
       }
       req.session.save((err2) => {
@@ -180,6 +196,7 @@ router.post('/logout', (req, res) => {
 router.post('/forgot-password', async (req, res) => {
   try {
     const { email } = req.body;
+    
     if (!email) {
       return res.status(400).json({ message: 'Email is required' });
     }
@@ -191,6 +208,8 @@ router.post('/forgot-password', async (req, res) => {
       }
       const user = results[0];
       const resetToken = require('crypto').randomBytes(32).toString('hex');
+      
+      // Set token expiration (30 minutes from now)
       const resetTokenExpires = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
       db.query('UPDATE users SET resetPasswordToken=?, resetPasswordExpires=? WHERE id=?', [resetToken, resetTokenExpires, user.id], (err2) => {
         if (err2) return res.status(500).json({ message: 'Server error' });
@@ -259,15 +278,16 @@ router.post('/refresh', auth, async (req, res) => {
     });
 
     // Check if the user had "Remember Me" enabled during login
+    // This would be indicated by a longer session expiry
     const isRememberedSession = req.session.cookie.maxAge > 24 * 60 * 60 * 1000;
-
+    
     // Refresh the session by extending its lifetime
     if (isRememberedSession) {
       req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days for remembered sessions
     } else {
       req.session.cookie.maxAge = 24 * 60 * 60 * 1000; // 24 hours for standard sessions
     }
-
+    
     // Get user info (only valid columns)
     db.query('SELECT id, fullName, email, phone, address, profilePicture, membership, userType FROM users WHERE id = ?', [userId], (err2, results) => {
       if (err2) {
@@ -283,6 +303,7 @@ router.post('/refresh', auth, async (req, res) => {
           console.error('Session refresh error:', err3);
           return res.status(500).json({ message: 'Session refresh failed' });
         }
+        
         res.json({
           message: 'Session refreshed successfully',
           success: true,
@@ -332,34 +353,32 @@ router.post('/merchant/register', async (req, res) => {
       return res.status(400).json({ message: 'Empty request body' });
     }
 
-
     const {
-      fullName,
-      email,
-      password,
-      phone,
+      fullName, 
+      email, 
+      password, 
+      phone, 
       address,
       businessInfo,
       socialMediaFollowed
     } = req.body;
 
-
     // Validate required fields
     if (!fullName || !email || !password) {
       return res.status(400).json({ message: 'Full name, email, and password are required.' });
     }
-
+    
     // Basic email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return res.status(400).json({ message: 'Please enter a valid email address.' });
     }
-
+    
     // Password validation
     if (password.length < 6) {
       return res.status(400).json({ message: 'Password must be at least 6 characters long.' });
     }
-
+    
     // Social media validation
     let socialMediaJson = null;
     try {

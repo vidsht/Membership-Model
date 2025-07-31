@@ -1,9 +1,18 @@
 
 
 const express = require('express');
+const { body, validationResult } = require('express-validator');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+const User = require('../models/User');
+const Deal = require('../models/Deal');
+const Business = require('../models/Business');
+const { auth, merchant } = require('../middleware/auth');
+
 const router = express.Router();
 const db = require('../db');
-const { auth } = require('../middleware/auth');
+
 
 
 // Merchant Dashboard - returns stats and deals for the logged-in merchant
@@ -30,9 +39,9 @@ router.get('/dashboard', auth, (req, res) => {
         activeDeals: dealResults.filter(d => d.status === 'active').length,
         totalViews: dealResults.reduce((sum, d) => sum + (d.views || 0), 0),
         totalRedemptions: dealResults.reduce((sum, d) => sum + (d.redemptions || 0), 0)
-      };
+    };
 
-      res.json({
+    res.json({
         data: {
           stats,
           deals: dealResults.map(deal => ({ ...deal, businessId: business.businessId })),

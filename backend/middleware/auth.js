@@ -5,7 +5,7 @@ const auth = (req, res, next) => {
     if (!req.session || !req.session.userId) {
       return res.status(401).json({ message: 'Access denied. Please login.' });
     }
-
+    
     db.query(
       'SELECT id, fullName, email, phone, address, profilePicture, membership, socialMediaFollowed, userType FROM users WHERE id = ?',
       [req.session.userId],
@@ -15,8 +15,8 @@ const auth = (req, res, next) => {
           return res.status(500).json({ message: 'Server error', error: err.message });
         }
         if (!results.length) {
-          return res.status(401).json({ message: 'User not found' });
-        }
+      return res.status(401).json({ message: 'User not found' });
+    }
         const user = results[0];
         if (user.socialMediaFollowed) {
           try {
@@ -25,8 +25,8 @@ const auth = (req, res, next) => {
             user.socialMediaFollowed = {};
           }
         }
-        req.user = user;
-        next();
+    req.user = user;
+    next();
       }
     );
   } catch (error) {

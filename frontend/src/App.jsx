@@ -41,10 +41,10 @@ function App() {
   return (
     <ErrorBoundary>
       <NotificationProvider>
-        <AuthProvider>
-          <Router>
-            <div className="App">
-              <Header />
+      <AuthProvider>
+        <Router>
+          <div className="App">
+            <Header />
               <Toast />
               <main className="container">              <Routes>
                 {/* Public Routes - Always accessible */}
@@ -153,7 +153,7 @@ function App() {
               </Routes>            </main>            <Footer />
           </div>
         </Router>
-        </AuthProvider>
+      </AuthProvider>
       </NotificationProvider>
     </ErrorBoundary>
   );

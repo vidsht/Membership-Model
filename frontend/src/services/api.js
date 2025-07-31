@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 // Get all deals (for users)
 export const getAllDeals = async () => {

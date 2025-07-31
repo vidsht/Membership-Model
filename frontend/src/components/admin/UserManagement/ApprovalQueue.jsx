@@ -162,8 +162,8 @@ const ApprovalQueue = () => {
                     <span className="approval-date">Registered: {formatDate(user.createdAt)}</span>
                   </div>
                   <div className="approval-meta">
-                    <span className={`plan-badge ${user.membership}`}>
-                      {user.membership.charAt(0).toUpperCase() + user.membership.slice(1)}
+                    <span className={`plan-badge ${user.membershipType}`}>
+                      {user.membershipType.charAt(0).toUpperCase() + user.membershipType.slice(1)}
                     </span>
                     {user.phone && (
                       <span className="contact-info"><i className="fas fa-phone"></i> {user.phone}</span>

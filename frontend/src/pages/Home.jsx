@@ -8,11 +8,11 @@ import '../styles/membership-plans.css';
 const Home = () => {
   const { isAuthenticated } = useAuth();
   const location = useLocation();
+  const [businesses, setBusinesses] = useState([]);
   const [stats, setStats] = useState({});
   const [terms, setTerms] = useState('');
   const [loading, setLoading] = useState(true);
   const [showAuthNotification, setShowAuthNotification] = useState(false);
-  
   useEffect(() => {
     // Check if user was redirected from a protected route
     if (location.state && location.state.from) {
@@ -23,27 +23,45 @@ const Home = () => {
   }, [location]);
 
   useEffect(() => {
-    const initializeData = () => {
+    const fetchData = async () => {
       try {
-        // Set default terms
-        setTerms('By using this service, you agree to abide by all rules and regulations set forth by the Indians in Ghana community. Membership benefits are subject to change without prior notice.');
+        // Fetch businesses (public data)
+        const businessResponse = await api.get('/businesses');
+        setBusinesses(businessResponse.data);
 
-        // Set static stats for display
+        // Fetch admin settings for terms and public info
+        try {
+          const settingsResponse = await api.get('/admin/settings');
+          setTerms(settingsResponse.data.termsConditions);
+        } catch (error) {
+          // Set default terms if admin settings not accessible
+          setTerms('By using this service, you agree to abide by all rules and regulations set forth by the Indians in Ghana community. Membership benefits are subject to change without prior notice.');
+        }
+
+        // Mock stats for display (in production, you'd have a public stats endpoint)
         setStats({
           totalMembers: 1250,
-          communityEvents: 25,
-          membersBenefits: 15
+          activeBusinesses: 85,
+          exclusiveDeals: 42
         });
 
       } catch (error) {
-        console.error('Error initializing data:', error);
+        console.error('Error fetching data:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    initializeData();
+    fetchData();
   }, []);
+
+  const groupedBusinesses = businesses.reduce((acc, business) => {
+    if (!acc[business.sector]) {
+      acc[business.sector] = [];
+    }
+    acc[business.sector].push(business);
+    return acc;
+  }, {});
 
   if (loading) {
     return (
@@ -54,8 +72,10 @@ const Home = () => {
         </div>
       </div>
     );
-  }  return (
-    <div className="home-container">      {showAuthNotification && (
+  }
+  return (
+    <div className="home-container">
+      {showAuthNotification && (
         <div className="auth-notification">
           <div className="notification-content">
             <i className="fas fa-info-circle"></i>
@@ -74,17 +94,17 @@ const Home = () => {
           
           {!isAuthenticated && (
             <div className="hero-actions">
-              <Link to="/unified-registration" className="btn btn-primary">
+              <Link to="/register" className="btn btn-primary">
                 <i className="fas fa-user-plus"></i> Join Now
               </Link>
               <Link to="/login" className="btn btn-secondary">
-                <i className="fas fa-sign-in-alt"></i> Sign In
+                <i className="fas fa-sign-in-alt"></i> Login
               </Link>
             </div>
           )}
         </div>
       </section>
-      
+
       <section className="stats">
         <div className="stats-container">
           <div className="stat-card">
@@ -92,101 +112,72 @@ const Home = () => {
             <div className="stat-label">Community Members</div>
           </div>
           <div className="stat-card">
-            <div className="stat-number">{stats.communityEvents}</div>
-            <div className="stat-label">Community Events</div>
+            <div className="stat-number">{stats.activeBusinesses}</div>
+            <div className="stat-label">Active Businesses</div>
           </div>
           <div className="stat-card">
-            <div className="stat-number">{stats.membersBenefits}</div>
-            <div className="stat-label">Member Benefits</div>
+            <div className="stat-number">{stats.exclusiveDeals}</div>
+            <div className="stat-label">Exclusive Deals</div>
           </div>
         </div>
-      </section>
-        <section className="features">
-        <div className="features-header">
-          <h2>Membership Benefits</h2>
-          <p>Discover the exclusive advantages of being part of our community</p>
-        </div>
-        
-        <div className="features-container">
-          <div className="features-grid">
-            <div className="feature-card">
-              <div className="feature-icon">
-                <i className="fas fa-id-card"></i>
-              </div>
-              <h3 className="feature-title">Digital Membership</h3>
-              <p className="feature-description">Access your digital membership card anytime, anywhere with exclusive member benefits.</p>
-              <Link to="/unified-registration" className="feature-link">Learn More <i className="fas fa-chevron-right"></i></Link>
-            </div>
-            
-            <div className="feature-card">
-              <div className="feature-icon">
-                <i className="fas fa-percentage"></i>
-              </div>
-              <h3 className="feature-title">Exclusive Discounts</h3>
-              <p className="feature-description">Enjoy special discounts and offers at partner businesses across Ghana.</p>
-              <Link to="/unified-registration" className="feature-link">View Offers <i className="fas fa-chevron-right"></i></Link>
-            </div>
-            
-            <div className="feature-card">
-              <div className="feature-icon">
-                <i className="fas fa-calendar-alt"></i>
-              </div>
-              <h3 className="feature-title">Community Events</h3>
-              <p className="feature-description">Connect with fellow community members through regular cultural and networking events.</p>
-              <Link to="/unified-registration" className="feature-link">See Calendar <i className="fas fa-chevron-right"></i></Link>
-            </div>
-          </div>        </div>
       </section>
 
-      <section className="membership-plans-section" style={{ background: 'linear-gradient(to bottom, #f5f5f5, #ffffff)', padding: '3rem 1rem', margin: '2rem 0', borderRadius: '0.5rem', boxShadow: '0 2px 10px rgba(0, 0, 0, 0.05)' }}>
-        <h2 className="section-title-centered">
-          <i className="fas fa-crown" style={{ marginRight: '0.5rem', color: '#ffd700' }}></i>
-          Membership Plans
-        </h2>
-        <p style={{ textAlign: 'center', maxWidth: '700px', margin: '0 auto 2rem', color: 'var(--neutral-medium)' }}>
-          Choose the membership plan that's right for you and start enjoying exclusive benefits designed for the Indian community in Ghana.
-        </p>
-        
-        <div className="membership-cards">
-          <div className="membership-card">
-            <div className="card-header">
+      <section className="features">
+        <div className="features-container">
+          <h2>Why Join Our Community?</h2>
+          <div className="features-grid">
+            <div className="feature-card">
+              <i className="fas fa-id-card"></i>
+              <h3>Digital Membership Card</h3>
+              <p>Get your digital membership card with QR code and barcode for easy verification.</p>
+            </div>
+            <div className="feature-card">
+              <i className="fas fa-store"></i>
+              <h3>Business Directory</h3>
+              <p>Discover Indian businesses in Ghana and connect with fellow entrepreneurs.</p>
+            </div>
+            <div className="feature-card">
+              <i className="fas fa-tags"></i>
+              <h3>Exclusive Deals</h3>
+              <p>Access member-only discounts and special offers from partner businesses.</p>
+            </div>
+            <div className="feature-card">
+              <i className="fas fa-users"></i>
+              <h3>Community Events</h3>
+              <p>Stay updated on cultural events, festivals, and community gatherings.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="membership-plans">
+        <div className="plans-container">
+          <h2>Membership Plans</h2>
+          <div className="plans-grid">
+            <div className="plan-card">
               <h3>Community</h3>
-              <p className="price">FREE</p>
-            </div>
-            <div className="card-body">
+              <div className="plan-price">Free</div>
               <ul className="plan-features">
-                <li><i className="fas fa-check"></i> Basic community access</li>
-                <li><i className="fas fa-check"></i> Digital membership card</li>
-                <li><i className="fas fa-check"></i> Member directory listing</li>
-                <li><i className="fas fa-check"></i> Public event access</li>
+                <li>Basic membership card</li>
+                <li>Business directory access</li>
+                <li>Community event updates</li>
               </ul>
-              <Link to="/unified-registration" className="plan-button">Join Free</Link>
+              <Link to="/register" className="btn btn-outline">Get Started</Link>
             </div>
-          </div>
-          
-          <div className="membership-card silver" style={{ backgroundImage: 'linear-gradient(to bottom right, #f0f0f0, #e0e0e0, #c0c0c0, #e0e0e0, #f0f0f0)' }}>
-            <div className="card-header" style={{ background: 'linear-gradient(to right, #c0c0c0, #d8d8d8, #c0c0c0)' }}>
+            <div className="plan-card featured">
               <h3>Silver</h3>
-              <p className="price">GHS 50<span>/year</span></p>
-            </div>
-            <div className="card-body">
+              <div className="plan-price">$50/year</div>
               <ul className="plan-features">
-                <li><i className="fas fa-check"></i> All Community features</li>
-                <li><i className="fas fa-check"></i> Member-only events</li>
-                <li><i className="fas fa-check"></i> Business directory access</li>
-                <li><i className="fas fa-check"></i> 5 exclusive deals monthly</li>
+                <li>All Community features</li>
+                <li>Exclusive deals access</li>
+                <li>Priority event booking</li>
+                <li>Monthly newsletter</li>
               </ul>
-              <Link to="/unified-registration" className="plan-button">Upgrade to Silver</Link>
+              <Link to="/register" className="btn btn-primary">Choose Silver</Link>
             </div>
-          </div>
-          
-          <div className="membership-card gold featured" style={{ animation: 'pulse 2s infinite' }}>
-            <div className="featured-badge">Most Popular</div>
-            <div className="card-header">
+            <div className="plan-card">
               <h3>Gold</h3>
-              <p className="price">GHS 100<span>/year</span></p>
-            </div>
-            <div className="card-body">
+              <div className="plan-price">$100/year</div>
               <ul className="plan-features">
                 <li><i className="fas fa-check"></i> All Silver features</li>
                 <li><i className="fas fa-check"></i> VIP access to events</li>

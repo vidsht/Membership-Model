@@ -37,7 +37,26 @@ router.get('/:id/redemptions', auth, (req, res) => {
 const express = require('express');
 const db = require('../db');
 const { auth } = require('../middleware/auth');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 const router = express.Router();
+
+// Configure multer for image uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadsDir = path.join(__dirname, '../uploads/deals');
+    
+    // Create directory if it doesn't exist
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+    cb(null, uploadsDir);
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + path.extname(file.originalname));
+  }
+});
 
 // Get all deals (public)
 router.get('/', (req, res) => {
@@ -62,6 +81,7 @@ router.get('/:id', auth, (req, res) => {
     if (!results.length) return res.status(404).json({ message: 'Deal not found' });
     res.json(results[0]);
   });
+});
 
 // Get business details by businessId
 router.get('/business/:businessId', auth, (req, res) => {
@@ -70,8 +90,8 @@ router.get('/business/:businessId', auth, (req, res) => {
     if (!results.length) return res.status(404).json({ message: 'Business not found' });
     res.json(results[0]);
   });
-});
-});
+  });
+
 
 // Create a new deal
 router.post('/', auth, (req, res) => {
@@ -120,6 +140,43 @@ router.delete('/:id', auth, (req, res) => {
   db.query('DELETE FROM deals WHERE id=?', [req.params.id], (err) => {
     if (err) return res.status(500).json({ message: 'Server error' });
     res.json({ message: 'Deal deleted' });
+  });
+});
+
+// Redeem a deal
+router.post('/:id/redeem', auth, (req, res) => {
+  const userId = req.session.userId;
+  const dealId = req.params.id;
+  if (!userId) return res.status(401).json({ message: 'Not authenticated' });
+  // Check if deal exists
+  db.query('SELECT * FROM deals WHERE id = ?', [dealId], (err, dealResults) => {
+    if (err) return res.status(500).json({ message: 'Server error' });
+    if (!dealResults.length) return res.status(404).json({ message: 'Deal not found' });
+    // Check if already redeemed
+    db.query('SELECT * FROM deal_redemptions WHERE dealId = ? AND userId = ?', [dealId, userId], (err2, redemptionResults) => {
+      if (err2) return res.status(500).json({ message: 'Server error' });
+      if (redemptionResults.length) return res.status(400).json({ message: 'Already redeemed' });
+      // Insert redemption
+      db.query('INSERT INTO deal_redemptions (dealId, userId, redeemedAt) VALUES (?, ?, NOW())', [dealId, userId], (err3) => {
+        if (err3) return res.status(500).json({ message: 'Server error' });
+        res.json({ message: 'Deal redeemed' });
+      });
+    });
+  });
+});
+
+// Get all users who redeemed a deal (for merchant dashboard)
+router.get('/:id/redemptions', auth, (req, res) => {
+  const dealId = req.params.id;
+  db.query(`
+    SELECT users.id, users.name, users.email, deal_redemptions.redeemedAt
+    FROM deal_redemptions
+    JOIN users ON deal_redemptions.userId = users.id
+    WHERE deal_redemptions.dealId = ?
+    ORDER BY deal_redemptions.redeemedAt DESC
+  `, [dealId], (err, results) => {
+    if (err) return res.status(500).json({ message: 'Server error' });
+    res.json(results);
   });
 });
 

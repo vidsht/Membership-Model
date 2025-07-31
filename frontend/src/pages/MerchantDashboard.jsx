@@ -198,7 +198,40 @@ const MerchantDashboard = () => {
         ) : (
           <div className="deals-grid">
             {deals.map(deal => (
-              <DealWithRedemptions key={deal.id} deal={deal} />
+              <div key={deal.id} className="deal-card">
+                <div className="deal-header">
+                  <h3>{deal.title}</h3>
+                  <span className={`status-badge ${deal.status}`}>
+                    {deal.status}
+                  </span>
+                </div>
+                <p className="deal-description">{deal.description}</p>
+                <div className="deal-meta">
+                  <div className="deal-discount">
+                    <strong>{deal.discount} OFF</strong>
+                  </div>
+                  <div className="deal-expiry">
+                    Expires: {new Date(deal.validUntil).toLocaleDateString()}
+                  </div>
+                </div>
+                <div className="deal-stats">
+                  <div className="stat-item">
+                    <i className="fas fa-eye"></i>
+                    <span>{deal.views} views</span>
+                  </div>
+                  <div className="stat-item">
+                    <i className="fas fa-shopping-cart"></i>
+                    <span>{deal.redemptions} used</span>
+                  </div>
+                </div>
+                <div className="deal-actions">
+                  <button className="btn btn-sm btn-secondary">
+                    <i className="fas fa-edit"></i> Edit
+                  </button>
+                  <button className="btn btn-sm btn-danger">
+                    <i className="fas fa-trash"></i> Delete
+                  </button>                </div>
+              </div>
             ))}
           </div>
         )}

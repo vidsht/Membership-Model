@@ -117,8 +117,8 @@ router.get('/users/:userId/role', auth, (req, res) => {
  * @desc    Assign role and permissions to user
  * @access  Private (SuperAdmin only)
  */
-router.post('/users/:userId/assign-role',
-  auth,
+router.post('/users/:userId/assign-role', 
+  auth, 
   checkRole('superAdmin'),
   (req, res) => {
     const { role, adminRole, permissions } = req.body;

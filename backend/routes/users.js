@@ -14,7 +14,7 @@ router.get('/profile', auth, (req, res) => {
     if (err) {
       console.error('Get profile error:', err);
       return res.status(500).json({ message: 'Server error' });
-    }
+  }
     if (!results.length) return res.status(404).json({ message: 'User not found' });
     const user = results[0];
     if (user.socialMediaFollowed) {
@@ -109,7 +109,7 @@ router.put('/password', auth, async (req, res) => {
       const hashedPassword = await bcrypt.hash(newPassword, 10);
       db.query('UPDATE users SET password=? WHERE id=?', [hashedPassword, req.user.id], (err2) => {
         if (err2) return res.status(500).json({ message: 'Server error' });
-        res.json({ message: 'Password updated successfully' });
+    res.json({ message: 'Password updated successfully' });
       });
     });
   } catch (error) {

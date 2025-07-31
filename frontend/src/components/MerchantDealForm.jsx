@@ -138,8 +138,27 @@ const MerchantDealForm = ({ onDealCreated, onClose }) => {
         onClose();
       }
     } catch (error) {
-      console.error('Error creating deal:', error);
-      showNotification('Failed to create deal. Please try again.', 'error');
+      // Enhanced error handling for merchant status
+      if (error.response && error.response.status === 403) {
+        const msg = error.response.data && error.response.data.message;
+        if (msg === 'Profile is not accepted by the admin') {
+          // Try to get the user's status from the backend error (if available)
+          // But backend only sends generic message, so show based on status if possible
+          // Optionally, you could enhance backend to send the actual status in the error
+          // For now, try to infer from a second API call (not implemented here)
+          // Default to generic message
+          showNotification('Your profile is not accepted by the admin.', 'error');
+        } else if (msg && msg.toLowerCase().includes('rejected')) {
+          showNotification('Your profile is rejected by admin.', 'error');
+        } else if (msg && msg.toLowerCase().includes('suspend')) {
+          showNotification('Your profile is temporarily suspended by admin.', 'error');
+        } else {
+          showNotification(msg || 'Failed to create deal. Please try again.', 'error');
+        }
+      } else {
+        console.error('Error creating deal:', error);
+        showNotification('Failed to create deal. Please try again.', 'error');
+      }
     } finally {
       setIsSaving(false);
     }
@@ -247,9 +266,9 @@ const MerchantDealForm = ({ onDealCreated, onClose }) => {
               value={formData.accessLevel}
               onChange={handleChange}
             >
-              <option value="community">Community</option>
-              <option value="silver">Silver</option>
-              <option value="gold">Gold</option>
+              <option value="basic">Community (Basic)</option>
+              <option value="intermediate">Silver (Intermediate)</option>
+              <option value="full">Gold (Full)</option>
             </select>
           </div>
         </div>

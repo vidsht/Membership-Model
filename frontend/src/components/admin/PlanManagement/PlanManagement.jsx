@@ -287,7 +287,7 @@ const PlanManagement = () => {
                     {user.membershipType?.charAt(0).toUpperCase() + user.membershipType?.slice(1)}
                   </span>
                 </td>
-                <td>{new Date(user.created_at).toLocaleDateString()}</td>
+                <td>{new Date(user.joinDate).toLocaleDateString()}</td>
                 <td>
                   <button
                     className="btn btn-sm btn-primary"
@@ -365,7 +365,7 @@ const PlanManagement = () => {
                     }
                   </span>
                 </td>
-                <td>{merchant.created_at ? new Date(merchant.created_at).toLocaleDateString() : ''}</td>
+                <td>{merchant.joinDate ? new Date(merchant.joinDate).toLocaleDateString() : new Date(merchant.createdAt).toLocaleDateString()}</td>
                 <td>
                   <button
                     className="btn btn-sm btn-primary"

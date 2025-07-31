@@ -44,7 +44,7 @@ const Dashboard = () => {
     }
   };
 
-  const getNextMembership = (current) => {
+  const getNextMembershipType = (current) => {
     switch (current) {
       case 'community': return 'silver';
       case 'silver': return 'gold';
@@ -75,11 +75,11 @@ const Dashboard = () => {
           </h2>
           <div className="benefits-card">
             <h3>
-              {user.membership === 'community' ? 'Community' : 
-               user.membership === 'silver' ? 'Silver' : 'Gold'} Member Benefits
+              {user.membershipType === 'community' ? 'Community' : 
+               user.membershipType === 'silver' ? 'Silver' : 'Gold'} Member Benefits
             </h3>
             <ul className="benefits-list">
-              {getMembershipBenefits(user.membership).map((benefit, index) => (
+              {getMembershipBenefits(user.membershipType).map((benefit, index) => (
                 <li key={index}>
                   <i className="fas fa-check"></i>
                   {benefit}
@@ -87,12 +87,12 @@ const Dashboard = () => {
               ))}
             </ul>
             
-            {getNextMembership(user.membership) && (
+            {getNextMembershipType(user.membershipType) && (
               <div className="upgrade-prompt">
                 <p>Want more benefits?</p>
                 <button className="btn btn-primary">
-                  Upgrade to {getNextMembership(user.membership).charAt(0).toUpperCase() + 
-                             getNextMembership(user.membership).slice(1)}
+                  Upgrade to {getNextMembershipType(user.membershipType).charAt(0).toUpperCase() + 
+                             getNextMembershipType(user.membershipType).slice(1)}
                 </button>
               </div>
             )}
@@ -111,7 +111,7 @@ const Dashboard = () => {
               </div>
               <div className="stat-info">
                 <h4>Member Since</h4>
-                <p>{new Date(user.created_at).toLocaleDateString()}</p>
+                <p>{new Date(user.joinDate).toLocaleDateString()}</p>
               </div>
             </div>
             <div className="stat-item">
@@ -129,8 +129,8 @@ const Dashboard = () => {
               </div>
               <div className="stat-info">
                 <h4>Membership Level</h4>
-                <p className={`membership-badge ${user.membership}`}>
-                  {user.membership.charAt(0).toUpperCase() + user.membership.slice(1)}
+                <p className={`membership-badge ${user.membershipType}`}>
+                  {user.membershipType.charAt(0).toUpperCase() + user.membershipType.slice(1)}
                 </p>
               </div>
             </div>
