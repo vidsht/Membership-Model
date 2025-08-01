@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import api from '../services/api';
 
 function Register() {
   const [formData, setFormData] = useState({
@@ -9,9 +10,20 @@ function Register() {
     password: '',
     phone: '',
     address: '',
+    dob: '',
+    community: '',
+    country: 'Ghana',
+    state: '',
+    city: '',
+    userCategory: '',
     plan: 'community',
     profilePhoto: ''
   });
+  
+  // Dynamic data from backend
+  const [communities, setCommunities] = useState([]);
+  const [membershipPlans, setMembershipPlans] = useState({});
+  const [loadingData, setLoadingData] = useState(true);
   
   // Social media tracking
   const [socialMedia, setSocialMedia] = useState({
@@ -57,33 +69,70 @@ function Register() {
       url: 'https://chat.whatsapp.com/indiansinghana', 
       name: 'WhatsApp Group',
       icon: 'fab fa-whatsapp'
-    }
-  };
+    }  };
 
-  // Membership plans configuration
-  const membershipPlans = {
-    community: { 
-      name: 'Community Plan', 
-      price: 0, 
-      currency: 'FREE',
-      features: ['Basic directory access', 'Community updates', 'Basic support'],
-      dealAccess: 'Limited community deals'
-    },
-    silver: { 
-      name: 'Silver Plan', 
-      price: 50, 
-      currency: 'GHS',
-      features: ['All community features', 'Priority support', 'Exclusive deals', 'Event notifications'],
-      dealAccess: 'Silver + Community deals'
-    },
-    gold: { 
-      name: 'Gold Plan', 
-      price: 150, 
-      currency: 'GHS',
-      features: ['All silver features', 'VIP events', 'Premium support', 'Business networking', 'Priority customer service'],
-      dealAccess: 'All exclusive deals'
-    }
-  };
+  // Load dynamic data from backend
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoadingData(true);
+        
+        // Fetch communities
+        const communitiesResponse = await api.get('/admin/communities');
+        setCommunities(communitiesResponse.data.communities || []);
+        
+        // Fetch membership plans
+        const plansResponse = await api.get('/admin/plans');
+        const plansData = {};
+        if (plansResponse.data.plans) {
+          plansResponse.data.plans.forEach(plan => {
+            plansData[plan.type] = {
+              name: plan.name,
+              price: plan.price,
+              currency: plan.currency,
+              features: plan.features ? plan.features.split(',') : [],
+              dealAccess: plan.dealAccess,
+              duration: plan.duration
+            };
+          });
+          setMembershipPlans(plansData);
+        }
+      } catch (error) {
+        console.error('Error loading data:', error);
+        showNotification('Error loading registration data. Using defaults.', 'warning');
+        
+        // Fallback to hardcoded values
+        setCommunities(['Gujarati', 'Bengali', 'Tamil', 'Punjabi', 'Hindi', 'Other']);
+        setMembershipPlans({
+          community: { 
+            name: 'Community Plan', 
+            price: 0, 
+            currency: 'FREE',
+            features: ['Basic directory access', 'Community updates', 'Basic support'],
+            dealAccess: 'Limited community deals'
+          },
+          silver: { 
+            name: 'Silver Plan', 
+            price: 50, 
+            currency: 'GHS',
+            features: ['All community features', 'Priority support', 'Exclusive deals', 'Event notifications'],
+            dealAccess: 'Silver + Community deals'
+          },
+          gold: { 
+            name: 'Gold Plan', 
+            price: 150, 
+            currency: 'GHS',
+            features: ['All silver features', 'VIP events', 'Premium support', 'Business networking', 'Priority customer service'],
+            dealAccess: 'All exclusive deals'
+          }
+        });
+      } finally {
+        setLoadingData(false);
+      }
+    };
+    
+    loadData();
+  }, []);
   
   // Redirect if already authenticated
   useEffect(() => {
@@ -123,12 +172,34 @@ function Register() {
       ...formData,
       plan: planType
     });
-  };
-
-  const validateForm = () => {
+  };  const validateForm = () => {
     // Basic field validation
     if (!formData.fullName || !formData.email || !formData.password || !formData.phone || !formData.address) {
       showNotification('Please fill in all required fields.', 'error');
+      return false;
+    }
+
+    // User category validation
+    if (!formData.userCategory) {
+      showNotification('Please select your category.', 'error');
+      return false;
+    }
+
+    // Date of birth validation
+    if (!formData.dob) {
+      showNotification('Please enter your date of birth.', 'error');
+      return false;
+    }
+
+    // Community validation
+    if (!formData.community) {
+      showNotification('Please select your community.', 'error');
+      return false;
+    }
+
+    // Location validation
+    if (!formData.city || !formData.state) {
+      showNotification('Please enter your city and state/region.', 'error');
       return false;
     }
 
@@ -142,6 +213,19 @@ function Register() {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
       showNotification('Please enter a valid email address.', 'error');
+      return false;
+    }
+
+    // Age validation (must be 18 or older)
+    const birthDate = new Date(formData.dob);
+    const today = new Date();
+    const age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    if (age < 18) {
+      showNotification('You must be at least 18 years old to register.', 'error');
       return false;
     }
 
@@ -251,11 +335,26 @@ function Register() {
               </p>
               
               <form onSubmit={handleSubmit}>
-                {/* Basic Information */}
-                <div className="form-section unified-form-section">
+                {/* Basic Information */}                <div className="form-section unified-form-section">
                   <h3 style={{ marginBottom: '15px', color: '#2c3e50' }}>
                     <i className="fas fa-user"></i> Personal Information
                   </h3>
+                  
+                  <div className="form-group">
+                    <label htmlFor="userCategory">I'm a *</label>
+                    <select 
+                      id="userCategory" 
+                      value={formData.userCategory}
+                      onChange={handleInputChange}
+                      required
+                    >
+                      <option value="">Select Category</option>
+                      <option value="student">Student</option>
+                      <option value="housewife">Housewife</option>
+                      <option value="working_professional">Working Professional</option>
+                      <option value="others">Others</option>
+                    </select>
+                  </div>
                   
                   <div className="form-group">
                     <label htmlFor="fullName">Full Name *</label>
@@ -304,9 +403,7 @@ function Register() {
                       placeholder="e.g., +233 24 123 4567" 
                       required 
                     />
-                  </div>
-
-                  <div className="form-group">
+                  </div>                  <div className="form-group">
                     <label htmlFor="address">Ghana Address *</label>
                     <input 
                       type="text" 
@@ -316,6 +413,96 @@ function Register() {
                       placeholder="Enter your full address in Ghana" 
                       required 
                     />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="dob">Date of Birth *</label>
+                    <input 
+                      type="date" 
+                      id="dob" 
+                      value={formData.dob}
+                      onChange={handleInputChange}
+                      max={new Date(new Date().setFullYear(new Date().getFullYear() - 18)).toISOString().split('T')[0]}
+                      required 
+                    />
+                    <small style={{ color: '#666' }}>You must be at least 18 years old</small>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '15px' }}>
+                    <div className="form-group" style={{ flex: 1 }}>
+                      <label htmlFor="city">City *</label>
+                      <input 
+                        type="text" 
+                        id="city" 
+                        value={formData.city}
+                        onChange={handleInputChange}
+                        placeholder="e.g., Accra, Kumasi, Tamale" 
+                        required 
+                      />
+                    </div>
+
+                    <div className="form-group" style={{ flex: 1 }}>
+                      <label htmlFor="state">State/Region *</label>
+                      <select 
+                        id="state" 
+                        value={formData.state}
+                        onChange={handleInputChange}
+                        required
+                      >
+                        <option value="">Select Region</option>
+                        <option value="Greater Accra">Greater Accra</option>
+                        <option value="Ashanti">Ashanti</option>
+                        <option value="Western">Western</option>
+                        <option value="Central">Central</option>
+                        <option value="Eastern">Eastern</option>
+                        <option value="Volta">Volta</option>
+                        <option value="Northern">Northern</option>
+                        <option value="Upper East">Upper East</option>
+                        <option value="Upper West">Upper West</option>
+                        <option value="Brong-Ahafo">Brong-Ahafo</option>
+                        <option value="Western North">Western North</option>
+                        <option value="Ahafo">Ahafo</option>
+                        <option value="Bono">Bono</option>
+                        <option value="Bono East">Bono East</option>
+                        <option value="Oti">Oti</option>
+                        <option value="North East">North East</option>
+                        <option value="Savannah">Savannah</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '15px' }}>                    <div className="form-group" style={{ flex: 1 }}>
+                      <label htmlFor="community">Community/Background *</label>
+                      <select 
+                        id="community" 
+                        value={formData.community}
+                        onChange={handleInputChange}
+                        required
+                        disabled={loadingData}
+                      >
+                        <option value="">
+                          {loadingData ? 'Loading communities...' : 'Select Community'}
+                        </option>
+                        {communities.map((community) => (
+                          <option key={community} value={community}>
+                            {community}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="form-group" style={{ flex: 1 }}>
+                      <label htmlFor="country">Country *</label>
+                      <input 
+                        type="text" 
+                        id="country" 
+                        value={formData.country}
+                        onChange={handleInputChange}
+                        placeholder="Ghana" 
+                        readOnly
+                        style={{ backgroundColor: '#f5f5f5' }}
+                      />
+                    </div>
                   </div>
 
                   <div className="form-group">
@@ -388,9 +575,17 @@ function Register() {
                   <h3 style={{ marginBottom: '15px', color: '#2c3e50' }}>
                     <i className="fas fa-crown"></i> Select Membership Plan
                   </h3>
-                  
-                  <div className="plan-selection">
-                    {Object.entries(membershipPlans).map(([planType, plan]) => (
+                    <div className="plan-selection">
+                    {loadingData ? (
+                      <div style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
+                        <i className="fas fa-spinner fa-spin"></i> Loading membership plans...
+                      </div>
+                    ) : Object.keys(membershipPlans).length === 0 ? (
+                      <div style={{ textAlign: 'center', padding: '20px', color: '#e74c3c' }}>
+                        <i className="fas fa-exclamation-triangle"></i> No membership plans available
+                      </div>
+                    ) : (
+                      Object.entries(membershipPlans).map(([planType, plan]) => (
                       <div key={planType} className="plan-option" style={{
                         border: formData.plan === planType ? '2px solid #3b82f6' : '1px solid #ddd',
                         borderRadius: '8px',
@@ -431,12 +626,11 @@ function Register() {
                           <strong>Deal Access:</strong> {plan.dealAccess}
                         </div>
                         {plan.price > 0 && (
-                          <div style={{ fontSize: '0.8em', color: '#e74c3c', marginTop: '5px' }}>
-                            * Payment required after registration
+                          <div style={{ fontSize: '0.8em', color: '#e74c3c', marginTop: '5px' }}>                            * Payment required after registration
                           </div>
                         )}
                       </div>
-                    ))}
+                    )))}
                   </div>
                 </div>
 

@@ -3,17 +3,26 @@ import { useAuth } from '../contexts/AuthContext';
 import { merchantApi } from '../services/api';
 import MerchantDealForm from '../components/MerchantDealForm';
 import axios from 'axios';
+import '../styles/MerchantDashboard.css';
 
 const MerchantDashboard = () => {
-  const { user } = useAuth();
-  const [deals, setDeals] = useState([]);
+  const { user } = useAuth();  const [deals, setDeals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showDealForm, setShowDealForm] = useState(false);
+  const [businessInfo, setBusinessInfo] = useState({});
+  const [planInfo, setPlanInfo] = useState({});
+  const [recentRedemptions, setRecentRedemptions] = useState([]);
   const [stats, setStats] = useState({
     totalDeals: 0,
     activeDeals: 0,
+    pendingDeals: 0,
+    expiredDeals: 0,
     totalViews: 0,
-    totalRedemptions: 0
+    totalRedemptions: 0,
+    todayRedemptions: 0,
+    thisMonthDeals: 0,
+    dealsUsedThisMonth: 0,
+    dealLimitRemaining: 0
   });
 
   useEffect(() => {
@@ -24,21 +33,31 @@ const MerchantDashboard = () => {
       const response = await merchantApi.getDashboard();
       
       if (response.data) {
-        setStats(response.data.stats);
-        setDeals(response.data.deals);
-        // Optionally, store businessId for use in deal creation, etc.
-        if (response.data.business) {
+        setStats(response.data.stats || {});
+        setDeals(response.data.deals || []);
+        setBusinessInfo(response.data.business || {});
+        setPlanInfo(response.data.plan || {});
+        setRecentRedemptions(response.data.recentRedemptions || []);
+        
+        // Store businessId for use in deal creation
+        if (response.data.business?.businessId) {
           localStorage.setItem('merchantBusinessId', response.data.business.businessId);
         }
       }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
-      // Fall back to mock data if API fails
+      // Keep the existing mock data as fallback
       setStats({
         totalDeals: 5,
         activeDeals: 3,
+        pendingDeals: 1,
+        expiredDeals: 1,
         totalViews: 248,
-        totalRedemptions: 42
+        totalRedemptions: 42,
+        todayRedemptions: 3,
+        thisMonthDeals: 2,
+        dealsUsedThisMonth: 2,
+        dealLimitRemaining: 8
       });
       
       setDeals([
@@ -95,72 +114,171 @@ const MerchantDashboard = () => {
       <div className="dashboard-header">
         <h1>Merchant Dashboard</h1>
         <p>Welcome back, {user?.businessInfo?.businessName || user?.firstName}!</p>
-      </div>
-
-      {/* Stats Cards */}
+      </div>      {/* Enhanced Stats Cards */}
       <div className="stats-grid">
-        <div className="stat-card">
+        <div className="stat-card primary">
           <div className="stat-icon">
             <i className="fas fa-tags"></i>
           </div>
           <div className="stat-content">
-            <h3>{stats.totalDeals}</h3>
+            <h3>{stats.totalDeals || 0}</h3>
             <p>Total Deals</p>
+            <small className="stat-subtext">All time</small>
           </div>
         </div>
         
-        <div className="stat-card">
+        <div className="stat-card success">
           <div className="stat-icon">
             <i className="fas fa-play-circle"></i>
           </div>
           <div className="stat-content">
-            <h3>{stats.activeDeals}</h3>
+            <h3>{stats.activeDeals || 0}</h3>
             <p>Active Deals</p>
+            <small className="stat-subtext">Currently running</small>
           </div>
         </div>
         
-        <div className="stat-card">
+        <div className="stat-card warning">
+          <div className="stat-icon">
+            <i className="fas fa-clock"></i>
+          </div>
+          <div className="stat-content">
+            <h3>{stats.pendingDeals || 0}</h3>
+            <p>Pending Approval</p>
+            <small className="stat-subtext">Awaiting admin review</small>
+          </div>
+        </div>
+        
+        <div className="stat-card info">
           <div className="stat-icon">
             <i className="fas fa-eye"></i>
           </div>
           <div className="stat-content">
-            <h3>{stats.totalViews}</h3>
+            <h3>{stats.totalViews || 0}</h3>
             <p>Total Views</p>
+            <small className="stat-subtext">Deal impressions</small>
           </div>
         </div>
         
-        <div className="stat-card">
+        <div className="stat-card accent">
           <div className="stat-icon">
             <i className="fas fa-shopping-cart"></i>
           </div>
           <div className="stat-content">
-            <h3>{stats.totalRedemptions}</h3>
-            <p>Redemptions</p>
+            <h3>{stats.totalRedemptions || 0}</h3>
+            <p>Total Redemptions</p>
+            <small className="stat-subtext">All time</small>
           </div>
         </div>
-      </div>
+        
+        <div className="stat-card secondary">
+          <div className="stat-icon">
+            <i className="fas fa-calendar-day"></i>
+          </div>
+          <div className="stat-content">
+            <h3>{stats.todayRedemptions || 0}</h3>
+            <p>Today's Redemptions</p>
+            <small className="stat-subtext">Last 24 hours</small>
+          </div>
+        </div>
+      </div>      {/* Enhanced Business Info */}
+      <div className="dashboard-sections">
+        <div className="business-info-card">
+          <div className="card-header">
+            <h2><i className="fas fa-store"></i> Business Information</h2>
+            <button className="btn btn-outline btn-sm">
+              <i className="fas fa-edit"></i> Edit
+            </button>
+          </div>
+          <div className="business-details">
+            <div className="detail-row">
+              <div className="detail-item">
+                <strong><i className="fas fa-building"></i> Business Name:</strong> 
+                <span>{businessInfo.businessName || 'Not provided'}</span>
+              </div>
+              <div className="detail-item">
+                <strong><i className="fas fa-tag"></i> Category:</strong> 
+                <span>{businessInfo.businessCategory || 'Not specified'}</span>
+              </div>
+            </div>
+            <div className="detail-row">
+              <div className="detail-item">
+                <strong><i className="fas fa-map-marker-alt"></i> Address:</strong> 
+                <span>{businessInfo.businessAddress || 'Not provided'}</span>
+              </div>
+              <div className="detail-item">
+                <strong><i className="fas fa-phone"></i> Phone:</strong> 
+                <span>{businessInfo.businessPhone || 'Not provided'}</span>
+              </div>
+            </div>
+            <div className="detail-row">
+              <div className="detail-item">
+                <strong><i className="fas fa-envelope"></i> Email:</strong> 
+                <span>{businessInfo.businessEmail || 'Not provided'}</span>
+              </div>
+              <div className="detail-item">
+                <strong><i className="fas fa-globe"></i> Website:</strong> 
+                <span>{businessInfo.website || 'Not provided'}</span>
+              </div>
+            </div>
+            <div className="detail-row">
+              <div className="detail-item">
+                <strong><i className="fas fa-id-badge"></i> Business ID:</strong> 
+                <span>{businessInfo.businessId || 'Not assigned'}</span>
+              </div>
+              <div className="detail-item">
+                <strong><i className="fas fa-check-circle"></i> Status:</strong> 
+                <span className={`status-badge ${businessInfo.status || 'pending'}`}>
+                  {businessInfo.status || 'Pending'}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
 
-      {/* Business Info */}
-      <div className="business-info-card">
-        <h2>Business Information</h2>
-        <div className="business-details">
-          <div className="detail-item">
-            <strong>Business Name:</strong> {user?.businessInfo?.businessName}
+        {/* Plan Information */}
+        <div className="plan-info-card">
+          <div className="card-header">
+            <h2><i className="fas fa-crown"></i> Current Plan</h2>
+            <button className="btn btn-accent btn-sm">
+              <i className="fas fa-arrow-up"></i> Upgrade
+            </button>
           </div>
-          <div className="detail-item">
-            <strong>Category:</strong> {user?.businessInfo?.category}
-          </div>
-          <div className="detail-item">
-            <strong>Address:</strong> {user?.businessInfo?.address}
-          </div>
-          <div className="detail-item">
-            <strong>Phone:</strong> {user?.businessInfo?.phone}
-          </div>
-          <div className="detail-item">
-            <strong>Email:</strong> {user?.businessInfo?.email}
-          </div>
-          <div className="detail-item">
-            <strong>Membership ID:</strong> {user?.membershipNumber}
+          <div className="plan-details">
+            <div className="plan-name">
+              <h3>{planInfo.name || businessInfo.currentPlan || 'Basic Plan'}</h3>
+              <span className="plan-key">{planInfo.key || businessInfo.currentPlan || 'basic_business'}</span>
+            </div>
+            <div className="plan-limits">
+              <div className="limit-item">
+                <strong>Deals This Month:</strong>
+                <div className="progress-bar">
+                  <div 
+                    className="progress-fill" 
+                    style={{
+                      width: `${Math.min(100, ((stats.dealsUsedThisMonth || 0) / (planInfo.maxDealsPerMonth || 10)) * 100)}%`
+                    }}
+                  ></div>
+                </div>
+                <span className="progress-text">
+                  {stats.dealsUsedThisMonth || 0} / {planInfo.maxDealsPerMonth || 10}
+                </span>
+              </div>
+              <div className="limit-item">
+                <strong>Remaining:</strong>
+                <span className="remaining-count">{stats.dealLimitRemaining || 0} deals</span>
+              </div>
+            </div>
+            {planInfo.features && planInfo.features.length > 0 && (
+              <div className="plan-features">
+                <strong>Plan Features:</strong>
+                <ul>
+                  {planInfo.features.map((feature, index) => (
+                    <li key={index}><i className="fas fa-check"></i> {feature}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -179,7 +297,41 @@ const MerchantDashboard = () => {
             <i className="fas fa-chart-bar"></i> View Analytics
           </button>
         </div>
-      </div>      {/* Recent Deals */}
+      </div>      {/* Recent Redemptions */}
+      {recentRedemptions && recentRedemptions.length > 0 && (
+        <div className="recent-redemptions-section">
+          <div className="card-header">
+            <h2><i className="fas fa-history"></i> Recent Redemptions</h2>
+            <button className="btn btn-outline btn-sm">
+              <i className="fas fa-external-link-alt"></i> View All
+            </button>
+          </div>
+          <div className="redemptions-list">
+            {recentRedemptions.slice(0, 5).map((redemption, index) => (
+              <div key={index} className="redemption-item">
+                <div className="redemption-info">
+                  <div className="user-info">
+                    <i className="fas fa-user-circle"></i>
+                    <span className="user-name">{redemption.fullName}</span>
+                    <span className="membership-number">#{redemption.membershipNumber}</span>
+                  </div>
+                  <div className="deal-info">
+                    <span className="deal-title">{redemption.dealTitle}</span>
+                    <span className="redemption-date">
+                      {new Date(redemption.redeemed_at || redemption.redeemedAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
+                <div className="redemption-status">
+                  <span className="status-badge success">Redeemed</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Recent Deals */}
       <div className="deals-section">
         <div className="section-header">
           <h2>Your Deals</h2>

@@ -9,14 +9,20 @@ const pool = mysql.createPool({
   database: process.env.DB_NAME,
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0
+  queueLimit: 0,
+  idleTimeout: 600000,
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 0
 });
 
+// Test connection on startup
 pool.getConnection((err, connection) => {
   if (err) {
-    console.error('❌ MySQL connection failed:', err.stack);
+    console.error('❌ MySQL connection failed:', err.message);
+    console.error('Please check your database credentials in .env file');
+    process.exit(1);
   } else {
-    console.log('✅ Connected to Hostinger MySQL Database');
+    console.log('✅ Connected to MySQL Database successfully');
     connection.release();
   }
 });

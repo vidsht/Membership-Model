@@ -1,15 +1,4 @@
 import axios from 'axios';
-// Get all deals (for users)
-export const getAllDeals = async () => {
-  const response = await api.get('/deals');
-  return response.data;
-};
-
-// Redeem a deal
-export const redeemDeal = async (dealId) => {
-  const response = await api.post(`/deals/${dealId}/redeem`);
-  return response.data;
-};
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
@@ -77,8 +66,7 @@ api.interceptors.response.use(
         data: error.config?.data,
         params: error.config?.params
       }
-    });
-    
+    });    
     // Log the full error for debugging
     console.log('Full error object:', error);
     
@@ -86,6 +74,18 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+// Get all deals (for users)
+export const getAllDeals = async () => {
+  const response = await api.get('/deals');
+  return response.data;
+};
+
+// Redeem a deal
+export const redeemDeal = async (dealId) => {
+  const response = await api.post(`/deals/${dealId}/redeem`);
+  return response.data;
+};
 
 export const authApi = {
   login: async (credentials) => {
@@ -135,9 +135,20 @@ export const authApi = {
     const response = await api.post('/auth/logout');
     return response.data;
   },
-
   me: async () => {
     const response = await api.get('/auth/me');
+    return response.data;
+  },
+
+  // Get communities for dropdown
+  getCommunities: async () => {
+    const response = await api.get('/auth/communities');
+    return response.data;
+  },
+
+  // Get user types for dropdown
+  getUserTypes: async () => {
+    const response = await api.get('/auth/user-types');
     return response.data;
   }
 };

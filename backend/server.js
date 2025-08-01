@@ -30,8 +30,21 @@ const sessionStore = new MySQLStore({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME
+  database: process.env.DB_NAME,
+  clearExpired: true,
+  checkExpirationInterval: 900000,
+  expiration: 86400000,
+  createDatabaseTable: true,
+  schema: {
+    tableName: 'sessions',
+    columnNames: {
+      session_id: 'session_id',
+      expires: 'expires',
+      data: 'data'
+    }
+  }
 });
+
 app.use(session({
   secret: process.env.SESSION_SECRET || 'your-secret-key-here',
   resave: false,
@@ -46,9 +59,13 @@ app.use(session({
   }
 }));
 
-
 // MySQL connection (handled in db.js)
 require('./db');
+
+// Import database connection for public routes
+const db = require('./db');
+const { promisify } = require('util');
+const queryAsync = promisify(db.query).bind(db);
 
 // Basic routes
 app.use('/api/auth', require('./routes/auth'));
@@ -57,6 +74,7 @@ app.use('/api/merchant', require('./routes/merchant'));
 app.use('/api/merchant/deals', require('./routes/deals'));
 // Public deals route for users
 app.use('/api/deals', require('./routes/deals'));
+app.use('/api/admin', require('./routes/admin_new'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/admin', require('./routes/deals'));
 app.use('/api/admin', require('./routes/roles'));
@@ -68,6 +86,41 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
+// Public businesses endpoint for home page
+app.get('/api/businesses', async (req, res) => {
+  try {
+    const businesses = await queryAsync(`
+      SELECT b.businessId, b.businessName, b.businessDescription, b.businessCategory,
+             b.businessAddress, b.businessPhone, b.businessEmail, b.website,
+             b.isVerified, b.membershipLevel, u.fullName as ownerName
+      FROM businesses b
+      LEFT JOIN users u ON b.userId = u.id
+      WHERE (b.status = 'active' OR b.status = '') AND u.status = 'approved'
+      ORDER BY b.businessName ASC
+    `);
+    
+    // Format the data for frontend consumption
+    const formattedBusinesses = businesses.map(business => ({
+      id: business.businessId,
+      name: business.businessName,
+      description: business.businessDescription,
+      sector: business.businessCategory || 'General',  // Map to expected 'sector' field
+      address: business.businessAddress,
+      phone: business.businessPhone,
+      email: business.businessEmail,
+      website: business.website,
+      isVerified: business.isVerified,
+      membershipLevel: business.membershipLevel,
+      ownerName: business.ownerName
+    }));
+    
+    res.json(formattedBusinesses);
+  } catch (err) {
+    console.error('Error fetching public businesses:', err);
+    res.status(500).json({ success: false, message: 'Server error fetching businesses' });
+  }
 });
 
 // 404 handler for unknown API routes

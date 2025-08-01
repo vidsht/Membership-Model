@@ -7,8 +7,8 @@ This is a comprehensive web-based membership management system for the Indian co
 
 ## Architecture
 - **Full-Stack Application**: React frontend with Node.js/Express backend
-- **Database**: MongoDB Atlas for data persistence with session storage
-- **Authentication**: Session-based authentication using MongoDB sessions
+- **Database**: MySQL with connection pooling for data persistence
+- **Authentication**: Session-based authentication using MySQL session store
 - **Modern JavaScript**: ES6+ features and modular approach
 - **Responsive Design**: Mobile-first approach with CSS Grid and Flexbox
 
@@ -43,11 +43,11 @@ This is a comprehensive web-based membership management system for the Indian co
 5. **Profile Management**: User data and preferences
 
 ## Data Structure
-- Users: Stored in MongoDB Atlas with proper validation
-- Businesses: MongoDB collection with expandable structure
-- Deals: MongoDB collection with categorized offers and expiration dates
-- Sessions: MongoDB-based session storage for authentication
-- All data persisted in MongoDB with proper schemas
+- Users: Stored in MySQL with proper schemas and validation
+- Businesses: MySQL table with expandable structure linked to users
+- Deals: MySQL table with categorized offers and expiration dates
+- Sessions: MySQL-based session storage for authentication
+- All data persisted in MySQL with proper foreign key relationships
 
 ## Third-Party Libraries
 - Font Awesome for icons

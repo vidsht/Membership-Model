@@ -109,9 +109,10 @@ const ApprovalQueue = () => {
       showNotification('Failed to add user. Please try again.', 'error');
     }
   };
-  
-  const formatDate = (dateString) => {
+    const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Invalid Date';
     return new Intl.DateTimeFormat('en-US', {
       year: 'numeric',
       month: 'short',
@@ -159,7 +160,7 @@ const ApprovalQueue = () => {
                   <div className="approval-user-details">
                     <h3>{user.fullName}</h3>
                     <p>{user.email}</p>
-                    <span className="approval-date">Registered: {formatDate(user.createdAt)}</span>
+                    <span className="approval-date">Registered: {formatDate(user.created_at || user.createdAt)}</span>
                   </div>
                   <div className="approval-meta">
                     <span className={`plan-badge ${user.membershipType}`}>

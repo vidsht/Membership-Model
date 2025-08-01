@@ -91,8 +91,12 @@ const Dashboard = () => {
               <div className="upgrade-prompt">
                 <p>Want more benefits?</p>
                 <button className="btn btn-primary">
-                  Upgrade to {getNextMembershipType(user.membershipType).charAt(0).toUpperCase() + 
-                             getNextMembershipType(user.membershipType).slice(1)}
+                  {(() => {
+                    const nextType = getNextMembershipType(user?.membershipType);
+                    return nextType
+                      ? `Upgrade to ${nextType.charAt(0).toUpperCase() + nextType.slice(1)}`
+                      : 'Upgrade';
+                  })()}
                 </button>
               </div>
             )}
@@ -130,7 +134,9 @@ const Dashboard = () => {
               <div className="stat-info">
                 <h4>Membership Level</h4>
                 <p className={`membership-badge ${user.membershipType}`}>
-                  {user.membershipType.charAt(0).toUpperCase() + user.membershipType.slice(1)}
+                  {user && user.membershipType
+                    ? user.membershipType.charAt(0).toUpperCase() + user.membershipType.slice(1)
+                    : 'N/A'}
                 </p>
               </div>
             </div>

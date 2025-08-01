@@ -7,7 +7,8 @@ const router = express.Router();
 
 // Register
 router.post('/register', async (req, res) => {
-  try {    // Accept all frontend registration fields
+  try {
+    // Accept all frontend registration fields
     const {
       fullName,
       email,
@@ -19,7 +20,6 @@ router.post('/register', async (req, res) => {
       country,
       state,
       city,
-      userCategory,
       profilePicture,
       preferences,
       membership,
@@ -67,10 +67,12 @@ router.post('/register', async (req, res) => {
       } catch (jsonErr) {
         console.error('Registration JSON error (socialMediaFollowed):', jsonErr);
         return res.status(400).json({ success: false, message: 'Invalid social media data.' });
-      }      const hashedPassword = await bcrypt.hash(password, 10);
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
       const insertQuery = `INSERT INTO users
-        (fullName, email, password, phone, address, dob, community, country, state, city, userCategory, profilePicture, preferences, membership, socialMediaFollowed, userType, status, adminRole, permissions, termsAccepted)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+        (fullName, email, password, phone, address, dob, community, country, state, city, profilePicture, preferences, membership, socialMediaFollowed, userType, status, adminRole, permissions, termsAccepted)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
       const insertValues = [
         fullName,
         email,
@@ -82,7 +84,6 @@ router.post('/register', async (req, res) => {
         country || 'Ghana',
         state || null,
         city || null,
-        userCategory || null,
         profilePicture || null,
         preferences || null,
         membership || 'community',
@@ -435,98 +436,6 @@ router.post('/reset-password', async (req, res) => {
   } catch (error) {
     console.error('Reset password error:', error);
     res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// Get communities for dropdown
-router.get('/communities', (req, res) => {
-  try {
-    const query = 'SELECT name, description FROM communities WHERE isActive = TRUE ORDER BY displayOrder, name';
-    
-    db.query(query, (err, results) => {
-      if (err) {
-        console.error('Communities query error:', err);
-        return res.status(500).json({ success: false, message: 'Server error' });
-      }
-      
-      res.json({ 
-        success: true, 
-        communities: results 
-      });
-    });
-  } catch (error) {
-    console.error('Get communities error:', error);
-    res.status(500).json({ success: false, message: 'Server error' });
-  }
-});
-
-// Get user types for dropdown  
-router.get('/user-types', (req, res) => {
-  try {
-    const query = 'SELECT name, description FROM user_types WHERE isActive = TRUE ORDER BY displayOrder, name';
-    
-    db.query(query, (err, results) => {
-      if (err) {
-        console.error('User types query error:', err);
-        return res.status(500).json({ success: false, message: 'Server error' });
-      }
-      
-      res.json({ 
-        success: true, 
-        userTypes: results 
-      });
-    });
-  } catch (error) {
-    console.error('Get user types error:', error);  
-    res.status(500).json({ success: false, message: 'Server error' });  }
-});
-
-// @route   POST /api/auth/refresh
-// @desc    Refresh user session
-// @access  Private
-router.post('/refresh', auth, async (req, res) => {
-  try {
-    // If we reach here, the auth middleware has validated the session
-    const userId = req.session.userId;
-    
-    if (!userId) {
-      return res.status(401).json({ success: false, message: 'No valid session found' });
-    }
-    
-    // Get fresh user data
-    const userResult = await new Promise((resolve, reject) => {
-      db.query('SELECT id, fullName, email, userType, status FROM users WHERE id = ?', [userId], (err, results) => {
-        if (err) reject(err);
-        else resolve(results);
-      });
-    });
-    
-    if (!userResult.length) {
-      return res.status(404).json({ success: false, message: 'User not found' });
-    }
-    
-    const user = userResult[0];
-    
-    // Update last active timestamp
-    db.query('UPDATE users SET lastActive = NOW() WHERE id = ?', [userId], (err) => {
-      if (err) console.error('Error updating last active:', err);
-    });
-    
-    res.json({
-      success: true,
-      message: 'Session refreshed successfully',
-      user: {
-        id: user.id,
-        fullName: user.fullName,
-        email: user.email,
-        userType: user.userType,
-        status: user.status
-      }
-    });
-    
-  } catch (error) {
-    console.error('Session refresh error:', error);
-    res.status(500).json({ success: false, message: 'Server error' });
   }
 });
 

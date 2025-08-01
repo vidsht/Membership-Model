@@ -43,11 +43,10 @@ const DealList = () => {
   };
   
   const handleStatusChange = async (dealId, newStatus) => {
-    try {
-      await api.patch(`/admin/deals/${dealId}/status`, { status: newStatus });
+    try {      await api.patch(`/admin/deals/${dealId}/status`, { status: newStatus });
         // Update local state
       setDeals((deals || []).map(deal => 
-        deal._id === dealId ? { ...deal, status: newStatus } : deal
+        deal.id === dealId ? { ...deal, status: newStatus } : deal
       ));
       
       showNotification(`Deal ${newStatus === 'active' ? 'activated' : 'deactivated'} successfully`, 'success');
@@ -61,7 +60,7 @@ const DealList = () => {
     if (window.confirm('Are you sure you want to delete this deal?')) {
       try {
         await api.delete(`/admin/deals/${dealId}`);
-        setDeals((deals || []).filter(deal => deal._id !== dealId));
+        setDeals((deals || []).filter(deal => deal.id !== dealId));
         showNotification('Deal deleted successfully', 'success');
       } catch (error) {
         console.error('Error deleting deal:', error);
@@ -195,10 +194,9 @@ const DealList = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredDeals.map(deal => (
-                <tr key={deal._id} className={`deal-row ${deal.status}`}>
+              {filteredDeals.map(deal => (                <tr key={deal.id} className={`deal-row ${deal.status}`}>
                   <td>
-                    <Link to={`/admin/deals/${deal._id}`}>
+                    <Link to={`/admin/deals/${deal.id}`}>
                       {deal.title}
                     </Link>
                   </td>
@@ -222,7 +220,7 @@ const DealList = () => {
                     <button 
                       className="btn-icon" 
                       title="Edit"
-                      onClick={() => navigate(`/admin/deals/${deal._id}/edit`)}
+                      onClick={() => navigate(`/admin/deals/${deal.id}/edit`)}
                     >
                       <i className="fas fa-edit"></i>
                     </button>
@@ -231,7 +229,7 @@ const DealList = () => {
                       <button 
                         className="btn-icon" 
                         title="Deactivate"
-                        onClick={() => handleStatusChange(deal._id, 'inactive')}
+                        onClick={() => handleStatusChange(deal.id, 'inactive')}
                       >
                         <i className="fas fa-toggle-on active"></i>
                       </button>
@@ -239,7 +237,7 @@ const DealList = () => {
                       <button 
                         className="btn-icon" 
                         title="Activate"
-                        onClick={() => handleStatusChange(deal._id, 'active')}
+                        onClick={() => handleStatusChange(deal.id, 'active')}
                       >
                         <i className="fas fa-toggle-off inactive"></i>
                       </button>
@@ -248,7 +246,7 @@ const DealList = () => {
                     <button 
                       className="btn-icon delete" 
                       title="Delete"
-                      onClick={() => handleDeleteDeal(deal._id)}
+                      onClick={() => handleDeleteDeal(deal.id)}
                     >
                       <i className="fas fa-trash-alt"></i>
                     </button>

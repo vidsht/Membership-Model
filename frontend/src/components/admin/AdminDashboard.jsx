@@ -1,101 +1,99 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotification } from '../../contexts/NotificationContext';
 import ApprovalQueue from './UserManagement/ApprovalQueue';
+import UserManagement from './UserManagement/UserManagement';
+import MerchantManagementEnhanced from './BusinessPartners/MerchantManagementEnhanced';
+import DealList from './DealManagement/DealList';
 import api from '../../services/api';
 import './AdminDashboard.css';
 
 const AdminDashboard = () => {
-  const { user, validateSession, handleSessionExpired } = useAuth();
+  const { user, validateSession } = useAuth();
   const { showNotification } = useNotification();
   const navigate = useNavigate();
+  
+  // Navigation state
+  const [activeTab, setActiveTab] = useState('dashboard');
+  
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalMerchants: 0,
     pendingApprovals: 0,
     activeBusinesses: 0,
     totalRevenue: 0,
+    activePlans: 0,
+    totalDeals: 0,
     userPlanCounts: {},
-    merchantPlanCounts: {},
-    planKeys: []
+    merchantPlanCounts: {}
   });
-    const [recentActivities, setRecentActivities] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
   
+  const [recentActivities, setRecentActivities] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const tabs = [
+    { id: 'dashboard', label: 'Dashboard', icon: 'fas fa-tachometer-alt' },
+    { id: 'users', label: 'User Management', icon: 'fas fa-users' },
+    { id: 'merchants', label: 'Business Partners', icon: 'fas fa-handshake' },
+    { id: 'deals', label: 'Deal Management', icon: 'fas fa-tags' },
+    { id: 'plans', label: 'Plan Management', icon: 'fas fa-crown' },
+    { id: 'approvals', label: 'Approvals', icon: 'fas fa-check-circle' },
+    { id: 'activities', label: 'Activities', icon: 'fas fa-history' },
+    { id: 'settings', label: 'Settings', icon: 'fas fa-cog' }
+  ];
+
   // Helper function to get activity icon
   const getActivityIcon = (type) => {
     switch (type) {
-      case 'user_registered':
-        return 'fas fa-user-plus';
-      case 'user_approved':
-        return 'fas fa-check-circle';
-      case 'user_rejected':
-        return 'fas fa-times-circle';
-      case 'business_registered':
-        return 'fas fa-store';
-      case 'business_approved':
-        return 'fas fa-handshake';
-      case 'deal_created':
-        return 'fas fa-tag';
-      case 'plan_assigned':
-        return 'fas fa-crown';
-      case 'role_assigned':
-        return 'fas fa-user-shield';
-      default:
-        return 'fas fa-info-circle';
+      case 'user_registered': return 'fas fa-user-plus';
+      case 'user_approved': return 'fas fa-check-circle';
+      case 'user_rejected': return 'fas fa-times-circle';
+      case 'business_registered': return 'fas fa-store';
+      case 'business_approved': return 'fas fa-handshake';
+      case 'deal_created': return 'fas fa-tag';
+      case 'plan_assigned': return 'fas fa-crown';
+      case 'role_assigned': return 'fas fa-user-shield';
+      default: return 'fas fa-info-circle';
     }
   };
-  
+
   // Helper function to format time ago
   const formatTimeAgo = (dateString) => {
     const date = new Date(dateString);
     const now = new Date();
     const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
     
-    if (diffInHours < 1) {
-      return 'Just now';
-    } else if (diffInHours < 24) {
-      return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
-    } else if (diffInHours < 168) {
+    if (diffInHours < 1) return 'Just now';
+    if (diffInHours < 24) return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
+    if (diffInHours < 168) {
       const days = Math.floor(diffInHours / 24);
       return `${days} day${days > 1 ? 's' : ''} ago`;
-    } else {
-      return date.toLocaleDateString();
     }
+    return date.toLocaleDateString();
   };
-    const testSessionValidation = async () => {
-    try {
-      const isValid = await validateSession();
-      showNotification(
-        isValid ? 'Session is valid!' : 'Session is invalid!', 
-        isValid ? 'success' : 'error'
-      );
-    } catch (error) {
-      showNotification('Error validating session', 'error');
-    }
-  };
-  
+
+  // Load admin statistics
   useEffect(() => {
     const fetchAdminStats = async () => {
       try {
         setIsLoading(true);
         
-        // Fetch stats
+        // Fetch dashboard statistics
         const statsResponse = await api.get('/admin/stats');
-        setStats(prevStats => ({
-          ...prevStats,
-          ...(statsResponse.data || {})
-        }));
+        if (statsResponse.data.success) {
+          setStats(statsResponse.data.stats);
+        }
         
         // Fetch recent activities
-        const activitiesResponse = await api.get('/admin/activities?limit=5&dateRange=7');
-        setRecentActivities(activitiesResponse.data?.activities || []);
+        const activitiesResponse = await api.get('/admin/activities');
+        if (activitiesResponse.data.success) {
+          setRecentActivities(activitiesResponse.data.activities || []);
+        }
         
       } catch (error) {
         console.error('Error fetching admin data:', error);
-        console.error('Error response:', error.response?.data);
-        showNotification('Error fetching dashboard data. Please try again.', 'error');
+        showNotification('Error loading admin dashboard', 'error');
       } finally {
         setIsLoading(false);
       }
@@ -103,206 +101,240 @@ const AdminDashboard = () => {
     
     fetchAdminStats();
   }, [showNotification]);
-  
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'dashboard':
+        return renderDashboardContent();
+      case 'users':
+        return <UserManagement />;      case 'merchants':
+        return <MerchantManagementEnhanced />;      case 'deals':
+        return <DealList />;
+      case 'plans':
+        return <div className="tab-content">Plan Management Content (To be implemented)</div>;
+      case 'approvals':
+        return <ApprovalQueue />;
+      case 'activities':
+        return <div className="tab-content">Activities Content (To be implemented)</div>;
+      case 'settings':
+        return <div className="tab-content">Settings Content (To be implemented)</div>;
+      default:
+        return renderDashboardContent();
+    }
+  };
+
+  const renderDashboardContent = () => (
+    <div className="dashboard-content">
+      {/* Statistics Cards */}
+      <div className="stats-grid">
+        <div className="stat-card">
+          <div className="stat-icon users">
+            <i className="fas fa-users"></i>
+          </div>
+          <div className="stat-info">
+            <h3>{stats.totalUsers}</h3>
+            <p>Total Users</p>
+          </div>
+        </div>
+        
+        <div className="stat-card">
+          <div className="stat-icon merchants">
+            <i className="fas fa-store"></i>
+          </div>
+          <div className="stat-info">
+            <h3>{stats.totalMerchants}</h3>
+            <p>Merchants</p>
+          </div>
+        </div>
+        
+        <div className="stat-card">
+          <div className="stat-icon pending">
+            <i className="fas fa-clock"></i>
+          </div>
+          <div className="stat-info">
+            <h3>{stats.pendingApprovals}</h3>
+            <p>Pending Approvals</p>
+          </div>
+        </div>
+        
+        <div className="stat-card">
+          <div className="stat-icon deals">
+            <i className="fas fa-tags"></i>
+          </div>
+          <div className="stat-info">
+            <h3>{stats.totalDeals}</h3>
+            <p>Active Deals</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Plan Distribution */}
+      <div className="charts-section">
+        <div className="chart-container">
+          <h3>User Plan Distribution</h3>
+          <div className="plan-breakdown">
+            {Object.entries(stats.userPlanCounts).map(([plan, count]) => (
+              <div key={plan} className="plan-stat">
+                <span className="plan-name">{plan}</span>
+                <span className="plan-count">{count}</span>
+                <div className="plan-bar">
+                  <div 
+                    className="plan-fill" 
+                    style={{ width: `${(count / stats.totalUsers) * 100}%` }}
+                  ></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        
+        <div className="chart-container">
+          <h3>Merchant Plan Distribution</h3>
+          <div className="plan-breakdown">
+            {Object.entries(stats.merchantPlanCounts).map(([plan, count]) => (
+              <div key={plan} className="plan-stat">
+                <span className="plan-name">{plan}</span>
+                <span className="plan-count">{count}</span>
+                <div className="plan-bar">
+                  <div 
+                    className="plan-fill" 
+                    style={{ width: `${(count / stats.totalMerchants) * 100}%` }}
+                  ></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Recent Activities */}
+      <div className="recent-activities">
+        <h3>Recent Activities</h3>
+        <div className="activities-list">
+          {recentActivities.length > 0 ? (
+            recentActivities.slice(0, 10).map((activity, index) => (
+              <div key={index} className="activity-item">
+                <div className="activity-icon">
+                  <i className={getActivityIcon(activity.type)}></i>
+                </div>
+                <div className="activity-details">
+                  <p className="activity-description">{activity.description}</p>
+                  <span className="activity-time">{formatTimeAgo(activity.createdAt)}</span>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="empty-state">
+              <i className="fas fa-history"></i>
+              <p>No recent activities</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="quick-actions">
+        <h3>Quick Actions</h3>
+        <div className="action-buttons">
+          <button 
+            onClick={() => setActiveTab('users')}
+            className="action-btn users"
+          >
+            <i className="fas fa-user-plus"></i>
+            Manage Users
+          </button>
+          <button 
+            onClick={() => setActiveTab('merchants')}
+            className="action-btn merchants"
+          >
+            <i className="fas fa-handshake"></i>
+            Review Partners
+          </button>
+          <button 
+            onClick={() => setActiveTab('deals')}
+            className="action-btn deals"
+          >
+            <i className="fas fa-tags"></i>
+            Manage Deals
+          </button>
+          <button 
+            onClick={() => setActiveTab('plans')}
+            className="action-btn plans"
+          >
+            <i className="fas fa-crown"></i>
+            Plan Settings
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="admin-dashboard">
+      {/* Sidebar Navigation */}
       <div className="admin-sidebar">
         <div className="sidebar-header">
-          <h2>Admin Panel</h2>
-          <p>{user?.fullName || 'Admin'}</p>
+          <h2><i className="fas fa-shield-alt"></i> Admin Panel</h2>
+          <p>{user?.fullName || 'Administrator'}</p>
         </div>
         
         <nav className="sidebar-nav">
           <ul>
-            <li className="active">
-              <Link to="/admin">
-                <i className="fas fa-tachometer-alt"></i>
-                <span>Dashboard</span>
-              </Link>
-            </li>
-            <li>
-              <Link to="/admin/users">
-                <i className="fas fa-users"></i>
-                <span>User Management</span>
-              </Link>
-            </li>
-            <li>
-              <Link to="/admin/partners">
-                <i className="fas fa-handshake"></i>
-                <span>Business Partners</span>
-              </Link>
-            </li>
-            <li>
-              <Link to="/admin/plans">
-                <i className="fas fa-list-alt"></i>
-                <span>Plan Management</span>
-              </Link>
-            </li>
-            {/* Role Management removed */}
-            <li>
-              <Link to="/admin/deals">
-                <i className="fas fa-tags"></i>
-                <span>Deal Management</span>
-              </Link>
-            </li>
-            <li>
-              <Link to="/admin/plans-settings">
-                <i className="fas fa-crown"></i>
-                <span>Plan Settings</span>
-              </Link>
-            </li>
-            <li>
-              <Link to="/admin/settings">
-                <i className="fas fa-cog"></i>
-                <span>Admin Settings</span>
-              </Link>
-            </li>
-            <li>
-              <Link to="/admin/activities">
-                <i className="fas fa-history"></i>
-                <span>Activities</span>
-              </Link>
-            </li>
+            {tabs.map(tab => (
+              <li key={tab.id} className={activeTab === tab.id ? 'active' : ''}>
+                <button 
+                  onClick={() => setActiveTab(tab.id)}
+                  className="nav-button"
+                >
+                  <i className={tab.icon}></i>
+                  <span>{tab.label}</span>
+                  {tab.id === 'approvals' && stats.pendingApprovals > 0 && (
+                    <span className="badge">{stats.pendingApprovals}</span>
+                  )}
+                </button>
+              </li>
+            ))}
           </ul>
         </nav>
+        
+        <div className="sidebar-footer">
+          <button 
+            onClick={() => navigate('/dashboard')}
+            className="back-button"
+          >
+            <i className="fas fa-arrow-left"></i>
+            Back to Dashboard
+          </button>
+        </div>
       </div>
-      
+
+      {/* Main Content */}
       <div className="admin-main">
         <div className="admin-header">
           <h1>
-            <i className="fas fa-tachometer-alt"></i>
-            Dashboard Overview
+            <i className={tabs.find(tab => tab.id === activeTab)?.icon}></i>
+            {tabs.find(tab => tab.id === activeTab)?.label || 'Dashboard'}
           </h1>
-            <div className="admin-actions">
-            <button onClick={testSessionValidation} className="btn-secondary">
-              <i className="fas fa-shield-alt"></i>
-              Check Session
-            </button>
-            <div className="admin-profile">
-              <span>Welcome, {user?.fullName?.split(' ')[0] || 'Admin'}</span>
-              <button onClick={() => navigate('/settings')} className="btn-icon">
-                <i className="fas fa-user-circle"></i>
-              </button>
-            </div>
-            
-            <button onClick={() => navigate('/')} className="btn-secondary">
-              <i className="fas fa-sign-out-alt"></i>
-              Exit Admin
+          <div className="header-actions">
+            <button 
+              onClick={() => window.location.reload()}
+              className="refresh-btn"
+              disabled={isLoading}
+            >
+              <i className={`fas ${isLoading ? 'fa-spinner fa-spin' : 'fa-sync-alt'}`}></i>
+              Refresh
             </button>
           </div>
         </div>
         
         <div className="admin-content">
-          <div className="stats-cards">
-            <div className="stat-card">
-              <div className="stat-icon">
-                <i className="fas fa-users"></i>
-              </div>
-              <div className="stat-details">
-                <h3>Total Users</h3>
-                {isLoading ? (
-                  <div className="stat-loading"></div>
-                ) : (
-                  <p className="stat-number">{stats.totalUsers || 0}</p>
-                )}
-              </div>
+          {isLoading ? (
+            <div className="loading-container">
+              <i className="fas fa-spinner fa-spin"></i>
+              <p>Loading admin dashboard...</p>
             </div>
-            <div className="stat-card">
-              <div className="stat-icon">
-                <i className="fas fa-store"></i>
-              </div>
-              <div className="stat-details">
-                <h3>Total Merchants</h3>
-                {isLoading ? (
-                  <div className="stat-loading"></div>
-                ) : (
-                  <p className="stat-number">{stats.totalMerchants || 0}</p>
-                )}
-              </div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-icon">
-                <i className="fas fa-user-clock"></i>
-              </div>
-              <div className="stat-details">
-                <h3>Pending Approvals</h3>
-                {isLoading ? (
-                  <div className="stat-loading"></div>
-                ) : (
-                  <p className="stat-number">{stats.pendingApprovals || 0}</p>
-                )}
-                {(stats.pendingApprovals || 0) > 0 && (
-                  <Link to="/admin/users?filter=pending" className="stat-link">Review Now</Link>
-                )}
-              </div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-icon">
-                <i className="fas fa-store"></i>
-              </div>
-              <div className="stat-details">
-                <h3>Active Businesses</h3>
-                {isLoading ? (
-                  <div className="stat-loading"></div>
-                ) : (
-                  <p className="stat-number">{stats.activeBusinesses || 0}</p>
-                )}
-              </div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-icon">
-                <i className="fas fa-coins"></i>
-              </div>
-              <div className="stat-details">
-                <h3>Total Revenue</h3>
-                {isLoading ? (
-                  <div className="stat-loading"></div>
-                ) : (
-                  <p className="stat-number">
-                    GHS {(stats.totalRevenue || 0).toLocaleString()}
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-          
-          <div className="dashboard-sections">
-            <div className="dashboard-section">
-              <div className="section-header">
-                <h2>Recent Activities</h2>
-                <Link to="/admin/activities" className="view-all">View All</Link>
-              </div>
-              <div className="section-content">
-                {isLoading ? (
-                  <div className="loading-list">
-                    <div className="loading-item"></div>
-                    <div className="loading-item"></div>
-                    <div className="loading-item"></div>
-                  </div>                ) : recentActivities.length > 0 ? (
-                  <ul className="activity-list">
-                    {recentActivities.map((activity) => (
-                      <li key={activity.id} className="activity-item">
-                        <div className="activity-icon">
-                          <i className={getActivityIcon(activity.type)}></i>
-                        </div>
-                        <div className="activity-content">
-                          <p>{activity.description}</p>
-                          <span className="activity-time">{formatTimeAgo(activity.createdAt)}</span>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <div className="empty-activities">
-                    <p>No recent activities</p>
-                  </div>
-                )}
-              </div>
-            </div>
-              <div className="dashboard-section">
-              <ApprovalQueue />
-            </div>
-          </div>
+          ) : (
+            renderTabContent()
+          )}
         </div>
       </div>
     </div>

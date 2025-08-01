@@ -49,17 +49,16 @@ const DealForm = () => {
         validUntil: formatDateForInput(nextMonth)
       }));
     }
-  }, [dealId]);
-  const fetchBusinesses = async () => {
+  }, [dealId]);  const fetchBusinesses = async () => {
     try {
       const response = await api.get('/admin/businesses');
-      setBusinesses(response.data);
+      setBusinesses(response.data.businesses || []);
       
       // If there's at least one business and we're not in edit mode, select the first one
-      if (response.data.length > 0 && !isEditMode) {
+      if (response.data.businesses && response.data.businesses.length > 0 && !isEditMode) {
         setFormData(prev => ({
           ...prev,
-          businessId: response.data[0]._id
+          businessId: response.data.businesses[0].businessId
         }));
       }
     } catch (error) {
@@ -67,14 +66,13 @@ const DealForm = () => {
       showNotification('Could not load businesses. Please try again.', 'error');
     }
   };
-  
-  const fetchDealData = async () => {
+    const fetchDealData = async () => {
     try {
       setIsLoading(true);
       const response = await api.get(`/admin/deals/${dealId}`);
       
       // Format dates for form inputs
-      const deal = response.data;
+      const deal = response.data.deal;
       deal.validFrom = formatDateForInput(new Date(deal.validFrom));
       deal.validUntil = formatDateForInput(new Date(deal.validUntil));
       
@@ -253,10 +251,9 @@ const DealForm = () => {
                 name="businessId"
                 value={formData.businessId}
                 onChange={handleChange}
-                className={formErrors.businessId ? 'error' : ''}              >
-                <option key="select-business" value="">Select Business</option>
+                className={formErrors.businessId ? 'error' : ''}              >                <option key="select-business" value="">Select Business</option>
                 {businesses.map(business => (
-                  <option key={business._id} value={business._id}>
+                  <option key={business.businessId} value={business.businessId}>
                     {business.businessName}
                   </option>
                 ))}

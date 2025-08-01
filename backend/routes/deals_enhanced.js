@@ -102,6 +102,7 @@ const checkDealAccess = (req, res, next) => {
 router.get('/', checkDealAccess, (req, res) => {
   const user = req.user;
   const userPlanAccess = user.dealAccess ? JSON.parse(user.dealAccess) : ['basic'];
+
   // Build query to get deals that user can access
   const dealsQuery = `
     SELECT d.*, b.businessName, b.businessCategory, b.businessAddress
@@ -109,11 +110,11 @@ router.get('/', checkDealAccess, (req, res) => {
     JOIN businesses b ON d.businessId = b.businessId
     WHERE d.status = 'active' 
     AND d.expiration_date > CURDATE()
-    AND (d.accessLevel IS NULL OR d.accessLevel = 'all' OR d.accessLevel = ?)
+    AND (d.requiredPlanLevel IS NULL OR JSON_OVERLAPS(d.requiredPlanLevel, ?))
     ORDER BY d.created_at DESC
   `;
 
-  db.query(dealsQuery, [user.membershipType || 'basic'], (err, results) => {
+  db.query(dealsQuery, [JSON.stringify(userPlanAccess)], (err, results) => {
     if (err) {
       console.error('Get deals error:', err);
       return res.status(500).json({ message: 'Server error fetching deals' });

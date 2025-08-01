@@ -1,10 +1,10 @@
 
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNotification } from '../contexts/NotificationContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import '../styles/registration.css'; 
+import '../styles/registration.css';
 
 
 
@@ -14,11 +14,20 @@ const UnifiedRegistration = () => {
 
   // User Registration State
   const [userForm, setUserForm] = useState({
+    firstName: '',
+    lastName: '',
     fullName: '',
     email: '',
     password: '',
+    confirmPassword: '',
     phone: '',
     address: '',
+    dob: '',
+    userCategory: '', // "I'm a *" field
+    community: '',
+    country: 'Ghana',
+    state: '',
+    city: '',
     plan: 'community',
     socialMediaFollowed: {
       facebook: false,
@@ -32,6 +41,11 @@ const UnifiedRegistration = () => {
   const [userNotification, setUserNotification] = useState({ message: '', type: '' }); // legacy, remove after migration
   const { showNotification } = useNotification();
   const [userTermsAccepted, setUserTermsAccepted] = useState(false);
+
+  // Dynamic dropdown options
+  const [communities, setCommunities] = useState([]);
+  const [userTypes, setUserTypes] = useState([]);
+  const [loadingOptions, setLoadingOptions] = useState(true);
 
   // Merchant Registration State
   const [merchantForm, setMerchantForm] = useState({
@@ -97,8 +111,38 @@ const UnifiedRegistration = () => {
         ...prev.socialMediaFollowed,
         [platform]: !prev.socialMediaFollowed[platform]
       }
-    }));
-  };
+    }));  };
+  
+  // Fetch dropdown options on component mount
+  useEffect(() => {
+    const fetchOptions = async () => {
+      try {
+        setLoadingOptions(true);
+        const [communitiesResponse, userTypesResponse] = await Promise.all([
+          fetch('/api/auth/communities', { credentials: 'include' }),
+          fetch('/api/auth/user-types', { credentials: 'include' })
+        ]);
+        
+        if (communitiesResponse.ok) {
+          const communitiesData = await communitiesResponse.json();
+          setCommunities(communitiesData.communities || []);
+        }
+        
+        if (userTypesResponse.ok) {
+          const userTypesData = await userTypesResponse.json();
+          setUserTypes(userTypesData.userTypes || []);
+        }
+      } catch (error) {
+        console.error('Error fetching dropdown options:', error);
+        showNotification('Failed to load form options', 'error');
+      } finally {
+        setLoadingOptions(false);
+      }
+    };
+    
+    fetchOptions();
+  }, [showNotification]);
+
   const handleMerchantSocialChange = (platform) => {
     setMerchantForm(prev => ({
       ...prev,
@@ -114,24 +158,64 @@ const UnifiedRegistration = () => {
 
   const { register, merchantRegister } = useAuth();
   const navigate = useNavigate();
-
   // User Registration Handlers
   const handleUserInputChange = (e) => {
-    const { name, value } = e.target;
-    setUserForm(prev => ({ ...prev, [name]: value }));
-  };
-  const handleUserSubmit = async (e) => {
+    const { name, value, id } = e.target;
+    const fieldName = name || id; // Support both name and id attributes
+    
+    setUserForm(prev => {
+      const newForm = { ...prev, [fieldName]: value };
+      
+      // Combine firstName and lastName into fullName
+      if (fieldName === 'firstName' || fieldName === 'lastName') {
+        const firstName = fieldName === 'firstName' ? value : prev.firstName;
+        const lastName = fieldName === 'lastName' ? value : prev.lastName;
+        newForm.fullName = `${firstName} ${lastName}`.trim();
+      }
+      
+      return newForm;
+    });
+  };  const handleUserSubmit = async (e) => {
     e.preventDefault();
-    if (!userForm.fullName || !userForm.email || !userForm.password || !userForm.phone) {
+    
+    // Validation
+    if (!userForm.firstName || !userForm.lastName || !userForm.email || !userForm.password || !userForm.phone) {
       showNotification('Please fill in all required fields', 'error');
       return;
     }
+    
+    if (!userForm.userCategory) {
+      showNotification('Please select what type of member you are', 'error');
+      return;
+    }
+    
+    if (!userForm.community) {
+      showNotification('Please select your community', 'error');
+      return;
+    }
+    
+    if (!userForm.country || !userForm.city) {
+      showNotification('Please fill in location information', 'error');
+      return;
+    }
+    
+    if (userForm.password !== userForm.confirmPassword) {
+      showNotification('Passwords do not match', 'error');
+      return;
+    }
+    
+    if (userForm.password.length < 6) {
+      showNotification('Password must be at least 6 characters', 'error');
+      return;
+    }
+    
     // At least one social media must be followed
     const followedCount = Object.values(userForm.socialMediaFollowed).filter(Boolean).length;
     if (followedCount === 0) {
       showNotification('Please follow at least one of our social media channels to join the community.', 'error');
       return;
     }
+    
     if (!userTermsAccepted) {
       showNotification('Please accept the terms and conditions', 'error');
       return;
@@ -301,23 +385,113 @@ const UnifiedRegistration = () => {
         <div className="registration-form-container unified-form-container">
           {activeTab === 'member' ? (
             <form onSubmit={handleUserSubmit} className="register-form">
-              {/* Notification handled by Toast/NotificationContext */}
-              <div className="form-section">
+              {/* Notification handled by Toast/NotificationContext */}              <div className="form-section">
                 <h3>Personal Information</h3>
+                
+                {/* I'm a * field */}
                 <div className="form-group">
-                  <label htmlFor="fullName">Full Name <span className="required">*</span></label>
+                  <label htmlFor="userCategory">I'm a <span className="required">*</span></label>
+                  <select
+                    id="userCategory"
+                    name="userCategory"
+                    value={userForm.userCategory}
+                    onChange={handleUserInputChange}
+                    required
+                  >
+                    <option value="">Select an option</option>
+                    {loadingOptions ? (
+                      <option disabled>Loading...</option>
+                    ) : (
+                      userTypes.map((type) => (
+                        <option key={type.name} value={type.name}>
+                          {type.name}
+                        </option>
+                      ))
+                    )}
+                  </select>
+                </div>
+
+                {/* First Name */}
+                <div className="form-group">
+                  <label htmlFor="firstName">First Name <span className="required">*</span></label>
                   <input
                     type="text"
-                    id="fullName"
-                    name="fullName"
-                    value={userForm.fullName}
+                    id="firstName"
+                    name="firstName"
+                    value={userForm.firstName}
                     onChange={handleUserInputChange}
-                    placeholder="Enter your full name"
+                    placeholder="Enter your first name"
                     required
                   />
                 </div>
+
+                {/* Last Name */}
                 <div className="form-group">
-                  <label htmlFor="email">Email Address <span className="required">*</span></label>
+                  <label htmlFor="lastName">Last Name <span className="required">*</span></label>
+                  <input
+                    type="text"
+                    id="lastName"
+                    name="lastName"
+                    value={userForm.lastName}
+                    onChange={handleUserInputChange}
+                    placeholder="Enter your last name"
+                    required
+                  />
+                </div>
+
+                {/* Community Selection */}
+                <div className="form-group">
+                  <label htmlFor="community">Select Your Community (I belong from) <span className="required">*</span></label>
+                  <select
+                    id="community"
+                    name="community"
+                    value={userForm.community}
+                    onChange={handleUserInputChange}
+                    required
+                  >
+                    <option value="">Select your community</option>
+                    {loadingOptions ? (
+                      <option disabled>Loading communities...</option>
+                    ) : (
+                      communities.map((community) => (
+                        <option key={community.name} value={community.name}>
+                          {community.name}
+                        </option>
+                      ))
+                    )}
+                  </select>
+                </div>
+
+                {/* Date of Birth */}
+                <div className="form-group">
+                  <label htmlFor="dob">Date of Birth (Optional)</label>
+                  <input
+                    type="date"
+                    id="dob"
+                    name="dob"
+                    value={userForm.dob}
+                    onChange={handleUserInputChange}
+                    placeholder="Enter Your Date of Birth"
+                  />
+                </div>
+
+                {/* WhatsApp Number */}
+                <div className="form-group">
+                  <label htmlFor="phone">WhatsApp No. (Add Country Code) <span className="required">*</span></label>
+                  <input
+                    type="tel"
+                    id="phone"
+                    name="phone"
+                    value={userForm.phone}
+                    onChange={handleUserInputChange}
+                    placeholder="Enter Your Mobile No."
+                    required
+                  />
+                </div>
+
+                {/* Email */}
+                <div className="form-group">
+                  <label htmlFor="email">User Email <span className="required">*</span></label>
                   <input
                     type="email"
                     id="email"
@@ -328,6 +502,71 @@ const UnifiedRegistration = () => {
                     required
                   />
                 </div>
+
+                {/* Country */}
+                <div className="form-group">
+                  <label htmlFor="country">Country <span className="required">*</span></label>
+                  <select
+                    id="country"
+                    name="country"
+                    value={userForm.country}
+                    onChange={handleUserInputChange}
+                    required
+                  >
+                    <option value="">Select a country</option>
+                    <option value="Ghana">Ghana</option>
+                    <option value="India">India</option>
+                    <option value="United States">United States</option>
+                    <option value="United Kingdom">United Kingdom</option>
+                    <option value="Canada">Canada</option>
+                    <option value="Australia">Australia</option>
+                    <option value="Others">Others</option>
+                  </select>
+                </div>
+
+                {/* State (India) */}
+                <div className="form-group">
+                  <label htmlFor="state">State (India) <span className="required">*</span></label>
+                  <input
+                    type="text"
+                    id="state"
+                    name="state"
+                    value={userForm.state}
+                    onChange={handleUserInputChange}
+                    placeholder="Enter your state in India"
+                    required
+                  />
+                </div>
+
+                {/* City (India) */}
+                <div className="form-group">
+                  <label htmlFor="city">City (India) <span className="required">*</span></label>
+                  <input
+                    type="text"
+                    id="city"
+                    name="city"
+                    value={userForm.city}
+                    onChange={handleUserInputChange}
+                    placeholder="Enter your city in India"
+                    required
+                  />
+                </div>
+
+                {/* Current Location in Ghana */}
+                <div className="form-group">
+                  <label htmlFor="address">Current Location In (Ghana) <span className="required">*</span></label>
+                  <textarea
+                    id="address"
+                    name="address"
+                    value={userForm.address}
+                    onChange={handleUserInputChange}
+                    placeholder="Enter your current location in Ghana"
+                    rows="2"
+                    required
+                  />
+                </div>
+
+                {/* Password */}
                 <div className="form-group">
                   <label htmlFor="password">Password <span className="required">*</span></label>
                   <input
@@ -340,29 +579,21 @@ const UnifiedRegistration = () => {
                     required
                   />
                 </div>
+
+                {/* Confirm Password */}
                 <div className="form-group">
-                  <label htmlFor="phone">Phone Number <span className="required">*</span></label>
+                  <label htmlFor="confirmPassword">Confirm Password <span className="required">*</span></label>
                   <input
-                    type="tel"
-                    id="phone"
-                    name="phone"
-                    value={userForm.phone}
+                    type="password"
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    value={userForm.confirmPassword}
                     onChange={handleUserInputChange}
-                    placeholder="Enter your phone number"
+                    placeholder="Confirm your password"
                     required
                   />
                 </div>
-                <div className="form-group">
-                  <label htmlFor="address">Address</label>
-                  <textarea
-                    id="address"
-                    name="address"
-                    value={userForm.address}
-                    onChange={handleUserInputChange}
-                    placeholder="Enter your address"
-                    rows="3"
-                  />
-                </div>
+                
                 <div className="form-group">
                   <label htmlFor="plan">Membership Plan</label>
                   <select

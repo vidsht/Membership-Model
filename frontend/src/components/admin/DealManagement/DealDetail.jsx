@@ -26,16 +26,15 @@ const DealDetail = () => {
   useEffect(() => {
     fetchDealData();
   }, [dealId]);
-  
-  const fetchDealData = async () => {
+    const fetchDealData = async () => {
     try {
       setIsLoading(true);
       const dealResponse = await api.get(`/admin/deals/${dealId}`);
-      setDeal(dealResponse.data);
+      setDeal(dealResponse.data.deal);
 
       // Always fetch redemptions for the deal
       const redemptionsResponse = await api.get(`/admin/deals/${dealId}/redemptions`);
-      setRedemptions(redemptionsResponse.data);
+      setRedemptions(redemptionsResponse.data.redemptions || []);
     } catch (error) {
       console.error('Error fetching deal details:', error);
       showNotification('Could not load deal details', 'error');
