@@ -7,16 +7,16 @@ const auth = (req, res, next) => {
     }
     
     db.query(
-      'SELECT id, fullName, email, phone, address, profilePicture, membership, socialMediaFollowed, userType FROM users WHERE id = ?',
+      'SELECT id, fullName, email, phone, address, profilePicture, membership, socialMediaFollowed, userType, adminRole, permissions FROM users WHERE id = ?',
       [req.session.userId],
       (err, results) => {
         if (err) {
           console.error('Auth middleware SQL error:', err);
-          return res.status(500).json({ message: 'Server error', error: err.message });
+          return res.status(500).json({ message: 'Server error checking user access' });
         }
         if (!results.length) {
-      return res.status(401).json({ message: 'User not found' });
-    }
+          return res.status(401).json({ message: 'User not found' });
+        }
         const user = results[0];
         if (user.socialMediaFollowed) {
           try {
@@ -25,13 +25,13 @@ const auth = (req, res, next) => {
             user.socialMediaFollowed = {};
           }
         }
-    req.user = user;
-    next();
+        req.user = user;
+        next();
       }
     );
   } catch (error) {
     console.error('Auth middleware error:', error);
-    res.status(401).json({ message: 'Invalid session' });
+    res.status(500).json({ message: 'Server error checking user access' });
   }
 };
 

@@ -41,14 +41,19 @@ const PlanAssignment = (props) => {
       return;
     }
     try {
-      setIsLoading(true);
-      // First get user data to determine userType
+      setIsLoading(true);      // First get user data to determine userType
       const userResponse = await api.get(`/admin/users/${userId}`);
       const userData = userResponse.data;
       const userType = userData.userType || 'user';
+      
       // Then fetch plans filtered by userType from backend
       const plansResponse = await api.get(`/admin/plans?userType=${userType}`);
-      const filteredPlans = plansResponse.data || [];
+      const plansData = plansResponse.data;
+      
+      // Ensure plans is always an array
+      const filteredPlans = Array.isArray(plansData?.plans) ? plansData.plans : 
+                          Array.isArray(plansData) ? plansData : [];
+      
       setUser(userData);
       setPlans(filteredPlans);
       setSelectedPlan(userData.membershipType || '');
@@ -215,13 +220,15 @@ const PlanAssignment = (props) => {
               value={selectedPlan}
               onChange={(e) => setSelectedPlan(e.target.value)}
               required
-            >
-              <option value="">-- Select a plan --</option>
-              {plans.map(plan => (
+            >              <option value="">-- Select a plan --</option>
+              {Array.isArray(plans) && plans.map(plan => (
                 <option key={plan.membershipType || plan.key} value={plan.membershipType || plan.key}>
                   {plan.name || plan.displayName || (plan.membershipType ? plan.membershipType.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') : plan.key)}
                 </option>
               ))}
+              {(!Array.isArray(plans) || plans.length === 0) && (
+                <option value="" disabled>No plans available</option>
+              )}
             </select>
           </div>
           

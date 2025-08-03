@@ -525,22 +525,9 @@ const MerchantManagementEnhanced = () => {
                   <div className="detail-item">
                     <label>Phone:</label>
                     <span>{selectedMerchant.phone || 'N/A'}</span>
-                  </div>
-                  <div className="detail-item">
+                  </div>                  <div className="detail-item">
                     <label>Community:</label>
                     <span>{selectedMerchant.community || 'N/A'}</span>
-                  </div>
-                  <div className="detail-item">
-                    <label>Country:</label>
-                    <span>{selectedMerchant.country || 'N/A'}</span>
-                  </div>
-                  <div className="detail-item">
-                    <label>State:</label>
-                    <span>{selectedMerchant.state || 'N/A'}</span>
-                  </div>
-                  <div className="detail-item">
-                    <label>City:</label>
-                    <span>{selectedMerchant.city || 'N/A'}</span>
                   </div>
                   <div className="detail-item">
                     <label>Membership:</label>
@@ -581,14 +568,9 @@ const MerchantManagementEnhanced = () => {
                   <div className="detail-item">
                     <label>Business License:</label>
                     <span>{selectedMerchant.businessLicense || 'N/A'}</span>
-                  </div>
-                  <div className="detail-item">
+                  </div>                  <div className="detail-item">
                     <label>Tax ID:</label>
                     <span>{selectedMerchant.taxId || 'N/A'}</span>
-                  </div>
-                  <div className="detail-item">
-                    <label>Verified:</label>
-                    <span>{selectedMerchant.isVerified ? 'Yes' : 'No'}</span>
                   </div>
                 </div>
               </div>

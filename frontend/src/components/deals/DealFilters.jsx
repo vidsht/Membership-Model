@@ -6,10 +6,11 @@ import './UserFilters.css';
  * DealFilters component for advanced deal filtering.
  * @param {Object} props
  * @param {Object} props.filters - Current filter values
+ * @param {Array} props.plans - Available membership plans
  * @param {Function} props.onFilterChange - Callback for filter changes
  * @param {Function} props.onSearch - Callback for search
  */
-const DealFilters = ({ filters, onFilterChange, onSearch }) => {
+const DealFilters = ({ filters, plans = [], onFilterChange, onSearch }) => {
   const [showFilters, setShowFilters] = useState(true);
 
   /**
@@ -132,8 +133,7 @@ const DealFilters = ({ filters, onFilterChange, onSearch }) => {
                   <option value="travel">Travel</option>
                   <option value="other">Other</option>
                 </select>
-              </div>
-              <div className="user-filters__filter-group">
+              </div>              <div className="user-filters__filter-group">
                 <label htmlFor="membershipLevel">Membership Level</label>
                 <select 
                   id="membershipLevel" 
@@ -142,10 +142,14 @@ const DealFilters = ({ filters, onFilterChange, onSearch }) => {
                   onChange={handleInputChange}
                   aria-label="Membership level"
                 >
-                  <option value="all">All Levels</option>
-                  <option value="community">Community</option>
-                  <option value="silver">Silver</option>
-                  <option value="gold">Gold</option>
+                  <option value="all">All Levels</option>                  {plans
+                    .filter(plan => plan.type === 'user')
+                    .sort((a, b) => a.priority - b.priority) // Sort by priority ascending
+                    .map(plan => (
+                      <option key={plan.id} value={plan.key || plan.name.toLowerCase()}>
+                        {plan.name}
+                      </option>
+                    ))}
                 </select>
               </div>
               <div className="user-filters__filter-group">

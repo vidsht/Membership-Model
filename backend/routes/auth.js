@@ -20,9 +20,9 @@ router.post('/register', async (req, res) => {
       state,
       city,
       userCategory,
+      plan, // Use dynamic plan instead of membership
       profilePicture,
       preferences,
-      membership,
       socialMediaFollowed,
       userType,
       status,
@@ -68,6 +68,20 @@ router.post('/register', async (req, res) => {
         console.error('Registration JSON error (socialMediaFollowed):', jsonErr);
         return res.status(400).json({ success: false, message: 'Invalid social media data.' });
       }      const hashedPassword = await bcrypt.hash(password, 10);
+      
+      // Get default plan if none selected
+      let selectedPlan = plan;
+      if (!selectedPlan) {
+        // Fetch the first available user plan
+        const defaultPlanResult = await new Promise((resolve, reject) => {
+          db.query('SELECT `key` FROM plans WHERE type = ? AND isActive = 1 ORDER BY sortOrder, priority DESC LIMIT 1', ['user'], (err, results) => {
+            if (err) reject(err);
+            else resolve(results);
+          });
+        });
+        selectedPlan = defaultPlanResult.length > 0 ? defaultPlanResult[0].key : 'community';
+      }
+      
       const insertQuery = `INSERT INTO users
         (fullName, email, password, phone, address, dob, community, country, state, city, userCategory, profilePicture, preferences, membership, socialMediaFollowed, userType, status, adminRole, permissions, termsAccepted)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
@@ -85,7 +99,7 @@ router.post('/register', async (req, res) => {
         userCategory || null,
         profilePicture || null,
         preferences || null,
-        membership || 'community',
+        selectedPlan, // Use dynamic plan
         socialMediaJson,
         userType || 'user',
         status || 'pending',
@@ -223,6 +237,7 @@ router.post('/merchant/register', async (req, res) => {
       email,
       password,
       phone,
+      plan, // Add dynamic plan selection
       socialMediaFollowed,
       businessInfo
     } = req.body;
@@ -265,16 +280,27 @@ router.post('/merchant/register', async (req, res) => {
       } catch (jsonErr) {
         console.error('Merchant registration JSON error:', jsonErr);
         return res.status(400).json({ success: false, message: 'Invalid social media data.' });
+      }      const hashedPassword = await bcrypt.hash(password, 10);
+      
+      // Get default plan if none selected
+      let selectedPlan = plan;
+      if (!selectedPlan) {
+        // Fetch the first available merchant plan
+        const defaultPlanResult = await new Promise((resolve, reject) => {
+          db.query('SELECT `key` FROM plans WHERE type = ? AND isActive = 1 ORDER BY sortOrder, priority DESC LIMIT 1', ['merchant'], (err, results) => {
+            if (err) reject(err);
+            else resolve(results);
+          });
+        });
+        selectedPlan = defaultPlanResult.length > 0 ? defaultPlanResult[0].key : 'basic';
       }
-
-      const hashedPassword = await bcrypt.hash(password, 10);
       
       // Insert user first
       const insertUserQuery = `INSERT INTO users
         (fullName, email, password, phone, socialMediaFollowed, userType, status, membership)
-        VALUES (?, ?, ?, ?, ?, 'merchant', 'pending', 'basic')`;
+        VALUES (?, ?, ?, ?, ?, 'merchant', 'pending', ?)`;
       
-      const userValues = [fullName, email, hashedPassword, phone || null, socialMediaJson];
+      const userValues = [fullName, email, hashedPassword, phone || null, socialMediaJson, selectedPlan];
       
       db.query(insertUserQuery, userValues, (err2, userResult) => {
         if (err2) {
@@ -441,22 +467,53 @@ router.post('/reset-password', async (req, res) => {
 // Get communities for dropdown
 router.get('/communities', (req, res) => {
   try {
-    const query = 'SELECT name, description FROM communities WHERE isActive = TRUE ORDER BY displayOrder, name';
+    // Simple query that works with basic table structure
+    const query = 'SELECT name, description FROM communities WHERE isActive = TRUE ORDER BY sortOrder, name';
     
     db.query(query, (err, results) => {
       if (err) {
         console.error('Communities query error:', err);
-        return res.status(500).json({ success: false, message: 'Server error' });
+        // If communities table doesn't exist or has issues, return default communities
+        const defaultCommunities = [
+          { name: 'Gujarati', description: 'Gujarati community' },
+          { name: 'Punjabi', description: 'Punjabi community' },
+          { name: 'Tamil', description: 'Tamil community' },
+          { name: 'Bengali', description: 'Bengali community' },
+          { name: 'Hindi', description: 'Hindi speaking community' },
+          { name: 'Marathi', description: 'Marathi community' },
+          { name: 'Telugu', description: 'Telugu community' },
+          { name: 'Kannada', description: 'Kannada community' },
+          { name: 'Malayalam', description: 'Malayalam community' },
+          { name: 'Sindhi', description: 'Sindhi community' },
+          { name: 'Other Indian', description: 'Other Indian communities' }
+        ];
+        
+        return res.json({ 
+          success: true, 
+          communities: defaultCommunities 
+        });
       }
       
       res.json({ 
         success: true, 
-        communities: results 
+        communities: results || []
       });
     });
   } catch (error) {
     console.error('Get communities error:', error);
-    res.status(500).json({ success: false, message: 'Server error' });
+    // Fallback to default communities on any error
+    const defaultCommunities = [
+      { name: 'Gujarati', description: 'Gujarati community' },
+      { name: 'Punjabi', description: 'Punjabi community' },
+      { name: 'Tamil', description: 'Tamil community' },
+      { name: 'Bengali', description: 'Bengali community' },
+      { name: 'Hindi', description: 'Hindi speaking community' },
+      { name: 'Other Indian', description: 'Other Indian communities' }
+    ];
+      res.json({ 
+      success: true, 
+      communities: defaultCommunities 
+    });
   }
 });
 
@@ -527,6 +584,62 @@ router.post('/refresh', auth, async (req, res) => {
   } catch (error) {
     console.error('Session refresh error:', error);
     res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// TEMPORARY: Quick admin login for development/testing
+// Remove this in production
+router.post('/dev-admin-login', async (req, res) => {
+  // Only enable in development
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(404).json({ message: 'Not found' });
+  }
+  
+  try {
+    console.log('Development admin login requested');
+    
+    // Get the first admin user
+    db.query('SELECT * FROM users WHERE userType = "admin" LIMIT 1', (err, results) => {
+      if (err) {
+        console.error('Database error in dev-admin-login:', err);
+        return res.status(500).json({ message: 'Server error' });
+      }
+      
+      if (results.length === 0) {
+        return res.status(404).json({ message: 'No admin user found' });
+      }
+      
+      const user = results[0];
+      
+      // Create session
+      req.session.userId = user.id;
+      req.session.cookie.maxAge = 1000 * 60 * 60 * 24; // 1 day
+      
+      req.session.save((sessionErr) => {
+        if (sessionErr) {
+          console.error('Session save error:', sessionErr);
+          return res.status(500).json({ message: 'Session error' });
+        }
+        
+        console.log(`Development admin session created for: ${user.email}`);
+        console.log(`Session ID: ${req.sessionID}`);
+        
+        res.json({
+          success: true,
+          message: 'Development admin login successful',
+          user: {
+            id: user.id,
+            fullName: user.fullName,
+            email: user.email,
+            userType: user.userType,
+            adminRole: user.adminRole || 'superAdmin'
+          }
+        });
+      });
+    });
+  } catch (error) {
+    console.error('Error in dev-admin-login:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 

@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { useNotification } from '../../../contexts/NotificationContext';
 import { useAuth } from '../../../contexts/AuthContext';
 import api from '../../../services/api';
+import Modal from '../../shared/Modal';
+import { useModal } from '../../../hooks/useModal';
 import './PlanSettings.css';
 
 /**
@@ -12,6 +14,7 @@ import './PlanSettings.css';
 const PlanSettings = () => {
   const { showNotification } = useNotification();
   const { validateSession } = useAuth();
+  const { modal, showConfirm, hideModal } = useModal();
   const [plans, setPlans] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('user');
@@ -80,17 +83,18 @@ const PlanSettings = () => {
       try {
         await api.post('/admin/plans/seed');
         showNotification('Default plans created successfully.', 'success');
-        fetchPlans();
-      } catch (firstError) {
+        fetchPlans();      } catch (firstError) {
         // If it fails due to existing plans, try with force
         if (firstError.response?.status === 400 && 
             firstError.response?.data?.message?.includes('already exist')) {
           
-          const confirmOverwrite = window.confirm(
-            'Plans already exist. Do you want to delete existing plans and seed new default plans?'
+          const confirmed = await showConfirm(
+            'Overwrite Existing Plans',
+            'Plans already exist. Do you want to delete existing plans and seed new default plans?',
+            'Overwrite Plans'
           );
           
-          if (confirmOverwrite) {
+          if (confirmed) {
             await api.post('/admin/plans/seed', { force: true });
             showNotification('Default plans created successfully (existing plans replaced).', 'success');
             fetchPlans();
@@ -133,13 +137,14 @@ const PlanSettings = () => {
   const formatPrice = (price, currency) => {
     return price === 0 ? 'Free' : `${currency} ${price}`;
   };
-
   const formatBillingCycle = (cycle) => {
     return cycle === 'lifetime' ? 'One-time' : cycle.charAt(0).toUpperCase() + cycle.slice(1);
   };
 
-  const userPlans = plans.filter(plan => !plan.metadata?.userType || plan.metadata.userType === 'user');
-  const merchantPlans = plans.filter(plan => plan.metadata?.userType === 'merchant');
+  // Ensure plans is always an array before filtering
+  const plansArray = Array.isArray(plans) ? plans : [];
+  const userPlans = plansArray.filter(plan => !plan.metadata?.userType || plan.metadata.userType === 'user');
+  const merchantPlans = plansArray.filter(plan => plan.metadata?.userType === 'merchant');
 
   return (
     <div className="user-management">
@@ -338,9 +343,9 @@ const PlanSettings = () => {
                 Delete Plan
               </button>
             </div>
-          </div>
-        </div>
+          </div>        </div>
       )}
+      <Modal modal={modal} onClose={hideModal} />
     </div>
   );
 };

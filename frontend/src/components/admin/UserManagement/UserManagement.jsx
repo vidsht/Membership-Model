@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../../services/api';
 import { useNotification } from '../../../contexts/NotificationContext';
+import Modal from '../../shared/Modal';
+import { useModal } from '../../../hooks/useModal';
 import './UserManagement.css';
 
 const UserManagement = () => {
   const { showNotification } = useNotification();
+  const { modal, showConfirm, showDeleteConfirm, hideModal } = useModal();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -104,15 +107,19 @@ const UserManagement = () => {
       setSelectedUsers(users.map(user => user.id));
     }
   };
-
   const handleBulkAction = async (action) => {
     if (selectedUsers.length === 0) {
       showNotification('Please select users first', 'warning');
       return;
     }
 
-    const confirmMessage = `Are you sure you want to ${action} ${selectedUsers.length} selected users?`;
-    if (!window.confirm(confirmMessage)) return;
+    const confirmed = await showConfirm(
+      `Confirm Bulk ${action.charAt(0).toUpperCase() + action.slice(1)}`,
+      `Are you sure you want to ${action} ${selectedUsers.length} selected users?`,
+      `${action.charAt(0).toUpperCase() + action.slice(1)} Users`
+    );
+    
+    if (!confirmed) return;
 
     try {
       await Promise.all(
@@ -168,23 +175,21 @@ const UserManagement = () => {
     } catch (err) {
       showNotification('Failed to add user', 'error');
       console.error('Add user error:', err);
-    }  };
-
-  const handleDeleteUser = (userId, userName) => {
-    if (window.confirm(`Are you sure you want to delete user "${userName}"? This action cannot be undone.`)) {
-      deleteUser(userId);
-    }
-  };
-
-  const deleteUser = async (userId) => {
-    try {
-      await api.delete(`/admin/users/${userId}`);
-      showNotification('User deleted successfully', 'success');
-      fetchUsers();
-    } catch (err) {
-      showNotification('Failed to delete user', 'error');
-      console.error('Delete user error:', err);
-    }
+    }  };  const handleDeleteUser = async (userId, userName) => {
+    const confirmed = await showDeleteConfirm(userName, async () => {
+      try {
+        await api.delete(`/admin/users/${userId}`);
+        showNotification('User deleted successfully', 'success');
+        fetchUsers();
+      } catch (err) {
+        showNotification('Failed to delete user', 'error');
+        console.error('Delete user error:', err);
+      }
+    }, {
+      title: 'Delete User',
+      message: `Are you sure you want to delete user "${userName}"? This action cannot be undone.`,
+      confirmText: 'Delete User'
+    });
   };
 
   const handleFilterChange = (key, value) => {
@@ -471,14 +476,14 @@ const UserManagement = () => {
       )}
 
       {/* Add User Modal */}
-      {showAddUser && (
-        <AddUserModal
+      {showAddUser && (        <AddUserModal
           communities={communities}
           plans={plans}
           onClose={() => setShowAddUser(false)}
           onSave={handleAddUser}
         />
       )}
+      <Modal modal={modal} onClose={hideModal} />
     </div>
   );
 };
@@ -711,10 +716,9 @@ const UserDetailsModal = ({ user, isEditing, communities, plans, onClose, onSave
               <div className="detail-row">
                 <label>Plan Assigned:</label>
                 <span>{formatDate(user.planAssignedAt)}</span>
-              </div>
-              <div className="detail-row">
+              </div>              <div className="detail-row">
                 <label>Plan Expiry:</label>
-                <span>{formatDate(user.validationDate)}</span>
+                <span>{formatDate(user.planExpiryDate || user.validationDate)}</span>
               </div>
               <div className="detail-row">
                 <label>Last Login:</label>

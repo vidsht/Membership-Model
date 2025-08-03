@@ -2,90 +2,155 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useNotification } from '../../../contexts/NotificationContext';
 import api from '../../../services/api';
+import DealFilters from './DealFilters';
+import Modal from '../../shared/Modal';
+import { useModal } from '../../../hooks/useModal';
 import './DealList.css';
 
 const DealList = () => {
   const { showNotification } = useNotification();
   const navigate = useNavigate();
+  const { modalState, closeModal, showDeleteConfirm } = useModal();
   
   const [deals, setDeals] = useState([]);
-  const [stats, setStats] = useState({ activeDeals: 0, totalDeals: 0, totalRedemptions: 0 });
+  const [businesses, setBusinesses] = useState([]);
+  const [stats, setStats] = useState({ 
+    activeDeals: 0, 
+    totalDeals: 0, 
+    totalRedemptions: 0,
+    expiredDeals: 0,
+    pendingDeals: 0
+  });
   const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
-  const [sortBy, setSortBy] = useState('createdAt');
-  const [sortOrder, setSortOrder] = useState('desc');
+  const [filters, setFilters] = useState({
+    status: 'all',
+    category: 'all',
+    businessId: 'all',
+    discountType: 'all',
+    search: '',
+    validFrom: '',
+    validTo: '',
+    minDiscount: '',
+    maxDiscount: '',
+    hasRedemptions: 'all',
+    sortBy: 'created_at',
+    sortOrder: 'desc'
+  });
   
   useEffect(() => {
+    fetchInitialData();
+  }, []);
+
+  useEffect(() => {
     fetchDeals();
-  }, [filterStatus, sortBy, sortOrder]);
-  
-  const fetchDeals = async () => {
+  }, [filters]);
+
+  const fetchInitialData = async () => {
     try {
-      setIsLoading(true);
-      const response = await api.get(`/admin/deals`, {
-        params: { 
-          status: filterStatus !== 'all' ? filterStatus : undefined,
-          sortBy,
-          sortOrder
-        }
-      });
-      setDeals(response.data.deals || []);
-      setStats(response.data.stats || { activeDeals: 0, totalDeals: 0, totalRedemptions: 0 });
+      const [dealsResponse, businessesResponse] = await Promise.all([
+        api.get('/admin/deals'),
+        api.get('/admin/merchants')
+      ]);
+      
+      setDeals(dealsResponse.data.deals || []);
+      setBusinesses(businessesResponse.data.merchants?.map(m => ({
+        businessId: m.businessId,
+        businessName: m.businessName
+      })) || []);
+      
+      // Calculate stats from deals
+      calculateStats(dealsResponse.data.deals || []);
     } catch (error) {
-      console.error('Error fetching deals:', error);
-      showNotification('Error loading deals. Please try again.', 'error');
-      setDeals([]); // Ensure deals is always an array
-      setStats({ activeDeals: 0, totalDeals: 0, totalRedemptions: 0 });
+      console.error('Error fetching initial data:', error);
+      showNotification('Error loading data. Please try again.', 'error');
     } finally {
       setIsLoading(false);
     }
   };
   
+  const fetchDeals = async () => {
+    try {
+      setIsLoading(true);
+      const params = {};
+      
+      if (filters.status !== 'all') params.status = filters.status;
+      if (filters.category !== 'all') params.category = filters.category;
+      if (filters.businessId !== 'all') params.businessId = filters.businessId;
+      if (filters.search) params.search = filters.search;
+      if (filters.validFrom) params.validFrom = filters.validFrom;
+      if (filters.validTo) params.validTo = filters.validTo;
+      if (filters.discountType !== 'all') params.discountType = filters.discountType;
+      if (filters.minDiscount) params.minDiscount = filters.minDiscount;
+      if (filters.maxDiscount) params.maxDiscount = filters.maxDiscount;
+      if (filters.hasRedemptions !== 'all') params.hasRedemptions = filters.hasRedemptions;
+      
+      params.sortBy = filters.sortBy;
+      params.sortOrder = filters.sortOrder;
+      
+      const response = await api.get('/admin/deals', { params });
+      const dealsData = response.data.deals || [];
+      setDeals(dealsData);
+      calculateStats(dealsData);
+    } catch (error) {
+      console.error('Error fetching deals:', error);
+      showNotification('Error loading deals. Please try again.', 'error');
+      setDeals([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const calculateStats = (dealsData) => {
+    const now = new Date();
+    const stats = {
+      totalDeals: dealsData.length,
+      activeDeals: dealsData.filter(deal => deal.status === 'active' && new Date(deal.validUntil) > now).length,
+      expiredDeals: dealsData.filter(deal => new Date(deal.validUntil) <= now).length,
+      pendingDeals: dealsData.filter(deal => deal.status === 'pending').length,
+      totalRedemptions: dealsData.reduce((sum, deal) => sum + (deal.redemptionCount || 0), 0)
+    };
+    setStats(stats);
+  };
+
+  const handleFilterChange = (newFilters) => {
+    setFilters(prev => ({ ...prev, ...newFilters }));
+  };
+
+  const handleSearch = () => {
+    fetchDeals();  };
+  
   const handleStatusChange = async (dealId, newStatus) => {
-    try {      await api.patch(`/admin/deals/${dealId}/status`, { status: newStatus });
-        // Update local state
+    try {      
+      await api.patch(`/admin/deals/${dealId}/status`, { status: newStatus });
+      // Update local state
       setDeals((deals || []).map(deal => 
         deal.id === dealId ? { ...deal, status: newStatus } : deal
       ));
       
       showNotification(`Deal ${newStatus === 'active' ? 'activated' : 'deactivated'} successfully`, 'success');
+      // Recalculate stats
+      calculateStats(deals.map(deal => 
+        deal.id === dealId ? { ...deal, status: newStatus } : deal
+      ));
     } catch (error) {
       console.error('Error updating deal status:', error);
       showNotification('Failed to update deal status', 'error');
     }
   };
-  
-  const handleDeleteDeal = async (dealId) => {
-    if (window.confirm('Are you sure you want to delete this deal?')) {
+    const handleDeleteDeal = async (dealId, dealTitle) => {
+    const confirmed = await showDeleteConfirm(dealTitle, async () => {
       try {
         await api.delete(`/admin/deals/${dealId}`);
-        setDeals((deals || []).filter(deal => deal.id !== dealId));
+        const updatedDeals = deals.filter(deal => deal.id !== dealId);
+        setDeals(updatedDeals);
+        calculateStats(updatedDeals);
         showNotification('Deal deleted successfully', 'success');
       } catch (error) {
         console.error('Error deleting deal:', error);
         showNotification('Failed to delete deal', 'error');
       }
-    }
+    });
   };
-    const filteredDeals = (deals || []).filter(deal => {
-    const matchesSearch = 
-      deal?.title?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      deal?.businessName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      deal?.category?.toLowerCase().includes(searchTerm.toLowerCase());
-      
-    return matchesSearch;
-  });
-
-  const handleSort = (field) => {
-    if (sortBy === field) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortBy(field);
-      setSortOrder('asc');
-    }
-  };
-  
   return (
     <div className="admin-deal-management">
       <div className="page-header">
@@ -112,161 +177,194 @@ const DealList = () => {
           <span className="stat-label">Total Redemptions</span>
           <span className="stat-value">{stats.totalRedemptions}</span>
         </div>
-      </div>
-
-      <div className="filter-controls">
-        <div className="search-box">
-          <i className="fas fa-search"></i>
-          <input 
-            type="text" 
-            placeholder="Search deals..." 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+        <div className="deal-stat">
+          <span className="stat-label">Expired Deals</span>
+          <span className="stat-value">{stats.expiredDeals}</span>
         </div>
-        <div className="filter-group">
-          <label>Status:</label>
-          <select 
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-          >
-            <option value="all">All Deals</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-            <option value="expired">Expired</option>
-          </select>
+        <div className="deal-stat">
+          <span className="stat-label">Pending Deals</span>
+          <span className="stat-value">{stats.pendingDeals}</span>
         </div>
-      </div>
+      </div>      {/* Deal Filters */}
+      <DealFilters
+        filters={filters}
+        onFilterChange={handleFilterChange}
+        onSearch={handleSearch}
+        businesses={businesses}
+      />
       
       {isLoading ? (
         <div className="loading-container">
           <div className="loading-spinner"></div>
           <p>Loading deals...</p>
         </div>
-      ) : filteredDeals.length > 0 ? (
+      ) : deals.length > 0 ? (
         <div className="deals-table-container">
-          <table className="deals-table">
-            <thead>
+          <table className="deals-table">            <thead>
               <tr>
-                <th onClick={() => handleSort('title')}>
-                  Deal Title
-                  {sortBy === 'title' && (
-                    <i className={`fas fa-sort-${sortOrder === 'asc' ? 'up' : 'down'}`}></i>
-                  )}
-                </th>
-                <th onClick={() => handleSort('businessName')}>
-                  Business
-                  {sortBy === 'businessName' && (
-                    <i className={`fas fa-sort-${sortOrder === 'asc' ? 'up' : 'down'}`}></i>
-                  )}
-                </th>
-                <th onClick={() => handleSort('category')}>
-                  Category
-                  {sortBy === 'category' && (
-                    <i className={`fas fa-sort-${sortOrder === 'asc' ? 'up' : 'down'}`}></i>
-                  )}
-                </th>
-                <th onClick={() => handleSort('discount')}>
-                  Discount
-                  {sortBy === 'discount' && (
-                    <i className={`fas fa-sort-${sortOrder === 'asc' ? 'up' : 'down'}`}></i>
-                  )}
-                </th>
-                <th onClick={() => handleSort('validUntil')}>
-                  Expires
-                  {sortBy === 'validUntil' && (
-                    <i className={`fas fa-sort-${sortOrder === 'asc' ? 'up' : 'down'}`}></i>
-                  )}
-                </th>
-                <th onClick={() => handleSort('accessLevel')}>
-                  Plan Access
-                  {sortBy === 'accessLevel' && (
-                    <i className={`fas fa-sort-${sortOrder === 'asc' ? 'up' : 'down'}`}></i>
-                  )}
-                </th>
-                <th onClick={() => handleSort('status')}>
-                  Status
-                  {sortBy === 'status' && (
-                    <i className={`fas fa-sort-${sortOrder === 'asc' ? 'up' : 'down'}`}></i>
-                  )}
-                </th>
+                <th>Deal Title</th>
+                <th>Business</th>
+                <th>Category</th>
+                <th>Discount</th>
+                <th>Expires</th>
+                <th>Status</th>
+                <th>Redemptions</th>
+                <th>Views</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {filteredDeals.map(deal => (                <tr key={deal.id} className={`deal-row ${deal.status}`}>
-                  <td>
-                    <Link to={`/admin/deals/${deal.id}`}>
-                      {deal.title}
-                    </Link>
-                  </td>
-                  <td>{deal.businessName}</td>
-                  <td>{deal.category}</td>
-                  <td>{deal.discount}</td>
-                  <td>
-                    {new Date(deal.validUntil).toLocaleDateString()}
-                  </td>
-                  <td>
-                    <span className={`access-level ${deal.accessLevel}`}>
-                      {deal.accessLevel}
-                    </span>
-                  </td>
-                  <td>
-                    <span className={`status-badge ${deal.status}`}>
-                      {deal.status}
-                    </span>
-                  </td>
-                  <td className="actions-cell">
-                    <button 
-                      className="btn-icon" 
-                      title="Edit"
-                      onClick={() => navigate(`/admin/deals/${deal.id}/edit`)}
-                    >
-                      <i className="fas fa-edit"></i>
-                    </button>
-                    
-                    {deal.status === 'active' ? (
-                      <button 
-                        className="btn-icon" 
-                        title="Deactivate"
-                        onClick={() => handleStatusChange(deal.id, 'inactive')}
-                      >
-                        <i className="fas fa-toggle-on active"></i>
-                      </button>
-                    ) : (
-                      <button 
-                        className="btn-icon" 
-                        title="Activate"
-                        onClick={() => handleStatusChange(deal.id, 'active')}
-                      >
-                        <i className="fas fa-toggle-off inactive"></i>
-                      </button>
-                    )}
-                    
-                    <button 
-                      className="btn-icon delete" 
-                      title="Delete"
-                      onClick={() => handleDeleteDeal(deal.id)}
-                    >
-                      <i className="fas fa-trash-alt"></i>
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {deals.map(deal => {
+                const isExpired = new Date(deal.validUntil) < new Date();
+                return (                  <tr key={deal.id}>
+                    <td>
+                      <Link to={`/admin/deals/${deal.id}`} className="deal-title-link">
+                        {deal.title}
+                      </Link>
+                      <div className="deal-description-preview">
+                        {deal.description && deal.description.length > 60 
+                          ? `${deal.description.substring(0, 60)}...` 
+                          : deal.description || 'No description'}
+                      </div>
+                    </td>
+                    <td>
+                      <div className="business-info">
+                        <div className="business-name">{deal.businessName || 'N/A'}</div>
+                        {deal.businessCategory && (
+                          <div className="business-category">{deal.businessCategory}</div>
+                        )}
+                        {deal.merchantName && (
+                          <div className="merchant-name">by {deal.merchantName}</div>
+                        )}
+                      </div>
+                    </td>
+                    <td>
+                      <span className={`category-badge ${deal.category}`}>
+                        {deal.category}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="discount-info">
+                        <div className="discount-amount">
+                          {deal.discountType === 'percentage' ? `${deal.discount}%` : `GHS ${deal.discount}`}
+                        </div>
+                        {deal.originalPrice && (
+                          <div className="price-info">
+                            <span className="original-price">GHS {deal.originalPrice}</span>
+                            {deal.discountedPrice && (
+                              <span className="discounted-price">GHS {deal.discountedPrice}</span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    <td>
+                      {deal.validUntil ? (
+                        <div className="validity-period">
+                          <span className={isExpired ? 'expired-date' : 'valid-date'}>
+                            {new Date(deal.validUntil).toLocaleDateString()}
+                          </span>
+                          {deal.validFrom && (
+                            <div className="valid-from">
+                              From: {new Date(deal.validFrom).toLocaleDateString()}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        'No expiry'
+                      )}
+                    </td>
+                    <td>
+                      <span className={`status-badge ${deal.status} ${isExpired ? 'expired' : ''}`}>
+                        {isExpired && deal.status === 'active' ? 'Expired' : deal.status}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="redemption-stats">
+                        <div className="total-redemptions">{deal.redemptionCount || 0}</div>
+                        {deal.monthlyRedemptions !== undefined && (
+                          <div className="monthly-redemptions">
+                            {deal.monthlyRedemptions} this month
+                          </div>
+                        )}
+                        {deal.maxRedemptions && (
+                          <div className="max-redemptions">
+                            / {deal.maxRedemptions} max
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    <td>
+                      <div className="views-info">
+                        {deal.views || 0} views
+                        {deal.views > 0 && deal.redemptionCount > 0 && (
+                          <div className="conversion-rate">
+                            {Math.round((deal.redemptionCount / deal.views) * 100)}% conversion
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="actions-cell">
+                      <div className="action-buttons">
+                        <Link 
+                          to={`/admin/deals/${deal.id}`}
+                          className="btn-sm btn-primary"
+                          title="View Details"
+                        >
+                          <i className="fas fa-eye"></i>
+                        </Link>
+                        <Link 
+                          to={`/admin/deals/${deal.id}/edit`}
+                          className="btn-sm btn-secondary"
+                          title="Edit Deal"
+                        >
+                          <i className="fas fa-edit"></i>
+                        </Link>
+                        <button
+                          className={`btn-sm ${deal.status === 'active' ? 'btn-warning' : 'btn-success'}`}
+                          onClick={() => handleStatusChange(deal.id, deal.status === 'active' ? 'inactive' : 'active')}
+                          title={deal.status === 'active' ? 'Deactivate' : 'Activate'}
+                        >
+                          <i className={`fas fa-${deal.status === 'active' ? 'pause' : 'play'}`}></i>
+                        </button>                        <button
+                          className="btn-sm btn-danger"
+                          onClick={() => handleDeleteDeal(deal.id, deal.title)}
+                          title="Delete Deal"
+                        >
+                          <i className="fas fa-trash"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
       ) : (
-        <div className="empty-state">
-          <i className="fas fa-tag fa-3x"></i>
-          <h2>No deals found</h2>
-          <p>
-            {searchTerm || filterStatus !== 'all' 
-              ? "Try adjusting your filters or search terms" 
-              : "Create your first deal by clicking the button above"}
-          </p>
-        </div>
+        <div className="no-deals">
+          <i className="fas fa-tags"></i>
+          <p>No deals found.</p>
+          <button 
+            className="btn-primary" 
+            onClick={() => navigate('/admin/deals/create')}
+          >
+            Create First Deal
+          </button>        </div>
       )}
+      
+      {/* Modal for confirmations and alerts */}
+      <Modal
+        isOpen={modalState.isOpen}
+        title={modalState.title}
+        message={modalState.message}
+        type={modalState.type}
+        confirmText={modalState.confirmText}
+        cancelText={modalState.cancelText}
+        showCancel={modalState.showCancel}
+        onConfirm={modalState.onConfirm}
+        onCancel={modalState.onCancel}
+      />
     </div>
   );
 };

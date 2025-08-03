@@ -74,6 +74,7 @@ app.use('/api/merchant', require('./routes/merchant'));
 app.use('/api/merchant/deals', require('./routes/deals'));
 // Public deals route for users
 app.use('/api/deals', require('./routes/deals'));
+app.use('/api/plans', require('./routes/plans'));
 app.use('/api/admin', require('./routes/admin_new'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/admin', require('./routes/deals'));

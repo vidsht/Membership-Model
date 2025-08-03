@@ -4,12 +4,15 @@ import { useAuth } from '../../../contexts/AuthContext';
 import { useNotification } from '../../../contexts/NotificationContext';
 import api from '../../../services/api';
 import UserDetail from './UserDetail';
+import Modal from '../../shared/Modal';
+import { useModal } from '../../../hooks/useModal';
 import './UserList.css';
 
 const UserList = () => {
   const { validateSession, handleSessionExpired } = useAuth();
   const { showNotification } = useNotification();
-  const [searchParams, setSearchParams] = useSearchParams();  const [users, setUsers] = useState([]);
+  const { modal, showAlert, hideModal } = useModal();
+  const [searchParams, setSearchParams] = useSearchParams();const [users, setUsers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState(null);
   const [showAddUserModal, setShowAddUserModal] = useState(false);
@@ -679,9 +682,7 @@ const UserList = () => {
           onClose={() => setShowAddUserModal(false)}
           onSubmit={handleAddUser}
         />
-      )}
-
-      {/* Bulk Action Modal */}
+      )}      {/* Bulk Action Modal */}
       {showBulkActionModal && (
         <BulkActionModal 
           users={users.filter(u => selectedUsers.includes(u._id))}
@@ -689,6 +690,7 @@ const UserList = () => {
           onSubmit={handleBulkAction}
         />
       )}
+      <Modal modal={modal} onClose={hideModal} />
     </div>
   );
 };
@@ -723,13 +725,15 @@ const AddUserModal = ({ onClose, onSubmit }) => {  const [formData, setFormData]
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
-  };
-  const handleSubmit = (e) => {
+  };  const handleSubmit = async (e) => {
     e.preventDefault();
     
     // Validate required fields
     if (!formData.fullName || !formData.email) {
-      alert('Please fill in all required fields: Full Name and Email');
+      await showAlert(
+        'Validation Error',
+        'Please fill in all required fields: Full Name and Email'
+      );
       return;
     }
     

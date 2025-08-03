@@ -139,6 +139,40 @@ const Login = () => {
     }
   };
 
+  // Development admin login
+  const handleDevAdminLogin = async () => {
+    if (process.env.NODE_ENV === 'production') return;
+    
+    setLoading(true);
+    try {
+      const response = await fetch('/api/auth/dev-admin-login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        showNotification('Development admin login successful!', 'success');
+        notify('Development admin session created. Redirecting to admin panel...', 'success');
+        // Force a page reload to establish the session properly
+        setTimeout(() => {
+          window.location.href = '/admin';
+        }, 1000);
+      } else {
+        showNotification(data.message || 'Admin login failed', 'error');
+      }
+    } catch (error) {
+      console.error('Dev admin login error:', error);
+      showNotification('Development admin login failed', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="page active">
       <div className="card active-section">
@@ -380,10 +414,43 @@ const Login = () => {
                     </table>
                   </div>
                 </form>
-              </div>
-            )}
+              </div>            )}
           </div>
         </div>
+        
+        {/* Development Admin Login - Only show in development */}
+        {process.env.NODE_ENV !== 'production' && (
+          <div style={{ 
+            marginTop: '20px', 
+            padding: '15px', 
+            border: '2px dashed #ff6b6b', 
+            borderRadius: '8px',
+            backgroundColor: '#fff5f5',
+            textAlign: 'center'
+          }}>
+            <h4 style={{ color: '#ff6b6b', marginBottom: '10px' }}>
+              <i className="fas fa-tools"></i> Development Mode
+            </h4>
+            <p style={{ fontSize: '14px', color: '#666', marginBottom: '15px' }}>
+              Quick admin login for testing (removes in production)
+            </p>
+            <button 
+              onClick={handleDevAdminLogin}
+              disabled={loading}
+              style={{
+                backgroundColor: '#ff6b6b',
+                color: 'white',
+                border: 'none',
+                padding: '10px 20px',
+                borderRadius: '5px',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                fontSize: '14px'
+              }}
+            >
+              <i className="fas fa-user-shield"></i> {loading ? 'Logging in...' : 'Quick Admin Login'}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,29 +1,49 @@
 import React, { useState } from 'react';
 import { useNotification } from '../contexts/NotificationContext';
 import { merchantApi } from '../services/api';
+import api from '../services/api';
 import './MerchantDealForm.css';
 
 const MerchantDealForm = ({ onDealCreated, onClose }) => {
   const { showNotification } = useNotification();
   const [isSaving, setIsSaving] = useState(false);
+  const [userPlans, setUserPlans] = useState([]);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     discount: '',
-    discountType: 'percentage',
-    category: '',
+    discountType: 'percentage',    category: '',
     validFrom: '',
     validUntil: '',
-    accessLevel: 'basic',
+    requiredPlanPriority: 1, // Default to lowest priority
     termsConditions: '',
     couponCode: '',
-    maxRedemptions: '',
     featuredImage: null
   });
+    const [formErrors, setFormErrors] = useState({});
   
-  const [formErrors, setFormErrors] = useState({});
-  
-  // Set default dates for new deals
+  const fetchUserPlans = async () => {
+    try {
+      const response = await api.get('/plans/user-plans');
+      setUserPlans(response.data.plans || []);
+      
+      // Set default required plan priority to the lowest priority plan if no data is loaded
+      if (response.data.plans && response.data.plans.length > 0) {
+        const lowestPriorityPlan = response.data.plans.reduce((min, plan) => 
+          plan.priority < min.priority ? plan : min
+        );
+        setFormData(prev => ({
+          ...prev,
+          requiredPlanPriority: lowestPriorityPlan.priority
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching user plans:', error);
+      showNotification('Could not load membership plans. Please try again.', 'error');
+    }
+  };
+
+  // Set default dates for new deals and fetch user plans
   React.useEffect(() => {
     const today = new Date();
     const nextMonth = new Date();
@@ -34,6 +54,8 @@ const MerchantDealForm = ({ onDealCreated, onClose }) => {
       validFrom: formatDateForInput(today),
       validUntil: formatDateForInput(nextMonth)
     }));
+    
+    fetchUserPlans();
   }, []);
   
   const formatDateForInput = (date) => {
@@ -111,9 +133,7 @@ const MerchantDealForm = ({ onDealCreated, onClose }) => {
     
     try {
       setIsSaving(true);
-      
-
-      // Send JSON only (no file upload)
+          // Send JSON only (no file upload)
       // Map validUntil to expiration_date and only send required fields
       const businessId = localStorage.getItem('merchantBusinessId');
       const dealData = {
@@ -122,7 +142,7 @@ const MerchantDealForm = ({ onDealCreated, onClose }) => {
         category: formData.category,
         expiration_date: formData.validUntil,
         businessId,
-        accessLevel: formData.accessLevel,
+        requiredPlanPriority: parseInt(formData.requiredPlanPriority),
         discount: formData.discount,
         discountType: formData.discountType,
         termsConditions: formData.termsConditions
@@ -256,20 +276,24 @@ const MerchantDealForm = ({ onDealCreated, onClose }) => {
                 <option key={category} value={category}>{category}</option>
               ))}
             </select>
-            {formErrors.category && <span className="error-message">{formErrors.category}</span>}
-          </div>
-            <div className="form-group">
-            <label htmlFor="accessLevel">Access Level</label>
+            {formErrors.category && <span className="error-message">{formErrors.category}</span>}          </div>
+          <div className="form-group">
+            <label htmlFor="requiredPlanPriority">Membership Access Level <span className="required">*</span></label>
             <select
-              id="accessLevel"
-              name="accessLevel"
-              value={formData.accessLevel}
+              id="requiredPlanPriority"
+              name="requiredPlanPriority"
+              value={formData.requiredPlanPriority}
               onChange={handleChange}
             >
-              <option value="basic">Community (Basic)</option>
-              <option value="intermediate">Silver (Intermediate)</option>
-              <option value="full">Gold (Full)</option>
+              {userPlans.map((plan) => (
+                <option key={plan.id} value={plan.priority}>
+                  {plan.name} (Priority: {plan.priority})
+                </option>
+              ))}
             </select>
+            <span className="help-text">
+              Which membership tiers can access this deal (users with this priority or higher)
+            </span>
           </div>
         </div>
         
@@ -307,22 +331,9 @@ const MerchantDealForm = ({ onDealCreated, onClose }) => {
             <input
               type="text"
               id="couponCode"
-              name="couponCode"
-              value={formData.couponCode}
+              name="couponCode"              value={formData.couponCode}
               onChange={handleChange}
               placeholder="e.g., SAVE20"
-            />
-          </div>
-          
-          <div className="form-group">
-            <label htmlFor="maxRedemptions">Max Redemptions</label>
-            <input
-              type="number"
-              id="maxRedemptions"
-              name="maxRedemptions"
-              value={formData.maxRedemptions}
-              onChange={handleChange}
-              placeholder="Leave blank for unlimited"
             />
           </div>
         </div>

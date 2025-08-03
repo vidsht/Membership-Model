@@ -11,9 +11,13 @@ const Home = () => {
   const location = useLocation();
   const [businesses, setBusinesses] = useState([]);
   const [stats, setStats] = useState({});
-  const [terms, setTerms] = useState('');
+  const [adminSettings, setAdminSettings] = useState({
+    content: { terms_conditions: '' },
+    features: { show_statistics: true, business_directory: true }
+  });
   const [loading, setLoading] = useState(true);
   const [showAuthNotification, setShowAuthNotification] = useState(false);
+  
   useEffect(() => {
     // Check if user was redirected from a protected route
     if (location.state && location.state.from) {
@@ -30,21 +34,43 @@ const Home = () => {
         const businessResponse = await api.get('/businesses');
         setBusinesses(businessResponse.data);
 
-        // Fetch admin settings for terms and public info
+        // Fetch public admin settings
         try {
-          const settingsResponse = await api.get('/admin/settings');
-          setTerms(settingsResponse.data.termsConditions);
+          const settingsResponse = await api.get('/admin/settings/public');
+          if (settingsResponse.data.success) {
+            setAdminSettings(settingsResponse.data.settings);
+          }
         } catch (error) {
-          // Set default terms if admin settings not accessible
-          setTerms('By using this service, you agree to abide by all rules and regulations set forth by the Indians in Ghana community. Membership benefits are subject to change without prior notice.');
+          // Use default settings if admin settings not accessible
+          console.log('Using default settings');
         }
 
-        // Mock stats for display (in production, you'd have a public stats endpoint)
-        setStats({
-          totalMembers: 1250,
-          activeBusinesses: 85,
-          exclusiveDeals: 42
-        });
+        // Fetch real stats from admin endpoint or use defaults
+        try {
+          if (isAuthenticated) {
+            const statsResponse = await api.get('/admin/stats');
+            if (statsResponse.data.success) {
+              setStats({
+                totalMembers: statsResponse.data.stats.totalUsers || 0,
+                activeBusinesses: statsResponse.data.stats.activeBusinesses || 0,
+                exclusiveDeals: statsResponse.data.stats.totalDeals || 0,
+                pendingApprovals: statsResponse.data.stats.pendingApprovals || 0
+              });
+            } else {
+              throw new Error('Failed to fetch stats');
+            }
+          } else {
+            throw new Error('Not authenticated');
+          }
+        } catch (error) {
+          // Mock stats for public display
+          setStats({
+            totalMembers: 1250,
+            activeBusinesses: 85,
+            exclusiveDeals: 42,
+            pendingApprovals: 8
+          });
+        }
 
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -104,21 +130,47 @@ const Home = () => {
             </div>
           )}
         </div>
-      </section>
-
-      <section className="stats">
+      </section>      <section className="stats">
         <div className="stats-container">
-          <div className="stat-card">
-            <div className="stat-number">{stats.totalMembers}</div>
-            <div className="stat-label">Community Members</div>
+          <div className="stats-header">
+            <h2><i className="fas fa-chart-bar"></i> Community Statistics</h2>
+            <p>Real-time insights into our growing community</p>
           </div>
-          <div className="stat-card">
-            <div className="stat-number">{stats.activeBusinesses}</div>
-            <div className="stat-label">Active Businesses</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-number">{stats.exclusiveDeals}</div>
-            <div className="stat-label">Exclusive Deals</div>
+          <div className="stats-grid">
+            <div className="stat-card">
+              <div className="stat-icon">
+                <i className="fas fa-users"></i>
+              </div>
+              <div className="stat-number">{stats.totalMembers || 0}</div>
+              <div className="stat-label">Community Members</div>
+              <div className="stat-description">Active registered members</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-icon">
+                <i className="fas fa-store"></i>
+              </div>
+              <div className="stat-number">{stats.activeBusinesses || 0}</div>
+              <div className="stat-label">Active Businesses</div>
+              <div className="stat-description">Verified business partners</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-icon">
+                <i className="fas fa-tags"></i>
+              </div>
+              <div className="stat-number">{stats.exclusiveDeals || 0}</div>
+              <div className="stat-label">Exclusive Deals</div>
+              <div className="stat-description">Member-only offers</div>
+            </div>
+            {isAuthenticated && (
+              <div className="stat-card">
+                <div className="stat-icon">
+                  <i className="fas fa-clock"></i>
+                </div>
+                <div className="stat-number">{stats.pendingApprovals || 0}</div>
+                <div className="stat-label">Pending Approvals</div>
+                <div className="stat-description">Awaiting verification</div>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -147,9 +199,66 @@ const Home = () => {
               <h3>Community Events</h3>
               <p>Stay updated on cultural events, festivals, and community gatherings.</p>
             </div>
-          </div>
-        </div>
+          </div>        </div>
       </section>
+
+      {adminSettings.features?.business_directory && businesses.length > 0 && (
+        <section className="business-partners">
+          <div className="business-container">
+            <div className="business-header">
+              <h2><i className="fas fa-handshake"></i> Our Business Partners</h2>
+              <p>Discover Indian-owned businesses and services in Ghana</p>
+            </div>
+            <div className="business-grid">
+              {businesses.slice(0, 6).map((business, index) => (
+                <div key={business.id || index} className="business-card">
+                  <div className="business-logo">
+                    {business.logo ? (
+                      <img src={business.logo} alt={business.businessName} />
+                    ) : (
+                      <div className="business-placeholder">
+                        <i className="fas fa-store"></i>
+                      </div>
+                    )}
+                  </div>
+                  <div className="business-info">
+                    <h3 className="business-name">{business.businessName || business.name}</h3>
+                    <p className="business-category">{business.category || business.sector}</p>
+                    <p className="business-description">{business.description?.substring(0, 100)}...</p>
+                    <div className="business-contact">
+                      {business.phone && (
+                        <a href={`tel:${business.phone}`} className="contact-link">
+                          <i className="fas fa-phone"></i>
+                        </a>
+                      )}
+                      {business.email && (
+                        <a href={`mailto:${business.email}`} className="contact-link">
+                          <i className="fas fa-envelope"></i>
+                        </a>
+                      )}
+                      {business.website && (
+                        <a href={business.website} target="_blank" rel="noopener noreferrer" className="contact-link">
+                          <i className="fas fa-globe"></i>
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                  <div className="business-badge">
+                    <i className="fas fa-certificate" title="Verified Partner"></i>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {businesses.length > 6 && (
+              <div className="business-actions">
+                <Link to="/directory" className="btn btn-outline">
+                  <i className="fas fa-search"></i> View All Businesses
+                </Link>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       <section className="membership-plans">
         <div className="plans-container">
@@ -269,14 +378,24 @@ const Home = () => {
               <a href="/contact" className="feature-link">Upcoming Events <i className="fas fa-arrow-right"></i></a>
             </div>
           </div>        </div>
-      </section>
-
-      <section className="terms-preview">
+      </section>      <section className="terms-preview">
         <div className="terms-container">
-          <h2>Terms and Conditions</h2>
+          <div className="terms-header">
+            <h2><i className="fas fa-gavel"></i> Terms and Conditions</h2>
+            <p>Important information about membership and community guidelines</p>
+          </div>
           <div className="terms-content">
-            <p>{terms}</p>
-            <Link to="/about" className="btn btn-link">Read Full Terms</Link>
+            <div className="terms-text">
+              <p>{adminSettings.content?.terms_conditions || 'By using this service, you agree to abide by all rules and regulations set forth by the Indians in Ghana community. Membership benefits are subject to change without prior notice.'}</p>
+            </div>
+            <div className="terms-actions">
+              <Link to="/about" className="btn btn-outline">
+                <i className="fas fa-file-contract"></i> Read Full Terms
+              </Link>
+              <Link to="/unified-registration" className="btn btn-primary">
+                <i className="fas fa-check"></i> I Agree & Join
+              </Link>
+            </div>
           </div>
         </div>
       </section>

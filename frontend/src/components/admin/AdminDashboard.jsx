@@ -6,6 +6,9 @@ import ApprovalQueue from './UserManagement/ApprovalQueue';
 import UserManagement from './UserManagement/UserManagement';
 import MerchantManagementEnhanced from './BusinessPartners/MerchantManagementEnhanced';
 import DealList from './DealManagement/DealList';
+import PlanManagement from './PlanManagement/PlanManagement';
+import AdminSettings from './Settings/AdminSettings';
+import Activities from './Activities/Activities';
 import api from '../../services/api';
 import './AdminDashboard.css';
 
@@ -100,8 +103,7 @@ const AdminDashboard = () => {
     };
     
     fetchAdminStats();
-  }, [showNotification]);
-  const renderTabContent = () => {
+  }, [showNotification]);  const renderTabContent = () => {
     switch (activeTab) {
       case 'dashboard':
         return renderDashboardContent();
@@ -110,13 +112,13 @@ const AdminDashboard = () => {
         return <MerchantManagementEnhanced />;      case 'deals':
         return <DealList />;
       case 'plans':
-        return <div className="tab-content">Plan Management Content (To be implemented)</div>;
+        return <PlanManagement />;
       case 'approvals':
         return <ApprovalQueue />;
       case 'activities':
-        return <div className="tab-content">Activities Content (To be implemented)</div>;
+        return <Activities />;
       case 'settings':
-        return <div className="tab-content">Settings Content (To be implemented)</div>;
+        return <AdminSettings />;
       default:
         return renderDashboardContent();
     }

@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext, useCallback } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 
 const NotificationContext = createContext();
 
@@ -14,7 +15,7 @@ export const NotificationProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
 
   const showNotification = useCallback((message, type = 'info', duration = 5000) => {
-    const id = Date.now();
+    const id = uuidv4();
     setNotifications(prev => [...prev, { id, message, type }]);
     
     // Auto dismiss after duration

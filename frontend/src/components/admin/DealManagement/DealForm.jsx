@@ -9,31 +9,32 @@ const DealForm = () => {
   const navigate = useNavigate();
   const { showNotification } = useNotification();
   const isEditMode = Boolean(dealId);
-  
-  const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [businesses, setBusinesses] = useState([]);
-  const [formData, setFormData] = useState({
+  const [userPlans, setUserPlans] = useState([]);  const [formData, setFormData] = useState({
     title: '',
     description: '',
     businessId: '',
     discount: '',
     discountType: 'percentage',
+    originalPrice: '',
+    discountedPrice: '',
     category: '',
     validFrom: '',
     validUntil: '',
-    accessLevel: 'basic',
+    requiredPlanPriority: 1, // Default to lowest priority
     termsConditions: '',
     couponCode: '',
-    maxRedemptions: '',
     featuredImage: null,
     status: 'active'
   });
   
   const [formErrors, setFormErrors] = useState({});
-  
-  useEffect(() => {
+    useEffect(() => {
     fetchBusinesses();
+    fetchUserPlans();
+    fetchUserPlans();
     
     if (isEditMode) {
       fetchDealData();
@@ -66,6 +67,26 @@ const DealForm = () => {
       showNotification('Could not load businesses. Please try again.', 'error');
     }
   };
+    const fetchUserPlans = async () => {
+    try {
+      const response = await api.get('/plans/user-plans');
+      setUserPlans(response.data.plans || []);
+      
+      // Set default required plan priority to the lowest priority plan if no data is loaded
+      if (response.data.plans && response.data.plans.length > 0 && !isEditMode) {
+        const lowestPriorityPlan = response.data.plans.reduce((min, plan) => 
+          plan.priority < min.priority ? plan : min
+        );
+        setFormData(prev => ({
+          ...prev,
+          requiredPlanPriority: lowestPriorityPlan.priority
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching user plans:', error);
+      showNotification('Could not load membership plans. Please try again.', 'error');
+    }
+  };
     const fetchDealData = async () => {
     try {
       setIsLoading(true);
@@ -85,21 +106,49 @@ const DealForm = () => {
       setIsLoading(false);
     }
   };
-  
-  const formatDateForInput = (date) => {
-    return date.toISOString().split('T')[0];
+    const formatDateForInput = (date) => {
+    if (!date) return '';
+    const dateObj = date instanceof Date ? date : new Date(date);
+    if (isNaN(dateObj.getTime())) return '';
+    return dateObj.toISOString().split('T')[0];
   };
-  
-  const validateForm = () => {
+    const validateForm = () => {
     const errors = {};
     
     if (!formData.title.trim()) errors.title = 'Title is required';
     if (!formData.description.trim()) errors.description = 'Description is required';
     if (!formData.businessId) errors.businessId = 'Business is required';
     if (!formData.discount) errors.discount = 'Discount value is required';
+    if (!formData.originalPrice) errors.originalPrice = 'Original price is required';
+    if (!formData.discountedPrice) errors.discountedPrice = 'Discounted price is required';
     if (!formData.category.trim()) errors.category = 'Category is required';
     if (!formData.validFrom) errors.validFrom = 'Start date is required';
     if (!formData.validUntil) errors.validUntil = 'End date is required';
+    
+    // Validate prices
+    if (formData.originalPrice) {
+      const originalPrice = parseFloat(formData.originalPrice);
+      if (isNaN(originalPrice) || originalPrice <= 0) {
+        errors.originalPrice = 'Original price must be greater than 0';
+      }
+    }
+    
+    if (formData.discountedPrice) {
+      const discountedPrice = parseFloat(formData.discountedPrice);
+      if (isNaN(discountedPrice) || discountedPrice < 0) {
+        errors.discountedPrice = 'Discounted price must be 0 or greater';
+      }
+    }
+    
+    // Validate that discounted price is less than original price
+    if (formData.originalPrice && formData.discountedPrice) {
+      const originalPrice = parseFloat(formData.originalPrice);
+      const discountedPrice = parseFloat(formData.discountedPrice);
+      
+      if (!isNaN(originalPrice) && !isNaN(discountedPrice) && discountedPrice >= originalPrice) {
+        errors.discountedPrice = 'Discounted price must be less than original price';
+      }
+    }
     
     // Check if end date is after start date
     if (formData.validFrom && formData.validUntil) {
@@ -127,8 +176,7 @@ const DealForm = () => {
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
-  
-  const handleChange = (e) => {
+    const handleChange = (e) => {
     const { name, value, type } = e.target;
     
     if (type === 'file') {
@@ -137,10 +185,27 @@ const DealForm = () => {
         [name]: e.target.files[0]
       }));
     } else {
-      setFormData(prev => ({
-        ...prev,
+      const newFormData = {
+        ...formData,
         [name]: value
-      }));
+      };
+      
+      // Auto-calculate discounted price when original price or discount changes
+      if ((name === 'originalPrice' || name === 'discount' || name === 'discountType') 
+          && newFormData.originalPrice && newFormData.discount && newFormData.discountType) {
+        const originalPrice = parseFloat(newFormData.originalPrice);
+        const discount = parseFloat(newFormData.discount);
+        
+        if (!isNaN(originalPrice) && !isNaN(discount)) {
+          if (newFormData.discountType === 'percentage') {
+            newFormData.discountedPrice = (originalPrice * (1 - discount / 100)).toFixed(2);
+          } else if (newFormData.discountType === 'fixed') {
+            newFormData.discountedPrice = Math.max(0, originalPrice - discount).toFixed(2);
+          }
+        }
+      }
+      
+      setFormData(newFormData);
     }
     
     // Clear error when field is edited
@@ -150,8 +215,7 @@ const DealForm = () => {
         [name]: ''
       }));
     }
-  };
-    const handleSubmit = async (e) => {
+  };const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!validateForm()) {
@@ -162,17 +226,21 @@ const DealForm = () => {
     try {
       setIsSaving(true);
       
-      // Create FormData for file upload
-      const submitData = new FormData();
-      Object.keys(formData).forEach(key => {
-        if (key === 'featuredImage' && formData[key]) {
-          submitData.append(key, formData[key]);
-        } else if (key !== 'featuredImage' && formData[key] !== null && formData[key] !== undefined) {
-          submitData.append(key, formData[key]);
-        }
-      });
-        // Add debug logging (remove after testing)
-      console.log('Submitting deal data:', formData);
+      // Prepare data for submission
+      const submitData = { ...formData };      // Remove fields that shouldn't be sent to backend
+      delete submitData.featuredImage; // Handle file uploads separately if needed
+      
+      // Ensure requiredPlanPriority is included
+      submitData.requiredPlanPriority = parseInt(submitData.requiredPlanPriority);
+      
+      // Add calculated fields if needed
+      if (submitData.discount && submitData.discountType === 'percentage') {
+        // Backend might expect originalPrice and discountedPrice
+        // For now, we'll send the discount value and type
+      }
+      
+      // Add debug logging (remove after testing)
+      console.log('Submitting deal data:', submitData);
       
       if (isEditMode) {
         await api.put(`/admin/deals/${dealId}`, submitData);
@@ -298,8 +366,7 @@ const DealForm = () => {
                 <option key="freeItem" value="freeItem">Free Item</option>
               </select>
               </div>
-              
-              <div className="form-group">
+                <div className="form-group">
                 <label htmlFor="discount">Discount Value <span className="required">*</span></label>
                 <div className="input-with-suffix">
                   <input
@@ -317,6 +384,46 @@ const DealForm = () => {
                   </span>
                 </div>
                 {formErrors.discount && <span className="error-message">{formErrors.discount}</span>}
+              </div>
+            </div>
+            
+            <div className="form-row">
+              <div className="form-group">
+                <label htmlFor="originalPrice">Original Price <span className="required">*</span></label>
+                <div className="input-with-suffix">
+                  <input
+                    type="number"
+                    id="originalPrice"
+                    name="originalPrice"
+                    value={formData.originalPrice}
+                    onChange={handleChange}
+                    className={formErrors.originalPrice ? 'error' : ''}
+                    placeholder="100.00"
+                    step="0.01"
+                    min="0"
+                  />
+                  <span className="input-suffix">GHS</span>
+                </div>
+                {formErrors.originalPrice && <span className="error-message">{formErrors.originalPrice}</span>}
+              </div>
+              
+              <div className="form-group">
+                <label htmlFor="discountedPrice">Discounted Price <span className="required">*</span></label>
+                <div className="input-with-suffix">
+                  <input
+                    type="number"
+                    id="discountedPrice"
+                    name="discountedPrice"
+                    value={formData.discountedPrice}
+                    onChange={handleChange}
+                    className={formErrors.discountedPrice ? 'error' : ''}
+                    placeholder="80.00"
+                    step="0.01"
+                    min="0"
+                  />
+                  <span className="input-suffix">GHS</span>
+                </div>
+                {formErrors.discountedPrice && <span className="error-message">{formErrors.discountedPrice}</span>}
               </div>
             </div>
           </div>
@@ -381,20 +488,22 @@ const DealForm = () => {
           
           <div className="form-section">
             <h2>Deal Configuration</h2>
-            
-            <div className="form-group">
-              <label htmlFor="accessLevel">Membership Access Level <span className="required">*</span></label>              <select
-                id="accessLevel"
-                name="accessLevel"
-                value={formData.accessLevel}
+              <div className="form-group">
+              <label htmlFor="requiredPlanPriority">Membership Access Level <span className="required">*</span></label>
+              <select
+                id="requiredPlanPriority"
+                name="requiredPlanPriority"
+                value={formData.requiredPlanPriority}
                 onChange={handleChange}
               >
-                <option key="basic" value="basic">Community (Basic)</option>
-                <option key="intermediate" value="intermediate">Silver (Intermediate)</option>
-                <option key="full" value="full">Gold (Full)</option>
+                {userPlans.map((plan) => (
+                  <option key={plan.id} value={plan.priority}>
+                    {plan.name} (Priority: {plan.priority})
+                  </option>
+                ))}
               </select>
               <span className="help-text">
-                Which membership tiers can access this deal
+                Which membership tiers can access this deal (users with this priority or higher)
               </span>
             </div>
             
@@ -407,22 +516,8 @@ const DealForm = () => {
                   name="couponCode"
                   value={formData.couponCode}
                   onChange={handleChange}
-                  placeholder="e.g., SUMMER2025"
-                />
+                  placeholder="e.g., SUMMER2025"                />
                 <span className="help-text">Optional redemption code</span>
-              </div>
-              
-              <div className="form-group">
-                <label htmlFor="maxRedemptions">Max Redemptions</label>
-                <input
-                  type="number"
-                  id="maxRedemptions"
-                  name="maxRedemptions"
-                  value={formData.maxRedemptions}
-                  onChange={handleChange}
-                  placeholder="Leave empty for unlimited"
-                  min="0"
-                />
               </div>
             </div>
             

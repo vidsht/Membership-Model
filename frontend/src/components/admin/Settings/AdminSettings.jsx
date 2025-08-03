@@ -6,6 +6,8 @@ import api from '../../../services/api';
 import SystemSettings from './SystemSettings';
 import FeatureToggles from './FeatureToggles';
 import SecuritySettings from './SecuritySettings';
+import Modal from '../../shared/Modal';
+import { useModal } from '../../../hooks/useModal';
 import './AdminSettings.css';
 
 /**
@@ -14,6 +16,7 @@ import './AdminSettings.css';
  */
 const AdminSettings = () => {
   const { showNotification } = useNotification();
+  const { modal, showConfirm, hideModal } = useModal();
   const [settings, setSettings] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('system');
@@ -23,8 +26,7 @@ const AdminSettings = () => {
   useEffect(() => {
     fetchSettings();
   }, []);
-  
-  const fetchSettings = async () => {
+    const fetchSettings = async () => {
     try {
       setIsLoading(true);
       const response = await api.get('/admin/settings');
@@ -32,6 +34,12 @@ const AdminSettings = () => {
       setHasChanges(false);
     } catch (error) {
       console.error('Error fetching admin settings:', error);
+      if (error.response?.status === 401) {
+        showNotification('Session expired. Please log in again.', 'error');
+        // Redirect to login or handle session expiry
+        window.location.href = '/login';
+        return;
+      }
       showNotification('Error loading settings. Please try again.', 'error');
     } finally {
       setIsLoading(false);
@@ -84,9 +92,14 @@ const AdminSettings = () => {
       setIsSaving(false);
     }
   };
-  
-  const resetSettings = () => {
-    if (window.confirm('Are you sure you want to reset all changes?')) {
+    const resetSettings = async () => {
+    const confirmed = await showConfirm(
+      'Reset Settings',
+      'Are you sure you want to reset all changes?',
+      'Reset Changes'
+    );
+    
+    if (confirmed) {
       fetchSettings();
       showNotification('Settings have been reset.', 'info');
     }
@@ -139,98 +152,172 @@ const AdminSettings = () => {
             settings={settings}
             onSettingChange={handleSettingChange} 
           />
-        );
-      case 'social':
+        );      case 'social':
         return (
           <div className="settings-section">
             <div className="settings-section-header">
               <h3>Social Media Requirements</h3>
-              <p>Configure which social media platforms are required for registration</p>
+              <p>Configure which social media platforms are required for registration and set links</p>
             </div>
             
-            <div className="toggle-control">
-              <div>
-                <span className="toggle-label">Facebook Required</span>
-                <div className="toggle-description">
-                  Users must provide their Facebook profile link during registration
+            <div className="social-platform-config">
+              <h4>Facebook</h4>
+              <div className="platform-settings">
+                <div className="form-group">
+                  <label htmlFor="facebook-url">Facebook Page URL</label>
+                  <input
+                    type="url"
+                    id="facebook-url"
+                    value={settings.socialMediaRequirements?.facebook?.url || ''}
+                    onChange={(e) => handleSettingChange('socialMediaRequirements', 'facebook.url', e.target.value)}
+                    placeholder="https://facebook.com/yourpage"
+                  />
+                </div>
+                <div className="toggle-control">
+                  <div>
+                    <span className="toggle-label">Required for Registration</span>
+                    <div className="toggle-description">
+                      Users must follow this Facebook page during registration
+                    </div>
+                  </div>
+                  <label className="toggle-switch">
+                    <input
+                      type="checkbox"
+                      checked={settings.socialMediaRequirements?.facebook?.required || false}
+                      onChange={(e) => handleSettingChange('socialMediaRequirements', 'facebook.required', e.target.checked)}
+                    />
+                    <span className="toggle-slider"></span>
+                  </label>
                 </div>
               </div>
-              <label className="toggle-switch">
-                <input
-                  type="checkbox"
-                  checked={settings.socialMediaRequirements?.facebook?.required || false}
-                  onChange={(e) => handleSettingChange('socialMediaRequirements', 'facebook.required', e.target.checked)}
-                />
-                <span className="toggle-slider"></span>
-              </label>
             </div>
-            
-            <div className="toggle-control">
-              <div>
-                <span className="toggle-label">Instagram Required</span>
-                <div className="toggle-description">
-                  Users must provide their Instagram profile link during registration
+
+            <div className="social-platform-config">
+              <h4>Instagram</h4>
+              <div className="platform-settings">
+                <div className="form-group">
+                  <label htmlFor="instagram-url">Instagram Profile URL</label>
+                  <input
+                    type="url"
+                    id="instagram-url"
+                    value={settings.socialMediaRequirements?.instagram?.url || ''}
+                    onChange={(e) => handleSettingChange('socialMediaRequirements', 'instagram.url', e.target.value)}
+                    placeholder="https://instagram.com/youraccount"
+                  />
+                </div>
+                <div className="toggle-control">
+                  <div>
+                    <span className="toggle-label">Required for Registration</span>
+                    <div className="toggle-description">
+                      Users must follow this Instagram account during registration
+                    </div>
+                  </div>
+                  <label className="toggle-switch">
+                    <input
+                      type="checkbox"
+                      checked={settings.socialMediaRequirements?.instagram?.required || false}
+                      onChange={(e) => handleSettingChange('socialMediaRequirements', 'instagram.required', e.target.checked)}
+                    />
+                    <span className="toggle-slider"></span>
+                  </label>
                 </div>
               </div>
-              <label className="toggle-switch">
-                <input
-                  type="checkbox"
-                  checked={settings.socialMediaRequirements?.instagram?.required || false}
-                  onChange={(e) => handleSettingChange('socialMediaRequirements', 'instagram.required', e.target.checked)}
-                />
-                <span className="toggle-slider"></span>
-              </label>
             </div>
-            
-            <div className="toggle-control">
-              <div>
-                <span className="toggle-label">YouTube Required</span>
-                <div className="toggle-description">
-                  Users must provide their YouTube channel link during registration
+
+            <div className="social-platform-config">
+              <h4>YouTube</h4>
+              <div className="platform-settings">
+                <div className="form-group">
+                  <label htmlFor="youtube-url">YouTube Channel URL</label>
+                  <input
+                    type="url"
+                    id="youtube-url"
+                    value={settings.socialMediaRequirements?.youtube?.url || ''}
+                    onChange={(e) => handleSettingChange('socialMediaRequirements', 'youtube.url', e.target.value)}
+                    placeholder="https://youtube.com/yourchannel"
+                  />
+                </div>
+                <div className="toggle-control">
+                  <div>
+                    <span className="toggle-label">Required for Registration</span>
+                    <div className="toggle-description">
+                      Users must subscribe to this YouTube channel during registration
+                    </div>
+                  </div>
+                  <label className="toggle-switch">
+                    <input
+                      type="checkbox"
+                      checked={settings.socialMediaRequirements?.youtube?.required || false}
+                      onChange={(e) => handleSettingChange('socialMediaRequirements', 'youtube.required', e.target.checked)}
+                    />
+                    <span className="toggle-slider"></span>
+                  </label>
                 </div>
               </div>
-              <label className="toggle-switch">
-                <input
-                  type="checkbox"
-                  checked={settings.socialMediaRequirements?.youtube?.required || false}
-                  onChange={(e) => handleSettingChange('socialMediaRequirements', 'youtube.required', e.target.checked)}
-                />
-                <span className="toggle-slider"></span>
-              </label>
             </div>
-            
-            <div className="toggle-control">
-              <div>
-                <span className="toggle-label">WhatsApp Channel Required</span>
-                <div className="toggle-description">
-                  Users must follow WhatsApp channel during registration
+
+            <div className="social-platform-config">
+              <h4>WhatsApp Channel</h4>
+              <div className="platform-settings">
+                <div className="form-group">
+                  <label htmlFor="whatsapp-channel-url">WhatsApp Channel URL</label>
+                  <input
+                    type="url"
+                    id="whatsapp-channel-url"
+                    value={settings.socialMediaRequirements?.whatsapp_channel?.url || ''}
+                    onChange={(e) => handleSettingChange('socialMediaRequirements', 'whatsapp_channel.url', e.target.value)}
+                    placeholder="https://whatsapp.com/channel/..."
+                  />
+                </div>
+                <div className="toggle-control">
+                  <div>
+                    <span className="toggle-label">Required for Registration</span>
+                    <div className="toggle-description">
+                      Users must follow this WhatsApp channel during registration
+                    </div>
+                  </div>
+                  <label className="toggle-switch">
+                    <input
+                      type="checkbox"
+                      checked={settings.socialMediaRequirements?.whatsapp_channel?.required || false}
+                      onChange={(e) => handleSettingChange('socialMediaRequirements', 'whatsapp_channel.required', e.target.checked)}
+                    />
+                    <span className="toggle-slider"></span>
+                  </label>
                 </div>
               </div>
-              <label className="toggle-switch">
-                <input
-                  type="checkbox"
-                  checked={settings.socialMediaRequirements?.whatsappChannel?.required || false}
-                  onChange={(e) => handleSettingChange('socialMediaRequirements', 'whatsappChannel.required', e.target.checked)}
-                />
-                <span className="toggle-slider"></span>
-              </label>
             </div>
-            
-            <div className="toggle-control">
-              <div>
-                <span className="toggle-label">WhatsApp Group Required</span>
-                <div className="toggle-description">
-                  Users must join WhatsApp group during registration
+
+            <div className="social-platform-config">
+              <h4>WhatsApp Group</h4>
+              <div className="platform-settings">
+                <div className="form-group">
+                  <label htmlFor="whatsapp-group-url">WhatsApp Group URL</label>
+                  <input
+                    type="url"
+                    id="whatsapp-group-url"
+                    value={settings.socialMediaRequirements?.whatsapp_group?.url || ''}
+                    onChange={(e) => handleSettingChange('socialMediaRequirements', 'whatsapp_group.url', e.target.value)}
+                    placeholder="https://chat.whatsapp.com/..."
+                  />
+                </div>
+                <div className="toggle-control">
+                  <div>
+                    <span className="toggle-label">Required for Registration</span>
+                    <div className="toggle-description">
+                      Users must join this WhatsApp group during registration
+                    </div>
+                  </div>
+                  <label className="toggle-switch">
+                    <input
+                      type="checkbox"
+                      checked={settings.socialMediaRequirements?.whatsapp_group?.required || false}
+                      onChange={(e) => handleSettingChange('socialMediaRequirements', 'whatsapp_group.required', e.target.checked)}
+                    />
+                    <span className="toggle-slider"></span>
+                  </label>
                 </div>
               </div>
-              <label className="toggle-switch">
-                <input
-                  type="checkbox"
-                  checked={settings.socialMediaRequirements?.whatsappGroup?.required || false}
-                  onChange={(e) => handleSettingChange('socialMediaRequirements', 'whatsappGroup.required', e.target.checked)}
-                />
-                <span className="toggle-slider"></span>
-              </label>
             </div>
           </div>
         );
@@ -442,9 +529,9 @@ const AdminSettings = () => {
             >
               {isSaving ? 'Saving...' : 'Save'}
             </button>
-          </div>
-        </div>
+          </div>        </div>
       )}
+      <Modal modal={modal} onClose={hideModal} />
     </div>
   );
 };

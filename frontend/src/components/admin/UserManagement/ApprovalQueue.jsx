@@ -46,13 +46,17 @@ const ApprovalQueue = () => {
       setSelectedUsers([]);
     } else {
       // Otherwise, select all
-      setSelectedUsers(pendingUsers.map(user => user._id));
+      setSelectedUsers(pendingUsers.map(user => user.id));
     }
   };
   
-  const handleApproveUser = async (userId) => {
+  const handleApproveUser = async (userId, userType) => {
     try {
-      await api.post(`/admin/users/${userId}/approve`);
+      if (userType === 'merchant') {
+        await api.post(`/admin/merchants/${userId}/approve`);
+      } else {
+        await api.put(`/admin/users/${userId}/status`, { status: 'approved' });
+      }
       fetchPendingUsers();
       showNotification('User approved successfully!', 'success');
     } catch (error) {
@@ -144,7 +148,7 @@ const ApprovalQueue = () => {
         ) : pendingUsers.length > 0 ? (
           <ul className="activity-list approval-list">
             {pendingUsers.map(user => (
-              <li key={user._id} className="activity-item approval-activity-item">
+              <li key={user.id} className="activity-item approval-activity-item">
                 <div className="activity-icon">
                   <div className="user-avatar">
                     {user.profilePicture ? (
@@ -161,10 +165,12 @@ const ApprovalQueue = () => {
                     <h3>{user.fullName}</h3>
                     <p>{user.email}</p>
                     <span className="approval-date">Registered: {formatDate(user.created_at || user.createdAt)}</span>
-                  </div>
-                  <div className="approval-meta">
-                    <span className={`plan-badge ${user.membershipType}`}>
-                      {user.membershipType.charAt(0).toUpperCase() + user.membershipType.slice(1)}
+                  </div>                  <div className="approval-meta">
+                    <span className={`plan-badge ${user.membershipType || 'none'}`}>
+                      {user.membershipType && typeof user.membershipType === 'string' ? 
+                        (user.membershipType.charAt(0).toUpperCase() + user.membershipType.slice(1)) : 
+                        'No Plan'
+                      }
                     </span>
                     {user.phone && (
                       <span className="contact-info"><i className="fas fa-phone"></i> {user.phone}</span>
@@ -174,10 +180,10 @@ const ApprovalQueue = () => {
                     )}
                   </div>
                   <div className="approval-actions">
-                    <button className="btn-approve" onClick={() => handleApproveUser(user._id)}>
+                    <button className="btn-approve" onClick={() => handleApproveUser(user.id, user.userType)}>
                       <i className="fas fa-check"></i> Approve
                     </button>
-                    <button className="btn-reject" onClick={() => handleRejectUser(user._id)}>
+                    <button className="btn-reject" onClick={() => handleRejectUser(user.id)}>
                       <i className="fas fa-times"></i> Reject
                     </button>
                     <button className="btn-view">

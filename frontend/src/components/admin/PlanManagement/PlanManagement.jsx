@@ -3,6 +3,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useNotification } from '../../../contexts/NotificationContext';
 import { useAuth } from '../../../contexts/AuthContext';
 import api from '../../../services/api';
+import { SimpleBarChart, SimplePieChart } from '../../shared/Charts';
+import Modal from '../../shared/Modal';
+import { useModal } from '../../../hooks/useModal';
 import './PlanManagement.css';
 
 /**
@@ -13,6 +16,7 @@ const PlanManagement = () => {
   const { showNotification } = useNotification();
   const { validateSession, handleSessionExpired } = useAuth();
   const navigate = useNavigate();
+  const { modal, showDeleteConfirm, hideModal } = useModal();
   // Add state for plans
   const [userPlans, setUserPlans] = useState([]);
   const [merchantPlans, setMerchantPlans] = useState([]);
@@ -30,6 +34,12 @@ const PlanManagement = () => {
     professionalBusinessUsers: 0,
     enterpriseBusinessUsers: 0
   });
+  // Add analytics state
+  const [analytics, setAnalytics] = useState({
+    planUsage: [],
+    upgradeConversions: [],
+    upcomingExpiries: { users: 0, merchants: 0 }
+  });
 
   useEffect(() => {
     const fetchPlanStatsAndPlansAndUsers = async () => {
@@ -37,19 +47,42 @@ const PlanManagement = () => {
         setIsLoading(true);
         // Fetch stats
         const statsResponse = await api.get('/admin/stats');
-        setStats(statsResponse.data || {});
-        // Fetch user plans
-        const userPlansResponse = await api.get('/admin/plans?userType=user');
-        setUserPlans(userPlansResponse.data || []);
-        // Fetch merchant plans
-        const merchantPlansResponse = await api.get('/admin/plans?userType=merchant');
-        setMerchantPlans(merchantPlansResponse.data || []);
+        setStats(statsResponse.data.stats || {});
+        
+        // Fetch user plans from the new plans endpoint
+        const userPlansResponse = await api.get('/plans?type=user&isActive=true');
+        setUserPlans(userPlansResponse.data.plans || []);
+        
+        // Fetch merchant plans from the new plans endpoint  
+        const merchantPlansResponse = await api.get('/plans?type=merchant&isActive=true');
+        setMerchantPlans(merchantPlansResponse.data.plans || []);
+        
         // Fetch users
         const usersResponse = await api.get('/admin/users?userType=user');
         setUsers(usersResponse.data.users || []);
-        // Fetch merchants
+          // Fetch merchants
         const merchantsResponse = await api.get('/admin/users?userType=merchant');
         setMerchants(merchantsResponse.data.users || []);
+        
+        // Fetch analytics data
+        try {
+          const analyticsResponse = await api.get('/admin/plan-analytics');
+          setAnalytics(analyticsResponse.data.analytics || {
+            planUsage: [],
+            upgradeConversions: [],
+            upcomingExpiries: { users: 0, merchants: 0 }
+          });
+        } catch (analyticsError) {
+          console.log('Analytics not available:', analyticsError.message);
+        }
+        
+        // Fetch analytics data
+        const analyticsResponse = await api.get('/admin/analytics');
+        setAnalytics(analyticsResponse.data.analytics || {
+          planUsage: [],
+          upgradeConversions: [],
+          upcomingExpiries: { users: 0, merchants: 0 }
+        });
       } catch (error) {
         console.error('Error fetching plan stats, plans, or users:', error);
         if (error.response?.status === 401) {
@@ -96,29 +129,40 @@ const PlanManagement = () => {
       console.error('Error during navigation:', error);
       showNotification('Error navigating to plan assignment page', 'error');
     }
-  };
-  // Delete plan handler
-  const handleDeletePlan = async (planKey) => {
-    const plan = stats.planKeys.find(p => p.key === planKey);
-    if (!plan) return;
-    if (!window.confirm(`Are you sure you want to delete the plan "${plan.name}"? This cannot be undone.`)) return;
-    try {
-      setIsLoading(true);
-      // Find plan by key (need to fetch plan id)
-      const plansRes = await api.get(`/admin/plans?userType=${plan.type}`);
-      const planObj = (plansRes.data || []).find(p => p.key === planKey);
-      if (!planObj) throw new Error('Plan not found');
-      await api.delete(`/admin/plans/${planObj._id}`);
-      // Refetch stats after deletion
-      const statsResponse = await api.get('/admin/stats');
-      setStats(statsResponse.data || {});
-      showNotification(`Plan "${plan.name}" deleted successfully.`, 'success');
-    } catch (error) {
-      showNotification('Error deleting plan', 'error');
-      console.error('Delete plan error:', error);
-    } finally {
-      setIsLoading(false);
-    }
+  };  // Delete plan handler
+  const handleDeletePlan = async (planId, planName) => {
+    if (!planId) return;
+    
+    const confirmed = await showDeleteConfirm(planName, async () => {
+      try {
+        setIsLoading(true);
+        await api.delete(`/plans/${planId}`);
+        
+        // Refetch stats and plans after deletion
+        const statsResponse = await api.get('/admin/stats');
+        setStats(statsResponse.data.stats || {});
+        
+        // Refetch plans
+        const userPlansResponse = await api.get('/plans?type=user&isActive=true');
+        setUserPlans(userPlansResponse.data.plans || []);
+        
+        const merchantPlansResponse = await api.get('/plans?type=merchant&isActive=true');
+        setMerchantPlans(merchantPlansResponse.data.plans || []);
+        
+        showNotification(`Plan "${planName}" deleted successfully.`, 'success');
+      } catch (error) {
+        console.error('Error deleting plan:', error);
+        showNotification(error.response?.data?.error || 'Failed to delete plan.', 'error');
+      } finally {
+        setIsLoading(false);
+      }
+    }, {
+      title: 'Delete Plan',
+      message: `Are you sure you want to delete the plan "${planName}"? This will deactivate the plan if users are still using it.`,
+      confirmText: 'Delete Plan'
+    });
+    
+    if (!confirmed) return;
   };
 
   // In renderOverview, use userPlans and merchantPlans for plan cards
@@ -154,26 +198,38 @@ const PlanManagement = () => {
             User Plans
           </h2>
           <p>Membership plans for individual users</p>
-        </div>
-        <div className="plan-cards">
+        </div>        <div className="plan-cards">
           {userPlans.map(plan => (
-            <div key={plan._id} className={`plan-card ${plan.key} ${!plan.isActive ? 'inactive' : ''}`}>
+            <div key={plan.id} className={`plan-card ${plan.key} ${!plan.isActive ? 'inactive' : ''}`}>
               <div className="plan-header">
                 <h3>{plan.name}</h3>
-                <button className="btn btn-sm btn-danger" onClick={() => handleDeletePlan(plan.key)} title="Delete Plan">
+                <div className="plan-pricing">
+                  <span className="price">{formatPrice(plan.price, plan.currency)}</span>
+                  <span className="billing-cycle">/{formatBillingCycle(plan.billingCycle)}</span>
+                </div>
+                <button 
+                  className="btn btn-sm btn-danger" 
+                  onClick={() => handleDeletePlan(plan.id, plan.name)} 
+                  title="Delete Plan"
+                >
                   <i className="fas fa-trash"></i>
                 </button>
               </div>
               <div className="plan-content">
-                <p className="plan-description">{plan.description}</p>
+                <div className="plan-priority">
+                  <span className="priority-badge">Priority: {plan.priority}</span>
+                  <span className="redemption-limit">
+                    {plan.maxRedemptions === -1 ? 'Unlimited' : `${plan.maxRedemptions || 0}`} redemptions/month
+                  </span>
+                </div>
                 <ul className="plan-features">
-                  {plan.features.slice(0, 4).map((feature, index) => (
+                  {(plan.features || []).slice(0, 4).map((feature, index) => (
                     <li key={index}>
                       <i className="fas fa-check"></i>
-                      {feature}
+                      {feature.trim()}
                     </li>
                   ))}
-                  {plan.features.length > 4 && (
+                  {(plan.features || []).length > 4 && (
                     <li className="more-features">
                       <i className="fas fa-plus"></i>
                       {plan.features.length - 4} more features
@@ -201,26 +257,38 @@ const PlanManagement = () => {
             Business Plans
           </h2>
           <p>Membership plans for business merchants</p>
-        </div>
-        <div className="plan-cards">
+        </div>        <div className="plan-cards">
           {merchantPlans.map(plan => (
-            <div key={plan._id} className={`plan-card ${plan.key} ${!plan.isActive ? 'inactive' : ''}`}>
+            <div key={plan.id} className={`plan-card ${plan.key} ${!plan.isActive ? 'inactive' : ''}`}>
               <div className="plan-header">
                 <h3>{plan.name}</h3>
-                <button className="btn btn-sm btn-danger" onClick={() => handleDeletePlan(plan.key)} title="Delete Plan">
+                <div className="plan-pricing">
+                  <span className="price">{formatPrice(plan.price, plan.currency)}</span>
+                  <span className="billing-cycle">/{formatBillingCycle(plan.billingCycle)}</span>
+                </div>
+                <button 
+                  className="btn btn-sm btn-danger" 
+                  onClick={() => handleDeletePlan(plan.id, plan.name)} 
+                  title="Delete Plan"
+                >
                   <i className="fas fa-trash"></i>
                 </button>
               </div>
               <div className="plan-content">
-                <p className="plan-description">{plan.description}</p>
+                <div className="plan-priority">
+                  <span className="priority-badge">Priority: {plan.priority}</span>
+                  <span className="posting-limit">
+                    {plan.dealPostingLimit === -1 ? 'Unlimited' : `${plan.dealPostingLimit || 0}`} deals/month
+                  </span>
+                </div>
                 <ul className="plan-features">
-                  {plan.features.slice(0, 4).map((feature, index) => (
+                  {(plan.features || []).slice(0, 4).map((feature, index) => (
                     <li key={index}>
                       <i className="fas fa-check"></i>
-                      {feature}
+                      {feature.trim()}
                     </li>
                   ))}
-                  {plan.features.length > 4 && (
+                  {(plan.features || []).length > 4 && (
                     <li className="more-features">
                       <i className="fas fa-plus"></i>
                       {plan.features.length - 4} more features
@@ -249,10 +317,9 @@ const PlanManagement = () => {
       <div className="user-management-header">
         <h3>User Plan Management</h3>
         <p>Manage individual user plan assignments</p>
-      </div>
-      <div className="plan-stats-bar">
+      </div>      <div className="plan-stats-bar">
         {userPlans.map(plan => (
-          <span key={plan._id} className={`plan-badge ${plan.key}`}>
+          <span key={plan.id} className={`plan-badge ${plan.key}`}>
             {plan.name}: {getUserCountForPlan(plan.key, 'user')} users
           </span>
         ))}
@@ -268,9 +335,8 @@ const PlanManagement = () => {
               <th>Actions</th>
             </tr>
           </thead>
-          <tbody>
-            {users.slice(0, 10).map(user => (
-              <tr key={user._id}>
+          <tbody>            {users.slice(0, 10).map(user => (
+              <tr key={user.id}>
                 <td>
                   <div className="user-info">
                     <div className="user-avatar">
@@ -283,15 +349,15 @@ const PlanManagement = () => {
                 </td>
                 <td>{user.email}</td>
                 <td>
-                  <span className={`plan-badge ${user.membershipType}`}>
-                    {user.membershipType?.charAt(0).toUpperCase() + user.membershipType?.slice(1)}
+                  <span className={`plan-badge ${user.membershipType || 'none'}`}>
+                    {user.membershipType?.charAt(0).toUpperCase() + user.membershipType?.slice(1) || 'No Plan'}
                   </span>
                 </td>
-                <td>{new Date(user.joinDate).toLocaleDateString()}</td>
+                <td>{new Date(user.createdAt).toLocaleDateString()}</td>
                 <td>
                   <button
                     className="btn btn-sm btn-primary"
-                    onClick={() => handlePlanAssignment(user._id)}
+                    onClick={() => handlePlanAssignment(user.id)}
                   >
                     <i className="fas fa-edit"></i>
                     Change Plan
@@ -318,10 +384,9 @@ const PlanManagement = () => {
       <div className="merchant-management-header">
         <h3>Merchant Plan Management</h3>
         <p>Manage individual merchant plan assignments</p>
-      </div>
-      <div className="plan-stats-bar">
+      </div>      <div className="plan-stats-bar">
         {merchantPlans.map(plan => (
-          <span key={plan._id} className={`plan-badge ${plan.key}`}>
+          <span key={plan.id} className={`plan-badge ${plan.key}`}>
             {plan.name}: {getUserCountForPlan(plan.key, 'merchant')} merchants
           </span>
         ))}
@@ -338,18 +403,17 @@ const PlanManagement = () => {
               <th>Actions</th>
             </tr>
           </thead>
-          <tbody>
-            {merchants.slice(0, 10).map(merchant => (
-              <tr key={merchant._id}>
+          <tbody>            {merchants.slice(0, 10).map(merchant => (
+              <tr key={merchant.id}>
                 <td>
                   <div className="merchant-info">
                     <div className="merchant-avatar">
                       <i className="fas fa-store"></i>
                     </div>
                     <div>
-                      <strong>{merchant.businessInfo?.businessName || 'N/A'}</strong>
+                      <strong>{merchant.businessName || 'N/A'}</strong>
                       <br />
-                      <small>{merchant.businessInfo?.businessCategory || 'Other'}</small>
+                      <small>{merchant.businessCategory || 'Other'}</small>
                     </div>
                   </div>
                 </td>
@@ -365,11 +429,11 @@ const PlanManagement = () => {
                     }
                   </span>
                 </td>
-                <td>{merchant.joinDate ? new Date(merchant.joinDate).toLocaleDateString() : new Date(merchant.createdAt).toLocaleDateString()}</td>
+                <td>{new Date(merchant.createdAt).toLocaleDateString()}</td>
                 <td>
                   <button
                     className="btn btn-sm btn-primary"
-                    onClick={() => handlePlanAssignment(merchant._id)}
+                    onClick={() => handlePlanAssignment(merchant.id)}
                   >
                     <i className="fas fa-edit"></i>
                     Change Plan
@@ -389,6 +453,179 @@ const PlanManagement = () => {
       </div>
     </div>
   );
+  // Analytics Dashboard Tab
+  const renderAnalytics = () => {
+    // Prepare data for charts
+    const planUsageData = userPlans.concat(merchantPlans).map(plan => ({
+      label: plan.name,
+      value: (users.filter(u => u.membershipType === plan.key).length + 
+              merchants.filter(m => m.membershipType === plan.key).length)
+    }));
+
+    const userPlanData = userPlans.map(plan => ({
+      label: plan.name,
+      value: users.filter(u => u.membershipType === plan.key).length
+    }));
+
+    const merchantPlanData = merchantPlans.map(plan => ({
+      label: plan.name,
+      value: merchants.filter(m => m.membershipType === plan.key).length
+    }));
+
+    const revenueData = userPlans.concat(merchantPlans).map(plan => {
+      const userCount = users.filter(u => u.membershipType === plan.key).length;
+      const merchantCount = merchants.filter(m => m.membershipType === plan.key).length;
+      const totalRevenue = (userCount + merchantCount) * (plan.price || 0);
+      
+      return {
+        label: plan.name,
+        value: totalRevenue
+      };
+    });
+
+    return (
+      <div className="plan-analytics">
+        <div className="analytics-header">
+          <h3><i className="fas fa-chart-pie"></i> Plan Analytics Dashboard</h3>
+          <p>Revenue insights, usage statistics, and plan performance metrics</p>
+        </div>
+        
+        {/* Charts Section */}
+        <div className="analytics-charts">
+          <div className="charts-grid">
+            <div className="chart-container-wrapper">
+              <SimplePieChart 
+                data={planUsageData.filter(d => d.value > 0)} 
+                title="Plan Usage Distribution" 
+              />
+            </div>
+            <div className="chart-container-wrapper">
+              <SimpleBarChart 
+                data={revenueData} 
+                title="Estimated Revenue by Plan (GHS)" 
+                height={250}
+              />
+            </div>
+            <div className="chart-container-wrapper">
+              <SimpleBarChart 
+                data={userPlanData} 
+                title="User Plan Distribution" 
+                height={200}
+              />
+            </div>
+            <div className="chart-container-wrapper">
+              <SimpleBarChart 
+                data={merchantPlanData} 
+                title="Merchant Plan Distribution" 
+                height={200}
+              />
+            </div>
+          </div>
+        </div>
+        
+        {/* Revenue Overview */}
+        <div className="analytics-section">
+          <h4><i className="fas fa-chart-line"></i> Revenue & Usage Overview</h4>
+          <div className="analytics-cards">
+            {userPlans.concat(merchantPlans).map(plan => {
+              const userCount = users.filter(u => u.membershipType === plan.key).length;
+              const merchantCount = merchants.filter(m => m.membershipType === plan.key).length;
+              const totalCount = userCount + merchantCount;
+              const estimatedRevenue = totalCount * (plan.price || 0);
+              
+              return (
+                <div key={plan.key} className={`analytics-card ${plan.key}`}>
+                  <div className="card-header">
+                    <h5>{plan.name}</h5>
+                    <span className="plan-type-badge">{plan.metadata?.userType || 'user'}</span>
+                  </div>
+                  <div className="card-metrics">
+                    <div className="metric">
+                      <span className="metric-label">Users</span>
+                      <span className="metric-value">{userCount}</span>
+                    </div>
+                    <div className="metric">
+                      <span className="metric-label">Merchants</span>
+                      <span className="metric-value">{merchantCount}</span>
+                    </div>
+                    <div className="metric">
+                      <span className="metric-label">Total Subscribers</span>
+                      <span className="metric-value">{totalCount}</span>
+                    </div>
+                    <div className="metric">
+                      <span className="metric-label">Est. Revenue</span>
+                      <span className="metric-value">{plan.currency || 'GHS'} {estimatedRevenue}</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Upgrade Analytics */}
+        {analytics.upgradeConversions && analytics.upgradeConversions.length > 0 && (
+          <div className="analytics-section">
+            <h4><i className="fas fa-arrow-up"></i> Upgrade Conversions</h4>
+            <div className="upgrade-analytics">
+              {analytics.upgradeConversions.map((conversion, index) => (
+                <div key={index} className="conversion-item">
+                  <div className="conversion-path">
+                    <span className={`plan-badge ${conversion.fromPlan}`}>
+                      {conversion.fromPlan}
+                    </span>
+                    <i className="fas fa-arrow-right"></i>
+                    <span className={`plan-badge ${conversion.toPlan}`}>
+                      {conversion.toPlan}
+                    </span>
+                  </div>
+                  <div className="conversion-count">
+                    {conversion.upgradeCount} upgrades
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Expiry Alerts */}
+        <div className="analytics-section">
+          <h4><i className="fas fa-exclamation-triangle"></i> Upcoming Plan Expiries</h4>
+          <div className="expiry-alerts">
+            <div className="alert-card users">
+              <div className="alert-icon">
+                <i className="fas fa-users"></i>
+              </div>
+              <div className="alert-content">
+                <h5>User Plans Expiring</h5>
+                <p>{analytics.upcomingExpiries?.users || 0} users in next 7 days</p>
+                {(analytics.upcomingExpiries?.users || 0) > 0 && (
+                  <button className="btn btn-warning btn-sm">
+                    <i className="fas fa-envelope"></i>
+                    Send Renewal Notices
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className="alert-card merchants">
+              <div className="alert-icon">
+                <i className="fas fa-store"></i>
+              </div>
+              <div className="alert-content">
+                <h5>Merchant Plans Expiring</h5>
+                <p>{analytics.upcomingExpiries?.merchants || 0} merchants in next 7 days</p>
+                {(analytics.upcomingExpiries?.merchants || 0) > 0 && (
+                  <button className="btn btn-warning btn-sm">
+                    <i className="fas fa-envelope"></i>
+                    Send Renewal Notices
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>        </div>
+      </div>
+    );
+  };
 
   if (isLoading) {
     return (
@@ -438,12 +675,20 @@ const PlanManagement = () => {
           <i className="fas fa-store"></i>
           Merchant Management
         </button>
-      </div>
-      <div className="plan-content">
+        <button
+          className={`tab-button ${activeTab === 'analytics' ? 'active' : ''}`}
+          onClick={() => setActiveTab('analytics')}
+        >
+          <i className="fas fa-chart-line"></i>
+          Analytics
+        </button>
+      </div>      <div className="plan-content">
         {activeTab === 'overview' && renderOverview()}
         {activeTab === 'users' && renderUserManagement()}
         {activeTab === 'merchants' && renderMerchantManagement()}
+        {activeTab === 'analytics' && renderAnalytics()}
       </div>
+      <Modal modal={modal} onClose={hideModal} />
     </div>
   );
 };

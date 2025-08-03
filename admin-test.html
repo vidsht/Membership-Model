@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel Quick Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .loading { background: #fff3cd; color: #856404; }
+    </style>
+</head>
+<body>
+    <h1>Admin Panel API Test</h1>
+    
+    <div class="test-section">
+        <h2>Authentication Test</h2>
+        <button class="test-button" onclick="testDevLogin()">Test Dev Admin Login</button>
+        <div id="auth-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Admin Endpoints Test</h2>
+        <button class="test-button" onclick="testEndpoint('/admin/dashboard')">Test Dashboard</button>
+        <button class="test-button" onclick="testEndpoint('/admin/plans')">Test Plans</button>
+        <button class="test-button" onclick="testEndpoint('/admin/users')">Test Users</button>
+        <button class="test-button" onclick="testEndpoint('/admin/deals')">Test Deals</button>
+        <button class="test-button" onclick="testEndpoint('/admin/analytics')">Test Analytics</button>
+        <div id="endpoint-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Quick Admin Login (Development)</h2>
+        <p>Use this to quickly create an admin session for testing:</p>
+        <button class="test-button" onclick="quickAdminLogin()">Create Admin Session</button>
+        <div id="login-result" class="result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Navigate to Admin Panel</h2>
+        <a href="http://localhost:3002/admin" class="test-button" style="text-decoration: none; display: inline-block;">Go to Admin Dashboard</a>
+        <a href="http://localhost:3002/admin/plan-management" class="test-button" style="text-decoration: none; display: inline-block;">Go to Plan Management</a>
+        <a href="http://localhost:3002/admin/deal-management" class="test-button" style="text-decoration: none; display: inline-block;">Go to Deal Management</a>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3000/api';
+
+        function showResult(elementId, message, type = 'loading') {
+            const element = document.getElementById(elementId);
+            element.className = `result ${type}`;
+            element.textContent = message;
+        }
+
+        async function testDevLogin() {
+            showResult('auth-result', 'Testing dev admin login...', 'loading');
+            try {
+                const response = await fetch(`${API_BASE}/auth/dev-admin-login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    showResult('auth-result', `Success: ${data.message}`, 'success');
+                } else {
+                    showResult('auth-result', `Error: ${data.message}`, 'error');
+                }
+            } catch (error) {
+                showResult('auth-result', `Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testEndpoint(endpoint) {
+            showResult('endpoint-result', `Testing ${endpoint}...`, 'loading');
+            try {
+                const response = await fetch(`${API_BASE}${endpoint}`, {
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    showResult('endpoint-result', `Success: ${endpoint} - Status: ${response.status}`, 'success');
+                } else {
+                    showResult('endpoint-result', `Error: ${endpoint} - Status: ${response.status} - ${data.message}`, 'error');
+                }
+            } catch (error) {
+                showResult('endpoint-result', `Error: ${endpoint} - ${error.message}`, 'error');
+            }
+        }
+
+        async function quickAdminLogin() {
+            showResult('login-result', 'Creating admin session...', 'loading');
+            try {
+                const response = await fetch(`${API_BASE}/auth/dev-admin-login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    showResult('login-result', 'Admin session created! You can now access the admin panel.', 'success');
+                } else {
+                    showResult('login-result', `Error: ${data.message}`, 'error');
+                }
+            } catch (error) {
+                showResult('login-result', `Error: ${error.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

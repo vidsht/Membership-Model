@@ -478,6 +478,554 @@
   margin: 0 0 20px;
 }
 
+/* Enhanced Business Info Styles */
+.business-info-container {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.business-header {
+  display: flex;
+  align-items: center;
+  padding: 2rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.business-image {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin-right: 1.5rem;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.business-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.no-logo {
+  color: #667eea;
+  font-size: 2rem;
+}
+
+.business-title h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.8rem;
+}
+
+.business-category {
+  margin: 0 0 1rem 0;
+  opacity: 0.9;
+  font-size: 1.1rem;
+}
+
+.business-status .status-badge {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.business-details-grid {
+  padding: 2rem;
+  display: grid;
+  gap: 2rem;
+}
+
+.business-section {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+.business-section h4 {
+  margin: 0 0 1rem 0;
+  color: #2c3e50;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.info-item label {
+  font-weight: 600;
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+.info-item span {
+  color: #2c3e50;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1rem;
+}
+
+.stat-item {
+  text-align: center;
+  padding: 1rem;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.stat-value {
+  display: block;
+  font-size: 2rem;
+  font-weight: bold;
+  color: #007bff;
+  margin-bottom: 0.5rem;
+}
+
+.stat-label {
+  display: block;
+  font-size: 0.85rem;
+  color: #6c757d;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.business-hours {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.hours-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem;
+  background: white;
+  border-radius: 4px;
+}
+
+.day {
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.hours {
+  color: #6c757d;
+}
+
+.no-business-info {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: #6c757d;
+}
+
+.no-business-info i {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+/* Enhanced Redemption Styles */
+.redemption-stats {
+  margin-bottom: 2rem;
+}
+
+.stats-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: transform 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+}
+
+.stat-card.total {
+  border-left: 4px solid #007bff;
+}
+
+.stat-card.today {
+  border-left: 4px solid #28a745;
+}
+
+.stat-card.week {
+  border-left: 4px solid #ffc107;
+}
+
+.stat-card.month {
+  border-left: 4px solid #dc3545;
+}
+
+.stat-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  color: white;
+}
+
+.stat-card.total .stat-icon {
+  background: #007bff;
+}
+
+.stat-card.today .stat-icon {
+  background: #28a745;
+}
+
+.stat-card.week .stat-icon {
+  background: #ffc107;
+}
+
+.stat-card.month .stat-icon {
+  background: #dc3545;
+}
+
+.stat-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-number {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #2c3e50;
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  color: #6c757d;
+  margin-top: 0.25rem;
+}
+
+.redemptions-section {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.redemptions-section h4 {
+  margin: 0;
+  padding: 1rem 1.5rem;
+  background: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+  color: #2c3e50;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.user-avatar img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.user-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.user-phone {
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+.redemption-date {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.redemption-date .time {
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+.redemption-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-sm {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+}
+
+.btn-info {
+  background: #17a2b8;
+  color: white;
+}
+
+.btn-success {
+  background: #28a745;
+  color: white;
+}
+
+.btn-sm:hover {
+  opacity: 0.8;
+  transform: translateY(-1px);
+}
+
+.no-redemptions {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: #6c757d;
+  background: #f8f9fa;
+  margin: 1rem;
+  border-radius: 8px;
+}
+
+.no-redemptions i {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+  color: #007bff;
+}
+
+.no-redemptions h3 {
+  margin: 0 0 1rem 0;
+  color: #2c3e50;
+}
+
+.no-redemptions p {
+  margin: 0;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+/* Enhanced Deal List Styles */
+.deal-description-preview {
+  font-size: 12px;
+  color: #666;
+  margin-top: 4px;
+  font-style: italic;
+}
+
+.business-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.business-name {
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.business-category {
+  font-size: 12px;
+  color: #666;
+  text-transform: capitalize;
+}
+
+.merchant-name {
+  font-size: 11px;
+  color: #999;
+  font-style: italic;
+}
+
+.discount-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.discount-amount {
+  font-weight: 600;
+  color: var(--color-success);
+}
+
+.price-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.original-price {
+  font-size: 11px;
+  color: #999;
+  text-decoration: line-through;
+}
+
+.discounted-price {
+  font-size: 11px;
+  color: var(--color-success);
+  font-weight: 500;
+}
+
+.validity-period .valid-from {
+  font-size: 11px;
+  color: #666;
+  margin-top: 2px;
+}
+
+.redemption-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.total-redemptions {
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.monthly-redemptions,
+.max-redemptions {
+  font-size: 11px;
+  color: #666;
+}
+
+.views-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.conversion-rate {
+  font-size: 11px;
+  color: var(--color-warning);
+  font-weight: 500;
+}
+
+/* Enhanced Deal Detail Styles */
+.business-status {
+  margin-left: 8px;
+  font-size: 12px;
+  color: #666;
+}
+
+.business-category {
+  font-size: 12px;
+  color: #999;
+  margin-left: 4px;
+}
+
+.price-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+  padding: 8px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+}
+
+.plan-priority {
+  font-size: 12px;
+  color: #666;
+}
+
+.verified-badge {
+  color: var(--color-success);
+  font-size: 12px;
+  margin-left: 8px;
+}
+
+.verified-badge i {
+  margin-right: 2px;
+}
+
+.business-id {
+  margin-top: 4px;
+  color: #999;
+}
+
+.membership-level {
+  text-transform: uppercase;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+}
+
+.membership-level.basic {
+  background-color: #e3f2fd;
+  color: #1565c0;
+}
+
+.membership-level.premium {
+  background-color: #f3e5f5;
+  color: #7b1fa2;
+}
+
+.membership-level.vip {
+  background-color: #fff3e0;
+  color: #ef6c00;
+}
+
+.location-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.business-address,
+.owner-address {
+  padding: 8px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  border-left: 3px solid var(--color-primary);
+}
+
+.location-details {
+  font-weight: 500;
+  color: var(--color-secondary);
+}
+
+.business-description {
+  padding: 12px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  border-left: 3px solid var(--color-info);
+}
+
 /* Responsive Adjustments */
 @media (max-width: 992px) {
   .detail-grid {

@@ -78,7 +78,8 @@ api.interceptors.response.use(
 // Get all deals (for users)
 export const getAllDeals = async () => {
   const response = await api.get('/deals');
-  return response.data;
+  // Always return the deals array, never the whole object
+  return response.data.deals || [];
 };
 
 // Redeem a deal
@@ -153,6 +154,22 @@ export const authApi = {
   }
 };
 
+// Get all plans
+export const getAllPlans = async (type = null, isActive = true) => {
+  const params = new URLSearchParams();
+  if (type) params.append('type', type);
+  if (isActive !== null) params.append('isActive', isActive.toString());
+  
+  const response = await api.get(`/plans?${params.toString()}`);
+  return response.data;
+};
+
+// Get upgrade plans for a specific user priority level
+export const getUpgradePlans = async (userPriority = 1) => {
+  const response = await api.get(`/deals/upgrade-plans/${userPriority}`);
+  return response.data.upgradePlans || [];
+};
+
 // Merchant API functions
 export const merchantApi = {
   // Get merchant dashboard data
@@ -181,7 +198,8 @@ export const merchantApi = {
   },
   // Fetch business details by businessId (for admin/customer views)
   getBusinessById: async (businessId) => {
-    const response = await api.get(`/deals/business/${businessId}`);
+    // Use admin endpoint for admin views
+    const response = await api.get(`/admin/businesses/${businessId}`);
     return response.data;
   },
 

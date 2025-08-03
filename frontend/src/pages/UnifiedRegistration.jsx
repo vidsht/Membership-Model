@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from 'react';
 import { useNotification } from '../contexts/NotificationContext';
 import { Link, useNavigate } from 'react-router-dom';
@@ -28,7 +26,7 @@ const UnifiedRegistration = () => {
     country: 'Ghana',
     state: '',
     city: '',
-    plan: 'community',
+    plan: '',
     socialMediaFollowed: {
       facebook: false,
       instagram: false,
@@ -41,11 +39,19 @@ const UnifiedRegistration = () => {
   const [userNotification, setUserNotification] = useState({ message: '', type: '' }); // legacy, remove after migration
   const { showNotification } = useNotification();
   const [userTermsAccepted, setUserTermsAccepted] = useState(false);
-
-  // Dynamic dropdown options
+  
+  // Dynamic dropdown options and settings
   const [communities, setCommunities] = useState([]);
   const [userTypes, setUserTypes] = useState([]);
+  const [userPlans, setUserPlans] = useState([]);
+  const [merchantPlans, setMerchantPlans] = useState([]);
   const [loadingOptions, setLoadingOptions] = useState(true);
+  const [adminSettings, setAdminSettings] = useState({
+    socialMediaRequirements: {},
+    content: { terms_conditions: '' },
+    features: {},
+    cardSettings: {}
+  });
 
   // Merchant Registration State
   const [merchantForm, setMerchantForm] = useState({
@@ -54,6 +60,7 @@ const UnifiedRegistration = () => {
     password: '',
     confirmPassword: '',
     phone: '',
+    plan: '', // Add plan selection for merchants
     businessName: '',
     businessDescription: '',
     businessCategory: '',
@@ -74,33 +81,45 @@ const UnifiedRegistration = () => {
       whatsappGroup: false
     }
   });
-  // Social media links config
-  const socialMediaLinks = {
-    facebook: {
-      url: 'https://facebook.com/indiansinghana',
-      name: 'Facebook Page',
-      icon: 'fab fa-facebook'
-    },
-    instagram: {
-      url: 'https://instagram.com/indians_in_ghana',
-      name: 'Instagram',
-      icon: 'fab fa-instagram'
-    },
-    youtube: {
-      url: 'https://youtube.com/indiansinghana',
-      name: 'YouTube Channel',
-      icon: 'fab fa-youtube'
-    },
-    whatsappChannel: {
-      url: 'https://whatsapp.com/channel/indiansinghana',
-      name: 'WhatsApp Channel',
-      icon: 'fab fa-whatsapp'
-    },
-    whatsappGroup: {
-      url: 'https://chat.whatsapp.com/indiansinghana',
-      name: 'WhatsApp Group',
-      icon: 'fab fa-whatsapp'
-    }
+  
+  // Social media links config - now dynamic from admin settings
+  const getSocialMediaLinks = () => {
+    const links = {};
+    const requirements = adminSettings.socialMediaRequirements || {};
+    
+    Object.keys(requirements).forEach(platform => {
+      if (requirements[platform].url) {
+        links[platform] = {
+          url: requirements[platform].url,
+          name: getSocialPlatformName(platform),
+          icon: getSocialPlatformIcon(platform),
+          required: requirements[platform].required || false
+        };
+      }
+    });
+    
+    return links;
+  };
+  
+  const getSocialPlatformName = (platform) => {
+    const names = {
+      facebook: 'Facebook Page',
+      instagram: 'Instagram',
+      youtube: 'YouTube Channel',
+      whatsappChannel: 'WhatsApp Channel',
+      whatsappGroup: 'WhatsApp Group'
+    };
+    return names[platform] || platform;
+  };
+    const getSocialPlatformIcon = (platform) => {
+    const icons = {
+      facebook: 'fab fa-facebook',
+      instagram: 'fab fa-instagram',
+      youtube: 'fab fa-youtube',
+      whatsappChannel: 'fab fa-whatsapp',
+      whatsappGroup: 'fab fa-whatsapp'
+    };
+    return icons[platform] || 'fas fa-link';
   };
 
   // Social media handlers
@@ -111,16 +130,18 @@ const UnifiedRegistration = () => {
         ...prev.socialMediaFollowed,
         [platform]: !prev.socialMediaFollowed[platform]
       }
-    }));  };
-  
-  // Fetch dropdown options on component mount
+    }));
+  };  // Fetch dropdown options on component mount
   useEffect(() => {
     const fetchOptions = async () => {
       try {
         setLoadingOptions(true);
-        const [communitiesResponse, userTypesResponse] = await Promise.all([
+        const [communitiesResponse, userTypesResponse, userPlansResponse, merchantPlansResponse, publicSettingsResponse] = await Promise.all([
           fetch('/api/auth/communities', { credentials: 'include' }),
-          fetch('/api/auth/user-types', { credentials: 'include' })
+          fetch('/api/auth/user-types', { credentials: 'include' }),
+          fetch('/api/plans?type=user&isActive=true', { credentials: 'include' }),
+          fetch('/api/plans?type=merchant&isActive=true', { credentials: 'include' }),
+          fetch('/api/admin/settings/public', { credentials: 'include' })
         ]);
         
         if (communitiesResponse.ok) {
@@ -131,6 +152,29 @@ const UnifiedRegistration = () => {
         if (userTypesResponse.ok) {
           const userTypesData = await userTypesResponse.json();
           setUserTypes(userTypesData.userTypes || []);
+        }
+          if (userPlansResponse.ok) {
+          const userPlansData = await userPlansResponse.json();
+          setUserPlans(userPlansData.plans || []);
+          // Set default plan to the first available plan or community plan
+          if (userPlansData.plans && userPlansData.plans.length > 0) {
+            const defaultPlan = userPlansData.plans.find(p => p.key === 'community') || userPlansData.plans[0];
+            setUserForm(prev => ({ ...prev, plan: defaultPlan.key }));
+          }
+        }
+        
+        if (merchantPlansResponse.ok) {
+          const merchantPlansData = await merchantPlansResponse.json();
+          setMerchantPlans(merchantPlansData.plans || []);
+          // Set default plan to the first available merchant plan
+          if (merchantPlansData.plans && merchantPlansData.plans.length > 0) {
+            setMerchantForm(prev => ({ ...prev, plan: merchantPlansData.plans[0].key }));
+          }
+        }
+
+        if (publicSettingsResponse.ok) {
+          const settingsData = await publicSettingsResponse.json();
+          setAdminSettings(settingsData.settings || {});
         }
       } catch (error) {
         console.error('Error fetching dropdown options:', error);
@@ -202,16 +246,26 @@ const UnifiedRegistration = () => {
     if (userForm.password !== userForm.confirmPassword) {
       showNotification('Passwords do not match', 'error');
       return;
-    }
-    
+    }    
     if (userForm.password.length < 6) {
       showNotification('Password must be at least 6 characters', 'error');
       return;
     }
     
-    // At least one social media must be followed
+    // Check required social media follows
+    const socialLinks = getSocialMediaLinks();
+    const requiredPlatforms = Object.entries(socialLinks).filter(([_, info]) => info.required).map(([platform, _]) => platform);
+    const missingRequired = requiredPlatforms.filter(platform => !userForm.socialMediaFollowed[platform]);
+    
+    if (missingRequired.length > 0) {
+      const platformNames = missingRequired.map(platform => getSocialPlatformName(platform)).join(', ');
+      showNotification(`Please follow these required social media channels: ${platformNames}`, 'error');
+      return;
+    }
+    
+    // At least one social media must be followed if any exist
     const followedCount = Object.values(userForm.socialMediaFollowed).filter(Boolean).length;
-    if (followedCount === 0) {
+    if (Object.keys(socialLinks).length > 0 && followedCount === 0) {
       showNotification('Please follow at least one of our social media channels to join the community.', 'error');
       return;
     }
@@ -252,8 +306,7 @@ const UnifiedRegistration = () => {
     }
     if (!merchantForm.businessName || !merchantForm.businessCategory) {
       showNotification('Please fill in required business information', 'error');
-      return false;
-    }
+      return false;    }
     if (merchantForm.password !== merchantForm.confirmPassword) {
       showNotification('Passwords do not match', 'error');
       return false;
@@ -262,12 +315,25 @@ const UnifiedRegistration = () => {
       showNotification('Password must be at least 6 characters', 'error');
       return false;
     }
-    // At least one social media must be followed
+    
+    // Check required social media follows
+    const socialLinks = getSocialMediaLinks();
+    const requiredPlatforms = Object.entries(socialLinks).filter(([_, info]) => info.required).map(([platform, _]) => platform);
+    const missingRequired = requiredPlatforms.filter(platform => !merchantForm.socialMediaFollowed[platform]);
+    
+    if (missingRequired.length > 0) {
+      const platformNames = missingRequired.map(platform => getSocialPlatformName(platform)).join(', ');
+      showNotification(`Please follow these required social media channels: ${platformNames}`, 'error');
+      return false;
+    }
+    
+    // At least one social media must be followed if any exist
     const followedCount = Object.values(merchantForm.socialMediaFollowed).filter(Boolean).length;
-    if (followedCount === 0) {
+    if (Object.keys(socialLinks).length > 0 && followedCount === 0) {
       showNotification('Please follow at least one of our social media channels to register as a merchant.', 'error');
       return false;
     }
+    
     if (!merchantTermsAccepted) {
       showNotification('Please accept the terms and conditions', 'error');
       return false;
@@ -407,7 +473,8 @@ const UnifiedRegistration = () => {
                           {type.name}
                         </option>
                       ))
-                    )}
+                    )
+                  }
                   </select>
                 </div>
 
@@ -593,8 +660,7 @@ const UnifiedRegistration = () => {
                     required
                   />
                 </div>
-                
-                <div className="form-group">
+                  <div className="form-group">
                   <label htmlFor="plan">Membership Plan</label>
                   <select
                     id="plan"
@@ -602,25 +668,30 @@ const UnifiedRegistration = () => {
                     value={userForm.plan}
                     onChange={handleUserInputChange}
                   >
-                    <option value="community">Community (Free)</option>
-                    <option value="silver">Silver (50 GHS)</option>
-                    <option value="gold">Gold (150 GHS)</option>
+                    <option value="">Select a Plan</option>
+                    {userPlans.map(plan => (
+                      <option key={plan.id} value={plan.key}>
+                        {plan.name} ({plan.price === 0 ? 'Free' : `${plan.currency} ${plan.price}`})
+                      </option>
+                    ))}
                   </select>
                 </div>
-              </div>
-              {/* Social Media Section */}
+              </div>              {/* Social Media Section */}
               <div className="form-section">
-                <h3><i className="fas fa-share-alt"></i> Community Connection (Required)</h3>
+                <h3><i className="fas fa-share-alt"></i> Community Connection {Object.values(getSocialMediaLinks()).some(link => link.required) && '(Required)'}</h3>
                 <p style={{ marginBottom: '15px', color: '#666', fontSize: '0.9em' }}>
-                  Please follow all of our social media channels to stay connected with the community. Check the box after following each platform.
+                  {Object.values(getSocialMediaLinks()).some(link => link.required) 
+                    ? 'Please follow our required social media channels to stay connected with the community. Check the box after following each platform.'
+                    : 'Follow our social media channels to stay connected with the community. Check the box after following each platform.'
+                  }
                 </p>
-                {Object.entries(socialMediaLinks).map(([platform, info]) => (
+                {Object.entries(getSocialMediaLinks()).map(([platform, info]) => (
                   <div key={platform} className="social-media-item" style={{
                     display: 'flex',
                     alignItems: 'center',
                     marginBottom: '10px',
                     padding: '10px',
-                    border: '1px solid #ddd',
+                    border: info.required ? '2px solid #ff6b6b' : '1px solid #ddd',
                     borderRadius: '5px',
                     backgroundColor: userForm.socialMediaFollowed[platform] ? '#e8f5e8' : '#f9f9f9'
                   }}>
@@ -633,7 +704,7 @@ const UnifiedRegistration = () => {
                     />
                     <i className={info.icon} style={{ marginRight: '10px', color: '#3b82f6', fontSize: '1.2em' }}></i>
                     <label htmlFor={platform} style={{ flex: 1, margin: 0, cursor: 'pointer' }}>
-                      {info.name}
+                      {info.name} {info.required && <span style={{ color: '#ff6b6b', fontWeight: 'bold' }}>*</span>}
                     </label>
                     <a
                       href={info.url}
@@ -641,7 +712,7 @@ const UnifiedRegistration = () => {
                       rel="noopener noreferrer"
                       style={{
                         padding: '5px 10px',
-                        backgroundColor: '#3b82f6',
+                        backgroundColor: info.required ? '#ff6b6b' : '#3b82f6',
                         color: 'white',
                         textDecoration: 'none',
                         borderRadius: '3px',
@@ -745,8 +816,7 @@ const UnifiedRegistration = () => {
                       placeholder="At least 6 characters"
                       required
                     />
-                  </div>
-                  <div className="form-group">
+                  </div>                  <div className="form-group">
                     <label htmlFor="confirmPassword">Confirm Password *</label>
                     <input
                       type="password"
@@ -758,20 +828,39 @@ const UnifiedRegistration = () => {
                     />
                   </div>
                 </div>
-              </div>
-              {/* Social Media Section */}
+                
+                <div className="form-group">
+                  <label htmlFor="plan">Business Plan</label>
+                  <select
+                    id="plan"
+                    name="plan"
+                    value={merchantForm.plan}
+                    onChange={handleMerchantInputChange}
+                  >
+                    <option value="">Select a Plan</option>
+                    {merchantPlans.map(plan => (
+                      <option key={plan.id} value={plan.key}>
+                        {plan.name} ({plan.price === 0 ? 'Free' : `${plan.currency} ${plan.price}`})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>              {/* Social Media Section */}
               <div className="form-section">
-                <h3><i className="fas fa-share-alt"></i> Community Connection (Required)</h3>
+                <h3><i className="fas fa-share-alt"></i> Community Connection {Object.values(getSocialMediaLinks()).some(link => link.required) && '(Required)'}</h3>
                 <p style={{ marginBottom: '15px', color: '#666', fontSize: '0.9em' }}>
-                  Please follow all of our social media channels to stay connected with the community. Check the box after following each platform.
+                  {Object.values(getSocialMediaLinks()).some(link => link.required) 
+                    ? 'Please follow our required social media channels to stay connected with the community. Check the box after following each platform.'
+                    : 'Follow our social media channels to stay connected with the community. Check the box after following each platform.'
+                  }
                 </p>
-                {Object.entries(socialMediaLinks).map(([platform, info]) => (
+                {Object.entries(getSocialMediaLinks()).map(([platform, info]) => (
                   <div key={platform} className="social-media-item" style={{
                     display: 'flex',
                     alignItems: 'center',
                     marginBottom: '10px',
                     padding: '10px',
-                    border: '1px solid #ddd',
+                    border: info.required ? '2px solid #ff6b6b' : '1px solid #ddd',
                     borderRadius: '5px',
                     backgroundColor: merchantForm.socialMediaFollowed[platform] ? '#e8f5e8' : '#f9f9f9'
                   }}>
@@ -784,7 +873,7 @@ const UnifiedRegistration = () => {
                     />
                     <i className={info.icon} style={{ marginRight: '10px', color: '#3b82f6', fontSize: '1.2em' }}></i>
                     <label htmlFor={platform} style={{ flex: 1, margin: 0, cursor: 'pointer' }}>
-                      {info.name}
+                      {info.name} {info.required && <span style={{ color: '#ff6b6b', fontWeight: 'bold' }}>*</span>}
                     </label>
                     <a
                       href={info.url}
@@ -792,7 +881,7 @@ const UnifiedRegistration = () => {
                       rel="noopener noreferrer"
                       style={{
                         padding: '5px 10px',
-                        backgroundColor: '#3b82f6',
+                        backgroundColor: info.required ? '#ff6b6b' : '#3b82f6',
                         color: 'white',
                         textDecoration: 'none',
                         borderRadius: '3px',

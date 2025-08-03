@@ -352,6 +352,41 @@ input:checked + .toggle-slider:before {
   flex: 1;
 }
 
+/* Social Media Platform Configuration */
+.social-platform-config {
+  margin-bottom: 30px;
+  padding: 20px;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  background: #f8f9fa;
+}
+
+.social-platform-config h4 {
+  margin: 0 0 15px 0;
+  color: var(--dark);
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.platform-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.platform-settings .form-group {
+  margin-bottom: 0;
+}
+
+.platform-settings .form-group input[type="url"] {
+  width: 100%;
+  max-width: 400px;
+}
+
+.platform-settings .toggle-control {
+  margin-top: 5px;
+}
+
 /* Responsive styles */
 @media (max-width: 992px) {
   .settings-container {

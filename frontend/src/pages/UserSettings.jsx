@@ -2,9 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import api from '../services/api';
+import Modal from '../components/shared/Modal';
+import { useModal } from '../hooks/useModal';
 
 const UserSettings = () => {
   const { user, updateUser } = useAuth();
+  const { showNotification } = useNotification();
+  const { modal, showDeleteConfirm, hideModal } = useModal();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -77,14 +81,11 @@ const UserSettings = () => {
   };
 
   const handlePasswordInputChange = (e) => {
-    const { name, value } = e.target;
-    setPasswordForm(prev => ({
+    const { name, value } = e.target;    setPasswordForm(prev => ({
       ...prev,
       [name]: value
     }));
   };
-
-  const { showNotification } = useNotification();
 
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
@@ -158,18 +159,21 @@ const UserSettings = () => {
       setLoading(false);
     }
   };
-
   const deleteAccount = async () => {
-    if (window.confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+    const confirmed = await showDeleteConfirm('your account', async () => {
       try {
         await api.delete('/users/account');
-        alert('Account deleted successfully');
+        showNotification('Account deleted successfully', 'success');
         // This would typically redirect to login page
         window.location.href = '/login';
       } catch (err) {
         setError(err.response?.data?.message || 'Failed to delete account');
       }
-    }
+    }, {
+      title: 'Delete Account',
+      message: 'Are you sure you want to delete your account? This action cannot be undone.',
+      confirmText: 'Delete Account'
+    });
   };
 
   return (
@@ -517,9 +521,9 @@ const UserSettings = () => {
                 </button>
               </div>
             </div>
-          </div>
-        </div>
+          </div>        </div>
       </div>
+      <Modal modal={modal} onClose={hideModal} />
     </div>
   );
 };

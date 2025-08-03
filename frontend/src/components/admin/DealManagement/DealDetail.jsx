@@ -1,24 +1,32 @@
 import React, { useState, useEffect } from 'react';
-
-
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useNotification } from '../../../contexts/NotificationContext';
-import api from '../../../services/api';
+import api, { merchantApi } from '../../../services/api';
+import Modal from '../../shared/Modal';
+import { useModal } from '../../../hooks/useModal';
 import './DealDetail.css';
 
-const DealDetail = () => {
-  const { dealId } = useParams();
+const DealDetail = () => {  const { dealId } = useParams();
   const navigate = useNavigate();
   const { showNotification } = useNotification();
+  const { modal, showDeleteConfirm, hideModal } = useModal();
   
   const [deal, setDeal] = useState(null);
+  const [business, setBusiness] = useState(null);
   const [redemptions, setRedemptions] = useState([]);
+  const [redemptionStats, setRedemptionStats] = useState({
+    total: 0,
+    thisMonth: 0,
+    thisWeek: 0,
+    today: 0
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('details');
 
-  // Ensure the Redemptions tab is visible and accessible via keyboard
+  // Enhanced tab list with business info
   const tabList = [
-    { key: 'details', label: 'Details', icon: 'fas fa-info-circle' },
+    { key: 'details', label: 'Deal Details', icon: 'fas fa-info-circle' },
+    { key: 'business', label: 'Business Info', icon: 'fas fa-building' },
     { key: 'redemptions', label: 'Redemptions', icon: 'fas fa-ticket-alt' },
     { key: 'analytics', label: 'Analytics', icon: 'fas fa-chart-line' },
   ];
@@ -26,15 +34,59 @@ const DealDetail = () => {
   useEffect(() => {
     fetchDealData();
   }, [dealId]);
-    const fetchDealData = async () => {
+
+  const fetchDealData = async () => {
     try {
       setIsLoading(true);
+      
+      // Fetch deal details
       const dealResponse = await api.get(`/admin/deals/${dealId}`);
-      setDeal(dealResponse.data.deal);
+      const dealData = dealResponse.data.deal;
+      // Explicit logging for debugging
+      // eslint-disable-next-line no-console
+      console.log('[DealDetail] dealData:', dealData);
+      setDeal(dealData);
 
-      // Always fetch redemptions for the deal
-      const redemptionsResponse = await api.get(`/admin/deals/${dealId}/redemptions`);
-      setRedemptions(redemptionsResponse.data.redemptions || []);
+      // Fetch business details
+      if (dealData.businessId) {
+        try {
+          // Use merchantApi.getBusinessById for admin/business context
+          const businessResponse = await merchantApi.getBusinessById(dealData.businessId);
+          // eslint-disable-next-line no-console
+          console.log('[DealDetail] businessResponse:', businessResponse);
+          setBusiness(businessResponse.business);
+        } catch (businessError) {
+          console.error('Error fetching business details:', businessError);
+        }
+      }
+
+      // Fetch redemptions with detailed stats
+      try {
+        const redemptionsResponse = await api.get(`/admin/deals/${dealId}/redemptions`);
+        const redemptionsData = redemptionsResponse.data.redemptions || [];
+        // eslint-disable-next-line no-console
+        console.log('[DealDetail] redemptionsData:', redemptionsData);
+        setRedemptions(redemptionsData);
+        
+        // Calculate redemption statistics
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const thisWeek = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        
+        const stats = {
+          total: redemptionsData.length,
+          today: redemptionsData.filter(r => new Date(r.redeemedAt) >= today).length,
+          thisWeek: redemptionsData.filter(r => new Date(r.redeemedAt) >= thisWeek).length,
+          thisMonth: redemptionsData.filter(r => new Date(r.redeemedAt) >= thisMonth).length
+        };
+        
+        setRedemptionStats(stats);
+      } catch (redemptionError) {
+        console.error('Error fetching redemptions:', redemptionError);
+        setRedemptions([]);
+      }
+      
     } catch (error) {
       console.error('Error fetching deal details:', error);
       showNotification('Could not load deal details', 'error');
@@ -54,9 +106,8 @@ const DealDetail = () => {
       showNotification('Failed to update deal status', 'error');
     }
   };
-  
-  const handleDeleteDeal = async () => {
-    if (window.confirm('Are you sure you want to delete this deal? This action cannot be undone.')) {
+    const handleDeleteDeal = async () => {
+    const confirmed = await showDeleteConfirm(deal?.title || 'this deal', async () => {
       try {
         await api.delete(`/admin/deals/${dealId}`);
         showNotification('Deal deleted successfully', 'success');
@@ -65,6 +116,22 @@ const DealDetail = () => {
         console.error('Error deleting deal:', error);
         showNotification('Failed to delete deal', 'error');
       }
+    }, {
+      title: 'Delete Deal',
+      message: 'Are you sure you want to delete this deal? This action cannot be undone.',
+      confirmText: 'Delete Deal'
+    });
+  };
+
+  const markRedemptionAsUsed = async (redemptionId) => {
+    try {
+      await api.patch(`/admin/redemptions/${redemptionId}/status`, { status: 'used' });
+      // Refresh redemptions
+      await fetchDealData();
+      showNotification('Redemption marked as used', 'success');
+    } catch (error) {
+      console.error('Error updating redemption status:', error);
+      showNotification('Error updating redemption status', 'error');
     }
   };
   
@@ -159,15 +226,31 @@ const DealDetail = () => {
                   
                   <div className="deal-info-card">
                     <h3>Deal Information</h3>
+                      <div className="info-row">
+                      <span className="info-label">Business</span>
+                      <span className="info-value">
+                        {deal.businessName}
+                        {deal.businessStatus && (
+                          <span className={`business-status ${deal.businessStatus}`}>
+                            ({deal.businessStatus})
+                          </span>
+                        )}
+                      </span>
+                    </div>
                     
                     <div className="info-row">
-                      <span className="info-label">Business</span>
-                      <span className="info-value">{deal.businessName}</span>
+                      <span className="info-label">Business Owner</span>
+                      <span className="info-value">{deal.businessOwner || 'N/A'}</span>
                     </div>
                     
                     <div className="info-row">
                       <span className="info-label">Category</span>
-                      <span className="info-value">{deal.category}</span>
+                      <span className="info-value">
+                        {deal.category}
+                        {deal.businessCategory && deal.businessCategory !== deal.category && (
+                          <span className="business-category"> (Business: {deal.businessCategory})</span>
+                        )}
+                      </span>
                     </div>
                     
                     <div className="info-row">
@@ -177,13 +260,27 @@ const DealDetail = () => {
                         {deal.discountType === 'fixed' && `GHS ${deal.discount} off`}
                         {deal.discountType === 'buyOneGetOne' && 'Buy One Get One Free'}
                         {deal.discountType === 'freeItem' && 'Free Item'}
+                        {deal.originalPrice && (
+                          <div className="price-breakdown">
+                            <span className="original-price">Original: GHS {deal.originalPrice}</span>
+                            {deal.discountedPrice && (
+                              <span className="discounted-price">Discounted: GHS {deal.discountedPrice}</span>
+                            )}
+                          </div>
+                        )}
                       </span>
                     </div>
                     
                     <div className="info-row">
                       <span className="info-label">Valid Period</span>
                       <span className="info-value">
-                        {new Date(deal.validFrom).toLocaleDateString()} to {new Date(deal.validUntil).toLocaleDateString()}
+                        {deal.validFrom && deal.validUntil ? (
+                          `${new Date(deal.validFrom).toLocaleDateString()} to ${new Date(deal.validUntil).toLocaleDateString()}`
+                        ) : deal.validUntil ? (
+                          `Until ${new Date(deal.validUntil).toLocaleDateString()}`
+                        ) : (
+                          'No expiry date set'
+                        )}
                       </span>
                     </div>
                     
@@ -193,6 +290,10 @@ const DealDetail = () => {
                         {deal.accessLevel === 'basic' && 'Community (Basic)'}
                         {deal.accessLevel === 'intermediate' && 'Silver (Intermediate)'}
                         {deal.accessLevel === 'full' && 'Gold (Full)'}
+                        {deal.accessLevel === 'all' && 'All Members'}
+                        {deal.minPlanPriority && (
+                          <span className="plan-priority"> (Min Priority: {deal.minPlanPriority})</span>
+                        )}
                       </span>
                     </div>
                     
@@ -277,55 +378,128 @@ const DealDetail = () => {
               </div>
             </div>
           )}
-          
-          {/* Redemptions Tab */}
+            {/* Redemptions Tab */}
           {activeTab === 'redemptions' && (
             <div className="deal-redemptions" id="tab-panel-redemptions" role="tabpanel" aria-labelledby="tab-redemptions">
+              {/* Redemption Statistics */}
+              <div className="redemption-stats">
+                <h4><i className="fas fa-chart-line"></i> Redemption Statistics</h4>
+                <div className="stats-cards">
+                  <div className="stat-card total">
+                    <div className="stat-icon">
+                      <i className="fas fa-ticket-alt"></i>
+                    </div>
+                    <div className="stat-content">
+                      <span className="stat-number">{redemptionStats.total}</span>
+                      <span className="stat-label">Total Redemptions</span>
+                    </div>
+                  </div>
+                  <div className="stat-card today">
+                    <div className="stat-icon">
+                      <i className="fas fa-calendar-day"></i>
+                    </div>
+                    <div className="stat-content">
+                      <span className="stat-number">{redemptionStats.today}</span>
+                      <span className="stat-label">Today</span>
+                    </div>
+                  </div>
+                  <div className="stat-card week">
+                    <div className="stat-icon">
+                      <i className="fas fa-calendar-week"></i>
+                    </div>
+                    <div className="stat-content">
+                      <span className="stat-number">{redemptionStats.thisWeek}</span>
+                      <span className="stat-label">This Week</span>
+                    </div>
+                  </div>
+                  <div className="stat-card month">
+                    <div className="stat-icon">
+                      <i className="fas fa-calendar-alt"></i>
+                    </div>
+                    <div className="stat-content">
+                      <span className="stat-number">{redemptionStats.thisMonth}</span>
+                      <span className="stat-label">This Month</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Redemption Details */}
               {redemptions.length > 0 ? (
-                <div className="redemptions-table-container">
-                  <table className="redemptions-table">
-                    <thead>
-                      <tr>
-                        <th>User</th>
-                        <th>Redeemed On</th>
-                        <th>Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {redemptions.map(redemption => (
-                        <tr key={redemption._id}>
-                          <td>
-                            <div className="user-info">
-                              <div className="user-avatar">
-                                <i className="fas fa-user"></i>
-                              </div>
-                              <div className="user-details">
-                                <span className="user-name">{redemption.userName}</span>
-                                <span className="user-email">{redemption.userEmail}</span>
-                              </div>
-                            </div>
-                          </td>
-                          <td>
-                            {new Date(redemption.redeemedAt).toLocaleString()}
-                          </td>
-                          <td>
-                            <span className={`status-badge ${redemption.status}`}>
-                              {redemption.status}
-                            </span>
-                          </td>
+                <div className="redemptions-section">
+                  <h4><i className="fas fa-list"></i> Redemption Details</h4>
+                  <div className="redemptions-table-container">
+                    <table className="redemptions-table">
+                      <thead>
+                        <tr>
+                          <th>User</th>
+                          <th>Redeemed On</th>
+                          <th>Status</th>
+                          <th>Actions</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {redemptions.map(redemption => (
+                          <tr key={redemption._id || redemption.id}>
+                            <td>
+                              <div className="user-info">
+                                <div className="user-avatar">
+                                  {redemption.userProfilePicture ? (
+                                    <img src={redemption.userProfilePicture} alt={redemption.userName} />
+                                  ) : (
+                                    <i className="fas fa-user"></i>
+                                  )}
+                                </div>
+                                <div className="user-details">
+                                  <span className="user-name">{redemption.userName}</span>
+                                  <span className="user-email">{redemption.userEmail}</span>
+                                  {redemption.userPhone && (
+                                    <span className="user-phone">{redemption.userPhone}</span>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+                            <td>
+                              <div className="redemption-date">
+                                <span className="date">{new Date(redemption.redeemedAt).toLocaleDateString()}</span>
+                                <span className="time">{new Date(redemption.redeemedAt).toLocaleTimeString()}</span>
+                              </div>
+                            </td>
+                            <td>
+                              <span className={`status-badge ${redemption.status || 'redeemed'}`}>
+                                {(redemption.status || 'redeemed').charAt(0).toUpperCase() + (redemption.status || 'redeemed').slice(1)}
+                              </span>
+                            </td>
+                            <td>
+                              <div className="redemption-actions">
+                                <button 
+                                  className="btn-sm btn-info"
+                                  title="View User Details"
+                                  onClick={() => navigate(`/admin/users/${redemption.userId}`)}
+                                >
+                                  <i className="fas fa-eye"></i>
+                                </button>
+                                {redemption.status === 'pending' && (
+                                  <button 
+                                    className="btn-sm btn-success"
+                                    title="Mark as Used"
+                                    onClick={() => markRedemptionAsUsed(redemption._id || redemption.id)}
+                                  >
+                                    <i className="fas fa-check"></i>
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}                      </tbody>
+                    </table>
+                  </div>
                 </div>
               ) : (
-                <div className="empty-state">
-                  <i className="fas fa-ticket-alt fa-3x"></i>
-                  <h2>No Redemptions Yet</h2>
-                  <p>
-                    This deal hasn't been redeemed by any members.
-                    {deal.status !== 'active' && " Consider activating the deal to make it available."}
-                  </p>
+                <div className="no-redemptions">
+                  <i className="fas fa-ticket-alt"></i>
+                  <h3>No Redemptions Yet</h3>
+                  <p>This deal hasn't been redeemed by any users yet.</p>
                 </div>
               )}
             </div>
@@ -387,8 +561,195 @@ const DealDetail = () => {
               </div>
             </div>
           )}
-        </div>
+
+          {/* Business Info Tab */}
+          {activeTab === 'business' && (
+            <div className="deal-business" id="tab-panel-business" role="tabpanel" aria-labelledby="tab-business">
+              {business ? (
+                <div className="business-info-container">
+                  <div className="business-header">
+                    <div className="business-image">
+                      {business.logo ? (
+                        <img src={business.logo} alt={business.businessName} />
+                      ) : (
+                        <div className="no-logo">
+                          <i className="fas fa-building"></i>
+                        </div>
+                      )}
+                    </div>                    <div className="business-title">
+                      <h3>{business.businessName}</h3>
+                      <p className="business-category">{business.businessCategory || business.category}</p>
+                      <div className="business-status">
+                        <span className={`status-badge ${business.status || business.businessStatus || 'active'}`}>
+                          {(business.status || business.businessStatus || 'active').charAt(0).toUpperCase() + (business.status || business.businessStatus || 'active').slice(1)}
+                        </span>
+                        {business.isVerified && (
+                          <span className="verified-badge">
+                            <i className="fas fa-check-circle"></i> Verified
+                          </span>
+                        )}
+                      </div>
+                      <div className="business-id">
+                        <small>Business ID: {business.businessId}</small>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="business-details-grid">
+                    <div className="business-section">
+                      <h4><i className="fas fa-info-circle"></i> Business Information</h4>                      <div className="info-grid">
+                        <div className="info-item">
+                          <label>Owner:</label>
+                          <span>{business.ownerName || 'N/A'}</span>
+                        </div>
+                        <div className="info-item">
+                          <label>Owner Email:</label>
+                          <span>{business.ownerEmail || business.email || 'N/A'}</span>
+                        </div>
+                        <div className="info-item">
+                          <label>Business Email:</label>
+                          <span>{business.businessEmail || 'N/A'}</span>
+                        </div>
+                        <div className="info-item">
+                          <label>Owner Phone:</label>
+                          <span>{business.ownerPhone || business.phone || 'N/A'}</span>
+                        </div>
+                        <div className="info-item">
+                          <label>Business Phone:</label>
+                          <span>{business.businessPhone || 'N/A'}</span>
+                        </div>
+                        <div className="info-item">
+                          <label>Website:</label>
+                          <span>
+                            {business.website ? (
+                              <a href={business.website} target="_blank" rel="noopener noreferrer">
+                                {business.website}
+                              </a>
+                            ) : 'N/A'}
+                          </span>
+                        </div>
+                        <div className="info-item">
+                          <label>Business License:</label>
+                          <span>{business.businessLicense || 'N/A'}</span>
+                        </div>
+                        <div className="info-item">
+                          <label>Tax ID:</label>
+                          <span>{business.taxId || 'N/A'}</span>
+                        </div>
+                        <div className="info-item">
+                          <label>Membership Level:</label>
+                          <span className={`membership-level ${business.businessMembershipLevel || business.membershipLevel}`}>
+                            {(business.businessMembershipLevel || business.membershipLevel || 'basic').toUpperCase()}
+                          </span>
+                        </div>
+                        {business.verificationDate && (
+                          <div className="info-item">
+                            <label>Verified On:</label>
+                            <span>{new Date(business.verificationDate).toLocaleDateString()}</span>
+                          </div>
+                        )}
+                        <div className="info-item">
+                          <label>Joined:</label>
+                          <span>{new Date(business.businessCreatedAt || business.created_at).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                    </div>                    <div className="business-section">
+                      <h4><i className="fas fa-map-marker-alt"></i> Location</h4>
+                      <div className="location-info">
+                        <div className="business-address">
+                          <strong>Business Address:</strong>
+                          <p>{business.businessAddress || 'Address not provided'}</p>
+                        </div>
+                        {business.ownerAddress && business.ownerAddress !== business.businessAddress && (
+                          <div className="owner-address">
+                            <strong>Owner Address:</strong>
+                            <p>{business.ownerAddress}</p>
+                          </div>
+                        )}
+                        {(business.ownerCity || business.city) && (
+                          <div className="location-details">
+                            <p>
+                              {business.ownerCity || business.city}
+                              {(business.ownerState || business.state) && `, ${business.ownerState || business.state}`}
+                              {(business.ownerCountry || business.country) && `, ${business.ownerCountry || business.country}`}
+                            </p>
+                          </div>
+                        )}
+                        {business.coordinates && (
+                          <div className="coordinates">
+                            <small>Coordinates: {business.coordinates.lat}, {business.coordinates.lng}</small>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {business.businessDescription && (
+                      <div className="business-section">
+                        <h4><i className="fas fa-file-alt"></i> Business Description</h4>
+                        <div className="business-description">
+                          <p>{business.businessDescription}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="business-section">
+                      <h4><i className="fas fa-chart-bar"></i> Business Statistics</h4>
+                      <div className="stats-grid">
+                        <div className="stat-item">
+                          <span className="stat-value">{business.totalDeals || 0}</span>
+                          <span className="stat-label">Total Deals</span>
+                        </div>
+                        <div className="stat-item">
+                          <span className="stat-value">{business.activeDeals || 0}</span>
+                          <span className="stat-label">Active Deals</span>
+                        </div>
+                        <div className="stat-item">
+                          <span className="stat-value">{business.totalRedemptions || 0}</span>
+                          <span className="stat-label">Total Redemptions</span>
+                        </div>
+                        <div className="stat-item">
+                          <span className="stat-value">{business.rating || 'N/A'}</span>
+                          <span className="stat-label">Rating</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {business.description && (
+                      <div className="business-section">
+                        <h4><i className="fas fa-file-alt"></i> Description</h4>
+                        <div className="business-description">
+                          <p>{business.description}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="business-section">
+                      <h4><i className="fas fa-clock"></i> Business Hours</h4>
+                      <div className="business-hours">
+                        {business.hours ? (
+                          Object.entries(business.hours).map(([day, hours]) => (
+                            <div key={day} className="hours-item">
+                              <span className="day">{day.charAt(0).toUpperCase() + day.slice(1)}:</span>
+                              <span className="hours">{hours}</span>
+                            </div>
+                          ))
+                        ) : (
+                          <p>Business hours not specified</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="no-business-info">
+                  <i className="fas fa-building"></i>
+                  <p>Business information not available</p>
+                </div>
+              )}
+            </div>
+          )}        </div>
       </div>
+      <Modal modal={modal} onClose={hideModal} />
     </div>
   );
 };
