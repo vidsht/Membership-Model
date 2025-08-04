@@ -8,7 +8,7 @@ import React, { useState } from 'react';
  * @returns {React.ReactElement} The system settings component
  */
 const SystemSettings = ({ settings, onSettingChange }) => {
-  const [imagePreview, setImagePreview] = useState(settings.loginImageUrl || '');
+  const [imagePreview, setImagePreview] = useState(settings?.loginImageUrl || '');
 
   const handleImageUrlChange = (e) => {
     const url = e.target.value;
@@ -19,21 +19,18 @@ const SystemSettings = ({ settings, onSettingChange }) => {
   const handleFileUploadChange = (field, value) => {
     onSettingChange('fileUpload', field, value);
   };
-
   const addAllowedFileType = () => {
-    const fileTypes = [...(settings.fileUpload?.allowedFileTypes || [])];
+    const fileTypes = [...(settings?.fileUpload?.allowedFileTypes || [])];
     fileTypes.push('');
     onSettingChange('fileUpload', 'allowedFileTypes', fileTypes);
   };
-
   const removeAllowedFileType = (index) => {
-    const fileTypes = [...(settings.fileUpload?.allowedFileTypes || [])];
+    const fileTypes = [...(settings?.fileUpload?.allowedFileTypes || [])];
     fileTypes.splice(index, 1);
     onSettingChange('fileUpload', 'allowedFileTypes', fileTypes);
   };
-
   const updateAllowedFileType = (index, value) => {
-    const fileTypes = [...(settings.fileUpload?.allowedFileTypes || [])];
+    const fileTypes = [...(settings?.fileUpload?.allowedFileTypes || [])];
     fileTypes[index] = value;
     onSettingChange('fileUpload', 'allowedFileTypes', fileTypes);
   };
@@ -51,7 +48,7 @@ const SystemSettings = ({ settings, onSettingChange }) => {
           <input
             type="text"
             id="systemName"
-            value={settings.systemName || ''}
+            value={settings?.systemName || ''}
             onChange={(e) => onSettingChange(null, 'systemName', e.target.value)}
             placeholder="Enter system name"
           />
@@ -65,7 +62,7 @@ const SystemSettings = ({ settings, onSettingChange }) => {
           <input
             type="email"
             id="adminEmail"
-            value={settings.adminEmail || ''}
+            value={settings?.adminEmail || ''}
             onChange={(e) => onSettingChange(null, 'adminEmail', e.target.value)}
             placeholder="admin@example.com"
           />
@@ -79,7 +76,7 @@ const SystemSettings = ({ settings, onSettingChange }) => {
           <input
             type="text"
             id="loginImageUrl"
-            value={settings.loginImageUrl || ''}
+            value={settings?.loginImageUrl || ''}
             onChange={handleImageUrlChange}
             placeholder="https://example.com/image.jpg"
           />
@@ -97,7 +94,7 @@ const SystemSettings = ({ settings, onSettingChange }) => {
           <label htmlFor="language">Default Language</label>
           <select
             id="language"
-            value={settings.language || 'en'}
+            value={settings?.language || 'en'}
             onChange={(e) => onSettingChange(null, 'language', e.target.value)}
           >
             <option value="en">English</option>
@@ -114,7 +111,7 @@ const SystemSettings = ({ settings, onSettingChange }) => {
           <label htmlFor="theme">Theme</label>
           <select
             id="theme"
-            value={settings.theme || 'light'}
+            value={settings?.theme || 'light'}
             onChange={(e) => onSettingChange(null, 'theme', e.target.value)}
           >
             <option value="light">Light</option>
@@ -140,7 +137,7 @@ const SystemSettings = ({ settings, onSettingChange }) => {
             id="maxUploadSize"
             min="1"
             max="100"
-            value={settings.fileUpload?.maxUploadSize || 5}
+            value={settings?.fileUpload?.maxUploadSize || 5}
             onChange={(e) => handleFileUploadChange('maxUploadSize', parseInt(e.target.value, 10))}
           />
           <div className="form-description">
@@ -151,7 +148,7 @@ const SystemSettings = ({ settings, onSettingChange }) => {
         <div className="form-group">
           <label>Allowed File Types</label>
           <div className="file-types-list">
-            {(settings.fileUpload?.allowedFileTypes || []).map((type, index) => (
+            {(settings?.fileUpload?.allowedFileTypes || []).map((type, index) => (
               <div key={index} className="file-type-item">
                 <input
                   type="text"
@@ -180,83 +177,7 @@ const SystemSettings = ({ settings, onSettingChange }) => {
           <div className="form-description">
             File extensions that are allowed for upload (without the dot)
           </div>
-        </div>
-      </div>      <div className="settings-section">
-        <div className="settings-section-header">
-          <h3>Social Media Links</h3>
-          <p>Configure social media requirements for user registration</p>
-        </div>
-        
-        <div className="form-group">
-          <label htmlFor="facebookLink">Facebook Page Link</label>
-          <input
-            type="text"
-            id="facebookLink"
-            value={settings.socialMediaRequirements?.facebook?.link || ''}
-            onChange={(e) => onSettingChange('socialMediaRequirements', 'facebook.link', e.target.value)}
-            placeholder="https://facebook.com/yourpage"
-          />
-          <div className="form-description">
-            Official Facebook page link for your community
-          </div>
-        </div>
-        
-        <div className="form-group">
-          <label htmlFor="instagramLink">Instagram Page Link</label>
-          <input
-            type="text"
-            id="instagramLink"
-            value={settings.socialMediaRequirements?.instagram?.link || ''}
-            onChange={(e) => onSettingChange('socialMediaRequirements', 'instagram.link', e.target.value)}
-            placeholder="https://instagram.com/yourpage"
-          />
-          <div className="form-description">
-            Official Instagram page link for your community
-          </div>
-        </div>
-        
-        <div className="form-group">
-          <label htmlFor="youtubeLink">YouTube Channel Link</label>
-          <input
-            type="text"
-            id="youtubeLink"
-            value={settings.socialMediaRequirements?.youtube?.link || ''}
-            onChange={(e) => onSettingChange('socialMediaRequirements', 'youtube.link', e.target.value)}
-            placeholder="https://youtube.com/yourchannel"
-          />
-          <div className="form-description">
-            Official YouTube channel link for your community
-          </div>
-        </div>
-        
-        <div className="form-group">
-          <label htmlFor="whatsappChannelLink">WhatsApp Channel Link</label>
-          <input
-            type="text"
-            id="whatsappChannelLink"
-            value={settings.socialMediaRequirements?.whatsappChannel?.link || ''}
-            onChange={(e) => onSettingChange('socialMediaRequirements', 'whatsappChannel.link', e.target.value)}
-            placeholder="https://whatsapp.com/channel/yourchannelid"
-          />
-          <div className="form-description">
-            WhatsApp channel link for community updates
-          </div>
-        </div>
-        
-        <div className="form-group">
-          <label htmlFor="whatsappGroupLink">WhatsApp Group Link</label>
-          <input
-            type="text"
-            id="whatsappGroupLink"
-            value={settings.socialMediaRequirements?.whatsappGroup?.link || ''}
-            onChange={(e) => onSettingChange('socialMediaRequirements', 'whatsappGroup.link', e.target.value)}
-            placeholder="https://chat.whatsapp.com/yourgroupid"
-          />
-          <div className="form-description">
-            WhatsApp group link for community discussions
-          </div>
-        </div>
-      </div>
+        </div>      </div>
 
       <div className="settings-section">
         <div className="settings-section-header">
@@ -269,7 +190,7 @@ const SystemSettings = ({ settings, onSettingChange }) => {
           <textarea
             id="termsConditions"
             rows="6"
-            value={settings.termsConditions || ''}
+            value={settings?.termsConditions || ''}
             onChange={(e) => onSettingChange(null, 'termsConditions', e.target.value)}
             placeholder="Enter terms and conditions text..."
           />

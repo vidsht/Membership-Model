@@ -79,7 +79,7 @@ select {
   background-repeat: no-repeat;
   background-position: right 10px center;
   background-size: 16px;
-  padding-right: 35px;
+  padding: 0;
 }
 
 input:focus,
@@ -103,7 +103,7 @@ textarea:focus {
 }
 
 .input-with-suffix input {
-  padding-right: 40px;
+  padding: 0;
 }
 
 .required {

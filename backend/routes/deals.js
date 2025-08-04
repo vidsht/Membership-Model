@@ -236,6 +236,69 @@ router.get('/public', async (req, res) => {
       success: false, 
       message: 'Server error fetching deals',
       deals: []
+    });  }
+});
+
+// Get home page statistics (public endpoint) - MUST be before /:id route
+router.get('/home-stats', async (req, res) => {
+  try {
+    // Get basic home page statistics - simplified version
+    let totalUsers = 0, totalBusinesses = 0, totalDeals = 0, totalRedemptions = 0;
+    
+    try {
+      const userCount = await queryAsync('SELECT COUNT(*) as count FROM users');
+      totalUsers = userCount[0]?.count || 0;
+    } catch (e) { console.log('Users table error:', e.message); }
+    
+    try {
+      const businessCount = await queryAsync('SELECT COUNT(*) as count FROM businesses');
+      totalBusinesses = businessCount[0]?.count || 0;
+    } catch (e) { console.log('Businesses table error:', e.message); }
+    
+    try {
+      const dealCount = await queryAsync('SELECT COUNT(*) as count FROM deals');
+      totalDeals = dealCount[0]?.count || 0;
+    } catch (e) { console.log('Deals table error:', e.message); }
+    
+    try {
+      const redemptionCount = await queryAsync('SELECT COUNT(*) as count FROM deal_redemptions');
+      totalRedemptions = redemptionCount[0]?.count || 0;
+    } catch (e) { console.log('Deal redemptions table might not exist:', e.message); }
+    
+    const formattedStats = {
+      totalUsers: totalUsers,
+      totalBusinesses: totalBusinesses,
+      totalDeals: totalDeals,
+      totalRedemptions: totalRedemptions,
+      uniqueRedeemers: 0, // Will add later when table exists
+      totalMerchants: Math.floor(totalUsers * 0.3), // Rough estimate
+      totalMembers: Math.floor(totalUsers * 0.7), // Rough estimate
+      avgDiscountPercentage: 15, // Default
+      totalViews: totalDeals * 50, // Rough estimate
+      engagementRate: totalUsers > 0 ? Math.round((totalRedemptions / totalUsers) * 100) : 0
+    };
+    
+    res.json({
+      success: true,
+      stats: formattedStats
+    });
+  } catch (error) {
+    console.error('Get home stats error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error fetching home page statistics',
+      stats: {
+        totalUsers: 0,
+        totalBusinesses: 0,
+        totalDeals: 0,
+        totalRedemptions: 0,
+        uniqueRedeemers: 0,
+        totalMerchants: 0,
+        totalMembers: 0,
+        avgDiscountPercentage: 0,
+        totalViews: 0,
+        engagementRate: 0
+      }
     });
   }
 });

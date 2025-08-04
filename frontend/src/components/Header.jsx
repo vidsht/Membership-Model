@@ -72,20 +72,22 @@ const Header = () => {
               </>
             )}
             
-            <li><Link to="/about" className={isActive('/about')}>About Us</Link></li>
-            <li><Link to="/contact" className={isActive('/contact')}>Contact</Link></li>
-            {/* Merchant dropdown */}
-            {!isAuthenticated && (
-              <li className="dropdown">
-                <a href="#" className="dropdown-toggle">
-                  <i className="fas fa-store nav-icon"></i> Business <i className="fas fa-chevron-down dropdown-arrow"></i>
-                </a>
-                <ul className="dropdown-menu">
-                  <li><Link to="/login"><i className="fas fa-sign-in-alt"></i> Business Login</Link></li>
-                  <li><Link to="/unified-registration"><i className="fas fa-plus-circle"></i> Register Business</Link></li>
-                </ul>
-              </li>
-            )}
+            <li><Link to="/about" className={isActive('/about')}>About Us</Link></li>            <li><Link to="/contact" className={isActive('/contact')}>Contact</Link></li>
+            {/* Business Directory and Merchant options */}
+            <li className="dropdown">
+              <div className="dropdown-toggle">
+                <i className="fas fa-store nav-icon"></i> Business <i className="fas fa-chevron-down dropdown-arrow"></i>
+              </div>
+              <ul className="dropdown-menu">
+                <li><Link to="/business-directory"><i className="fas fa-building"></i> Business Directory</Link></li>
+                {!isAuthenticated && (
+                  <>
+                    <li><Link to="/login"><i className="fas fa-sign-in-alt"></i> Business Login</Link></li>
+                    <li><Link to="/unified-registration"><i className="fas fa-plus-circle"></i> Register Business</Link></li>
+                  </>
+                )}
+              </ul>
+            </li>
             {/* Admin/Merchant specific links */}
             {isAuthenticated && user?.userType === 'merchant' && (
               <li><Link to="/merchant/dashboard" className={`${isActive('/merchant/dashboard')} merchant-link`}>

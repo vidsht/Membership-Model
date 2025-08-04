@@ -1714,8 +1714,7 @@ router.get('/settings', auth, admin, async (req, res) => {
           else if (setting_key === 'registration_enabled') settings.systemSettings.registrationEnabled = value;
           else if (setting_key === 'login_image_url') settings.systemSettings.loginImageUrl = value;
           else if (setting_key === 'language') settings.systemSettings.language = value;
-          break;
-        case 'social_media':
+          break;        case 'social_media':
           if (setting_key.includes('_required')) {
             const platform = setting_key.replace('_required', '');
             if (!settings.socialMediaRequirements[platform]) settings.socialMediaRequirements[platform] = {};
@@ -1724,14 +1723,23 @@ router.get('/settings', auth, admin, async (req, res) => {
             const platform = setting_key.replace('_url', '');
             if (!settings.socialMediaRequirements[platform]) settings.socialMediaRequirements[platform] = {};
             settings.socialMediaRequirements[platform].url = value;
+          } else if (setting_key.includes('_display_')) {
+            const parts = setting_key.split('_display_');
+            const platform = parts[0];
+            const displayKey = parts[1];
+            if (!settings.socialMediaRequirements[platform]) settings.socialMediaRequirements[platform] = {};
+            if (!settings.socialMediaRequirements[platform].display) settings.socialMediaRequirements[platform].display = {};
+            settings.socialMediaRequirements[platform].display[displayKey] = value;
+          } else if (setting_key === 'home_section_title' || setting_key === 'home_section_subtitle') {
+            settings.socialMediaRequirements[setting_key] = value;
           }
-          break;
-        case 'features':
+          break;        case 'features':
           if (setting_key === 'deal_management') settings.featureToggles.dealManagement = value;
           else if (setting_key === 'plan_management') settings.featureToggles.planManagement = value;
           else if (setting_key === 'user_management') settings.featureToggles.userManagement = value;
           else if (setting_key === 'show_statistics') settings.featureToggles.showStatistics = value;
           else if (setting_key === 'business_directory') settings.featureToggles.businessDirectory = value;
+          else if (setting_key === 'show_social_media_home') settings.featureToggles.showSocialMediaHome = value;
           break;
         case 'security':
           if (setting_key === 'session_timeout') settings.securitySettings.sessionTimeout = value;
@@ -1781,21 +1789,35 @@ router.put('/settings', auth, admin, async (req, res) => {
       if (systemSettings.language !== undefined) 
         updatePromises.push(updateSetting('system', 'language', systemSettings.language, 'string'));
     }
-    
-    // Social media requirements
+      // Social media requirements
     if (settings.socialMediaRequirements) {
       const socialSettings = settings.socialMediaRequirements;
+      
+      // Handle home section title and subtitle
+      if (socialSettings.home_section_title !== undefined) {
+        updatePromises.push(updateSetting('social_media', 'home_section_title', socialSettings.home_section_title, 'string'));
+      }
+      if (socialSettings.home_section_subtitle !== undefined) {
+        updatePromises.push(updateSetting('social_media', 'home_section_subtitle', socialSettings.home_section_subtitle, 'string'));
+      }
+      
       Object.keys(socialSettings).forEach(platform => {
+        if (platform === 'home_section_title' || platform === 'home_section_subtitle') return;
+        
         if (socialSettings[platform].required !== undefined) {
           updatePromises.push(updateSetting('social_media', `${platform}_required`, socialSettings[platform].required.toString(), 'boolean'));
         }
         if (socialSettings[platform].url !== undefined) {
           updatePromises.push(updateSetting('social_media', `${platform}_url`, socialSettings[platform].url, 'string'));
         }
+        if (socialSettings[platform].display) {
+          Object.keys(socialSettings[platform].display).forEach(displayKey => {
+            updatePromises.push(updateSetting('social_media', `${platform}_display_${displayKey}`, socialSettings[platform].display[displayKey], 'string'));
+          });
+        }
       });
     }
-    
-    // Feature toggles
+      // Feature toggles
     if (settings.featureToggles) {
       const featureSettings = settings.featureToggles;
       if (featureSettings.dealManagement !== undefined) 
@@ -1808,6 +1830,8 @@ router.put('/settings', auth, admin, async (req, res) => {
         updatePromises.push(updateSetting('features', 'show_statistics', featureSettings.showStatistics.toString(), 'boolean'));
       if (featureSettings.businessDirectory !== undefined) 
         updatePromises.push(updateSetting('features', 'business_directory', featureSettings.businessDirectory.toString(), 'boolean'));
+      if (featureSettings.showSocialMediaHome !== undefined) 
+        updatePromises.push(updateSetting('features', 'show_social_media_home', featureSettings.showSocialMediaHome.toString(), 'boolean'));
     }
     
     // Security settings
@@ -2362,8 +2386,7 @@ router.get('/settings/public', async (req, res) => {
           value = setting_value;
         }
       }
-      
-      // Map to appropriate category
+        // Map to appropriate category
       if (category === 'social_media') {
         if (setting_key.includes('_required')) {
           const platform = setting_key.replace('_required', '');
@@ -2373,6 +2396,15 @@ router.get('/settings/public', async (req, res) => {
           const platform = setting_key.replace('_url', '');
           if (!settings.socialMediaRequirements[platform]) settings.socialMediaRequirements[platform] = {};
           settings.socialMediaRequirements[platform].url = value;
+        } else if (setting_key.includes('_display_')) {
+          const parts = setting_key.split('_display_');
+          const platform = parts[0];
+          const displayKey = parts[1];
+          if (!settings.socialMediaRequirements[platform]) settings.socialMediaRequirements[platform] = {};
+          if (!settings.socialMediaRequirements[platform].display) settings.socialMediaRequirements[platform].display = {};
+          settings.socialMediaRequirements[platform].display[displayKey] = value;
+        } else if (setting_key === 'home_section_title' || setting_key === 'home_section_subtitle') {
+          settings.socialMediaRequirements[setting_key] = value;
         }
       } else if (category === 'content') {
         settings.content[setting_key] = value;

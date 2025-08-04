@@ -6,6 +6,7 @@ import api from '../../../services/api';
 import SystemSettings from './SystemSettings';
 import FeatureToggles from './FeatureToggles';
 import SecuritySettings from './SecuritySettings';
+import SocialMediaSettings from './SocialMediaSettings';
 import Modal from '../../shared/Modal';
 import { useModal } from '../../../hooks/useModal';
 import './AdminSettings.css';
@@ -16,21 +17,26 @@ import './AdminSettings.css';
  */
 const AdminSettings = () => {
   const { showNotification } = useNotification();
-  const { modal, showConfirm, hideModal } = useModal();
-  const [settings, setSettings] = useState(null);
+  const { modal, showConfirm, hideModal } = useModal();  const [settings, setSettings] = useState({
+    socialMediaRequirements: {},
+    cardSettings: {},
+    fileUpload: {},
+    featureToggles: {}
+  });
   const [isLoading, setIsLoading] = useState(true);
+  const [hasLoadedInitialData, setHasLoadedInitialData] = useState(false);
   const [activeTab, setActiveTab] = useState('system');
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   
   useEffect(() => {
     fetchSettings();
-  }, []);
-    const fetchSettings = async () => {
+  }, []);    const fetchSettings = async () => {
     try {
       setIsLoading(true);
       const response = await api.get('/admin/settings');
       setSettings(response.data);
+      setHasLoadedInitialData(true);
       setHasChanges(false);
     } catch (error) {
       console.error('Error fetching admin settings:', error);
@@ -45,19 +51,24 @@ const AdminSettings = () => {
       setIsLoading(false);
     }
   };
-  
   const handleSettingChange = (section, key, value) => {
     setSettings(prevSettings => {
-      const newSettings = { ...prevSettings };
+      // Defensive: ensure prevSettings is not null
+      const newSettings = { ...(prevSettings || {}) };
       
       if (section) {
+        // Ensure the section exists
+        if (!newSettings[section]) {
+          newSettings[section] = {};
+        }
+        
         // Handle nested settings like socialMediaRequirements.facebook.required
         if (key.includes('.')) {
           const [subKey, nestedKey] = key.split('.');
           newSettings[section] = {
             ...newSettings[section],
             [subKey]: {
-              ...newSettings[section][subKey],
+              ...(newSettings[section][subKey] || {}), // Defensive: provide empty object if undefined
               [nestedKey]: value
             }
           };
@@ -82,7 +93,8 @@ const AdminSettings = () => {
   const saveSettings = async () => {
     try {
       setIsSaving(true);
-      await api.put('/admin/settings', settings);
+      // Ensure payload is { settings }
+      await api.put('/admin/settings', { settings });
       showNotification('Settings saved successfully.', 'success');
       setHasChanges(false);
     } catch (error) {
@@ -115,8 +127,7 @@ const AdminSettings = () => {
       </div>
     );
   }
-  
-  if (!settings) {
+    if (!hasLoadedInitialData && !isLoading) {
     return (
       <div className="empty-state">
         <i className="fas fa-exclamation-triangle"></i>
@@ -154,172 +165,10 @@ const AdminSettings = () => {
           />
         );      case 'social':
         return (
-          <div className="settings-section">
-            <div className="settings-section-header">
-              <h3>Social Media Requirements</h3>
-              <p>Configure which social media platforms are required for registration and set links</p>
-            </div>
-            
-            <div className="social-platform-config">
-              <h4>Facebook</h4>
-              <div className="platform-settings">
-                <div className="form-group">
-                  <label htmlFor="facebook-url">Facebook Page URL</label>
-                  <input
-                    type="url"
-                    id="facebook-url"
-                    value={settings.socialMediaRequirements?.facebook?.url || ''}
-                    onChange={(e) => handleSettingChange('socialMediaRequirements', 'facebook.url', e.target.value)}
-                    placeholder="https://facebook.com/yourpage"
-                  />
-                </div>
-                <div className="toggle-control">
-                  <div>
-                    <span className="toggle-label">Required for Registration</span>
-                    <div className="toggle-description">
-                      Users must follow this Facebook page during registration
-                    </div>
-                  </div>
-                  <label className="toggle-switch">
-                    <input
-                      type="checkbox"
-                      checked={settings.socialMediaRequirements?.facebook?.required || false}
-                      onChange={(e) => handleSettingChange('socialMediaRequirements', 'facebook.required', e.target.checked)}
-                    />
-                    <span className="toggle-slider"></span>
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            <div className="social-platform-config">
-              <h4>Instagram</h4>
-              <div className="platform-settings">
-                <div className="form-group">
-                  <label htmlFor="instagram-url">Instagram Profile URL</label>
-                  <input
-                    type="url"
-                    id="instagram-url"
-                    value={settings.socialMediaRequirements?.instagram?.url || ''}
-                    onChange={(e) => handleSettingChange('socialMediaRequirements', 'instagram.url', e.target.value)}
-                    placeholder="https://instagram.com/youraccount"
-                  />
-                </div>
-                <div className="toggle-control">
-                  <div>
-                    <span className="toggle-label">Required for Registration</span>
-                    <div className="toggle-description">
-                      Users must follow this Instagram account during registration
-                    </div>
-                  </div>
-                  <label className="toggle-switch">
-                    <input
-                      type="checkbox"
-                      checked={settings.socialMediaRequirements?.instagram?.required || false}
-                      onChange={(e) => handleSettingChange('socialMediaRequirements', 'instagram.required', e.target.checked)}
-                    />
-                    <span className="toggle-slider"></span>
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            <div className="social-platform-config">
-              <h4>YouTube</h4>
-              <div className="platform-settings">
-                <div className="form-group">
-                  <label htmlFor="youtube-url">YouTube Channel URL</label>
-                  <input
-                    type="url"
-                    id="youtube-url"
-                    value={settings.socialMediaRequirements?.youtube?.url || ''}
-                    onChange={(e) => handleSettingChange('socialMediaRequirements', 'youtube.url', e.target.value)}
-                    placeholder="https://youtube.com/yourchannel"
-                  />
-                </div>
-                <div className="toggle-control">
-                  <div>
-                    <span className="toggle-label">Required for Registration</span>
-                    <div className="toggle-description">
-                      Users must subscribe to this YouTube channel during registration
-                    </div>
-                  </div>
-                  <label className="toggle-switch">
-                    <input
-                      type="checkbox"
-                      checked={settings.socialMediaRequirements?.youtube?.required || false}
-                      onChange={(e) => handleSettingChange('socialMediaRequirements', 'youtube.required', e.target.checked)}
-                    />
-                    <span className="toggle-slider"></span>
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            <div className="social-platform-config">
-              <h4>WhatsApp Channel</h4>
-              <div className="platform-settings">
-                <div className="form-group">
-                  <label htmlFor="whatsapp-channel-url">WhatsApp Channel URL</label>
-                  <input
-                    type="url"
-                    id="whatsapp-channel-url"
-                    value={settings.socialMediaRequirements?.whatsapp_channel?.url || ''}
-                    onChange={(e) => handleSettingChange('socialMediaRequirements', 'whatsapp_channel.url', e.target.value)}
-                    placeholder="https://whatsapp.com/channel/..."
-                  />
-                </div>
-                <div className="toggle-control">
-                  <div>
-                    <span className="toggle-label">Required for Registration</span>
-                    <div className="toggle-description">
-                      Users must follow this WhatsApp channel during registration
-                    </div>
-                  </div>
-                  <label className="toggle-switch">
-                    <input
-                      type="checkbox"
-                      checked={settings.socialMediaRequirements?.whatsapp_channel?.required || false}
-                      onChange={(e) => handleSettingChange('socialMediaRequirements', 'whatsapp_channel.required', e.target.checked)}
-                    />
-                    <span className="toggle-slider"></span>
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            <div className="social-platform-config">
-              <h4>WhatsApp Group</h4>
-              <div className="platform-settings">
-                <div className="form-group">
-                  <label htmlFor="whatsapp-group-url">WhatsApp Group URL</label>
-                  <input
-                    type="url"
-                    id="whatsapp-group-url"
-                    value={settings.socialMediaRequirements?.whatsapp_group?.url || ''}
-                    onChange={(e) => handleSettingChange('socialMediaRequirements', 'whatsapp_group.url', e.target.value)}
-                    placeholder="https://chat.whatsapp.com/..."
-                  />
-                </div>
-                <div className="toggle-control">
-                  <div>
-                    <span className="toggle-label">Required for Registration</span>
-                    <div className="toggle-description">
-                      Users must join this WhatsApp group during registration
-                    </div>
-                  </div>
-                  <label className="toggle-switch">
-                    <input
-                      type="checkbox"
-                      checked={settings.socialMediaRequirements?.whatsapp_group?.required || false}
-                      onChange={(e) => handleSettingChange('socialMediaRequirements', 'whatsapp_group.required', e.target.checked)}
-                    />
-                    <span className="toggle-slider"></span>
-                  </label>
-                </div>
-              </div>
-            </div>
-          </div>
+          <SocialMediaSettings 
+            settings={settings}
+            onSettingChange={handleSettingChange} 
+          />
         );
       case 'card':
         return (
@@ -333,7 +182,7 @@ const AdminSettings = () => {
               <label htmlFor="cardLayout">Card Layout</label>
               <select
                 id="cardLayout"
-                value={settings.cardSettings?.layout || 'default'}
+                value={settings?.cardSettings?.layout || 'default'}
                 onChange={(e) => handleSettingChange('cardSettings', 'layout', e.target.value)}
               >
                 <option value="default">Default</option>
@@ -352,7 +201,7 @@ const AdminSettings = () => {
                 id="cardExpiryPeriod"
                 min="1"
                 max="60"
-                value={settings.cardSettings?.expiryPeriod || 12}
+                value={settings?.cardSettings?.expiryPeriod || 12}
                 onChange={(e) => handleSettingChange('cardSettings', 'expiryPeriod', parseInt(e.target.value, 10))}
               />
               <div className="form-description">
@@ -370,7 +219,7 @@ const AdminSettings = () => {
               <label className="toggle-switch">
                 <input
                   type="checkbox"
-                  checked={settings.cardSettings?.showQRCode !== false}
+                  checked={settings?.cardSettings?.showQRCode !== false}
                   onChange={(e) => handleSettingChange('cardSettings', 'showQRCode', e.target.checked)}
                 />
                 <span className="toggle-slider"></span>
@@ -387,7 +236,7 @@ const AdminSettings = () => {
               <label className="toggle-switch">
                 <input
                   type="checkbox"
-                  checked={settings.cardSettings?.showBarcode !== false}
+                  checked={settings?.cardSettings?.showBarcode !== false}
                   onChange={(e) => handleSettingChange('cardSettings', 'showBarcode', e.target.checked)}
                 />
                 <span className="toggle-slider"></span>
@@ -408,7 +257,7 @@ const AdminSettings = () => {
               <textarea
                 id="termsConditions"
                 rows="15"
-                value={settings.termsConditions || ''}
+                value={settings?.termsConditions || ''}
                 onChange={(e) => handleSettingChange(null, 'termsConditions', e.target.value)}
                 placeholder="Enter your terms and conditions here..."
               />

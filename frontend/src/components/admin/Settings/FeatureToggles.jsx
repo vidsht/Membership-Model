@@ -26,11 +26,10 @@ const FeatureToggles = ({ settings, onSettingChange }) => {
             <div className="toggle-description">
               Allow new users to register for the platform
             </div>
-          </div>
-          <label className="toggle-switch">
+          </div>          <label className="toggle-switch">
             <input
               type="checkbox"
-              checked={settings.userRegistrationEnabled !== false}
+              checked={settings?.userRegistrationEnabled !== false}
               onChange={(e) => onSettingChange(null, 'userRegistrationEnabled', e.target.checked)}
             />
             <span className="toggle-slider"></span>
@@ -43,11 +42,10 @@ const FeatureToggles = ({ settings, onSettingChange }) => {
             <div className="toggle-description">
               Automatically approve users who register for the free Community plan
             </div>
-          </div>
-          <label className="toggle-switch">
+          </div>          <label className="toggle-switch">
             <input
               type="checkbox"
-              checked={settings.autoApproveFree !== false}
+              checked={settings?.autoApproveFree !== false}
               onChange={(e) => onSettingChange(null, 'autoApproveFree', e.target.checked)}
             />
             <span className="toggle-slider"></span>
@@ -60,11 +58,10 @@ const FeatureToggles = ({ settings, onSettingChange }) => {
             <div className="toggle-description">
               Require admin approval for new user registrations (except auto-approved)
             </div>
-          </div>
-          <label className="toggle-switch">
+          </div>          <label className="toggle-switch">
             <input
               type="checkbox"
-              checked={settings.requireApproval !== false}
+              checked={settings?.requireApproval !== false}
               onChange={(e) => onSettingChange(null, 'requireApproval', e.target.checked)}
             />
             <span className="toggle-slider"></span>
@@ -77,11 +74,10 @@ const FeatureToggles = ({ settings, onSettingChange }) => {
             <div className="toggle-description">
               Send email notifications for important events
             </div>
-          </div>
-          <label className="toggle-switch">
+          </div>          <label className="toggle-switch">
             <input
               type="checkbox"
-              checked={settings.emailNotifications !== false}
+              checked={settings?.emailNotifications !== false}
               onChange={(e) => onSettingChange(null, 'emailNotifications', e.target.checked)}
             />
             <span className="toggle-slider"></span>
@@ -98,107 +94,13 @@ const FeatureToggles = ({ settings, onSettingChange }) => {
           <label className="toggle-switch">
             <input
               type="checkbox"
-              checked={settings.showStats !== false}
+              checked={settings?.showStats !== false}
               onChange={(e) => onSettingChange(null, 'showStats', e.target.checked)}
             />
             <span className="toggle-slider"></span>
           </label>
         </div>
-      </div>
-
-      <div className="settings-section">
-        <div className="settings-section-header">
-          <h3>Social Media Requirements</h3>
-          <p>Configure which social media platforms are required for registration</p>
-        </div>
-        
-        <div className="toggle-control">
-          <div>
-            <span className="toggle-label">Facebook Required</span>
-            <div className="toggle-description">
-              Users must provide their Facebook profile link during registration
-            </div>
-          </div>
-          <label className="toggle-switch">
-            <input
-              type="checkbox"
-              checked={settings.socialMediaRequirements?.facebook?.required || false}
-              onChange={(e) => onSettingChange('socialMediaRequirements', 'facebook.required', e.target.checked)}
-            />
-            <span className="toggle-slider"></span>
-          </label>
-        </div>
-        
-        <div className="toggle-control">
-          <div>
-            <span className="toggle-label">Instagram Required</span>
-            <div className="toggle-description">
-              Users must provide their Instagram profile link during registration
-            </div>
-          </div>
-          <label className="toggle-switch">
-            <input
-              type="checkbox"
-              checked={settings.socialMediaRequirements?.instagram?.required || false}
-              onChange={(e) => onSettingChange('socialMediaRequirements', 'instagram.required', e.target.checked)}
-            />
-            <span className="toggle-slider"></span>
-          </label>
-        </div>
-        
-        <div className="toggle-control">
-          <div>
-            <span className="toggle-label">YouTube Required</span>
-            <div className="toggle-description">
-              Users must provide their YouTube channel link during registration
-            </div>
-          </div>
-          <label className="toggle-switch">
-            <input
-              type="checkbox"
-              checked={settings.socialMediaRequirements?.youtube?.required || false}
-              onChange={(e) => onSettingChange('socialMediaRequirements', 'youtube.required', e.target.checked)}
-            />
-            <span className="toggle-slider"></span>
-          </label>
-        </div>
-        
-        <div className="toggle-control">
-          <div>
-            <span className="toggle-label">WhatsApp Channel Required</span>
-            <div className="toggle-description">
-              Users must follow your WhatsApp channel during registration
-            </div>
-          </div>
-          <label className="toggle-switch">
-            <input
-              type="checkbox"
-              checked={settings.socialMediaRequirements?.whatsappChannel?.required || false}
-              onChange={(e) => onSettingChange('socialMediaRequirements', 'whatsappChannel.required', e.target.checked)}
-            />
-            <span className="toggle-slider"></span>
-          </label>
-        </div>
-        
-        <div className="toggle-control">
-          <div>
-            <span className="toggle-label">WhatsApp Group Required</span>
-            <div className="toggle-description">
-              Users must join your WhatsApp group during registration
-            </div>
-          </div>
-          <label className="toggle-switch">
-            <input
-              type="checkbox"
-              checked={settings.socialMediaRequirements?.whatsappGroup?.required || false}
-              onChange={(e) => onSettingChange('socialMediaRequirements', 'whatsappGroup.required', e.target.checked)}
-            />
-            <span className="toggle-slider"></span>
-          </label>
-        </div>
-      </div>
-
-      <div className="settings-section">
+      </div>      <div className="settings-section">
         <div className="settings-section-header">
           <h3>Membership Card Settings</h3>
           <p>Configure membership card display options</p>
@@ -214,7 +116,7 @@ const FeatureToggles = ({ settings, onSettingChange }) => {
           <label className="toggle-switch">
             <input
               type="checkbox"
-              checked={settings.cardSettings?.showQRCode !== false}
+              checked={settings?.cardSettings?.showQRCode !== false}
               onChange={(e) => onSettingChange('cardSettings', 'showQRCode', e.target.checked)}
             />
             <span className="toggle-slider"></span>
@@ -298,6 +200,47 @@ const FeatureToggles = ({ settings, onSettingChange }) => {
             <i className="fas fa-exclamation-triangle"></i>
             <strong>Warning:</strong> Maintenance mode is currently enabled. Regular users cannot access the system.
           </div>        )}
+      </div>
+
+      <div className="settings-section">
+        <div className="settings-section-header">
+          <h3>Home Page Features</h3>
+          <p>Control features displayed on the home page</p>
+        </div>
+        
+        <div className="toggle-control">
+          <div>
+            <span className="toggle-label">Show Hero Section</span>
+            <div className="toggle-description">
+              Display the hero section at the top of the home page
+            </div>
+          </div>
+          <label className="toggle-switch">
+            <input
+              type="checkbox"
+              checked={settings.featureToggles?.showHeroSection !== false}
+              onChange={(e) => onSettingChange('featureToggles', 'showHeroSection', e.target.checked)}
+            />
+            <span className="toggle-slider"></span>
+          </label>
+        </div>
+        
+        <div className="toggle-control">
+          <div>
+            <span className="toggle-label">Show Social Media Home Section</span>
+            <div className="toggle-description">
+              Display social media section on the home page for community engagement
+            </div>
+          </div>
+          <label className="toggle-switch">
+            <input
+              type="checkbox"
+              checked={settings?.featureToggles?.showSocialMediaHome !== false}
+              onChange={(e) => onSettingChange('featureToggles', 'showSocialMediaHome', e.target.checked)}
+            />
+            <span className="toggle-slider"></span>
+          </label>
+        </div>
       </div>
     </div>
   );

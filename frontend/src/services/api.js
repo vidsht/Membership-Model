@@ -170,6 +170,12 @@ export const getUpgradePlans = async (userPriority = 1) => {
   return response.data.upgradePlans || [];
 };
 
+// Get all businesses (for users)
+export const getAllBusinesses = async () => {
+  const response = await api.get('/businesses');
+  return response.data.businesses || [];
+};
+
 // Merchant API functions
 export const merchantApi = {
   // Get merchant dashboard data

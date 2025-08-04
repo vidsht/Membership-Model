@@ -9,6 +9,7 @@ import Toast from './components/Toast';
 import Home from './pages/Home';
 import UnifiedLogin from './pages/UnifiedLogin';
 import UnifiedRegistration from './pages/UnifiedRegistration';
+import BusinessDirectory from './components/BusinessDirectory';
 import Deals from './pages/Deals';
 // import Register from './pages/UserRegister';
 // import RegisterClean from './pages/RegisterClean';
@@ -51,6 +52,7 @@ function App() {
                 <Route path="/" element={<Home />} />
                 <Route path="/about" element={<About />} />
                 <Route path="/contact" element={<Contact />} />
+                <Route path="/business-directory" element={<BusinessDirectory />} />
                 
                 {/* Authentication Routes */}
                 <Route path="/login" element={<UnifiedLogin />} />

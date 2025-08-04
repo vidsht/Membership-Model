@@ -7,9 +7,8 @@ import React from 'react';
  * @param {Function} props.onSettingChange - Handler for setting changes
  * @returns {React.ReactElement} The security settings component
  */
-const SecuritySettings = ({ settings, onSettingChange }) => {
-  // Get security settings with defaults
-  const security = settings.security || {};
+const SecuritySettings = ({ settings, onSettingChange }) => {  // Get security settings with defaults
+  const security = settings?.security || {};
   
   return (
     <div className="security-settings">

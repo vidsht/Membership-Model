@@ -24,15 +24,9 @@ function Register() {
   const [communities, setCommunities] = useState([]);
   const [membershipPlans, setMembershipPlans] = useState({});
   const [loadingData, setLoadingData] = useState(true);
-  
   // Social media tracking
-  const [socialMedia, setSocialMedia] = useState({
-    facebook: false,
-    instagram: false,
-    youtube: false,
-    whatsappChannel: false,
-    whatsappGroup: false
-  });
+  const [socialMedia, setSocialMedia] = useState({});
+  const [socialMediaSettings, setSocialMediaSettings] = useState({});
   
   // Terms and conditions
   const [termsAccepted, setTermsAccepted] = useState(false);
@@ -42,35 +36,6 @@ function Register() {
 
   const { register, isAuthenticated, error, clearError } = useAuth();
   const navigate = useNavigate();
-
-  // Social media links configuration
-  const socialMediaLinks = {
-    facebook: { 
-      url: 'https://facebook.com/indiansinghana', 
-      name: 'Facebook Page',
-      icon: 'fab fa-facebook'
-    },
-    instagram: { 
-      url: 'https://instagram.com/indians_in_ghana', 
-      name: 'Instagram',
-      icon: 'fab fa-instagram'
-    },
-    youtube: { 
-      url: 'https://youtube.com/indiansinghana', 
-      name: 'YouTube Channel',
-      icon: 'fab fa-youtube'
-    },
-    whatsappChannel: { 
-      url: 'https://whatsapp.com/channel/indiansinghana', 
-      name: 'WhatsApp Channel',
-      icon: 'fab fa-whatsapp'
-    },
-    whatsappGroup: { 
-      url: 'https://chat.whatsapp.com/indiansinghana', 
-      name: 'WhatsApp Group',
-      icon: 'fab fa-whatsapp'
-    }  };
-
   // Load dynamic data from backend
   useEffect(() => {
     const loadData = async () => {
@@ -96,6 +61,22 @@ function Register() {
             };
           });
           setMembershipPlans(plansData);
+        }
+
+        // Fetch social media settings
+        const socialResponse = await api.get('/admin/settings/public');
+        if (socialResponse.data.success) {
+          setSocialMediaSettings(socialResponse.data.settings.socialMediaRequirements || {});
+          
+          // Initialize social media state based on required platforms
+          const initialSocialState = {};
+          const socialReqs = socialResponse.data.settings.socialMediaRequirements || {};
+          Object.keys(socialReqs).forEach(platform => {
+            if (socialReqs[platform] && typeof socialReqs[platform] === 'object' && socialReqs[platform].url) {
+              initialSocialState[platform] = false;
+            }
+          });
+          setSocialMedia(initialSocialState);
         }
       } catch (error) {
         console.error('Error loading data:', error);
@@ -516,59 +497,79 @@ function Register() {
                     />
                     <small style={{ color: '#666' }}>You can upload a photo and paste the URL here</small>
                   </div>
-                </div>
+                </div>                {/* Social Media Section */}
+                {Object.keys(socialMediaSettings).length > 0 && (
+                  <div className="form-section" style={{ marginTop: '30px' }}>
+                    <h3 style={{ marginBottom: '15px', color: '#2c3e50' }}>
+                      <i className="fas fa-share-alt"></i> Community Connection (Required)
+                    </h3>
+                    <p style={{ marginBottom: '15px', color: '#666', fontSize: '0.9em' }}>
+                      Please follow all of our social media channels to stay connected with the community. Check the box after following each platform.
+                    </p>
+                    
+                    {Object.entries(socialMediaSettings).map(([platform, settings]) => {
+                      if (!settings || !settings.url) return null;
+                      
+                      const getIcon = (platform) => {
+                        switch(platform) {
+                          case 'facebook': return 'fab fa-facebook';
+                          case 'instagram': return 'fab fa-instagram';
+                          case 'youtube': return 'fab fa-youtube';
+                          case 'whatsapp_channel': return 'fab fa-whatsapp';
+                          case 'whatsappChannel': return 'fab fa-whatsapp';
+                          case 'whatsappGroup': return 'fab fa-whatsapp';
+                          default: return 'fas fa-link';
+                        }
+                      };
 
-                {/* Social Media Section */}
-                <div className="form-section" style={{ marginTop: '30px' }}>
-                  <h3 style={{ marginBottom: '15px', color: '#2c3e50' }}>
-                    <i className="fas fa-share-alt"></i> Community Connection (Required)
-                  </h3>
-                  <p style={{ marginBottom: '15px', color: '#666', fontSize: '0.9em' }}>
-                    Please follow all of our social media channels to stay connected with the community. Check the box after following each platform.
-                  </p>
-                  
-                  {Object.entries(socialMediaLinks).map(([platform, info]) => (
-                    <div key={platform} className="social-media-item" style={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      marginBottom: '10px', 
-                      padding: '10px', 
-                      border: '1px solid #ddd', 
-                      borderRadius: '5px',
-                      backgroundColor: socialMedia[platform] ? '#e8f5e8' : '#f9f9f9'
-                    }}>
-                      <input 
-                        type="checkbox" 
-                        id={platform}
-                        checked={socialMedia[platform]}
-                        onChange={() => handleSocialMediaChange(platform)}
-                        style={{ marginRight: '10px' }}
-                      />
-                      <i className={info.icon} style={{ marginRight: '10px', color: '#3b82f6', fontSize: '1.2em' }}></i>
-                      <label htmlFor={platform} style={{ flex: 1, margin: 0, cursor: 'pointer' }}>
-                        {info.name}
-                      </label>
-                      <a 
-                        href={info.url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        style={{ 
-                          padding: '5px 10px', 
-                          backgroundColor: '#3b82f6', 
-                          color: 'white', 
-                          textDecoration: 'none', 
-                          borderRadius: '3px',
-                          fontSize: '0.8em'
-                        }}
-                      >
-                        Follow <i className="fas fa-external-link-alt"></i>
-                      </a>
-                    </div>
-                  ))}
-                  <small style={{ color: '#e74c3c', fontSize: '0.8em' }}>
-                    * You must follow at least one social media channel to join our community
-                  </small>
-                </div>
+                      const getName = (platform, settings) => {
+                        return settings.display?.name || platform.charAt(0).toUpperCase() + platform.slice(1);
+                      };
+
+                      return (
+                        <div key={platform} className="social-media-item" style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          marginBottom: '10px', 
+                          padding: '10px', 
+                          border: '1px solid #ddd', 
+                          borderRadius: '5px',
+                          backgroundColor: socialMedia[platform] ? '#e8f5e8' : '#f9f9f9'
+                        }}>
+                          <input 
+                            type="checkbox" 
+                            id={platform}
+                            checked={socialMedia[platform] || false}
+                            onChange={() => handleSocialMediaChange(platform)}
+                            style={{ marginRight: '10px' }}
+                          />
+                          <i className={getIcon(platform)} style={{ marginRight: '10px', color: '#3b82f6', fontSize: '1.2em' }}></i>
+                          <label htmlFor={platform} style={{ flex: 1, margin: 0, cursor: 'pointer' }}>
+                            {getName(platform, settings)}
+                          </label>
+                          <a 
+                            href={settings.url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            style={{ 
+                              padding: '5px 10px', 
+                              backgroundColor: '#3b82f6', 
+                              color: 'white', 
+                              textDecoration: 'none', 
+                              borderRadius: '3px',
+                              fontSize: '0.8em'
+                            }}
+                          >
+                            Follow <i className="fas fa-external-link-alt"></i>
+                          </a>
+                        </div>
+                      );
+                    })}
+                    <small style={{ color: '#e74c3c', fontSize: '0.8em' }}>
+                      * You must follow at least one social media channel to join our community
+                    </small>
+                  </div>
+                )}
 
                 {/* Membership Plan Selection */}
                 <div className="form-section" style={{ marginTop: '30px' }}>

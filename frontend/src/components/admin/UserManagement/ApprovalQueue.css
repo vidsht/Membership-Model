@@ -132,7 +132,7 @@
 
 .approval-table .checkbox-cell {
   width: 40px;
-  padding-left: 0.5rem;
+  padding: 0;
 }
 
 .user-name-cell {

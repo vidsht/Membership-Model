@@ -46,21 +46,20 @@
   
   /* Transitions */
   --transition-fast: 0.2s ease;
-  --transition-normal: 0.3s ease;
-  --transition-slow: 0.5s ease;
-  
-  /* Container Widths */
-  --container-sm: 600px;
-  --container-md: 800px;
-  --container-lg: 1000px;
-  --container-xl: 1200px;
+  --transition-normal: 0.3s ease;  --transition-slow: 0.5s ease;
 }
 
 /* Base Styles */
 * {
-  margin: 0;
-  padding: 0;
   box-sizing: border-box;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
@@ -101,13 +100,8 @@ p {
   margin-bottom: var(--space-md);
 }
 
-/* Container */
-.container {
-  width: 100%;
-  max-width: var(--container-xl);
-  margin: 0 auto;
-  padding: 0 var(--space-lg);
-}
+
+
 
 /* Header Styles */
 /* Header Styles - Modern & Professional */
@@ -131,8 +125,7 @@ header.scrolled {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--space-md) var(--space-lg);
-  max-width: var(--container-xl);
+  padding: var(--space-md) 0;
   margin: 0 auto;
 }
 
@@ -252,7 +245,6 @@ header.scrolled {
 
 .dropdown-arrow {
   font-size: 10px;
-  margin-left: 2px;
   transition: transform var(--transition-fast);
   color: rgba(255, 255, 255, 0.7);
 }
@@ -386,10 +378,8 @@ footer {
 }
 
 .footer-content {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  display: grid;  grid-template-columns: repeat(4, 1fr);
   gap: var(--space-xl);
-  max-width: var(--container-xl);
   margin: 0 auto;
   padding: 0 var(--space-lg);
 }
@@ -466,9 +456,8 @@ footer {
   }
 }
 
-@media (max-width: 768px) {
-  .main-nav ul li a .nav-icon {
-    margin-right: 0;
+@media (max-width: 768px) {  .main-nav ul li a .nav-icon {
+    margin: 0;
   }
   
   .main-nav ul li a span {
@@ -501,7 +490,7 @@ footer {
   }
   
   .auth-buttons {
-    margin-left: auto;
+    margin: 0 auto;
   }
 }
 
@@ -528,14 +517,8 @@ footer {
   transform: translateY(-3px);
 }
 
-.footer-bottom {
-  margin-top: var(--space-xl);
-  padding-top: var(--space-md);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  text-align: center;
-  max-width: var(--container-xl);
-  margin-left: auto;
-  margin-right: auto;
+.footer-bottom {  max-width: var(--container-xl);
+  margin: var(--space-xl) auto 0 auto;
   color: var(--neutral-light);
   font-size: var(--text-small);
 }
@@ -604,8 +587,7 @@ footer {
     box-shadow: none;
     opacity: 1;
     visibility: visible;
-    transform: none;
-    padding-left: var(--space-md);
+    transform: none;    padding: 0;
   }
   
   .footer-content {

@@ -6,6 +6,8 @@ import './MerchantManagementEnhanced.css';
 const MerchantManagementEnhanced = () => {
   const { showNotification } = useNotification();
   const [merchants, setMerchants] = useState([]);
+  const [businesses, setBusinesses] = useState([]);
+  const [viewMode, setViewMode] = useState('cards'); // 'table' or 'cards'
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedMerchant, setSelectedMerchant] = useState(null);
@@ -32,10 +34,27 @@ const MerchantManagementEnhanced = () => {
     merchantId: null,
     merchantName: ''
   });
-
   useEffect(() => {
-    fetchMerchants();
-  }, [filters, pagination.page]);
+    if (viewMode === 'cards') {
+      fetchBusinesses();
+    } else {
+      fetchMerchants();
+    }
+  }, [filters, pagination.page, viewMode]);
+
+  const fetchBusinesses = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/businesses');
+      setBusinesses(response.data || []);
+    } catch (err) {
+      setError('Failed to fetch businesses');
+      console.error('Error fetching businesses:', err);
+      showNotification('Error loading businesses', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchMerchants = async () => {
     try {
@@ -235,81 +254,101 @@ const MerchantManagementEnhanced = () => {
   }
 
   return (
-    <div className="merchant-management-enhanced">
-      <div className="merchant-management-header">
+    <div className="merchant-management-enhanced">      <div className="merchant-management-header">
         <h2>Business Partner Management</h2>
         <div className="header-actions">
-          <button 
-            className="btn btn-primary"
-            onClick={() => {
-              setEditingMerchant(null);
-              setShowAddMerchant(true);
-            }}
-          >
-            <i className="fas fa-plus"></i>
-            Add Partner
-          </button>
-          {selectedMerchants.length > 0 && (
+          <div className="view-toggle">
             <button 
-              className="btn btn-secondary"
-              onClick={() => setShowBulkActions(!showBulkActions)}
+              className={`btn ${viewMode === 'cards' ? 'btn-primary' : 'btn-secondary'}`}
+              onClick={() => setViewMode('cards')}
             >
-              <i className="fas fa-tasks"></i>
-              Bulk Actions ({selectedMerchants.length})
+              <i className="fas fa-th-large"></i>
+              Cards View
             </button>
+            <button 
+              className={`btn ${viewMode === 'table' ? 'btn-primary' : 'btn-secondary'}`}
+              onClick={() => setViewMode('table')}
+            >
+              <i className="fas fa-table"></i>
+              Table View
+            </button>
+          </div>
+          {viewMode === 'table' && (
+            <>
+              <button 
+                className="btn btn-primary"
+                onClick={() => {
+                  setEditingMerchant(null);
+                  setShowAddMerchant(true);
+                }}
+              >
+                <i className="fas fa-plus"></i>
+                Add Partner
+              </button>
+              {selectedMerchants.length > 0 && (
+                <button 
+                  className="btn btn-secondary"
+                  onClick={() => setShowBulkActions(!showBulkActions)}
+                >
+                  <i className="fas fa-tasks"></i>
+                  Bulk Actions ({selectedMerchants.length})
+                </button>
+              )}
+            </>
           )}
-        </div>
-      </div>
+        </div>      </div>
 
-      {/* Filters */}
-      <div className="filters-section">
-        <div className="filters-row">
-          <div className="filter-group">
-            <input
-              type="text"
-              placeholder="Search merchants..."
-              value={filters.search}
-              onChange={(e) => handleFilterChange('search', e.target.value)}
-              className="search-input"
-            />
-          </div>
-          <div className="filter-group">
-            <select
-              value={filters.status}
-              onChange={(e) => handleFilterChange('status', e.target.value)}
-              className="filter-select"
-            >
-              <option value="">All Status</option>
-              <option value="pending">Pending</option>
-              <option value="approved">Approved</option>
-              <option value="rejected">Rejected</option>
-              <option value="suspended">Suspended</option>
-            </select>
-          </div>
-          <div className="filter-group">
-            <select
-              value={filters.category}
-              onChange={(e) => handleFilterChange('category', e.target.value)}
-              className="filter-select"
-            >
-              <option value="">All Categories</option>
-              <option value="restaurant">Restaurant</option>
-              <option value="retail">Retail</option>
-              <option value="services">Services</option>
-              <option value="entertainment">Entertainment</option>
-              <option value="healthcare">Healthcare</option>
-            </select>
-          </div>
-          <div className="filter-group">
-            <select
-              value={filters.membershipType}
-              onChange={(e) => handleFilterChange('membershipType', e.target.value)}
-              className="filter-select"
-            >
-              <option value="">All Plans</option>
-              <option value="free">Free</option>
-              <option value="premium">Premium</option>
-              <option value="business">Business</option>
+      {viewMode === 'table' && (
+        <>
+          {/* Filters */}
+          <div className="filters-section">
+            <div className="filters-row">
+              <div className="filter-group">
+                <input
+                  type="text"
+                  placeholder="Search merchants..."
+                  value={filters.search}
+                  onChange={(e) => handleFilterChange('search', e.target.value)}
+                  className="search-input"
+                />
+              </div>
+              <div className="filter-group">
+                <select
+                  value={filters.status}
+                  onChange={(e) => handleFilterChange('status', e.target.value)}
+                  className="filter-select"
+                >
+                  <option value="">All Status</option>
+                  <option value="pending">Pending</option>
+                  <option value="approved">Approved</option>
+                  <option value="rejected">Rejected</option>
+                  <option value="suspended">Suspended</option>
+                </select>
+              </div>
+              <div className="filter-group">
+                <select
+                  value={filters.category}
+                  onChange={(e) => handleFilterChange('category', e.target.value)}
+                  className="filter-select"
+                >
+                  <option value="">All Categories</option>
+                  <option value="restaurant">Restaurant</option>
+                  <option value="retail">Retail</option>
+                  <option value="services">Services</option>
+                  <option value="entertainment">Entertainment</option>
+                  <option value="healthcare">Healthcare</option>
+                </select>
+              </div>
+              <div className="filter-group">
+                <select
+                  value={filters.membershipType}
+                  onChange={(e) => handleFilterChange('membershipType', e.target.value)}
+                  className="filter-select"
+                >
+                  <option value="">All Plans</option>
+                  <option value="free">Free</option>
+                  <option value="premium">Premium</option>
+                  <option value="business">Business</option>
             </select>
           </div>
         </div>
@@ -490,6 +529,113 @@ const MerchantManagementEnhanced = () => {
               Next
             </button>
           </div>
+        </div>      )}
+        </>
+      )}
+
+      {/* Business Cards View */}
+      {viewMode === 'cards' && (
+        <div className="business-cards-container">
+          <div className="business-cards-header">
+            <h3>
+              <i className="fas fa-th-large"></i>
+              Active Business Partners ({businesses.length})
+            </h3>
+            <p>Explore our verified business partners directory</p>
+          </div>
+          
+          {businesses.length > 0 ? (
+            <div className="business-grid">
+              {businesses.map((business, index) => (
+                <div key={business.id || index} className="business-card">
+                  <div className="business-card-inner">
+                    <div className="business-card-front">
+                      <div className="business-logo">
+                        {business.logo ? (
+                          <img src={business.logo} alt={business.name} />
+                        ) : (
+                          <div className="business-placeholder">
+                            <i className="fas fa-store"></i>
+                          </div>
+                        )}
+                      </div>
+                      <div className="business-info">
+                        <h3 className="business-name">{business.name}</h3>
+                        <p className="business-category">{business.sector}</p>
+                        <p className="business-description">
+                          {business.description ? 
+                            `${business.description.substring(0, 100)}...` : 
+                            'Premium business partner in our community'
+                          }
+                        </p>
+                        <div className="business-contact">
+                          {business.phone && (
+                            <a href={`tel:${business.phone}`} className="contact-link" title="Call">
+                              <i className="fas fa-phone"></i>
+                            </a>
+                          )}
+                          {business.email && (
+                            <a href={`mailto:${business.email}`} className="contact-link" title="Email">
+                              <i className="fas fa-envelope"></i>
+                            </a>
+                          )}
+                          {business.website && (
+                            <a href={business.website} target="_blank" rel="noopener noreferrer" className="contact-link" title="Website">
+                              <i className="fas fa-globe"></i>
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                      <div className="business-badge">
+                        <i className="fas fa-certificate" title="Verified Partner"></i>
+                      </div>
+                    </div>
+                    <div className="business-card-back">
+                      <div className="card-back-content">
+                        <h4>{business.name}</h4>
+                        <div className="business-details">
+                          <div className="detail-item">
+                            <i className="fas fa-tag"></i>
+                            <span>{business.sector}</span>
+                          </div>
+                          {business.address && (
+                            <div className="detail-item">
+                              <i className="fas fa-map-marker-alt"></i>
+                              <span>{business.address}</span>
+                            </div>
+                          )}
+                          {business.isVerified && (
+                            <div className="detail-item">
+                              <i className="fas fa-check-circle"></i>
+                              <span>Verified Business</span>
+                            </div>
+                          )}
+                          {business.membershipLevel && (
+                            <div className="detail-item">
+                              <i className="fas fa-crown"></i>
+                              <span>{business.membershipLevel} Member</span>
+                            </div>
+                          )}
+                          {business.ownerName && (
+                            <div className="detail-item">
+                              <i className="fas fa-user"></i>
+                              <span>Owner: {business.ownerName}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="no-businesses">
+              <i className="fas fa-store-slash fa-4x"></i>
+              <h3>No Active Businesses Found</h3>
+              <p>There are currently no active business partners to display.</p>
+            </div>
+          )}
         </div>
       )}
 

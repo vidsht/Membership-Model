@@ -16,9 +16,9 @@ const AdminDashboard = () => {
   const { user, validateSession } = useAuth();
   const { showNotification } = useNotification();
   const navigate = useNavigate();
-  
-  // Navigation state
+    // Navigation state
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   
   const [stats, setStats] = useState({
     totalUsers: 0,
@@ -269,11 +269,10 @@ const AdminDashboard = () => {
       </div>
     </div>
   );
-
   return (
     <div className="admin-dashboard">
       {/* Sidebar Navigation */}
-      <div className="admin-sidebar">
+      <div className={`admin-sidebar ${sidebarOpen ? 'open' : 'closed'}`}>
         <div className="sidebar-header">
           <h2><i className="fas fa-shield-alt"></i> Admin Panel</h2>
           <p>{user?.fullName || 'Administrator'}</p>
@@ -307,15 +306,21 @@ const AdminDashboard = () => {
             Back to Dashboard
           </button>
         </div>
-      </div>
-
-      {/* Main Content */}
+      </div>      {/* Main Content */}
       <div className="admin-main">
         <div className="admin-header">
-          <h1>
-            <i className={tabs.find(tab => tab.id === activeTab)?.icon}></i>
-            {tabs.find(tab => tab.id === activeTab)?.label || 'Dashboard'}
-          </h1>
+          <div className="header-left">
+            <button 
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="sidebar-toggle"
+            >
+              <i className="fas fa-bars"></i>
+            </button>
+            <h1>
+              <i className={tabs.find(tab => tab.id === activeTab)?.icon}></i>
+              {tabs.find(tab => tab.id === activeTab)?.label || 'Dashboard'}
+            </h1>
+          </div>
           <div className="header-actions">
             <button 
               onClick={() => window.location.reload()}

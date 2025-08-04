@@ -31,15 +31,9 @@
 body {
     background-color: #f5f7fa;
     color: var(--dark);
-    line-height: 1.6;
-    min-height: 100vh;
+    line-height: 1.6;    min-height: 100vh;
 }
 
-.container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
-}
 
 header {
     background: linear-gradient(135deg, var(--secondary) 0%, var(--primary) 100%);
@@ -269,8 +263,7 @@ nav a:hover, nav a.active {
 }
 
 .terms-container ul {
-    margin-left: 20px;
-    margin-bottom: 15px;
+    margin: 0 0 15px 0;
 }
 
 .terms-container li {
@@ -884,7 +877,6 @@ input:focus, select:focus, textarea:focus {
 
 .detail-item strong {
     color: var(--dark);
-    margin-right: 10px;
 }
 
 .quick-actions {

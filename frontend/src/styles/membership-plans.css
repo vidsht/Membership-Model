@@ -119,14 +119,13 @@
 
 .plan-features li {
   margin-bottom: 10px;
-  padding-left: 5px;
+  padding: 0;
   display: flex;
   align-items: center;
 }
 
 .plan-features li i {
   color: #4caf50;
-  margin-right: 10px;
 }
 
 .membership-card.silver .plan-features li i {

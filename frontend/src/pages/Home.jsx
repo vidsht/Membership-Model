@@ -5,6 +5,7 @@ import api from '../services/api';
 import '../styles/global.css';
 import '../styles/home.css';
 import '../styles/membership-plans.css';
+import '../styles/social-media-home.css';
 
 const Home = () => {
   const { isAuthenticated } = useAuth();
@@ -32,43 +33,71 @@ const Home = () => {
       try {
         // Fetch businesses (public data)
         const businessResponse = await api.get('/businesses');
-        setBusinesses(businessResponse.data);
-
-        // Fetch public admin settings
+        setBusinesses(businessResponse.data);        // Fetch public admin settings
         try {
           const settingsResponse = await api.get('/admin/settings/public');
           if (settingsResponse.data.success) {
+            console.log('✅ Admin settings received:', settingsResponse.data.settings);
+            console.log('📱 Social media requirements:', settingsResponse.data.settings.socialMediaRequirements);
+            console.log('🎛️ Features:', settingsResponse.data.settings.features);
             setAdminSettings(settingsResponse.data.settings);
           }
         } catch (error) {
           // Use default settings if admin settings not accessible
+          console.log('❌ Admin settings error:', error);
           console.log('Using default settings');
-        }
-
-        // Fetch real stats from admin endpoint or use defaults
+        }// Fetch real stats - use admin endpoint for authenticated users, public endpoint for everyone else
         try {
+          let statsResponse;
           if (isAuthenticated) {
-            const statsResponse = await api.get('/admin/stats');
-            if (statsResponse.data.success) {
-              setStats({
-                totalMembers: statsResponse.data.stats.totalUsers || 0,
-                activeBusinesses: statsResponse.data.stats.activeBusinesses || 0,
-                exclusiveDeals: statsResponse.data.stats.totalDeals || 0,
-                pendingApprovals: statsResponse.data.stats.pendingApprovals || 0
-              });
-            } else {
-              throw new Error('Failed to fetch stats');
+            // For authenticated users, try admin stats first
+            try {
+              statsResponse = await api.get('/admin/stats');
+              if (statsResponse.data.success) {
+                setStats({
+                  totalMembers: statsResponse.data.stats.totalUsers || 0,
+                  activeBusinesses: statsResponse.data.stats.activeBusinesses || 0,
+                  exclusiveDeals: statsResponse.data.stats.totalDeals || 0,
+                  pendingApprovals: statsResponse.data.stats.pendingApprovals || 0
+                });
+              } else {
+                throw new Error('Admin stats failed');
+              }
+            } catch (adminError) {
+              // Fallback to public stats if admin stats fail
+              console.log('Admin stats failed, using public stats');
+              statsResponse = await api.get('/deals/home-stats');
+              if (statsResponse.data.success) {
+                setStats({
+                  totalMembers: statsResponse.data.stats.totalMembers || 0,
+                  activeBusinesses: statsResponse.data.stats.totalBusinesses || 0,
+                  exclusiveDeals: statsResponse.data.stats.totalDeals || 0,
+                  pendingApprovals: 0 // Not available in public stats
+                });
+              }
             }
           } else {
-            throw new Error('Not authenticated');
+            // For public users, use the public home stats endpoint
+            statsResponse = await api.get('/deals/home-stats');
+            if (statsResponse.data.success) {
+              setStats({
+                totalMembers: statsResponse.data.stats.totalMembers || 0,
+                activeBusinesses: statsResponse.data.stats.totalBusinesses || 0,
+                exclusiveDeals: statsResponse.data.stats.totalDeals || 0,
+                pendingApprovals: 0 // Not available in public stats
+              });
+            } else {
+              throw new Error('Failed to fetch public stats');
+            }
           }
         } catch (error) {
-          // Mock stats for public display
+          console.error('Error fetching stats:', error);
+          // Fallback to minimal default stats only if all endpoints fail
           setStats({
-            totalMembers: 1250,
-            activeBusinesses: 85,
-            exclusiveDeals: 42,
-            pendingApprovals: 8
+            totalMembers: 0,
+            activeBusinesses: 0,
+            exclusiveDeals: 0,
+            pendingApprovals: 0
           });
         }
 
@@ -113,15 +142,14 @@ const Home = () => {
           </div>
         </div>
       )}
-      
+
       <section className="hero">
         <div className="hero-content">
           <h1>Welcome to Indians in Ghana</h1>
           <p>Connecting the Indian community in Ghana through membership, business opportunities, and exclusive benefits.</p>
-          
           {!isAuthenticated && (
             <div className="hero-actions">
-              <Link to="/register" className="btn btn-primary">
+              <Link to="/unified-registration" className="btn btn-primary">
                 <i className="fas fa-user-plus"></i> Join Now
               </Link>
               <Link to="/login" className="btn btn-secondary">
@@ -130,77 +158,46 @@ const Home = () => {
             </div>
           )}
         </div>
-      </section>      <section className="stats">
-        <div className="stats-container">
-          <div className="stats-header">
-            <h2><i className="fas fa-chart-bar"></i> Community Statistics</h2>
-            <p>Real-time insights into our growing community</p>
-          </div>
-          <div className="stats-grid">
-            <div className="stat-card">
-              <div className="stat-icon">
+      </section>
+
+      {/* Why Join Our Community section (features) */}
+      <section className="features">
+        <div className="features-header">
+          <h2>Why Join Our Community?</h2>
+          <p>Discover the benefits of becoming a member of the Indians in Ghana community</p>
+        </div>
+        <div className="features-container">
+          <div className="features-grid">
+            <div className="feature-card">
+              <div className="feature-icon">
+                <i className="fas fa-id-card"></i>
+              </div>
+              <h3 className="feature-title">Digital Membership Card</h3>
+              <p className="feature-description">Get your digital membership card with QR code and barcode for easy verification at all community events and partner businesses.</p>
+              <a href="/unified-registration" className="feature-link">Get Your Card <i className="fas fa-arrow-right"></i></a>
+            </div>
+            <div className="feature-card">
+              <div className="feature-icon">
                 <i className="fas fa-users"></i>
               </div>
-              <div className="stat-number">{stats.totalMembers || 0}</div>
-              <div className="stat-label">Community Members</div>
-              <div className="stat-description">Active registered members</div>
+              <h3 className="feature-title">Community Network</h3>
+              <p className="feature-description">Connect with the Indian community in Ghana and build meaningful relationships with fellow Indians through our various networking events.</p>
+              <a href="/about" className="feature-link">Learn More <i className="fas fa-arrow-right"></i></a>
             </div>
-            <div className="stat-card">
-              <div className="stat-icon">
-                <i className="fas fa-store"></i>
+            <div className="feature-card">
+              <div className="feature-icon">
+                <i className="fas fa-gift"></i>
               </div>
-              <div className="stat-number">{stats.activeBusinesses || 0}</div>
-              <div className="stat-label">Active Businesses</div>
-              <div className="stat-description">Verified business partners</div>
+              <h3 className="feature-title">Member Benefits</h3>
+              <p className="feature-description">Access member-only events, cultural celebrations, exclusive deals with local businesses, and special community gatherings.</p>
+              <a href="/unified-registration" className="feature-link">View Benefits <i className="fas fa-arrow-right"></i></a>
             </div>
-            <div className="stat-card">
-              <div className="stat-icon">
-                <i className="fas fa-tags"></i>
-              </div>
-              <div className="stat-number">{stats.exclusiveDeals || 0}</div>
-              <div className="stat-label">Exclusive Deals</div>
-              <div className="stat-description">Member-only offers</div>
-            </div>
-            {isAuthenticated && (
-              <div className="stat-card">
-                <div className="stat-icon">
-                  <i className="fas fa-clock"></i>
-                </div>
-                <div className="stat-number">{stats.pendingApprovals || 0}</div>
-                <div className="stat-label">Pending Approvals</div>
-                <div className="stat-description">Awaiting verification</div>
-              </div>
-            )}
           </div>
         </div>
       </section>
 
-      <section className="features">
-        <div className="features-container">
-          <h2>Why Join Our Community?</h2>
-          <div className="features-grid">
-            <div className="feature-card">
-              <i className="fas fa-id-card"></i>
-              <h3>Digital Membership Card</h3>
-              <p>Get your digital membership card with QR code and barcode for easy verification.</p>
-            </div>
-            <div className="feature-card">
-              <i className="fas fa-store"></i>
-              <h3>Business Directory</h3>
-              <p>Discover Indian businesses in Ghana and connect with fellow entrepreneurs.</p>
-            </div>
-            <div className="feature-card">
-              <i className="fas fa-tags"></i>
-              <h3>Exclusive Deals</h3>
-              <p>Access member-only discounts and special offers from partner businesses.</p>
-            </div>
-            <div className="feature-card">
-              <i className="fas fa-users"></i>
-              <h3>Community Events</h3>
-              <p>Stay updated on cultural events, festivals, and community gatherings.</p>
-            </div>
-          </div>        </div>
-      </section>
+      {/* Move the CTA (Why Join Our Community) section here, right after hero */}
+
 
       {adminSettings.features?.business_directory && businesses.length > 0 && (
         <section className="business-partners">
@@ -251,7 +248,7 @@ const Home = () => {
             </div>
             {businesses.length > 6 && (
               <div className="business-actions">
-                <Link to="/directory" className="btn btn-outline">
+                <Link to="/business-directory" className="btn btn-outline">
                   <i className="fas fa-search"></i> View All Businesses
                 </Link>
               </div>
@@ -260,46 +257,8 @@ const Home = () => {
         </section>
       )}
 
-      <section className="membership-plans">
-        <div className="plans-container">
-          <h2>Membership Plans</h2>
-          <div className="plans-grid">
-            <div className="plan-card">
-              <h3>Community</h3>
-              <div className="plan-price">Free</div>
-              <ul className="plan-features">
-                <li>Basic membership card</li>
-                <li>Business directory access</li>
-                <li>Community event updates</li>
-              </ul>
-              <Link to="/register" className="btn btn-outline">Get Started</Link>
-            </div>
-            <div className="plan-card featured">
-              <h3>Silver</h3>
-              <div className="plan-price">$50/year</div>
-              <ul className="plan-features">
-                <li>All Community features</li>
-                <li>Exclusive deals access</li>
-                <li>Priority event booking</li>
-                <li>Monthly newsletter</li>
-              </ul>
-              <Link to="/register" className="btn btn-primary">Choose Silver</Link>
-            </div>
-            <div className="plan-card">
-              <h3>Gold</h3>
-              <div className="plan-price">$100/year</div>
-              <ul className="plan-features">
-                <li><i className="fas fa-check"></i> All Silver features</li>
-                <li><i className="fas fa-check"></i> VIP access to events</li>
-                <li><i className="fas fa-check"></i> Unlimited exclusive deals</li>
-                <li><i className="fas fa-check"></i> Business networking</li>
-                <li><i className="fas fa-check"></i> Priority customer service</li>
-              </ul>
-              <Link to="/unified-registration" className="plan-button">Upgrade to Gold</Link>
-            </div>
-          </div>
-        </div>
-      </section>
+
+
       
       <section className="testimonials">
         <div className="testimonials-header">
@@ -321,7 +280,7 @@ const Home = () => {
           </div>
         </div>
       </section>
-      
+
       <section className="cta">
         <div className="cta-container">
           <h2>Join Our Community Today</h2>
@@ -335,50 +294,74 @@ const Home = () => {
             </Link>
           </div>
         </div>
-      </section>      <section className="features">
-        <div className="features-header">
-          <h2>Why Join Our Community?</h2>
-          <p>Discover the benefits of becoming a member of the Indians in Ghana community</p>
-        </div>
-        <div className="features-container">
-          <div className="features-grid">
-            <div className="feature-card">
-              <div className="feature-icon">
-                <i className="fas fa-id-card"></i>
-              </div>
-              <h3 className="feature-title">Digital Membership Card</h3>
-              <p className="feature-description">Get your digital membership card with QR code and barcode for easy verification at all community events and partner businesses.</p>
-              <a href="/unified-registration" className="feature-link">Get Your Card <i className="fas fa-arrow-right"></i></a>
-            </div>
-            
-            <div className="feature-card">
-              <div className="feature-icon">
-                <i className="fas fa-users"></i>
-              </div>
-              <h3 className="feature-title">Community Network</h3>
-              <p className="feature-description">Connect with the Indian community in Ghana and build meaningful relationships with fellow Indians through our various networking events.</p>
-              <a href="/about" className="feature-link">Learn More <i className="fas fa-arrow-right"></i></a>
-            </div>
-            
-            <div className="feature-card">
-              <div className="feature-icon">
-                <i className="fas fa-gift"></i>
-              </div>
-              <h3 className="feature-title">Member Benefits</h3>
-              <p className="feature-description">Access member-only events, cultural celebrations, exclusive deals with local businesses, and special community gatherings.</p>
-              <a href="/unified-registration" className="feature-link">View Benefits <i className="fas fa-arrow-right"></i></a>
-            </div>
-            
-            <div className="feature-card">
-              <div className="feature-icon">
-                <i className="fas fa-calendar-alt"></i>
-              </div>
-              <h3 className="feature-title">Community Events</h3>
-              <p className="feature-description">Stay updated on cultural events, festivals, Diwali celebrations, Holi festivities, and other community gatherings throughout the year.</p>
-              <a href="/contact" className="feature-link">Upcoming Events <i className="fas fa-arrow-right"></i></a>
-            </div>
-          </div>        </div>
-      </section>      <section className="terms-preview">
+      </section>        {/* Social Media Section */}
+      {(() => {
+        const showSocialHome = adminSettings.features?.show_social_media_home !== false;
+        const hasSocialPlatforms = Object.keys(adminSettings.socialMediaRequirements || {}).length > 0;
+        console.log('🔍 Social Media Debug:', {
+          showSocialHome,
+          hasSocialPlatforms,
+          features: adminSettings.features,
+          socialMediaRequirements: adminSettings.socialMediaRequirements,
+          shouldShow: showSocialHome && hasSocialPlatforms
+        });
+        return showSocialHome && hasSocialPlatforms;
+      })() && (
+        <section className="social-media-section">
+          <div className="social-media-banner">
+            {adminSettings.socialMediaRequirements?.whatsapp_channel && (
+              <a
+                className="social-media-box"
+                href={adminSettings.socialMediaRequirements.whatsapp_channel.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="WhatsApp Channel"
+              >
+                <i className="fab fa-whatsapp"></i>
+                <span>{adminSettings.socialMediaRequirements.whatsapp_channel.display?.name || 'WhatsApp'}</span>
+              </a>
+            )}
+            {adminSettings.socialMediaRequirements?.facebook && (
+              <a
+                className="social-media-box"
+                href={adminSettings.socialMediaRequirements.facebook.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Facebook"
+              >
+                <i className="fab fa-facebook-f"></i>
+                <span>{adminSettings.socialMediaRequirements.facebook.display?.name || 'Facebook'}</span>
+              </a>
+            )}
+            {adminSettings.socialMediaRequirements?.instagram && (
+              <a
+                className="social-media-box"
+                href={adminSettings.socialMediaRequirements.instagram.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Instagram"
+              >
+                <i className="fab fa-instagram"></i>
+                <span>{adminSettings.socialMediaRequirements.instagram.display?.name || 'Instagram'}</span>
+              </a>
+            )}
+            {adminSettings.socialMediaRequirements?.youtube && (
+              <a
+                className="social-media-box"
+                href={adminSettings.socialMediaRequirements.youtube.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="YouTube"
+              >
+                <i className="fab fa-youtube"></i>
+                <span>{adminSettings.socialMediaRequirements.youtube.display?.name || 'YouTube'}</span>
+              </a>
+            )}
+          </div>
+        </section>
+      )}
+
+      <section className="terms-preview">
         <div className="terms-container">
           <div className="terms-header">
             <h2><i className="fas fa-gavel"></i> Terms and Conditions</h2>
@@ -399,6 +382,53 @@ const Home = () => {
           </div>
         </div>
       </section>
+
+      <section className="stats">
+        <div className="stats-container">
+          <div className="stats-header">
+            <h2><i className="fas fa-chart-bar"></i> Community Statistics</h2>
+            <p>Real-time insights into our growing community</p>
+          </div>
+          <div className="stats-grid">
+            <div className="stat-card">
+              <div className="stat-icon">
+                <i className="fas fa-users"></i>
+              </div>
+              <div className="stat-number">{stats.totalMembers || 0}</div>
+              <div className="stat-label">Community Members</div>
+              <div className="stat-description">Active registered members</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-icon">
+                <i className="fas fa-store"></i>
+              </div>
+              <div className="stat-number">{stats.activeBusinesses || 0}</div>
+              <div className="stat-label">Active Businesses</div>
+              <div className="stat-description">Verified business partners</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-icon">
+                <i className="fas fa-tags"></i>
+              </div>
+              <div className="stat-number">{stats.exclusiveDeals || 0}</div>
+              <div className="stat-label">Exclusive Deals</div>
+              <div className="stat-description">Member-only offers</div>
+            </div>
+            {isAuthenticated && (
+              <div className="stat-card">
+                <div className="stat-icon">
+                  <i className="fas fa-clock"></i>
+                </div>
+                <div className="stat-number">{stats.pendingApprovals || 0}</div>
+                <div className="stat-label">Pending Approvals</div>
+                <div className="stat-description">Awaiting verification</div>
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* ...footer is rendered after this in the layout... */}
     </div>
   );
 };
