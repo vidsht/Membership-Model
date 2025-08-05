@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .test-button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; cursor: pointer; }
+        .test-results { background: #f8f9fa; padding: 10px; margin: 10px 0; }
+        .error { color: red; }
+        .success { color: green; }
+    </style>
+</head>
+<body>
+    <h1>User Management API Tests</h1>
+    
+    <div class="test-section">
+        <h3>API Connection Test</h3>
+        <button class="test-button" onclick="testConnection()">Test Backend Connection</button>
+        <div id="connection-results" class="test-results"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>User Management Endpoints</h3>
+        <button class="test-button" onclick="testGetUsers()">Test GET /admin/users</button>
+        <button class="test-button" onclick="testCreateUser()">Test POST /admin/users</button>
+        <div id="users-results" class="test-results"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5001/api';
+        
+        async function testConnection() {
+            const results = document.getElementById('connection-results');
+            results.innerHTML = 'Testing connection...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                results.innerHTML = `<span class="success">✅ Connection successful: ${JSON.stringify(data)}</span>`;
+            } catch (error) {
+                results.innerHTML = `<span class="error">❌ Connection failed: ${error.message}</span>`;
+            }
+        }
+        
+        async function testGetUsers() {
+            const results = document.getElementById('users-results');
+            results.innerHTML = 'Testing GET /admin/users...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/admin/users`, {
+                    credentials: 'include'
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    results.innerHTML = `<span class="success">✅ GET Users successful: Found ${data.users?.length || 0} users</span>`;
+                } else {
+                    results.innerHTML = `<span class="error">❌ GET Users failed (${response.status}): ${data.message}</span>`;
+                }
+            } catch (error) {
+                results.innerHTML = `<span class="error">❌ GET Users error: ${error.message}</span>`;
+            }
+        }
+        
+        async function testCreateUser() {
+            const results = document.getElementById('users-results');
+            results.innerHTML = 'Testing POST /admin/users...';
+            
+            const testUser = {
+                fullName: 'Test User',
+                email: `test${Date.now()}@example.com`,
+                phone: '1234567890',
+                userType: 'user',
+                membershipType: 'basic'
+            };
+            
+            try {
+                const response = await fetch(`${API_BASE}/admin/users`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify(testUser)
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    results.innerHTML = `<span class="success">✅ POST User successful: Created user with ID ${data.user?.id}</span>`;
+                } else {
+                    results.innerHTML = `<span class="error">❌ POST User failed (${response.status}): ${data.message}</span>`;
+                }
+            } catch (error) {
+                results.innerHTML = `<span class="error">❌ POST User error: ${error.message}</span>`;
+            }
+        }
+    </script>
+</body>
+</html>

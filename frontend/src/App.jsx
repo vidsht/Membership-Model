@@ -24,9 +24,7 @@ import ResetPassword from './pages/ResetPassword';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/admin/AdminRoute';
 import AdminDashboard from './components/admin/AdminDashboard';
-import UserList from './components/admin/UserManagement/UserList';
-import UserDetail from './components/admin/UserManagement/UserDetail';
-import ApprovalQueue from './components/admin/UserManagement/ApprovalQueue';
+import UserManagement from './components/admin/UserManagement/UserManagement';
 import PartnerList from './components/admin/BusinessPartners/PartnerList';
 import PartnerRegistration from './components/admin/BusinessPartners/PartnerRegistration';
 import AdminSettings from './components/admin/Settings/AdminSettings';
@@ -86,19 +84,9 @@ function App() {
                   <AdminRoute>
                     <AdminDashboard />
                   </AdminRoute>
-                } />
-                <Route path="/admin/users" element={
+                } />                <Route path="/admin/users" element={
                   <AdminRoute>
-                    <UserList />
-                  </AdminRoute>
-                } />                <Route path="/admin/users/:userId" element={
-                  <AdminRoute>
-                    <UserDetail />
-                  </AdminRoute>
-                } />
-                <Route path="/admin/approval-queue" element={
-                  <AdminRoute>
-                    <ApprovalQueue />
+                    <UserManagement />
                   </AdminRoute>
                 } />
                 <Route path="/admin/partners" element={

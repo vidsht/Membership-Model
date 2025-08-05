@@ -74,7 +74,7 @@ router.post('/register', async (req, res) => {
       if (!selectedPlan) {
         // Fetch the first available user plan
         const defaultPlanResult = await new Promise((resolve, reject) => {
-          db.query('SELECT `key` FROM plans WHERE type = ? AND isActive = 1 ORDER BY sortOrder, priority DESC LIMIT 1', ['user'], (err, results) => {
+          db.query('SELECT `key` FROM plans WHERE type = ? AND isActive = 1 ORDER BY displayOrder, priority DESC LIMIT 1', ['user'], (err, results) => {
             if (err) reject(err);
             else resolve(results);
           });
@@ -128,10 +128,28 @@ router.post('/register', async (req, res) => {
               return res.status(500).json({ success: false, message: 'Server error', error: err3.message });
             }
             const user = userRows && userRows[0] ? userRows[0] : null;
-            res.status(201).json({ 
-              success: true, 
-              message: 'Registration successful! Your account is pending approval. Welcome to Indians in Ghana community.', 
-              user 
+            // Log activity: user registration
+            const activityQuery = `INSERT INTO activities (type, title, description, userId, userName, userEmail, userType, timestamp, icon)
+              VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), ?)`;
+            const activityValues = [
+              'user_registered',
+              'New User Registered',
+              `${user.fullName} registered as a new user.`,
+              user.id,
+              user.fullName,
+              user.email,
+              user.userType || 'user',
+              'fa-user-plus'
+            ];
+            db.query(activityQuery, activityValues, (errAct) => {
+              if (errAct) {
+                console.error('Failed to log registration activity:', errAct);
+              }
+              res.status(201).json({ 
+                success: true, 
+                message: 'Registration successful! Your account is pending approval. Welcome to Indians in Ghana community.', 
+                user 
+              });
             });
           });
         });
@@ -287,7 +305,7 @@ router.post('/merchant/register', async (req, res) => {
       if (!selectedPlan) {
         // Fetch the first available merchant plan
         const defaultPlanResult = await new Promise((resolve, reject) => {
-          db.query('SELECT `key` FROM plans WHERE type = ? AND isActive = 1 ORDER BY sortOrder, priority DESC LIMIT 1', ['merchant'], (err, results) => {
+          db.query('SELECT `key` FROM plans WHERE type = ? AND isActive = 1 ORDER BY displayOrder, priority DESC LIMIT 1', ['merchant'], (err, results) => {
             if (err) reject(err);
             else resolve(results);
           });
@@ -358,10 +376,28 @@ router.post('/merchant/register', async (req, res) => {
             }
             
             const user = userRows && userRows[0] ? userRows[0] : null;
-            res.status(201).json({ 
-              success: true, 
-              message: 'Merchant account created successfully! Your account is pending approval.', 
-              user 
+            // Log activity: merchant registration
+            const activityQuery = `INSERT INTO activities (type, title, description, userId, userName, userEmail, userType, timestamp, icon)
+              VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), ?)`;
+            const activityValues = [
+              'business_registered',
+              'New Merchant Registered',
+              `${user.fullName} registered as a new merchant (${user.businessName || ''}).`,
+              user.id,
+              user.fullName,
+              user.email,
+              user.userType || 'merchant',
+              'fa-store'
+            ];
+            db.query(activityQuery, activityValues, (errAct) => {
+              if (errAct) {
+                console.error('Failed to log merchant registration activity:', errAct);
+              }
+              res.status(201).json({ 
+                success: true, 
+                message: 'Merchant account created successfully! Your account is pending approval.', 
+                user 
+              });
             });
           });
         });
@@ -468,7 +504,7 @@ router.post('/reset-password', async (req, res) => {
 router.get('/communities', (req, res) => {
   try {
     // Simple query that works with basic table structure
-    const query = 'SELECT name, description FROM communities WHERE isActive = TRUE ORDER BY sortOrder, name';
+    const query = 'SELECT name, description FROM communities WHERE isActive = TRUE ORDER BY displayOrder, name';
     
     db.query(query, (err, results) => {
       if (err) {

@@ -26,6 +26,8 @@ app.use(express.urlencoded({ extended: true }));
 
 // Session configuration (MySQL store)
 const MySQLStore = require('express-mysql-session')(session);
+
+// Create session store with enhanced error handling
 const sessionStore = new MySQLStore({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -35,6 +37,9 @@ const sessionStore = new MySQLStore({
   checkExpirationInterval: 900000,
   expiration: 86400000,
   createDatabaseTable: true,
+  reconnect: true,
+  acquireTimeout: 60000,
+  reconnectTimeout: 60000,
   schema: {
     tableName: 'sessions',
     columnNames: {
@@ -43,6 +48,15 @@ const sessionStore = new MySQLStore({
       data: 'data'
     }
   }
+});
+
+// Add error handling for session store
+sessionStore.onReady = function() {
+  console.log('✅ MySQL session store ready');
+};
+
+sessionStore.on('error', function(error) {
+  console.error('❌ MySQL session store error:', error);
 });
 
 app.use(session({
@@ -75,7 +89,7 @@ app.use('/api/merchant/deals', require('./routes/deals'));
 // Public deals route for users
 app.use('/api/deals', require('./routes/deals'));
 app.use('/api/plans', require('./routes/plans'));
-app.use('/api/admin', require('./routes/admin_new'));
+
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/admin', require('./routes/deals'));
 app.use('/api/admin', require('./routes/roles'));

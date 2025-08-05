@@ -71,8 +71,10 @@ const UserManagement = () => {
   const initializeComponent = async () => {
     try {
       setLoading(true);
-      await fetchReferenceData();
-      await fetchUsers(); // Ensure users are loaded on first mount
+      await Promise.all([
+        fetchReferenceData(),
+      ]);
+      // fetchUsers will be called by useEffect when loading becomes false
     } catch (err) {
       setError('Failed to initialize user management');
       showNotification('Failed to load user management', 'error');
@@ -80,25 +82,15 @@ const UserManagement = () => {
       setLoading(false);
     }
   };
+
   /**
    * Fetch all reference data (communities, plans)
    */
   const fetchReferenceData = async () => {
     try {
-      console.log('📋 Fetching reference data...');
       const [communitiesRes, plansRes] = await Promise.all([
-        api.get('/admin/communities').catch(err => {
-          console.warn('⚠️ Failed to fetch communities:', err.response?.status);
-          return { data: { communities: ['Gujarati', 'Bengali', 'Tamil', 'Other'] } };
-        }),
-        api.get('/admin/plans').catch(err => {
-          console.warn('⚠️ Failed to fetch plans:', err.response?.status);
-          return { data: { plans: [
-            { id: 1, key: 'basic', name: 'Basic' },
-            { id: 2, key: 'premium', name: 'Premium' },
-            { id: 3, key: 'vip', name: 'VIP' }
-          ] } };
-        })
+        api.get('/admin/communities'),
+        api.get('/admin/plans')
       ]);
 
       setReferenceData({
@@ -106,28 +98,18 @@ const UserManagement = () => {
         plans: plansRes.data.plans || [],
         userTypes: ['user', 'merchant', 'admin']
       });
-      console.log('✅ Reference data loaded');
     } catch (err) {
-      console.error('❌ Error fetching reference data:', err);
-      // Set fallback data
-      setReferenceData({
-        communities: ['Gujarati', 'Bengali', 'Tamil', 'Other'],
-        plans: [
-          { id: 1, key: 'basic', name: 'Basic' },
-          { id: 2, key: 'premium', name: 'Premium' },
-          { id: 3, key: 'vip', name: 'VIP' }
-        ],
-        userTypes: ['user', 'merchant', 'admin']
-      });
+      console.error('Error fetching reference data:', err);
+      // Don't throw error, just log it
     }
   };
+
   /**
    * Fetch users with current filters and pagination
    */
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      console.log('🔄 Fetching users with pagination:', pagination, 'and filters:', filters);
       
       const queryParams = new URLSearchParams({
         page: pagination.page,
@@ -142,9 +124,7 @@ const UserManagement = () => {
         }
       }
 
-      console.log('📡 API request URL:', `/admin/users?${queryParams}`);
       const response = await api.get(`/admin/users?${queryParams}`);
-      console.log('✅ API response:', response.data);
       
       if (response.data.success) {
         setUsers(response.data.users || []);
@@ -154,14 +134,11 @@ const UserManagement = () => {
           totalPages: response.data.totalPages || 1
         }));
         setError(null);
-        console.log('👥 Users loaded:', response.data.users?.length || 0);
       } else {
         throw new Error(response.data.message || 'Failed to fetch users');
       }
     } catch (err) {
-      console.error('❌ Error fetching users:', err);
-      console.error('Response data:', err.response?.data);
-      console.error('Status:', err.response?.status);
+      console.error('Error fetching users:', err);
       setError('Failed to load users');
       showNotification('Failed to load users', 'error');
     } finally {
@@ -205,11 +182,11 @@ const UserManagement = () => {
       setSelectedUsers(users.map(user => user.id));
     }
   };
+
   /**
    * Open modal for different operations
    */
   const openModal = (type, user = null) => {
-    console.log('🔓 Opening modal:', type, user ? `for user ${user.id}` : 'for new user');
     setModalState({
       isOpen: true,
       type,
@@ -227,14 +204,13 @@ const UserManagement = () => {
       user: null
     });
   };
+
   /**
    * Handle adding a new user
    */
   const handleAddUser = async (userData) => {
     try {
-      console.log('➕ Creating new user:', userData);
       const response = await api.post('/admin/users', userData);
-      console.log('✅ User creation response:', response.data);
       
       if (response.data.success) {
         showNotification('User added successfully', 'success');
@@ -252,9 +228,8 @@ const UserManagement = () => {
         throw new Error(response.data.message || 'Failed to add user');
       }
     } catch (err) {
-      console.error('❌ Error adding user:', err);
-      console.error('Response details:', err.response?.data);
-      const message = err.response?.data?.message || err.message || 'Failed to add user';
+      console.error('Error adding user:', err);
+      const message = err.response?.data?.message || 'Failed to add user';
       showNotification(message, 'error');
     }
   };

@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-// import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useNotification } from '../../../contexts/NotificationContext';
 import api from '../../../services/api';
@@ -14,9 +13,9 @@ const ApprovalQueue = () => {
   const [selectedMerchants, setSelectedMerchants] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showAddUserModal, setShowAddUserModal] = useState(false);
-  const [activeTab, setActiveTab] = useState('users'); // 'users' or 'merchants'
+  const [activeTab, setActiveTab] = useState('users');
   
-  React.useEffect(() => {
+  useEffect(() => {
     fetchPendingApprovals();
   }, []);
 
@@ -39,7 +38,8 @@ const ApprovalQueue = () => {
       setIsLoading(false);
     }
   };
-    const handleSelectUser = (userId) => {
+
+  const handleSelectUser = (userId) => {
     if (activeTab === 'users') {
       setSelectedUsers(prev => {
         if (prev.includes(userId)) {
@@ -74,7 +74,8 @@ const ApprovalQueue = () => {
       }
     }
   };
-    const handleApproveUser = async (userId, userType) => {
+  
+  const handleApproveUser = async (userId, userType) => {
     try {
       if (userType === 'merchant') {
         await api.post(`/admin/merchants/${userId}/approve`);
@@ -98,7 +99,9 @@ const ApprovalQueue = () => {
       console.error('Error rejecting user:', error);
       showNotification('Failed to reject user. Please try again.', 'error');
     }
-  };  const handleBulkAction = async (action) => {
+  };
+
+  const handleBulkAction = async (action) => {
     const selectedIds = activeTab === 'users' ? selectedUsers : selectedMerchants;
     if (selectedIds.length === 0) {
       showNotification('No users selected. Please select users first.', 'warning');
@@ -177,7 +180,9 @@ const ApprovalQueue = () => {
       if (!isSessionValid) {
         showNotification('Your session has expired. Please log in again.', 'error');
         return;
-      }      const response = await api.post('/admin/users', userData);
+      }
+
+      const response = await api.post('/admin/users', userData);
       showNotification('User added successfully!', 'success');
       setShowAddUserModal(false);
       fetchPendingApprovals();
@@ -190,7 +195,8 @@ const ApprovalQueue = () => {
       showNotification('Failed to add user. Please try again.', 'error');
     }
   };
-    const formatDate = (dateString) => {
+
+  const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return 'Invalid Date';
@@ -200,7 +206,8 @@ const ApprovalQueue = () => {
       day: 'numeric'
     }).format(date);
   };
-    return (
+
+  return (
     <div className="approval-queue">
       <div className="section-header">
         <div className="header-content">
@@ -270,7 +277,9 @@ const ApprovalQueue = () => {
                 />
                 Select All {activeTab}
               </label>
-            </div>            <ul className="activity-list approval-list">
+            </div>
+
+            <ul className="activity-list approval-list">
               {(activeTab === 'users' ? pendingUsers : pendingMerchants).map(user => (
                 <li key={user.id} className="activity-item approval-activity-item">
                   <div className="activity-icon">
@@ -346,13 +355,13 @@ const ApprovalQueue = () => {
   );
 };
 
-// Add User Modal Component (reused from UserList)
+// Add User Modal Component
 const AddUserModal = ({ onClose, onSubmit }) => {
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
     phone: '',
-    userType: 'user', // Changed from 'member' to 'user'
+    userType: 'user',
     membershipType: 'community',
     address: {
       street: '',
@@ -385,17 +394,17 @@ const AddUserModal = ({ onClose, onSubmit }) => {
   };
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content large">
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h3>Add New User</h3>
-          <button className="modal-close" onClick={onClose}>
+          <button className="close-button" onClick={onClose}>
             <i className="fas fa-times"></i>
           </button>
         </div>
-        <form onSubmit={handleSubmit} className="modal-form">
-          <div className="form-section">
-            <h4>Personal Information</h4>
+        
+        <form onSubmit={handleSubmit} className="user-form">
+          <div className="form-grid">
             <div className="form-row">
               <div className="form-group">
                 <label htmlFor="fullName">Full Name *</label>
@@ -432,7 +441,8 @@ const AddUserModal = ({ onClose, onSubmit }) => {
                 />
               </div>
               <div className="form-group">
-                <label htmlFor="userType">User Type</label>                <select
+                <label htmlFor="userType">User Type</label>
+                <select
                   id="userType"
                   name="userType"
                   value={formData.userType}
@@ -457,22 +467,6 @@ const AddUserModal = ({ onClose, onSubmit }) => {
                   <option value="gold">Gold</option>
                 </select>
               </div>
-            </div>
-          </div>
-
-          <div className="form-section">
-            <h4>Address Information</h4>
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="address.street">Street</label>
-                <input
-                  type="text"
-                  id="address.street"
-                  name="address.street"
-                  value={formData.address.street}
-                  onChange={handleChange}
-                />
-              </div>
               <div className="form-group">
                 <label htmlFor="address.city">City</label>
                 <input
@@ -484,31 +478,9 @@ const AddUserModal = ({ onClose, onSubmit }) => {
                 />
               </div>
             </div>
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="address.state">State</label>
-                <input
-                  type="text"
-                  id="address.state"
-                  name="address.state"
-                  value={formData.address.state}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="address.zipCode">Zip Code</label>
-                <input
-                  type="text"
-                  id="address.zipCode"
-                  name="address.zipCode"
-                  value={formData.address.zipCode}
-                  onChange={handleChange}
-                />
-              </div>
-            </div>
           </div>
-
-          <div className="modal-actions">
+          
+          <div className="form-actions">
             <button type="button" className="button secondary" onClick={onClose}>
               Cancel
             </button>

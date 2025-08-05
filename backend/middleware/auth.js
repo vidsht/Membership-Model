@@ -6,7 +6,8 @@ const auth = (req, res, next) => {
       return res.status(401).json({ message: 'Access denied. Please login.' });
     }
     
-    db.query(
+    // Add timeout to the database query
+    const query = db.query(
       'SELECT id, fullName, email, phone, address, profilePicture, membership, socialMediaFollowed, userType, adminRole, permissions FROM users WHERE id = ?',
       [req.session.userId],
       (err, results) => {
@@ -29,6 +30,14 @@ const auth = (req, res, next) => {
         next();
       }
     );
+    
+    // Set a timeout for the query
+    setTimeout(() => {
+      if (query.timeout) {
+        query.timeout();
+      }
+    }, 25000); // 25 second timeout
+    
   } catch (error) {
     console.error('Auth middleware error:', error);
     res.status(500).json({ message: 'Server error checking user access' });

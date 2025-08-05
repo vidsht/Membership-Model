@@ -15,6 +15,8 @@ const AdminRoute = ({ children }) => {
   const { showNotification } = useNotification();
   const location = useLocation();
 
+  console.log('🔐 AdminRoute - Auth status:', { isAuthenticated, userType: user?.userType, isLoading });
+  
   // Show loading state while checking authentication
   if (isLoading) {
     return (
@@ -30,7 +32,7 @@ const AdminRoute = ({ children }) => {
   // Redirect to login if not authenticated
   if (!isAuthenticated) {
     showNotification('Please log in to access the admin panel.', 'warning');
-    return null;
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   // Check if user has admin role

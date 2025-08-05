@@ -307,56 +307,84 @@ const Home = () => {
         });
         return showSocialHome && hasSocialPlatforms;
       })() && (
-        <section className="social-media-section">
-          <div className="social-media-banner">
-            {adminSettings.socialMediaRequirements?.whatsapp_channel && (
-              <a
-                className="social-media-box"
-                href={adminSettings.socialMediaRequirements.whatsapp_channel.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="WhatsApp Channel"
-              >
-                <i className="fab fa-whatsapp"></i>
-                <span>{adminSettings.socialMediaRequirements.whatsapp_channel.display?.name || 'WhatsApp'}</span>
-              </a>
-            )}
-            {adminSettings.socialMediaRequirements?.facebook && (
-              <a
-                className="social-media-box"
-                href={adminSettings.socialMediaRequirements.facebook.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Facebook"
-              >
-                <i className="fab fa-facebook-f"></i>
-                <span>{adminSettings.socialMediaRequirements.facebook.display?.name || 'Facebook'}</span>
-              </a>
-            )}
-            {adminSettings.socialMediaRequirements?.instagram && (
-              <a
-                className="social-media-box"
-                href={adminSettings.socialMediaRequirements.instagram.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Instagram"
-              >
-                <i className="fab fa-instagram"></i>
-                <span>{adminSettings.socialMediaRequirements.instagram.display?.name || 'Instagram'}</span>
-              </a>
-            )}
-            {adminSettings.socialMediaRequirements?.youtube && (
-              <a
-                className="social-media-box"
-                href={adminSettings.socialMediaRequirements.youtube.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="YouTube"
-              >
-                <i className="fab fa-youtube"></i>
-                <span>{adminSettings.socialMediaRequirements.youtube.display?.name || 'YouTube'}</span>
-              </a>
-            )}
+        <section className="social-media-home">
+          <div className="social-container">
+            <div className="social-header">
+              <h2>{adminSettings.socialMediaRequirements?.home_section_title || 'Join Our Community'}</h2>
+              <p>{adminSettings.socialMediaRequirements?.home_section_subtitle || 'Stay connected with the Indians in Ghana community through our social channels'}</p>
+            </div>
+            <div className="social-grid">
+              {adminSettings.socialMediaRequirements?.whatsapp_channel && (
+                <div className="social-card">
+                  <div className="social-icon">
+                    <i className="fab fa-whatsapp"></i>
+                  </div>
+                  <h3>{adminSettings.socialMediaRequirements.whatsapp_channel.display?.name || 'WhatsApp Channel'}</h3>
+                  <p>{adminSettings.socialMediaRequirements.whatsapp_channel.display?.description || 'Get official updates and announcements'}</p>
+                  <a 
+                    href={adminSettings.socialMediaRequirements.whatsapp_channel.url} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="btn btn-primary"
+                  >
+                    <i className="fab fa-whatsapp"></i> {adminSettings.socialMediaRequirements.whatsapp_channel.display?.button || 'Join Channel'}
+                  </a>
+                </div>
+              )}
+              
+              {adminSettings.socialMediaRequirements?.facebook && (
+                <div className="social-card">
+                  <div className="social-icon">
+                    <i className="fab fa-facebook-f"></i>
+                  </div>
+                  <h3>{adminSettings.socialMediaRequirements.facebook.display?.name || 'Facebook'}</h3>
+                  <p>{adminSettings.socialMediaRequirements.facebook.display?.description || 'Follow us for community updates and events'}</p>
+                  <a 
+                    href={adminSettings.socialMediaRequirements.facebook.url} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="btn btn-primary"
+                  >
+                    <i className="fab fa-facebook-f"></i> {adminSettings.socialMediaRequirements.facebook.display?.button || 'Like & Follow'}
+                  </a>
+                </div>
+              )}
+              
+              {adminSettings.socialMediaRequirements?.instagram && (
+                <div className="social-card">
+                  <div className="social-icon">
+                    <i className="fab fa-instagram"></i>
+                  </div>
+                  <h3>{adminSettings.socialMediaRequirements.instagram.display?.name || 'Instagram'}</h3>
+                  <p>{adminSettings.socialMediaRequirements.instagram.display?.description || 'See photos and stories from our community'}</p>
+                  <a 
+                    href={adminSettings.socialMediaRequirements.instagram.url} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="btn btn-primary"
+                  >
+                    <i className="fab fa-instagram"></i> {adminSettings.socialMediaRequirements.instagram.display?.button || 'Follow Us'}
+                  </a>
+                </div>
+              )}
+              
+              {adminSettings.socialMediaRequirements?.youtube && (
+                <div className="social-card">
+                  <div className="social-icon">
+                    <i className="fab fa-youtube"></i>
+                  </div>
+                  <h3>{adminSettings.socialMediaRequirements.youtube.display?.name || 'YouTube'}</h3>
+                  <p>{adminSettings.socialMediaRequirements.youtube.display?.description || 'Watch our community events and tutorials'}</p>
+                  <a 
+                    href={adminSettings.socialMediaRequirements.youtube.url} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="btn btn-primary"
+                  >
+                    <i className="fab fa-youtube"></i> {adminSettings.socialMediaRequirements.youtube.display?.button || 'Subscribe Now'}
+                  </a>
+                </div>              )}
+            </div>
           </div>
         </section>
       )}

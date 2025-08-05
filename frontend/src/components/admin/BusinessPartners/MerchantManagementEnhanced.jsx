@@ -41,12 +41,11 @@ const MerchantManagementEnhanced = () => {
       fetchMerchants();
     }
   }, [filters, pagination.page, viewMode]);
-
   const fetchBusinesses = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/businesses');
-      setBusinesses(response.data || []);
+      const response = await api.get('/admin/merchants');
+      setBusinesses(response.data?.merchants || []);
     } catch (err) {
       setError('Failed to fetch businesses');
       console.error('Error fetching businesses:', err);
@@ -235,6 +234,21 @@ const MerchantManagementEnhanced = () => {
     setPagination(prev => ({ ...prev, page: 1 }));
   };
 
+  // Add useEffect to debug component mounting and state changes
+  useEffect(() => {
+    console.log('MerchantManagementEnhanced component mounted');
+    console.log('Initial state:', { 
+      showAddMerchant, 
+      loading, 
+      error, 
+      merchants: merchants.length 
+    });
+  }, []);
+
+  useEffect(() => {
+    console.log('ShowAddMerchant state changed:', showAddMerchant);
+  }, [showAddMerchant]);
+
   if (loading) {
     return (
       <div className="merchant-management-loading">
@@ -274,12 +288,13 @@ const MerchantManagementEnhanced = () => {
             </button>
           </div>
           {viewMode === 'table' && (
-            <>
-              <button 
+            <>              <button 
                 className="btn btn-primary"
                 onClick={() => {
+                  console.log('Add Partner button clicked!'); // Debug log
                   setEditingMerchant(null);
                   setShowAddMerchant(true);
+                  console.log('Show Add Merchant modal set to true'); // Debug log
                 }}
               >
                 <i className="fas fa-plus"></i>
@@ -446,20 +461,29 @@ const MerchantManagementEnhanced = () => {
                     {merchant.status}
                   </span>
                 </td>
-                <td>{formatDate(merchant.createdAt)}</td>
-                <td>
+                <td>{formatDate(merchant.createdAt)}</td>                <td>
                   <div className="action-buttons">
                     <button
                       className="btn btn-sm btn-info"
-                      onClick={() => handleViewDetails(merchant)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleViewDetails(merchant);
+                      }}
                       title="View Details"
+                      type="button"
                     >
                       <i className="fas fa-eye"></i>
                     </button>
                     <button
                       className="btn btn-sm btn-primary"
-                      onClick={() => handleEditMerchant(merchant)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleEditMerchant(merchant);
+                      }}
                       title="Edit"
+                      type="button"
                     >
                       <i className="fas fa-edit"></i>
                     </button>
@@ -467,15 +491,25 @@ const MerchantManagementEnhanced = () => {
                       <>
                         <button
                           className="btn btn-sm btn-success"
-                          onClick={() => handleStatusChange(merchant.id, 'approved')}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleStatusChange(merchant.id, 'approved');
+                          }}
                           title="Approve"
+                          type="button"
                         >
                           <i className="fas fa-check"></i>
                         </button>
                         <button
                           className="btn btn-sm btn-warning"
-                          onClick={() => handleStatusChange(merchant.id, 'rejected')}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleStatusChange(merchant.id, 'rejected');
+                          }}
                           title="Reject"
+                          type="button"
                         >
                           <i className="fas fa-times"></i>
                         </button>
@@ -483,8 +517,13 @@ const MerchantManagementEnhanced = () => {
                     )}
                     <button
                       className="btn btn-sm btn-danger"
-                      onClick={() => handleDeleteMerchant(merchant.id, merchant.businessName || merchant.fullName)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleDeleteMerchant(merchant.id, merchant.businessName || merchant.fullName);
+                      }}
                       title="Delete"
+                      type="button"
                     >
                       <i className="fas fa-trash"></i>
                     </button>
@@ -737,18 +776,65 @@ const MerchantManagementEnhanced = () => {
             </div>
           </div>
         </div>
-      )}
-
-      {/* Add/Edit Merchant Modal */}
-      {showAddMerchant && (
-        <MerchantForm
-          merchant={editingMerchant}
-          onSave={handleSaveMerchant}
-          onCancel={() => {
-            setShowAddMerchant(false);
-            setEditingMerchant(null);
-          }}
-        />
+      )}      {/* Add/Edit Merchant Modal */}
+      {console.log('Checking showAddMerchant condition:', showAddMerchant) || showAddMerchant && (
+        console.log('Rendering MerchantForm component') ||
+        (() => {
+          try {
+            return (
+              <MerchantForm
+                key="merchant-form-modal"
+                merchant={editingMerchant}
+                onSave={handleSaveMerchant}
+                onCancel={() => {
+                  console.log('MerchantForm onCancel called');
+                  setShowAddMerchant(false);
+                  setEditingMerchant(null);
+                }}
+              />
+            );
+          } catch (error) {
+            console.error('Error rendering MerchantForm:', error);
+            return (
+              <div style={{
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                backgroundColor: 'rgba(255, 0, 0, 0.8)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 9999,
+                color: 'white',
+                padding: '20px',
+                textAlign: 'center'
+              }}>
+                <div>
+                  <h3>Merchant Modal Error</h3>
+                  <p>{error.message}</p>
+                  <button 
+                    onClick={() => {
+                      setShowAddMerchant(false);
+                      setEditingMerchant(null);
+                    }}
+                    style={{
+                      padding: '10px 20px',
+                      backgroundColor: 'white',
+                      color: 'red',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            );
+          }
+        })()
       )}
 
       {/* Confirmation Dialog */}
@@ -782,6 +868,9 @@ const MerchantManagementEnhanced = () => {
 
 // Merchant Form Component
 const MerchantForm = ({ merchant, onSave, onCancel }) => {
+  console.log('MerchantForm component rendering!'); // Debug log
+  console.log('Props received:', { merchant, onSave, onCancel });
+  
   const [formData, setFormData] = useState({
     userInfo: {
       fullName: '',

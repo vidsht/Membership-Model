@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotification } from '../../contexts/NotificationContext';
-import ApprovalQueue from './UserManagement/ApprovalQueue';
+import ApprovalQueue from './UserManagement/ApprovalQueueFixed.jsx';
 import UserManagement from './UserManagement/UserManagement';
 import MerchantManagementEnhanced from './BusinessPartners/MerchantManagementEnhanced';
 import DealList from './DealManagement/DealList';
@@ -19,17 +19,13 @@ const AdminDashboard = () => {
     // Navigation state
   const [activeTab, setActiveTab] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  
-  const [stats, setStats] = useState({
+    const [stats, setStats] = useState({
     totalUsers: 0,
     totalMerchants: 0,
     pendingApprovals: 0,
     activeBusinesses: 0,
     totalRevenue: 0,
-    activePlans: 0,
-    totalDeals: 0,
-    userPlanCounts: {},
-    merchantPlanCounts: {}
+    totalDeals: 0
   });
   
   const [recentActivities, setRecentActivities] = useState([]);
@@ -82,34 +78,55 @@ const AdminDashboard = () => {
       try {
         setIsLoading(true);
         
-        // Fetch dashboard statistics
-        const statsResponse = await api.get('/admin/stats');
-        if (statsResponse.data.success) {
-          setStats(statsResponse.data.stats);
+        // Fetch dashboard statistics with fallback
+        try {
+          const statsResponse = await api.get('/admin/stats');
+          if (statsResponse.data.success) {
+            setStats(statsResponse.data.stats);
+          }
+        } catch (statsError) {
+          console.error('Error fetching stats:', statsError);
+          // Set fallback stats
+          setStats({            totalUsers: 0,
+            totalMerchants: 0,
+            pendingApprovals: 0,
+            activeBusinesses: 0,
+            totalRevenue: 0,
+            totalDeals: 0
+          });
         }
         
-        // Fetch recent activities
-        const activitiesResponse = await api.get('/admin/activities');
-        if (activitiesResponse.data.success) {
-          setRecentActivities(activitiesResponse.data.activities || []);
-        }
+        // Fetch recent activities with fallback
+        try {
+          const activitiesResponse = await api.get('/admin/activities');
+          if (activitiesResponse.data.success) {
+            setRecentActivities(activitiesResponse.data.activities || []);
+          }
+        } catch (activitiesError) {
+          console.error('Error fetching activities:', activitiesError);
+          setRecentActivities([]);        }
         
       } catch (error) {
         console.error('Error fetching admin data:', error);
-        showNotification('Error loading admin dashboard', 'error');
+        showNotification('Some admin data could not be loaded. Please check your connection.', 'warning');
       } finally {
         setIsLoading(false);
       }
     };
     
+
     fetchAdminStats();
-  }, [showNotification]);  const renderTabContent = () => {
+    // eslint-disable-next-line
+  }, [showNotification]);
+  const renderTabContent = () => {
     switch (activeTab) {
       case 'dashboard':
         return renderDashboardContent();
       case 'users':
-        return <UserManagement />;      case 'merchants':
-        return <MerchantManagementEnhanced />;      case 'deals':
+        return <UserManagement />;
+      case 'merchants':
+        return <MerchantManagementEnhanced />;
+      case 'deals':
         return <DealList />;
       case 'plans':
         return <PlanManagement />;
@@ -166,47 +183,7 @@ const AdminDashboard = () => {
             <h3>{stats.totalDeals}</h3>
             <p>Active Deals</p>
           </div>
-        </div>
-      </div>
-
-      {/* Plan Distribution */}
-      <div className="charts-section">
-        <div className="chart-container">
-          <h3>User Plan Distribution</h3>
-          <div className="plan-breakdown">
-            {Object.entries(stats.userPlanCounts).map(([plan, count]) => (
-              <div key={plan} className="plan-stat">
-                <span className="plan-name">{plan}</span>
-                <span className="plan-count">{count}</span>
-                <div className="plan-bar">
-                  <div 
-                    className="plan-fill" 
-                    style={{ width: `${(count / stats.totalUsers) * 100}%` }}
-                  ></div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-        
-        <div className="chart-container">
-          <h3>Merchant Plan Distribution</h3>
-          <div className="plan-breakdown">
-            {Object.entries(stats.merchantPlanCounts).map(([plan, count]) => (
-              <div key={plan} className="plan-stat">
-                <span className="plan-name">{plan}</span>
-                <span className="plan-count">{count}</span>
-                <div className="plan-bar">
-                  <div 
-                    className="plan-fill" 
-                    style={{ width: `${(count / stats.totalMerchants) * 100}%` }}
-                  ></div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+        </div>      </div>
 
       {/* Recent Activities */}
       <div className="recent-activities">

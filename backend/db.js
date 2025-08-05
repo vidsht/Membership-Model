@@ -8,11 +8,34 @@ const pool = mysql.createPool({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
   waitForConnections: true,
-  connectionLimit: 10,
+  connectionLimit: 20,
   queueLimit: 0,
-  idleTimeout: 600000,
+  idleTimeout: 300000,        // 5 minutes
   enableKeepAlive: true,
-  keepAliveInitialDelay: 0
+  keepAliveInitialDelay: 30000,
+  // Enhanced timeout settings to handle connection issues
+  connectTimeout: 60000,      // 60 seconds
+  acquireTimeout: 60000,      // 60 seconds
+  timeout: 60000,             // 60 seconds
+  reconnect: true,
+  // Additional settings for better connection stability
+  ssl: false,
+  multipleStatements: false,
+  charset: 'utf8mb4'
+});
+
+// Add global error handler for pool
+pool.on('connection', function (connection) {
+  console.log('New MySQL connection established with ID:', connection.threadId);
+});
+
+pool.on('error', function(err) {
+  console.error('MySQL pool error:', err);
+  if(err.code === 'PROTOCOL_CONNECTION_LOST') {
+    console.log('MySQL connection lost, attempting to reconnect...');
+  } else {
+    throw err;
+  }
 });
 
 // Test connection on startup

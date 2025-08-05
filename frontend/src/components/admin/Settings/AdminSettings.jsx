@@ -5,7 +5,6 @@ import { useNotification } from '../../../contexts/NotificationContext';
 import api from '../../../services/api';
 import SystemSettings from './SystemSettings';
 import FeatureToggles from './FeatureToggles';
-import SecuritySettings from './SecuritySettings';
 import SocialMediaSettings from './SocialMediaSettings';
 import Modal from '../../shared/Modal';
 import { useModal } from '../../../hooks/useModal';
@@ -19,8 +18,6 @@ const AdminSettings = () => {
   const { showNotification } = useNotification();
   const { modal, showConfirm, hideModal } = useModal();  const [settings, setSettings] = useState({
     socialMediaRequirements: {},
-    cardSettings: {},
-    fileUpload: {},
     featureToggles: {}
   });
   const [isLoading, setIsLoading] = useState(true);
@@ -140,8 +137,7 @@ const AdminSettings = () => {
         </button>
       </div>
     );
-  }
-    const renderActiveTab = () => {
+  }    const renderActiveTab = () => {
     switch (activeTab) {
       case 'system':
         return (
@@ -156,121 +152,44 @@ const AdminSettings = () => {
             settings={settings}
             onSettingChange={handleSettingChange} 
           />
-        ); // Plan management tab removed
-      case 'security':
-        return (
-          <SecuritySettings 
-            settings={settings}
-            onSettingChange={handleSettingChange} 
-          />
-        );      case 'social':
+        );
+      case 'social':
         return (
           <SocialMediaSettings 
             settings={settings}
             onSettingChange={handleSettingChange} 
           />
         );
-      case 'card':
-        return (
-          <div className="settings-section">
-            <div className="settings-section-header">
-              <h3>Membership Card Settings</h3>
-              <p>Configure the appearance and functionality of membership cards</p>
-            </div>
-            
-            <div className="form-group">
-              <label htmlFor="cardLayout">Card Layout</label>
-              <select
-                id="cardLayout"
-                value={settings?.cardSettings?.layout || 'default'}
-                onChange={(e) => handleSettingChange('cardSettings', 'layout', e.target.value)}
-              >
-                <option value="default">Default</option>
-                <option value="modern">Modern</option>
-                <option value="classic">Classic</option>
-              </select>
-              <div className="form-description">
-                Choose the layout style for membership cards
-              </div>
-            </div>
-            
-            <div className="form-group">
-              <label htmlFor="cardExpiryPeriod">Card Expiry Period (months)</label>
-              <input
-                type="number"
-                id="cardExpiryPeriod"
-                min="1"
-                max="60"
-                value={settings?.cardSettings?.expiryPeriod || 12}
-                onChange={(e) => handleSettingChange('cardSettings', 'expiryPeriod', parseInt(e.target.value, 10))}
-              />
-              <div className="form-description">
-                Number of months before membership cards expire
-              </div>
-            </div>
-            
-            <div className="toggle-control">
-              <div>
-                <span className="toggle-label">Show QR Code</span>
-                <div className="toggle-description">
-                  Display QR codes on membership cards
-                </div>
-              </div>
-              <label className="toggle-switch">
-                <input
-                  type="checkbox"
-                  checked={settings?.cardSettings?.showQRCode !== false}
-                  onChange={(e) => handleSettingChange('cardSettings', 'showQRCode', e.target.checked)}
-                />
-                <span className="toggle-slider"></span>
-              </label>
-            </div>
-            
-            <div className="toggle-control">
-              <div>
-                <span className="toggle-label">Show Barcode</span>
-                <div className="toggle-description">
-                  Display barcodes on membership cards
-                </div>
-              </div>
-              <label className="toggle-switch">
-                <input
-                  type="checkbox"
-                  checked={settings?.cardSettings?.showBarcode !== false}
-                  onChange={(e) => handleSettingChange('cardSettings', 'showBarcode', e.target.checked)}
-                />
-                <span className="toggle-slider"></span>
-              </label>
-            </div>
-          </div>
-        );
       case 'terms':
         return (
           <div className="settings-section">
             <div className="settings-section-header">
-              <h3>Terms & Conditions</h3>
-              <p>Legal terms and conditions for users</p>
+              <h3>Terms and Policies</h3>
+              <p>Manage terms of service and privacy policy content</p>
             </div>
-            
             <div className="form-group">
-              <label htmlFor="termsConditions">Terms & Conditions Text</label>
-              <textarea
-                id="termsConditions"
-                rows="15"
-                value={settings?.termsConditions || ''}
-                onChange={(e) => handleSettingChange(null, 'termsConditions', e.target.value)}
-                placeholder="Enter your terms and conditions here..."
+              <label>Terms of Service URL</label>
+              <input
+                type="url"
+                value={settings.content?.termsUrl || ''}
+                onChange={(e) => handleSettingChange('content', 'termsUrl', e.target.value)}
+                placeholder="https://yoursite.com/terms"
               />
-              <div className="form-description">
-                Terms and conditions that users must accept during registration
-              </div>
+            </div>
+            <div className="form-group">
+              <label>Privacy Policy URL</label>
+              <input
+                type="url"
+                value={settings.content?.privacyUrl || ''}
+                onChange={(e) => handleSettingChange('content', 'privacyUrl', e.target.value)}
+                placeholder="https://yoursite.com/privacy"
+              />
             </div>
           </div>
         );
       default:
-        return <div>Select a settings category</div>;
-    }
-  };
+        return <div>Select a tab to view settings</div>;
+    }  };
   
   return (
     <div className="admin-settings">
@@ -323,14 +242,7 @@ const AdminSettings = () => {
               onClick={() => setActiveTab('features')}
             >
               <i className="fas fa-toggle-on"></i>
-              <span>Feature Toggles</span>
-            </li>            {/* Plan Management tab removed */}            <li 
-              className={activeTab === 'security' ? 'active' : ''}
-              onClick={() => setActiveTab('security')}
-            >
-              <i className="fas fa-shield-alt"></i>
-              <span>Security Settings</span>
-            </li>
+              <span>Feature Toggles</span>            </li>
             <li 
               className={activeTab === 'social' ? 'active' : ''}
               onClick={() => setActiveTab('social')}
@@ -339,18 +251,11 @@ const AdminSettings = () => {
               <span>Social Media</span>
             </li>
             <li 
-              className={activeTab === 'card' ? 'active' : ''}
-              onClick={() => setActiveTab('card')}
-            >
-              <i className="fas fa-id-card"></i>
-              <span>Card Settings</span>
-            </li>
-            <li 
               className={activeTab === 'terms' ? 'active' : ''}
               onClick={() => setActiveTab('terms')}
             >
               <i className="fas fa-file-contract"></i>
-              <span>Terms & Conditions</span>
+              <span>Terms & Policies</span>
             </li>
           </ul>
         </div>

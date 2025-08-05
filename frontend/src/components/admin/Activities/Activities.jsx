@@ -285,13 +285,9 @@ const Activities = () => {
                       Completed
                     </span>
                   </td>
-                  <td>
-                    <div className="user-actions">
+                  <td>                    <div className="user-actions">
                       <button className="btn-icon" title="View Details">
                         <i className="fas fa-eye"></i>
-                      </button>
-                      <button className="btn-icon" title="Export">
-                        <i className="fas fa-download"></i>
                       </button>
                     </div>
                   </td>

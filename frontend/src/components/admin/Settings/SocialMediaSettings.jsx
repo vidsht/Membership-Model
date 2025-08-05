@@ -65,9 +65,7 @@ const SocialMediaSettings = ({ settings, onSettingChange }) => {
     } else {
       showNotification('Social media section disabled on home page', 'info');
     }
-  };
-
-  return (
+  };  return (
     <div className="social-media-settings">
       {/* Feature Toggle */}
       <div className="setting-group">

@@ -4,6 +4,9 @@
   border-radius: 8px;
   padding: 1.5rem;
   margin-bottom: 2rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e1e5e9;
+  min-height: 200px;
 }
 
 .setting-group {
@@ -15,7 +18,7 @@
 }
 
 .setting-header h3 {
-  color: var(--primary-color);
+  color: var(--primary);
   font-size: 1.2rem;
   font-weight: 600;
   margin-bottom: 0.5rem;
@@ -25,7 +28,7 @@
 }
 
 .setting-header p {
-  color: var(--text-muted);
+  color: #6c757d;
   font-size: 0.9rem;
   margin: 0;
 }
@@ -75,7 +78,7 @@
 }
 
 .toggle-switch input:checked + .toggle-slider {
-  background-color: var(--primary-color);
+  background-color: var(--primary);
 }
 
 .toggle-switch input:checked + .toggle-slider:before {
@@ -84,7 +87,7 @@
 
 .toggle-label {
   font-weight: 500;
-  color: var(--text-color);
+  color: var(--dark);
 }
 
 /* Input Groups */
@@ -96,7 +99,7 @@
   display: block;
   margin-bottom: 0.5rem;
   font-weight: 500;
-  color: var(--text-color);
+  color: var(--dark);
 }
 
 .input-group input,
@@ -112,8 +115,8 @@
 .input-group input:focus,
 .input-group textarea:focus {
   outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb), 0.1);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(17, 138, 178, 0.1);
 }
 
 /* Platform Settings */
@@ -150,7 +153,7 @@
 
 .platform-info span:first-of-type {
   font-weight: 600;
-  color: var(--text-color);
+  color: var(--dark);
 }
 
 .status {
@@ -172,7 +175,7 @@
 
 .chevron-icon {
   transition: transform 0.3s ease;
-  color: var(--text-muted);
+  color: #6c757d;
 }
 
 .platform-details {
@@ -188,7 +191,7 @@
 }
 
 .display-settings h4 {
-  color: var(--primary-color);
+  color: var(--primary);
   font-size: 1rem;
   font-weight: 600;
   margin-bottom: 1rem;

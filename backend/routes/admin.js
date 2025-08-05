@@ -112,52 +112,21 @@ router.get('/dashboard', auth, admin, async (req, res) => {
 // @desc    Get admin dashboard statistics
 // @access  Private (Admin only)
 router.get('/stats', auth, admin, async (req, res) => {
-  try {
-    // Get basic counts from the correct tables
+  try {    // Get basic counts from the correct tables
     const [userCount] = await queryAsync('SELECT COUNT(*) as count FROM users WHERE userType != "merchant"');
     const [merchantCount] = await queryAsync('SELECT COUNT(*) as count FROM users WHERE userType = "merchant"');
     const [pendingUserApprovals] = await queryAsync('SELECT COUNT(*) as count FROM users WHERE status = "pending" AND userType != "merchant"');
     const [pendingMerchantApprovals] = await queryAsync('SELECT COUNT(*) as count FROM users WHERE status = "pending" AND userType = "merchant"');
     const [activeBusinesses] = await queryAsync('SELECT COUNT(*) as count FROM users WHERE status = "approved" AND userType = "merchant"');
-    const [activePlans] = await queryAsync('SELECT COUNT(*) as count FROM plans WHERE isActive = 1');
     const [totalDeals] = await queryAsync('SELECT COUNT(*) as count FROM deals WHERE status = "active"');
-
-    // Get plan distributions using correct column names
-    const userPlanCounts = await queryAsync(`
-      SELECT membershipType as plan, COUNT(*) as count 
-      FROM users 
-      WHERE membershipType IS NOT NULL AND userType != "merchant"
-      GROUP BY membershipType
-    `);
-
-    const merchantPlanCounts = await queryAsync(`
-      SELECT membershipType as plan, COUNT(*) as count 
-      FROM users 
-      WHERE membershipType IS NOT NULL AND userType = "merchant"
-      GROUP BY membershipType
-    `);
-
-    // Format plan counts as objects
-    const userPlans = {};
-    userPlanCounts.forEach(item => {
-      userPlans[item.plan] = item.count;
-    });
-
-    const merchantPlans = {};
-    merchantPlanCounts.forEach(item => {
-      merchantPlans[item.plan] = item.count;
-    });
 
     const stats = {
       totalUsers: userCount.count,
       totalMerchants: merchantCount.count,
       pendingApprovals: pendingUserApprovals.count + pendingMerchantApprovals.count,
       activeBusinesses: activeBusinesses.count,
-      activePlans: activePlans.count,
       totalDeals: totalDeals.count,
-      totalRevenue: 0, // TODO: Calculate from subscription payments
-      userPlanCounts: userPlans,
-      merchantPlanCounts: merchantPlans
+      totalRevenue: 0 // TODO: Calculate from subscription payments
     };
 
     res.json({ success: true, stats });
@@ -173,15 +142,41 @@ router.get('/stats', auth, admin, async (req, res) => {
 router.get('/activities', auth, admin, async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 20;
-    
+    // Use correct columns from the actual activities table
     const activities = await queryAsync(`
-      SELECT type, description, createdAt, userId, relatedId
-      FROM activities 
-      ORDER BY createdAt DESC 
+      SELECT 
+        id,
+        type,
+        title,
+        description,
+        userId,
+        userName,
+        userEmail,
+        userType,
+        timestamp AS createdAt,
+        icon
+      FROM activities
+      ORDER BY timestamp DESC
       LIMIT ?
     `, [limit]);
 
-    res.json({ success: true, activities });
+    // Format activities for frontend (add user object)
+    const formatted = activities.map(act => ({
+      id: act.id,
+      type: act.type,
+      title: act.title,
+      description: act.description,
+      createdAt: act.createdAt,
+      icon: act.icon,
+      user: act.userId ? {
+        id: act.userId,
+        fullName: act.userName,
+        email: act.userEmail,
+        userType: act.userType
+      } : null
+    }));
+
+    res.json({ success: true, activities: formatted });
   } catch (err) {
     console.error('Error fetching activities:', err);
     res.status(500).json({ success: false, message: 'Server error fetching activities' });
@@ -191,24 +186,80 @@ router.get('/activities', auth, admin, async (req, res) => {
 // User Management Routes
 
 // @route   GET /api/admin/users
-// @desc    Get all users for admin management
+// @desc    Get all users for admin management with advanced filtering and pagination
 // @access  Private (Admin only)
 router.get('/users', auth, admin, async (req, res) => {
   try {
-    const { status, userType, limit = 50, offset = 0 } = req.query;
+    const { 
+      status, 
+      userType, 
+      membershipType,
+      search,
+      dateFrom,
+      dateTo,
+      page = 1, 
+      limit = 10 
+    } = req.query;
     
     let whereClause = 'WHERE 1=1';
     const params = [];
     
-    if (status) {
-      whereClause += ' AND status = ?';
+    // Status filter
+    if (status && status !== 'all') {
+      whereClause += ' AND u.status = ?';
       params.push(status);
     }
     
-    if (userType) {
-      whereClause += ' AND userType = ?';
+    // User type filter
+    if (userType && userType !== 'all') {
+      whereClause += ' AND u.userType = ?';
       params.push(userType);
-    }    const users = await queryAsync(`
+    }
+
+    // Membership type filter
+    if (membershipType && membershipType !== 'all') {
+      if (membershipType === 'none') {
+        whereClause += ' AND (u.membershipType IS NULL OR u.membershipType = "")';
+      } else {
+        whereClause += ' AND u.membershipType = ?';
+        params.push(membershipType);
+      }
+    }
+
+    // Search filter (name, email, phone)
+    if (search && search.trim()) {
+      whereClause += ' AND (u.fullName LIKE ? OR u.email LIKE ? OR u.phone LIKE ?)';
+      const searchTerm = `%${search.trim()}%`;
+      params.push(searchTerm, searchTerm, searchTerm);
+    }
+
+    // Date range filter
+    if (dateFrom) {
+      whereClause += ' AND DATE(u.createdAt) >= ?';
+      params.push(dateFrom);
+    }
+    if (dateTo) {
+      whereClause += ' AND DATE(u.createdAt) <= ?';
+      params.push(dateTo);
+    }
+
+    // Calculate pagination
+    const currentPage = parseInt(page) || 1;
+    const pageSize = parseInt(limit) || 10;
+    const offset = (currentPage - 1) * pageSize;
+
+    // Get total count
+    const countResult = await queryAsync(`
+      SELECT COUNT(*) as total
+      FROM users u
+      ${whereClause}
+    `, params);
+    
+    const total = countResult[0].total;
+    const totalPages = Math.ceil(total / pageSize);
+
+    // Get users with pagination
+    const users = await queryAsync(`
       SELECT u.id, u.fullName, u.email, u.phone, u.address, u.community, u.membershipType, 
              u.userType, u.userCategory, u.status, u.createdAt, u.lastLogin, u.dob, 
              u.country, u.state, u.city, u.planAssignedAt, u.planAssignedBy, u.currentPlan,
@@ -222,7 +273,7 @@ router.get('/users', auth, admin, async (req, res) => {
       ${whereClause}
       ORDER BY u.createdAt DESC
       LIMIT ? OFFSET ?
-    `, [...params, parseInt(limit), parseInt(offset)]);
+    `, [...params, pageSize, offset]);
 
     // Process users data to parse JSON address and calculate plan expiry
     const processedUsers = users.map(user => {
@@ -248,7 +299,18 @@ router.get('/users', auth, admin, async (req, res) => {
       return processedUser;
     });
 
-    res.json({ success: true, users: processedUsers });
+    res.json({ 
+      success: true, 
+      users: processedUsers,
+      pagination: {
+        page: currentPage,
+        limit: pageSize,
+        total: total,
+        totalPages: totalPages
+      },
+      total: total,
+      totalPages: totalPages
+    });
   } catch (err) {
     console.error('Error fetching users:', err);
     res.status(500).json({ success: false, message: 'Server error fetching users' });
@@ -381,43 +443,69 @@ router.put('/users/:id/plan', auth, admin, async (req, res) => {
 });
 
 // @route   GET /api/admin/communities
-// @desc    Get all communities for registration dropdown
-// @access  Public (for registration form)
-router.get('/communities', async (req, res) => {
+// @desc    Get all communities for admin management
+// @access  Private (Admin only)
+router.get('/communities', auth, admin, async (req, res) => {
   try {
-    const communities = await queryAsync('SELECT name FROM communities WHERE isActive = 1 ORDER BY name');
-    const communityNames = communities.map(c => c.name);
+    const communities = await queryAsync('SELECT * FROM communities ORDER BY displayOrder, name');
     
     // If no communities in database, return default ones
-    if (communityNames.length === 0) {
+    if (communities.length === 0) {
       return res.json({
         success: true,
-        communities: ['Gujarati', 'Bengali', 'Tamil', 'Punjabi', 'Hindi', 'Marathi', 'Telugu', 'Kannada', 'Malayalam', 'Sindhi', 'Rajasthani', 'Other Indian', 'Mixed Heritage']
+        communities: [
+          { name: 'Gujarati', isActive: true },
+          { name: 'Bengali', isActive: true },
+          { name: 'Tamil', isActive: true },
+          { name: 'Punjabi', isActive: true },
+          { name: 'Hindi', isActive: true },
+          { name: 'Marathi', isActive: true },
+          { name: 'Telugu', isActive: true },
+          { name: 'Kannada', isActive: true },
+          { name: 'Malayalam', isActive: true },
+          { name: 'Sindhi', isActive: true },
+          { name: 'Rajasthani', isActive: true },
+          { name: 'Other Indian', isActive: true },
+          { name: 'Mixed Heritage', isActive: true }
+        ]
       });
     }
     
-    res.json({ success: true, communities: communityNames });
+    res.json({ success: true, communities });
   } catch (err) {
     console.error('Error fetching communities:', err);
     // Return fallback communities on error
     res.json({
       success: true,
-      communities: ['Gujarati', 'Bengali', 'Tamil', 'Punjabi', 'Hindi', 'Marathi', 'Telugu', 'Kannada', 'Malayalam', 'Sindhi', 'Rajasthani', 'Other Indian', 'Mixed Heritage']
+      communities: [
+        { name: 'Gujarati', isActive: true },
+        { name: 'Bengali', isActive: true },
+        { name: 'Tamil', isActive: true },
+        { name: 'Punjabi', isActive: true },
+        { name: 'Hindi', isActive: true },
+        { name: 'Marathi', isActive: true },
+        { name: 'Telugu', isActive: true },
+        { name: 'Kannada', isActive: true },
+        { name: 'Malayalam', isActive: true },
+        { name: 'Sindhi', isActive: true },
+        { name: 'Rajasthani', isActive: true },
+        { name: 'Other Indian', isActive: true },
+        { name: 'Mixed Heritage', isActive: true }
+      ]
     });
   }
 });
 
 // @route   GET /api/admin/plans
-// @desc    Get all available membership plans for registration
-// @access  Public (for registration form)
-router.get('/plans', async (req, res) => {
+// @desc    Get all membership plans for admin management
+// @access  Private (Admin only)
+router.get('/plans', auth, admin, async (req, res) => {
   try {
     const plans = await queryAsync(`
-      SELECT id, name, \`key\` as type, price, currency, duration, features, 
-             dealAccess, maxDeals, maxRedemptions, isActive
+      SELECT id, \`key\`, name, description, price, currency, billingCycle, 
+             features, dealAccess, type, isActive, priority, created_at
       FROM plans 
-      WHERE isActive = 1 
-      ORDER BY price ASC
+      ORDER BY priority ASC, name ASC
     `);
     
     res.json({ success: true, plans });
@@ -429,30 +517,38 @@ router.get('/plans', async (req, res) => {
       plans: [
         {
           id: 1,
+          key: 'community',
           name: 'Community Plan',
           type: 'community',
           price: 0,
           currency: 'FREE',
           features: 'Basic directory access,Community updates,Basic support',
-          dealAccess: 'Limited community deals'
+          dealAccess: 'Limited community deals',
+          isActive: true
         },
         {
           id: 2,
+          key: 'silver',
           name: 'Silver Plan',
           type: 'silver',
           price: 50,
           currency: 'GHS',
           features: 'All community features,Priority support,Exclusive deals,Event notifications',
-          dealAccess: 'Silver + Community deals'
+          dealAccess: 'Silver + Community deals',
+          isActive: true
         },
         {
           id: 3,
+          key: 'gold',
           name: 'Gold Plan',
           type: 'gold',
           price: 150,
           currency: 'GHS',
           features: 'All silver features,VIP events,Premium support,Business networking,Priority customer service',
-          dealAccess: 'All exclusive deals'        }      ]
+          dealAccess: 'All exclusive deals',
+          isActive: true
+        }
+      ]
     });
   }
 });
@@ -1677,14 +1773,11 @@ router.get('/settings', auth, admin, async (req, res) => {
   try {
     // Fetch settings from database
     const settingsRows = await queryAsync('SELECT category, setting_key, setting_value, data_type FROM admin_settings');
-    
-    // Organize settings by category
+      // Organize settings by category
     const settings = {
       systemSettings: {},
       socialMediaRequirements: {},
       featureToggles: {},
-      securitySettings: {},
-      cardSettings: {},
       content: {}
     };
     
@@ -1704,17 +1797,11 @@ router.get('/settings', auth, admin, async (req, res) => {
           value = setting_value;
         }
       }
-      
-      // Map to appropriate category
+        // Map to appropriate category
       switch (category) {
         case 'system':
-          if (setting_key === 'site_name') settings.systemSettings.siteName = value;
-          else if (setting_key === 'admin_email') settings.systemSettings.adminEmail = value;
-          else if (setting_key === 'maintenance_mode') settings.systemSettings.maintenanceMode = value;
-          else if (setting_key === 'registration_enabled') settings.systemSettings.registrationEnabled = value;
-          else if (setting_key === 'login_image_url') settings.systemSettings.loginImageUrl = value;
-          else if (setting_key === 'language') settings.systemSettings.language = value;
-          break;        case 'social_media':
+          if (setting_key === 'registration_enabled') settings.systemSettings.registrationEnabled = value;
+          break;case 'social_media':
           if (setting_key.includes('_required')) {
             const platform = setting_key.replace('_required', '');
             if (!settings.socialMediaRequirements[platform]) settings.socialMediaRequirements[platform] = {};
@@ -1737,18 +1824,8 @@ router.get('/settings', auth, admin, async (req, res) => {
           if (setting_key === 'deal_management') settings.featureToggles.dealManagement = value;
           else if (setting_key === 'plan_management') settings.featureToggles.planManagement = value;
           else if (setting_key === 'user_management') settings.featureToggles.userManagement = value;
-          else if (setting_key === 'show_statistics') settings.featureToggles.showStatistics = value;
           else if (setting_key === 'business_directory') settings.featureToggles.businessDirectory = value;
           else if (setting_key === 'show_social_media_home') settings.featureToggles.showSocialMediaHome = value;
-          break;
-        case 'security':
-          if (setting_key === 'session_timeout') settings.securitySettings.sessionTimeout = value;
-          else if (setting_key === 'max_login_attempts') settings.securitySettings.maxLoginAttempts = value;
-          else if (setting_key === 'require_email_verification') settings.securitySettings.requireEmailVerification = value;
-          else if (setting_key === 'password_min_length') settings.securitySettings.passwordMinLength = value;
-          break;
-        case 'card':
-          settings.cardSettings[setting_key] = value;
           break;
         case 'content':
           settings.content[setting_key] = value;
@@ -2237,7 +2314,7 @@ router.post('/plans/seed', auth, admin, async (req, res) => {
     const insertQuery = `
       INSERT INTO plans (name, \`key\`, description, price, currency, billingCycle, 
                         features, dealAccess, maxDeals, maxRedemptions, userType, isActive, createdAt)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     for (const plan of defaultPlans) {
@@ -2337,6 +2414,25 @@ router.post('/users', auth, admin, async (req, res) => {
       WHERE u.id = ?
     `, [result.insertId]);
 
+    // Log activity: admin added a user
+    try {
+      await queryAsync(
+        `INSERT INTO activities (type, title, description, userId, userName, userEmail, userType, timestamp, icon)
+         VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), ?)`,
+        [
+          'user_registered',
+          'User Added by Admin',
+          `${fullName} was added by admin (${req.user?.fullName || 'Admin'})`,
+          newUser[0].id,
+          fullName,
+          email,
+          userType,
+          'fa-user-plus'
+        ]
+      );
+    } catch (activityErr) {
+      console.error('Failed to log user creation activity:', activityErr);
+    }
     // Return user data without password and include temp password for admin
     res.status(201).json({
       success: true,
@@ -2417,8 +2513,429 @@ router.get('/settings/public', async (req, res) => {
     
     res.json({ success: true, settings });
   } catch (err) {
-    console.error('Error fetching public settings:', err);
-    res.status(500).json({ success: false, message: 'Server error fetching public settings' });
+    console.error('Error fetching public settings:', err);    res.status(500).json({ success: false, message: 'Server error fetching public settings' });
+  }
+});
+
+// @route   POST /api/admin/users/:id/approve
+// @desc    Approve a user
+// @access  Private (Admin only)
+router.post('/users/:id/approve', auth, admin, async (req, res) => {
+  try {
+    const userId = parseInt(req.params.id);
+    
+    const result = await queryAsync(
+      'UPDATE users SET status = "approved", statusUpdatedAt = NOW(), statusUpdatedBy = ? WHERE id = ?',
+      [req.session.userId, userId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // Log activity
+    await queryAsync(
+      'INSERT INTO activities (type, description, userId, relatedId, createdAt) VALUES (?, ?, ?, ?, NOW())',
+      ['user_approved', 'User approved by admin', req.session.userId, userId]
+    );
+
+    res.json({ success: true, message: 'User approved successfully' });
+  } catch (err) {
+    console.error('Error approving user:', err);
+    res.status(500).json({ success: false, message: 'Server error approving user' });
+  }
+});
+
+// @route   POST /api/admin/users/:id/reject
+// @desc    Reject a user
+// @access  Private (Admin only)
+router.post('/users/:id/reject', auth, admin, async (req, res) => {
+  try {
+    const userId = parseInt(req.params.id);
+    const { comment } = req.body;
+    
+    const result = await queryAsync(
+      'UPDATE users SET status = "rejected", statusUpdatedAt = NOW(), statusUpdatedBy = ? WHERE id = ?',
+      [req.session.userId, userId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // Log activity
+    await queryAsync(
+      'INSERT INTO activities (type, description, userId, relatedId, createdAt) VALUES (?, ?, ?, ?, NOW())',
+      ['user_rejected', `User rejected by admin${comment ? ': ' + comment : ''}`, req.session.userId, userId]
+    );
+
+    res.json({ success: true, message: 'User rejected successfully' });
+  } catch (err) {
+    console.error('Error rejecting user:', err);
+    res.status(500).json({ success: false, message: 'Server error rejecting user' });
+  }
+});
+
+// @route   POST /api/admin/users/:id/suspend
+// @desc    Suspend a user
+// @access  Private (Admin only)
+router.post('/users/:id/suspend', auth, admin, async (req, res) => {
+  try {
+    const userId = parseInt(req.params.id);
+    const { comment } = req.body;
+    
+    const result = await queryAsync(
+      'UPDATE users SET status = "suspended", statusUpdatedAt = NOW(), statusUpdatedBy = ? WHERE id = ?',
+      [req.session.userId, userId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // Log activity
+    await queryAsync(
+      'INSERT INTO activities (type, description, userId, relatedId, createdAt) VALUES (?, ?, ?, ?, NOW())',
+      ['user_suspended', `User suspended by admin${comment ? ': ' + comment : ''}`, req.session.userId, userId]
+    );
+
+    res.json({ success: true, message: 'User suspended successfully' });
+  } catch (err) {
+    console.error('Error suspending user:', err);
+    res.status(500).json({ success: false, message: 'Server error suspending user' });
+  }
+});
+
+// @route   POST /api/admin/users/:id/activate
+// @desc    Activate a user
+// @access  Private (Admin only)
+router.post('/users/:id/activate', auth, admin, async (req, res) => {
+  try {
+    const userId = parseInt(req.params.id);
+    
+    const result = await queryAsync(
+      'UPDATE users SET status = "approved", statusUpdatedAt = NOW(), statusUpdatedBy = ? WHERE id = ?',
+      [req.session.userId, userId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // Log activity
+    await queryAsync(
+      'INSERT INTO activities (type, description, userId, relatedId, createdAt) VALUES (?, ?, ?, ?, NOW())',
+      ['user_activated', 'User activated by admin', req.session.userId, userId]
+    );
+
+    res.json({ success: true, message: 'User activated successfully' });
+  } catch (err) {
+    console.error('Error activating user:', err);
+    res.status(500).json({ success: false, message: 'Server error activating user' });
+  }
+});
+
+// @route   POST /api/admin/users/bulk-action
+// @desc    Perform bulk actions on users
+// @access  Private (Admin only)
+router.post('/users/bulk-action', auth, admin, async (req, res) => {
+  try {
+    const { action, userIds } = req.body;
+    
+    if (!action || !userIds || !Array.isArray(userIds) || userIds.length === 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Action and user IDs are required' 
+      });
+    }
+
+    // Validate action
+    const validActions = ['approve', 'reject', 'suspend', 'activate', 'delete'];
+    if (!validActions.includes(action)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid action specified' 
+      });
+    }
+
+    // Convert string IDs to integers
+    const numericIds = userIds.map(id => parseInt(id)).filter(id => !isNaN(id));
+    if (numericIds.length === 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'No valid user IDs provided' 
+      });
+    }
+
+    const placeholders = numericIds.map(() => '?').join(',');
+    let updateQuery;
+    let logAction;
+
+    switch (action) {
+      case 'approve':
+      case 'activate':
+        updateQuery = `UPDATE users SET status = "approved", statusUpdatedAt = NOW(), statusUpdatedBy = ? WHERE id IN (${placeholders})`;
+        logAction = 'users_bulk_approved';
+        break;
+      case 'reject':
+        updateQuery = `UPDATE users SET status = "rejected", statusUpdatedAt = NOW(), statusUpdatedBy = ? WHERE id IN (${placeholders})`;
+        logAction = 'users_bulk_rejected';
+        break;
+      case 'suspend':
+        updateQuery = `UPDATE users SET status = "suspended", statusUpdatedAt = NOW(), statusUpdatedBy = ? WHERE id IN (${placeholders})`;
+        logAction = 'users_bulk_suspended';
+        break;
+      case 'delete':
+        // Prevent deletion of admin users
+        const adminCheck = await queryAsync(`SELECT COUNT(*) as count FROM users WHERE id IN (${placeholders}) AND userType = "admin"`, numericIds);
+        if (adminCheck[0].count > 0) {
+          return res.status(403).json({ 
+            success: false, 
+            message: 'Cannot delete admin users' 
+          });
+        }
+        updateQuery = `DELETE FROM users WHERE id IN (${placeholders})`;
+        logAction = 'users_bulk_deleted';
+        break;
+    }
+
+    // Execute the bulk action
+    const result = await queryAsync(updateQuery, [req.session.userId, ...numericIds]);
+
+    // Log the bulk activity
+    await queryAsync(
+      'INSERT INTO activities (type, description, userId, createdAt) VALUES (?, ?, ?, NOW())',
+      [logAction, `Bulk ${action} performed on ${result.affectedRows} users by admin`, req.session.userId]
+    );
+
+    res.json({ 
+      success: true, 
+      message: `Successfully ${action}ed ${result.affectedRows} user(s)`,
+      affectedRows: result.affectedRows
+    });
+
+  } catch (err) {
+    console.error('Error performing bulk action:', err);
+    res.status(500).json({ success: false, message: 'Server error performing bulk action' });
+  }
+});
+
+// @route   POST /api/admin/plans
+// @desc    Create a new membership plan
+// @access  Private (Admin only)
+router.post('/plans', [
+  auth,
+  admin,
+  body('key').notEmpty().trim().escape(),
+  body('name').notEmpty().trim().escape(),
+  body('price').isDecimal(),
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ success: false, errors: errors.array() });
+    }
+
+    const { key, name, description, price, currency, billingCycle, features, dealAccess, type, isActive, priority } = req.body;
+
+    // Check if plan key already exists
+    const existingPlan = await queryAsync('SELECT id FROM plans WHERE `key` = ?', [key]);
+    if (existingPlan.length > 0) {
+      return res.status(400).json({ success: false, message: 'Plan key already exists.' });
+    }
+
+    const result = await queryAsync(`
+      INSERT INTO plans (\`key\`, name, description, price, currency, billingCycle, features, dealAccess, type, isActive, priority)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [key, name, description || '', price || 0, currency || 'GHS', billingCycle || 'yearly', 
+        JSON.stringify(features || []), dealAccess || null, type || 'user', isActive !== false, priority || 0]);
+
+    // Get the created plan
+    const planRows = await queryAsync('SELECT * FROM plans WHERE id = ?', [result.insertId]);
+
+    return res.json({ success: true, plan: planRows[0] });
+  } catch (err) {
+    console.error('Error creating plan:', err);
+    return res.status(500).json({ success: false, message: 'Server error creating plan.' });
+  }
+});
+
+// ===== ENHANCED COMMUNITIES MANAGEMENT =====
+
+// @route   POST /api/admin/communities
+// @desc    Create a new community
+// @access  Private (Admin only)
+router.post('/communities', auth, admin, async (req, res) => {
+  try {
+    const { name, description, displayOrder, isActive } = req.body;
+    
+    if (!name) {
+      return res.status(400).json({ success: false, message: 'Community name is required' });
+    }
+    
+    const result = await queryAsync(
+      'INSERT INTO communities (name, description, displayOrder, isActive) VALUES (?, ?, ?, ?)',
+      [name, description || '', displayOrder || 999, isActive !== false]
+    );
+    
+    const community = await queryAsync('SELECT * FROM communities WHERE id = ?', [result.insertId]);
+    res.json({ success: true, community: community[0] });
+  } catch (err) {
+    if (err.code === 'ER_DUP_ENTRY') {
+      res.status(400).json({ success: false, message: 'Community name already exists' });
+    } else {
+      console.error('Error creating community:', err);
+      res.status(500).json({ success: false, message: 'Server error' });
+    }
+  }
+});
+
+// @route   PUT /api/admin/communities/:id
+// @desc    Update a community
+// @access  Private (Admin only)
+router.put('/communities/:id', auth, admin, async (req, res) => {
+  try {
+    const { name, description, displayOrder, isActive } = req.body;
+    const communityId = parseInt(req.params.id);
+    
+    if (!name) {
+      return res.status(400).json({ success: false, message: 'Community name is required' });
+    }
+    
+    const result = await queryAsync(
+      'UPDATE communities SET name = ?, description = ?, displayOrder = ?, isActive = ? WHERE id = ?',
+      [name, description || '', displayOrder || 999, isActive !== false, communityId]
+    );
+    
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Community not found' });
+    }
+    
+    const community = await queryAsync('SELECT * FROM communities WHERE id = ?', [communityId]);
+    res.json({ success: true, community: community[0] });
+  } catch (err) {
+    if (err.code === 'ER_DUP_ENTRY') {
+      res.status(400).json({ success: false, message: 'Community name already exists' });
+    } else {
+      console.error('Error updating community:', err);
+      res.status(500).json({ success: false, message: 'Server error' });
+    }
+  }
+});
+
+// @route   DELETE /api/admin/communities/:id
+// @desc    Delete a community
+// @access  Private (Admin only)
+router.delete('/communities/:id', auth, admin, async (req, res) => {
+  try {
+    const communityId = parseInt(req.params.id);
+    
+    const result = await queryAsync('DELETE FROM communities WHERE id = ?', [communityId]);
+    
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Community not found' });
+    }
+    
+    res.json({ success: true, message: 'Community deleted successfully' });
+  } catch (err) {
+    console.error('Error deleting community:', err);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// ===== USER TYPES MANAGEMENT =====
+
+// @route   GET /api/admin/user-types
+// @desc    Get all user types for admin management
+// @access  Private (Admin only)
+router.get('/user-types', auth, admin, async (req, res) => {
+  try {
+    const userTypes = await queryAsync('SELECT * FROM user_types ORDER BY displayOrder, name');
+    res.json({ success: true, userTypes });
+  } catch (err) {
+    console.error('Error fetching user types:', err);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// @route   POST /api/admin/user-types
+// @desc    Create a new user type
+// @access  Private (Admin only)
+router.post('/user-types', auth, admin, async (req, res) => {
+  try {
+    const { name, description, displayOrder, isActive } = req.body;
+    
+    if (!name) {
+      return res.status(400).json({ success: false, message: 'User type name is required' });
+    }
+    
+    const result = await queryAsync(
+      'INSERT INTO user_types (name, description, displayOrder, isActive) VALUES (?, ?, ?, ?)',
+      [name, description || '', displayOrder || 999, isActive !== false]
+    );
+    
+    const userType = await queryAsync('SELECT * FROM user_types WHERE id = ?', [result.insertId]);
+    res.json({ success: true, userType: userType[0] });
+  } catch (err) {
+    if (err.code === 'ER_DUP_ENTRY') {
+      res.status(400).json({ success: false, message: 'User type name already exists' });
+    } else {
+      console.error('Error creating user type:', err);
+      res.status(500).json({ success: false, message: 'Server error' });
+    }
+  }
+});
+
+// @route   PUT /api/admin/user-types/:id
+// @desc    Update a user type
+// @access  Private (Admin only)
+router.put('/user-types/:id', auth, admin, async (req, res) => {
+  try {
+    const { name, description, displayOrder, isActive } = req.body;
+    const userTypeId = parseInt(req.params.id);
+    
+    if (!name) {
+      return res.status(400).json({ success: false, message: 'User type name is required' });
+    }
+    
+    const result = await queryAsync(
+      'UPDATE user_types SET name = ?, description = ?, displayOrder = ?, isActive = ? WHERE id = ?',
+      [name, description || '', displayOrder || 999, isActive !== false, userTypeId]
+    );
+    
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'User type not found' });
+    }
+    
+    const userType = await queryAsync('SELECT * FROM user_types WHERE id = ?', [userTypeId]);
+    res.json({ success: true, userType: userType[0] });
+  } catch (err) {
+    if (err.code === 'ER_DUP_ENTRY') {
+      res.status(400).json({ success: false, message: 'User type name already exists' });
+    } else {
+      console.error('Error updating user type:', err);
+      res.status(500).json({ success: false, message: 'Server error' });
+    }
+  }
+});
+
+// @route   DELETE /api/admin/user-types/:id
+// @desc    Delete a user type
+// @access  Private (Admin only)
+router.delete('/user-types/:id', auth, admin, async (req, res) => {
+  try {
+    const userTypeId = parseInt(req.params.id);
+    
+    const result = await queryAsync('DELETE FROM user_types WHERE id = ?', [userTypeId]);
+    
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'User type not found' });
+    }
+    
+    res.json({ success: true, message: 'User type deleted successfully' });
+  } catch (err) {
+    console.error('Error deleting user type:', err);
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 });
 
