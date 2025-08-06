@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import '../styles/global.css';
-
 const Header = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
@@ -47,14 +46,10 @@ const Header = () => {
       <div className="header-content">
         <div className="logo">
           <img 
-            src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/41/Flag_of_India.svg/1200px-Flag_of_India.svg.png" 
-            alt="India Flag" 
+            src="../logo.jpeg" 
+            alt="logo" 
             className="logo-img"
           />
-          <div className="logo-text">
-            <h1>Indians in Ghana</h1>
-            <span className="logo-tagline">Community & Business Network</span>
-          </div>
         </div>
             
         <nav className="main-nav">
@@ -71,8 +66,6 @@ const Header = () => {
                 </Link></li>
               </>
             )}
-            
-            <li><Link to="/about" className={isActive('/about')}>About Us</Link></li>            <li><Link to="/contact" className={isActive('/contact')}>Contact</Link></li>
             {/* Business Directory and Merchant options */}
             <li className="dropdown">
               <div className="dropdown-toggle">
@@ -88,6 +81,10 @@ const Header = () => {
                 )}
               </ul>
             </li>
+
+            <li><Link to="/about" className={isActive('/about')}>About Us</Link></li>
+            <li><Link to="/contact" className={isActive('/contact')}>Contact</Link></li>
+            
             {/* Admin/Merchant specific links */}
             {isAuthenticated && user?.userType === 'merchant' && (
               <li><Link to="/merchant/dashboard" className={`${isActive('/merchant/dashboard')} merchant-link`}>

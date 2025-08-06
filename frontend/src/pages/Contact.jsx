@@ -45,9 +45,92 @@ const Contact = () => {
     }
   };
   return (
-    <div className="container">
-      {/* Notification */}
-      {notification.message && (
+    <div style={{ minHeight: '100vh' }}>
+      {/* Hero Section */}
+      <div style={{
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        padding: '4rem 2rem',
+        textAlign: 'center',
+        color: 'white',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.1)',
+          zIndex: 1
+        }}></div>
+        <div style={{
+          position: 'relative',
+          zIndex: 2,
+          maxWidth: '800px',
+          margin: '0 auto'
+        }}>
+          <h1 style={{
+            fontSize: '3rem',
+            fontWeight: '700',
+            marginBottom: '1rem',
+            textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)'
+          }}>
+            Contact Us
+          </h1>
+          <p style={{
+            fontSize: '1.2rem',
+            marginBottom: '2rem',
+            opacity: '0.9'
+          }}>
+             We'd love to hear from you! Whether you have questions, suggestions, or need assistance, 
+            our team is here to help you make the most of your membership.
+          </p>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            gap: '3rem',
+            marginTop: '2rem'
+          }}>
+            <div style={{ textAlign: 'center' }}>
+              <span style={{
+                display: 'block',
+                fontSize: '2.5rem',
+                fontWeight: '700',
+                marginBottom: '0.5rem'
+              }}>24hrs</span>
+              <span style={{
+                fontSize: '0.9rem',
+                opacity: '0.8',
+                textTransform: 'uppercase',
+                letterSpacing: '1px'
+              }}>Response Time</span>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <span style={{
+                display: 'block',
+                fontSize: '2.5rem',
+                fontWeight: '700',
+                marginBottom: '0.5rem'
+              }}>24/7</span>
+              <span style={{
+                fontSize: '0.9rem',
+                opacity: '0.8',
+                textTransform: 'uppercase',
+                letterSpacing: '1px'
+              }}>WhatsApp Support</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="container" style={{ 
+        marginTop: '-2rem', 
+        position: 'relative', 
+        zIndex: 3 
+      }}>
+        {/* Notification */}
+        {notification.message && (
         <div className={`notification show ${notification.type}`}>
           <i className={`fas ${notification.type === 'success' ? 'fa-check-circle' : notification.type === 'error' ? 'fa-exclamation-triangle' : 'fa-info-circle'}`}></i>
           {notification.message}
@@ -55,19 +138,7 @@ const Contact = () => {
       )}
 
       <div className="card">
-        <div className="card-header">
-          <h2 className="card-title">
-            <i className="fas fa-envelope card-icon"></i>
-            Contact Indians in Ghana
-          </h2>
-        </div>
-        
         <div className="contact-content">
-          <p style={{ marginBottom: '30px', fontSize: '1.1rem', textAlign: 'center' }}>
-            We'd love to hear from you! Whether you have questions, suggestions, or need assistance, 
-            our team is here to help you make the most of your membership.
-          </p>
-
           <div className="contact-container" style={{ 
             display: 'grid', 
             gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 
@@ -304,63 +375,7 @@ const Contact = () => {
             </div>
           </div>
 
-          {/* FAQ Section */}
-          <div className="faq-section" style={{
-            background: 'var(--light)',
-            padding: '25px',
-            borderRadius: 'var(--border-radius-card)',
-            marginTop: '30px'
-          }}>
-            <h3 className="section-title" style={{ textAlign: 'center', marginBottom: '25px' }}>
-              <i className="fas fa-question-circle" style={{ color: 'var(--accent)', marginRight: '10px' }}></i>
-              Frequently Asked Questions
-            </h3>
-            
-            <div className="faq-grid" style={{ 
-              display: 'grid', 
-              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 
-              gap: '20px'
-            }}>
-              <div className="faq-item">
-                <h4 style={{ color: 'var(--primary)', marginBottom: '10px' }}>
-                  <i className="fas fa-id-card"></i> How do I get my membership card?
-                </h4>
-                <p style={{ color: '#666', lineHeight: '1.6' }}>
-                  After registration and payment verification, your digital membership card will be activated within 24 hours. 
-                  You can then access it from your dashboard.
-                </p>
-              </div>
-
-              <div className="faq-item">
-                <h4 style={{ color: 'var(--primary)', marginBottom: '10px' }}>
-                  <i className="fas fa-tags"></i> How do I access exclusive deals?
-                </h4>
-                <p style={{ color: '#666', lineHeight: '1.6' }}>
-                  Exclusive deals are available in your member dashboard. Simply present your digital card 
-                  at participating businesses to redeem offers.
-                </p>
-              </div>
-
-              <div className="faq-item">
-                <h4 style={{ color: 'var(--primary)', marginBottom: '10px' }}>
-                  <i className="fas fa-credit-card"></i> What payment methods do you accept?
-                </h4>
-                <p style={{ color: '#666', lineHeight: '1.6' }}>
-                  We accept Mobile Money (MTN, Vodafone, AirtelTigo), bank transfers, and cash payments at our office.
-                </p>
-              </div>
-
-              <div className="faq-item">
-                <h4 style={{ color: 'var(--primary)', marginBottom: '10px' }}>
-                  <i className="fas fa-calendar-alt"></i> How do I join community events?
-                </h4>
-                <p style={{ color: '#666', lineHeight: '1.6' }}>
-                  Members receive priority invitations to all events. Check your dashboard for upcoming events 
-                  and register directly through the platform.
-                </p>
-              </div>
-            </div>
-          </div>
+  
 
           {/* Emergency Contact */}
           <div className="emergency-contact" style={{
@@ -384,6 +399,7 @@ const Contact = () => {
           </div>
         </div>
       </div>
+    </div>
     </div>
   );
 };

@@ -106,139 +106,161 @@ const UnifiedLogin = () => {
   };
 
   return (
-    <div className="page active">
-      <div className="unified-login-card">
-        <div className="login-tabs">
-          <button 
-            className={`tab-btn ${activeTab === 'user' ? 'active' : ''}`}
-            onClick={() => setActiveTab('user')}
-          >
-            <i className="fas fa-user"></i> Member Login
-          </button>
-          <button 
-            className={`tab-btn ${activeTab === 'merchant' ? 'active' : ''}`}
-            onClick={() => setActiveTab('merchant')}
-          >
-            <i className="fas fa-store"></i> Merchant Login
-          </button>
-          <div className={`slider ${activeTab}`}></div>
-        </div>
-          <div className={`login-content ${activeTab}`}>
-          <div className="login-panels-container">
-            <div className="login-panel" id="user-login">
-              <div className="login-form-header">
-                <h2><i className="fas fa-sign-in-alt"></i> Welcome Back</h2>
-                <p>Access your membership benefits and exclusive deals</p>
+    <>
+      {/* Back to Home floating button */}
+      <Link to="/" style={{
+        position: 'fixed',
+        top: '18px',
+        right: '24px',
+        zIndex: 1000,
+        background: 'rgba(255,255,255,0.95)',
+        color: '#667eea',
+        borderRadius: '50px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+        padding: '8px 16px',
+        fontWeight: 600,
+        fontSize: '0.95rem',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '7px',
+        textDecoration: 'none',
+        border: '1px solid #e2e8f0',
+        transition: 'background 0.2s'
+      }}>
+        <i className="fas fa-home" style={{ fontSize: '1.1rem', marginRight: '2px' }}></i>
+        Home
+      </Link>
+
+      <div className="unified-login-container">
+        <div className="unified-login-card">
+          {/* Left Side - Hero Section */}
+          <div className="login-hero-section">
+            <div className="hero-content">
+              <div className="hero-logo">
+                <i className="fas fa-users"></i>
               </div>
-              
-              <div className="login-image-container">
-                <img 
-                  src="https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80" 
-                  alt="Member Login" 
-                  className="login-image"
-                  onError={(e) => {
-                    e.target.src = 'https://placehold.co/600x400/CCCCCC/333333?text=Login+Image';
-                  }}
-                />
-              </div>
-            </div>
-              <div className="login-panel" id="merchant-login">
-              <div className="login-form-header">
-                <h2><i className="fas fa-store"></i> Welcome Back</h2>
-                <p>Access your business dashboard and manage offers</p>
-              </div>
-              
-              <div className="login-image-container">
-                <img 
-                  src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1170&q=80" 
-                  alt="Merchant Login" 
-                  className="login-image"
-                  onError={(e) => {
-                    e.target.src = 'https://placehold.co/600x400/CCCCCC/333333?text=Merchant+Login';
-                  }}
-                />
-                
-                <div className="merchant-benefits">
-                  <h3>Business Benefits</h3>
-                  <ul>
-                    <li><i className="fas fa-users"></i> Access to 500+ community members</li>
-                    <li><i className="fas fa-tags"></i> Create exclusive deals and offers</li>
-                    <li><i className="fas fa-chart-bar"></i> Business analytics dashboard</li>
-                    <li><i className="fas fa-star"></i> Featured business listings</li>
-                  </ul>
+              <h1 className="hero-title">Indians in Ghana</h1>
+              <p className="hero-subtitle">
+                Join our vibrant community and unlock exclusive benefits, deals, and connections.
+              </p>
+              <div className="hero-features">
+                <div className="hero-feature">
+                  <i className="fas fa-star"></i>
+                  <span>Exclusive member deals and discounts</span>
+                </div>
+                <div className="hero-feature">
+                  <i className="fas fa-network-wired"></i>
+                  <span>Connect with fellow community members</span>
+                </div>
+                <div className="hero-feature">
+                  <i className="fas fa-calendar-alt"></i>
+                  <span>Access to cultural events and programs</span>
+                </div>
+                <div className="hero-feature">
+                  <i className="fas fa-briefcase"></i>
+                  <span>Business networking opportunities</span>
                 </div>
               </div>
             </div>
           </div>
-          
-          <div className="login-form-container">
-            <form onSubmit={handleLogin}>
-              <div className="form-group">
-                <label htmlFor="email">
-                  <i className="fas fa-envelope"></i> Email Address
-                </label>
-                <input 
-                  type="email" 
-                  id="email" 
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  placeholder={activeTab === 'user' ? "Enter your email" : "Enter your business email"} 
-                  required 
-                />
-              </div>
-              
-              <div className="form-group">
-                <label htmlFor="password">
-                  <i className="fas fa-lock"></i> Password
-                </label>
-                <input 
-                  type="password" 
-                  id="password" 
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  placeholder="Enter password" 
-                  required 
-                />
-              </div>
-              
-              <div className="form-options">
-                <label className="checkbox-container">
-                  <input 
-                    type="checkbox" 
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                  />
-                  <span className="checkmark"></span>
-                  <span>Remember Me</span>
-                </label>
-                
-                <Link to="/forgot-password" className="forgot-password">
-                  Forgot Password?
-                </Link>
-              </div>
-              
-              <button type="submit" className="login-btn" disabled={loading}>
-                <i className="fas fa-sign-in-alt"></i> 
-                {loading ? 'Logging in...' : activeTab === 'user' ? 'Sign in' : 'Sign in as Merchant'}
+
+          {/* Right Side - Login Form */}
+          <div className="login-form-section">
+            <div className="login-tabs">
+              <button 
+                className={`tab-btn ${activeTab === 'user' ? 'active' : ''}`}
+                onClick={() => setActiveTab('user')}
+              >
+                <i className="fas fa-user"></i> Member Login
               </button>
-            </form>
-            
-            <div className="login-footer">
-              <p>Don't have an account?</p>
-              {activeTab === 'user' ? (
-                <Link to="/register" className="register-btn">
-                  <i className="fas fa-user-plus"></i> Register as Member
-                </Link>
-              ) : (
-                <Link to="/merchant/register" className="register-btn">
-                  <i className="fas fa-store"></i> Register as Merchant
-                </Link>
-              )}
+              <button 
+                className={`tab-btn ${activeTab === 'merchant' ? 'active' : ''}`}
+                onClick={() => setActiveTab('merchant')}
+              >
+                <i className="fas fa-store"></i> Merchant Login
+              </button>
+              <div className={`slider ${activeTab}`}></div>
+            </div>
+
+            <div className="login-form-container">
+              <div className="form-header">
+                <h2 className="form-title">
+                  {activeTab === 'user' ? 'Welcome Back!' : 'Merchant Portal'}
+                </h2>
+              </div>
+
+              <form onSubmit={handleLogin} className="login-form">
+                <div className="form-group">
+                  <label htmlFor="email">Email Address</label>
+                  <input
+                    type="email"
+                    id="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    placeholder="Enter your email"
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="password">Password</label>
+                  <input
+                    type="password"
+                    id="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    placeholder="Enter your password"
+                    required
+                  />
+                </div>
+
+                <div className="remember-forgot">
+                  <label className="remember-me">
+                    <input
+                      type="checkbox"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                    />
+                    <span>Remember me</span>
+                  </label>
+                  <Link to="/forgot-password" className="forgot-password">
+                    Forgot password?
+                  </Link>
+                </div>
+
+                <button 
+                  type="submit" 
+                  className="login-btn"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <>
+                      <i className="fas fa-spinner fa-spin"></i> Signing in...
+                    </>
+                  ) : (
+                    <>
+                      <i className="fas fa-sign-in-alt"></i> Sign In
+                    </>
+                  )}
+                </button>
+              </form>
+
+              <div className="form-divider">
+                <span>New to our community?</span>
+              </div>
+
+              <div className="register-link">
+                {activeTab === 'user' ? (
+                  <p>Don't have an account? <Link to="/register">Join us today!</Link></p>
+                ) : (
+                  <p>Want to partner with us? <Link to="/merchant/register">Register your business</Link></p>
+                )}
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

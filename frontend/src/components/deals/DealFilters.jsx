@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import './UserFilters.css';
-
+import './dealfilter.css';
 
 /**
  * DealFilters component for advanced deal filtering.
@@ -38,13 +37,7 @@ const DealFilters = ({ filters, plans = [], onFilterChange, onSearch }) => {
     onFilterChange({
       status: 'all',
       category: 'all',
-      membershipLevel: 'all',
-      accessLevel: 'all',
-      discountType: 'all',
-      search: '',
-      terms: '',
-      dateFrom: '',
-      dateTo: ''
+      search: ''
     });
   };
 
@@ -54,13 +47,7 @@ const DealFilters = ({ filters, plans = [], onFilterChange, onSearch }) => {
   const hasActiveFilters = () => {
     return (
       filters.status !== 'all' ||
-      filters.category !== 'all' ||
-      filters.membershipLevel !== 'all' ||
-      filters.accessLevel !== 'all' ||
-      filters.discountType !== 'all' ||
-      filters.terms ||
-      filters.dateFrom ||
-      filters.dateTo
+      filters.category !== 'all'
     );
   };
 
@@ -79,8 +66,7 @@ const DealFilters = ({ filters, plans = [], onFilterChange, onSearch }) => {
         />
       </div>
       <div className="user-filters__filters-container">
-        <header className="user-filters__filters-header">
-          <h3>Filter Deals</h3>
+        <div className="user-filters__filters-header">
           <button 
             className="user-filters__toggle-filters" 
             onClick={() => setShowFilters(!showFilters)}
@@ -98,7 +84,7 @@ const DealFilters = ({ filters, plans = [], onFilterChange, onSearch }) => {
               </>
             )}
           </button>
-        </header>
+        </div>
         {showFilters && (
           <>
             <form className="user-filters__filters-content" onSubmit={handleSearchSubmit}>
@@ -133,88 +119,6 @@ const DealFilters = ({ filters, plans = [], onFilterChange, onSearch }) => {
                   <option value="travel">Travel</option>
                   <option value="other">Other</option>
                 </select>
-              </div>              <div className="user-filters__filter-group">
-                <label htmlFor="membershipLevel">Membership Level</label>
-                <select 
-                  id="membershipLevel" 
-                  name="membershipLevel" 
-                  value={filters.membershipLevel || 'all'} 
-                  onChange={handleInputChange}
-                  aria-label="Membership level"
-                >
-                  <option value="all">All Levels</option>                  {plans
-                    .filter(plan => plan.type === 'user')
-                    .sort((a, b) => a.priority - b.priority) // Sort by priority ascending
-                    .map(plan => (
-                      <option key={plan.id} value={plan.key || plan.name.toLowerCase()}>
-                        {plan.name}
-                      </option>
-                    ))}
-                </select>
-              </div>
-              <div className="user-filters__filter-group">
-                <label htmlFor="accessLevel">Deal Access Level</label>
-                <select 
-                  id="accessLevel" 
-                  name="accessLevel" 
-                  value={filters.accessLevel || 'all'} 
-                  onChange={handleInputChange}
-                  aria-label="Deal access level"
-                >
-                  <option value="all">All Access Levels</option>
-                  <option value="community">Community</option>
-                  <option value="silver">Silver</option>
-                  <option value="gold">Gold</option>
-                </select>
-              </div>
-              <div className="user-filters__filter-group">
-                <label htmlFor="discountType">Discount Type</label>
-                <select 
-                  id="discountType" 
-                  name="discountType" 
-                  value={filters.discountType || 'all'} 
-                  onChange={handleInputChange}
-                  aria-label="Discount type"
-                >
-                  <option value="all">All Types</option>
-                  <option value="percent">Percent</option>
-                  <option value="flat">Flat</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
-              <div className="user-filters__filter-group">
-                <label htmlFor="terms">Terms/Keyword</label>
-                <input
-                  type="text"
-                  id="terms"
-                  name="terms"
-                  value={filters.terms || ''}
-                  onChange={handleInputChange}
-                  placeholder="Search terms or conditions..."
-                  aria-label="Terms or keyword"
-                />
-              </div>
-              <div className="user-filters__filter-group">
-                <label htmlFor="dateFrom">From Date</label>
-                <input 
-                  type="date" 
-                  id="dateFrom"
-                  name="dateFrom" 
-                  value={filters.dateFrom || ''} 
-                  onChange={handleInputChange}
-                  aria-label="From date"
-                />
-              </div>
-              <div className="user-filters__filter-group">
-                <label htmlFor="dateTo">To Date</label>
-                <input 
-                  type="date" 
-                  id="dateTo"
-                  name="dateTo" 
-                  value={filters.dateTo || ''} 
-                  onChange={handleInputChange}
-                  aria-label="To date"
-                />
               </div>
               <div className="user-filters__filters-actions">
                 <button type="button" className="user-filters__btn-reset" onClick={clearFilters}>
@@ -242,48 +146,6 @@ const DealFilters = ({ filters, plans = [], onFilterChange, onSearch }) => {
                   <div className="user-filters__filter-tag">
                     <span>Category: {filters.category}</span>
                     <button aria-label="Clear category filter" onClick={() => onFilterChange({ category: 'all' })}>
-                      <i className="fas fa-times" aria-hidden="true"></i>
-                    </button>
-                  </div>
-                )}
-                {filters.membershipLevel !== 'all' && (
-                  <div className="user-filters__filter-tag">
-                    <span>Membership: {filters.membershipLevel}</span>
-                    <button aria-label="Clear membership filter" onClick={() => onFilterChange({ membershipLevel: 'all' })}>
-                      <i className="fas fa-times" aria-hidden="true"></i>
-                    </button>
-                  </div>
-                )}
-                {filters.accessLevel !== 'all' && (
-                  <div className="user-filters__filter-tag">
-                    <span>Access: {filters.accessLevel}</span>
-                    <button aria-label="Clear access filter" onClick={() => onFilterChange({ accessLevel: 'all' })}>
-                      <i className="fas fa-times" aria-hidden="true"></i>
-                    </button>
-                  </div>
-                )}
-                {filters.discountType !== 'all' && (
-                  <div className="user-filters__filter-tag">
-                    <span>Discount: {filters.discountType}</span>
-                    <button aria-label="Clear discount filter" onClick={() => onFilterChange({ discountType: 'all' })}>
-                      <i className="fas fa-times" aria-hidden="true"></i>
-                    </button>
-                  </div>
-                )}
-                {filters.terms && (
-                  <div className="user-filters__filter-tag">
-                    <span>Terms: {filters.terms}</span>
-                    <button aria-label="Clear terms filter" onClick={() => onFilterChange({ terms: '' })}>
-                      <i className="fas fa-times" aria-hidden="true"></i>
-                    </button>
-                  </div>
-                )}
-                {(filters.dateFrom || filters.dateTo) && (
-                  <div className="user-filters__filter-tag">
-                    <span>
-                      Date: {filters.dateFrom || 'Any'} - {filters.dateTo || 'Any'}
-                    </span>
-                    <button aria-label="Clear date filter" onClick={() => onFilterChange({ dateFrom: '', dateTo: '' })}>
                       <i className="fas fa-times" aria-hidden="true"></i>
                     </button>
                   </div>

@@ -1,443 +1,229 @@
-/* Enhanced Membership Card Styles */
-.membership-card-container {
-  max-width: 500px;
-  margin: 0 auto;
-  padding: 20px;
-}
-
-.card-controls {
-  margin-bottom: 20px;
-  padding: 15px;
-  background: #f8f9fa;
-  border-radius: 8px;
-}
-
-.layout-selector {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.layout-selector label {
-  font-weight: 600;
-  color: #333;
-}
-
-.layout-select {
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  background: white;
-  font-size: 14px;
-}
-
-.membership-card {
-  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-  border-radius: 15px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-  overflow: hidden;
+.card-premium-style {
+  background: linear-gradient(90deg, #2c2346 0%, #7e3fad 100%);
+  color: #fff;
   position: relative;
-  border-top: 5px solid #4CAF50;
-  margin-bottom: 20px;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  min-height: 340px;
+  border-radius: 20px;
+  border-top: none;
+  box-shadow: 0 10px 30px rgba(70, 10, 100, 0.15);
+  padding: 0;
+  width: 430px;
+  max-width: 97vw;
 }
 
-.membership-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
-}
-
-/* Card Layout Variants */
-.membership-card.layout-modern {
-  min-height: 280px;
-}
-
-.membership-card.layout-classic {
-  background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
-  color: white;
-  min-height: 260px;
-}
-
-.membership-card.layout-passport {
-  background: linear-gradient(135deg, #f8f4e5, #e8e4d5);
-  min-height: 320px;
-  max-width: 400px;
-}
-
-/* Plan-based styling */
-.membership-card.plan-free {
-  background: linear-gradient(135deg, #CCCCCC, #e0e0e0);
-  color: #333;
-}
-
-.membership-card.plan-basic {
-  background: linear-gradient(135deg, #A0A0A0, #d0d0d0);
-  color: white;
-}
-
-.membership-card.plan-silver {
-  background: linear-gradient(135deg, #C0C0C0, #e8e8e8);
-  color: #333;
-}
-
-.membership-card.plan-gold, .membership-card.plan-premium {
-  background: linear-gradient(135deg, #FFD700, #e6c200);
-  color: #333;
-}
-
-.card-header {
-  padding: 20px 20px 0 20px;
+.card-row {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-}
-
-.card-title {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
-
-.card-logo-placeholder {
-  font-size: 2.5rem;
-  color: #118AB2;
-  display: flex;
-  align-items: center;
-}
-
-.card-text h3 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin: 0;
-  color: inherit;
-}
-
-.membership-type {
-  font-size: 0.9rem;
-  margin: 5px 0 0 0;
-  opacity: 0.8;
-  font-weight: 500;
-}
-
-.passport-photo {
-  width: 80px;
-  height: 100px;
-  border-radius: 8px;
-  overflow: hidden;
-  border: 2px solid #333;
-  background: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.passport-photo img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.passport-photo .default-avatar {
-  font-size: 2rem;
-  color: #666;
-}
-
-.card-body {
-  padding: 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 20px;
-}
-
-.layout-passport .card-body {
-  flex-direction: column;
-  gap: 15px;
-}
-
-.member-info {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  flex: 1;
-}
-
-.layout-passport .member-info {
-  flex-direction: column;
-  text-align: center;
-  width: 100%;
-}
-
-.member-photo {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  overflow: hidden;
-  border: 3px solid #118AB2;
-  background: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.layout-passport .member-photo {
-  display: none;
-}
-
-.member-photo img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.default-avatar {
-  font-size: 2rem;
-  color: #666;
-}
-
-.member-details {
-  flex: 1;
-}
-
-.layout-passport .member-details {
-  text-align: center;
-}
-
-.user-name {
-  font-size: 1.4rem;
-  font-weight: 700;
-  margin: 0 0 5px 0;
-  color: inherit;
-}
-
-.user-id {
-  font-size: 0.9rem;
-  margin: 0 0 10px 0;
-  background: rgba(0,0,0,0.1);
-  padding: 4px 8px;
-  border-radius: 12px;
-  display: inline-block;
-  font-weight: 600;
-}
-
-.member-since {
-  font-size: 0.8rem;
-  margin: 0;
-  opacity: 0.8;
-}
-
-.passport-details {
-  margin-top: 10px;
-  font-size: 0.8rem;
-  text-align: left;
-}
-
-.passport-details p {
-  margin: 2px 0;
-}
-
-.card-codes {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 15px;
-  min-width: 120px;
-}
-
-.layout-passport .card-codes {
   flex-direction: row;
-  justify-content: center;
-  min-width: auto;
+  align-items: stretch;
   width: 100%;
 }
 
-.qr-section, .barcode-section {
-  text-align: center;
+.card-premium-style .card-row:first-child {
+  padding: 12px 24px 0 24px;
+  align-items: center;
+  position: relative;
 }
 
-.qrcode-container {
-  width: 100px;
-  height: 100px;
-  background: white;
-  border-radius: 8px;
-  padding: 10px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+.card-logo-imgbox {
+  width: 64px;
+  height: 64px;
+  border-radius: 32px;
+  background: #221442;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 5px;
+  position: absolute;
+  left: 18px;
+  top: 14px;
+  box-shadow: 0 4px 20px rgba(30,10,50,0.03);
+  border: 4px solid #271856;
+}
+.logo-img {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
-.layout-passport .qrcode-container {
-  width: 80px;
-  height: 80px;
-  padding: 8px;
-}
-
-.barcode-container {
-  background: white;
-  border-radius: 5px;
-  padding: 8px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  margin: 0 auto 5px;
-  min-height: 40px;
+.indians-title-block {
+  flex: 1;
+  text-align: right;
+  margin-left: auto;
+  margin-right: 0;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
 }
-
-.layout-passport .barcode-container {
-  padding: 5px;
-  min-height: 30px;
+.indians-title {
+  font-size: 1.6rem;
+  font-weight: bold;
+  letter-spacing: 1px;
+  color: #fff;
 }
-
-.qr-section p, .barcode-section p {
-  font-size: 0.7rem;
-  margin: 0;
-  opacity: 0.8;
-  font-weight: 600;
+.indians-tagline {
+  font-size: 0.9rem;
+  color: #d7c9ec;
+  margin-bottom: 2px;
+  letter-spacing: 0.5px;
 }
-
-.barcode-number {
-  font-size: 0.6rem !important;
-  font-family: 'Courier New', monospace;
+.membership-badge {
+  margin-top: 3px;
+  font-size: 1rem;
+  color: #ffe94d;
+  padding: 3px 14px;
+  border-radius: 7px;
+  border: 2px solid #ffe94d;
+  background: rgba(111,68,255,0.10);
+  width: fit-content;
+  margin-left: auto;
+  font-weight: 700;
   letter-spacing: 1px;
 }
 
-.card-footer {
-  padding: 15px 20px;
-  background: rgba(0,0,0,0.05);
-  border-top: 1px solid rgba(0,0,0,0.1);
-}
-
-.card-footer-info {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 10px;
-  font-size: 0.8rem;
-  opacity: 0.8;
-}
-
-.card-actions {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  justify-content: center;
-  margin-top: 20px;
-}
-
-.card-actions .btn {
-  flex: 1;
-  min-width: 120px;
-  padding: 10px 15px;
-  border-radius: 8px;
-  border: none;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.card-actions .btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-}
-
-.btn-outline {
+.premium-label {
+  position: absolute;
+  right: 32px;
+  top: 60px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #ffd700;
+  letter-spacing: 1.5px;
   background: transparent;
-  border: 2px solid #118AB2 !important;
-  color: #118AB2;
+  border: none;
+  z-index: 3;
 }
 
-.btn-outline:hover {
-  background: #118AB2;
-  color: white;
+.card-mainrow {
+  padding: 15px 16px 4px 16px;
+  align-items: flex-start;
+  gap: 18px;
 }
 
-.btn-primary {
-  background: #118AB2;
-  color: white;
+.card-photo-imgbox {
+  flex-shrink: 0;
+  width: 95px;
+  height: 102px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 3px 10px rgba(60, 10, 70, 0.11);
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-left: 2px;
+}
+.member-photo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.default-avatar.large {
+  font-size: 3rem;
+  color: #9918c7;
 }
 
-.btn-primary:hover {
-  background: #0d7296;
+.qr-box {
+  flex-shrink: 0;
+  width: 98px;
+  height: 98px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px #c97aea08;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 18px;
+  padding: 8px;
+}
+.membership-qrcode-img > canvas {
+  width: 80px !important;
+  height: 80px !important;
+  display: block;
 }
 
-.btn-success {
-  background: #25d366;
-  color: white;
+.main-details-block {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 185px;
+  margin-left: 8px;
 }
-
-.btn-success:hover {
-  background: #1da851;
-}
-
-.btn-secondary {
-  background: #6c757d;
-  color: white;
-}
-
-.btn-secondary:hover {
-  background: #545b62;
-}
-
-/* Mobile responsive */
-@media (max-width: 768px) {
-  .membership-card-container {
-    padding: 10px;
-  }
-  
-  .membership-card {
-    margin: 0 auto 15px;
-    max-width: 100%;
-  }
-  
-  .card-body {
-    flex-direction: column;
-    gap: 15px;
-  }
-  
-  .member-info {
-    flex-direction: column;
-    text-align: center;
-  }
-  
-  .card-codes {
-    flex-direction: row;
-    justify-content: space-around;
-    width: 100%;
-  }
-  
-  .card-actions {
-    flex-direction: column;
-  }
-  
-  .card-actions .btn {
-    min-width: auto;
-    width: 100%;
-  }
-}
-
-/* Loading spinner */
-.loading-spinner {
-  text-align: center;
-  padding: 40px;
-  color: #666;
-}
-
-.loading-spinner i {
-  font-size: 2rem;
-  margin-bottom: 10px;
-  color: #118AB2;
-}
-
-.loading-spinner p {
-  margin: 0;
+.card-label {
   font-size: 1rem;
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  gap: 10px;
+  color: #fff;
+}
+.card-label span:first-child {
+  color: #ffe94d;
+  min-width: 120px;
+  text-align: right;
+  font-weight: 500;
+}
+.card-value {
+  font-weight: 700;
+  text-align: left;
+  color: #fff;
+}
+.card-name {
+  font-size: 1.2rem;
+}
+.card-mobile {
+  font-size: 1rem;
+  letter-spacing: 1px;
+}
+.card-blood {
+  color: #ffd2f3;
+  font-size: 1.05rem;
+}
+
+.barcode-row {
+  justify-content: flex-end;
+  padding: 5px 14px 11px 14px;
+  margin-top: 6px;
+}
+.barcode-box {
+  width: 100%;
+  max-width: 330px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0;
+}
+.membership-barcode-svg {
+  width: 95%;
+  min-width: 220px;
+  max-width: 295px;
+  height: 38px;
+  background: #fff;
+  border-radius: 5px;
+  margin-bottom: 4px;
+}
+.barcode-num-txt {
+  color: #fff;
+  font-family: 'Courier New', monospace;
+  font-size: 1.25rem;
+  letter-spacing: 1.3px;
+  margin-right: 11px;
+}
+@media (max-width: 520px) {
+  .card-premium-style { width: 99vw; min-width: unset; padding: 0;}
+  .card-logo-imgbox { width: 49px; height: 49px; left: 8px;}
+  .logo-img { width: 38px; height: 38px; }
+  .indians-title { font-size: 1.1rem;}
+  .indians-title-block { padding-left: 0; }
+  .indians-tagline {font-size: 0.64rem;}
+  .membership-badge { font-size: 0.85rem; padding: 2px 8px;}
+  .premium-label { font-size: 0.97rem; top: 48px; right: 10px;}
+  .card-mainrow { flex-direction: column; align-items: flex-end; gap: 7px;}
+  .main-details-block { min-width: 50vw;}
+  .card-photo-imgbox { width: 60px; height: 67px;}
+  .qr-box { width: 61px; height: 61px; min-width: 62px; margin:0 6px;}
+  .barcode-row { padding-right: 7px; }
+  .barcode-box { max-width: 92vw;}
+  .membership-barcode-svg { min-width: 101px; height: 30px;}
+  .barcode-num-txt { font-size: 0.99rem;}
 }

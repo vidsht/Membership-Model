@@ -411,6 +411,29 @@ const UnifiedRegistration = () => {
         </button>
         <div className={`slider ${activeTab}`}></div>
       </div>
+        {/* Back to Home floating button */}
+        <Link to="/" style={{
+          position: 'fixed',
+          top: '18px',
+          right: '24px',
+          zIndex: 1000,
+          background: 'rgba(255,255,255,0.95)',
+          color: '#667eea',
+          borderRadius: '50px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+          padding: '8px 16px',
+          fontWeight: 600,
+          fontSize: '0.95rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '7px',
+          textDecoration: 'none',
+          border: '1px solid #e2e8f0',
+          transition: 'background 0.2s'
+        }}>
+          <i className="fas fa-home" style={{ fontSize: '1.1rem', marginRight: '2px' }}></i>
+          Home
+        </Link>
       <div className={`registration-content ${activeTab}`}>
         <div className="registration-panels-container unified-panels">
           {/* Member Panel */}

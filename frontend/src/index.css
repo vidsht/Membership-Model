@@ -35,10 +35,9 @@ body {
 }
 
 
-header {
-    background: linear-gradient(135deg, var(--secondary) 0%, var(--primary) 100%);
+ header {
     color: white;
-    padding: 15px 0;
+    padding: 2px 0;
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     position: sticky;
     top: 0;
@@ -62,18 +61,10 @@ header {
 }
 
 .logo img {
-    height: 50px;
-    width: 50px;
-    object-fit: contain;
+    height: 40px;
+    width: 40px;
     background: white;
-    border-radius: 50%;
-    padding: 5px;
-}
-
-.logo h1 {
-    font-size: 1.8rem;
-    font-weight: 700;
-}
+} 
 
 nav ul {
     display: flex;
@@ -110,12 +101,12 @@ nav a:hover, nav a.active {
 }
 
 .auth-btn {
-    padding: 8px 16px;
+    padding: 8px 10px;
     border-radius: var(--border-radius-btn);
     background: var(--accent);
     color: var(--dark);
     text-decoration: none;
-    font-weight: 600;
+    font-weight: 500;
     cursor: pointer;
     transition: all 0.3s ease;
     display: flex;

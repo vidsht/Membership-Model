@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import Header from './components/Header';
@@ -36,114 +36,126 @@ import DealForm from './components/admin/DealManagement/DealForm';
 import DealDetail from './components/admin/DealManagement/DealDetail';
 import Activities from './components/admin/Activities/Activities';
 
+function AppContent() {
+  const location = useLocation();
+  const hideHeaderRoutes = ['/login', '/unified-registration'];
+  const showHeader = !hideHeaderRoutes.includes(location.pathname);
+  return (
+    <div className="App">
+      {showHeader && <Header />}
+      <Toast />
+      <main className="container">
+        <Routes>
+          {/* Public Routes - Always accessible */}
+          <Route path="/" element={<Home />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="/business-directory" element={<BusinessDirectory />} />
+          
+          {/* Authentication Routes */}
+          <Route path="/login" element={<UnifiedLogin />} />
+          <Route path="/unified-registration" element={<UnifiedRegistration />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password/:token" element={<ResetPassword />} />
+          <Route path="/merchant/login" element={<UnifiedLogin />} />
+          {/* <Route path="/merchant/register" element={<MerchantRegister />} /> */}
+
+          {/* Deals Page for Users */}
+          <Route path="/deals" element={<Deals />} />
+          
+          {/* Protected Routes */}
+          <Route path="/dashboard" element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/merchant/dashboard" element={
+            <ProtectedRoute>
+              <MerchantDashboard />
+            </ProtectedRoute>
+          } />                <Route path="/settings" element={
+            <ProtectedRoute>
+              <UserSettings />
+            </ProtectedRoute>
+          } />
+
+          {/* Admin Routes */}
+          <Route path="/admin" element={
+            <AdminRoute>
+              <AdminDashboard />
+            </AdminRoute>
+          } />                <Route path="/admin/users" element={
+            <AdminRoute>
+              <UserManagement />
+            </AdminRoute>
+          } />
+          <Route path="/admin/partners" element={
+            <AdminRoute>
+              <PartnerList />
+            </AdminRoute>
+          } />
+          <Route path="/admin/partners/register" element={
+            <AdminRoute>
+              <PartnerRegistration />
+            </AdminRoute>
+          } />                <Route path="/admin/settings" element={
+            <AdminRoute>
+              <AdminSettings />
+            </AdminRoute>
+          } />
+          <Route path="/admin/plans-settings" element={
+            <AdminRoute>
+              <PlanSettings />
+            </AdminRoute>
+          } /><Route path="/admin/users/:userId/assign-plan" element={
+            <AdminRoute>
+              <PlanAssignment />
+            </AdminRoute>
+          } />
+          <Route path="/admin/plans" element={
+            <AdminRoute>
+              <PlanManagement />
+            </AdminRoute>
+          } />
+          <Route path="/admin/deals" element={
+            <AdminRoute>
+              <DealList />
+            </AdminRoute>
+          } />
+          <Route path="/admin/deals/create" element={
+            <AdminRoute>
+              <DealForm />
+            </AdminRoute>
+          } />
+          <Route path="/admin/deals/:dealId" element={
+            <AdminRoute>
+              <DealDetail />
+            </AdminRoute>
+          } />                <Route path="/admin/deals/:dealId/edit" element={
+            <AdminRoute>
+              <DealForm />
+            </AdminRoute>
+          } />                <Route path="/admin/activities" element={
+            <AdminRoute>
+              <Activities />
+            </AdminRoute>
+          } />
+        </Routes>
+      </main>
+      <Footer />
+    </div>
+  );
+}
+
 function App() {
   return (
     <ErrorBoundary>
       <NotificationProvider>
-      <AuthProvider>
-        <Router>
-          <div className="App">
-            <Header />
-              <Toast />
-              <main className="container">              <Routes>
-                {/* Public Routes - Always accessible */}
-                <Route path="/" element={<Home />} />
-                <Route path="/about" element={<About />} />
-                <Route path="/contact" element={<Contact />} />
-                <Route path="/business-directory" element={<BusinessDirectory />} />
-                
-                {/* Authentication Routes */}
-                <Route path="/login" element={<UnifiedLogin />} />
-                <Route path="/unified-registration" element={<UnifiedRegistration />} />
-                <Route path="/forgot-password" element={<ForgotPassword />} />
-                <Route path="/reset-password/:token" element={<ResetPassword />} />
-                <Route path="/merchant/login" element={<UnifiedLogin />} />
-                {/* <Route path="/merchant/register" element={<MerchantRegister />} /> */}
-
-                {/* Deals Page for Users */}
-                <Route path="/deals" element={<Deals />} />
-                
-                {/* Protected Routes */}
-                <Route path="/dashboard" element={
-                  <ProtectedRoute>
-                    <Dashboard />
-                  </ProtectedRoute>
-                } />
-                <Route path="/merchant/dashboard" element={
-                  <ProtectedRoute>
-                    <MerchantDashboard />
-                  </ProtectedRoute>
-                } />                <Route path="/settings" element={
-                  <ProtectedRoute>
-                    <UserSettings />
-                  </ProtectedRoute>
-                } />
-
-                {/* Admin Routes */}
-                <Route path="/admin" element={
-                  <AdminRoute>
-                    <AdminDashboard />
-                  </AdminRoute>
-                } />                <Route path="/admin/users" element={
-                  <AdminRoute>
-                    <UserManagement />
-                  </AdminRoute>
-                } />
-                <Route path="/admin/partners" element={
-                  <AdminRoute>
-                    <PartnerList />
-                  </AdminRoute>
-                } />
-                <Route path="/admin/partners/register" element={
-                  <AdminRoute>
-                    <PartnerRegistration />
-                  </AdminRoute>
-                } />                <Route path="/admin/settings" element={
-                  <AdminRoute>
-                    <AdminSettings />
-                  </AdminRoute>
-                } />
-                <Route path="/admin/plans-settings" element={
-                  <AdminRoute>
-                    <PlanSettings />
-                  </AdminRoute>
-                } /><Route path="/admin/users/:userId/assign-plan" element={
-                  <AdminRoute>
-                    <PlanAssignment />
-                  </AdminRoute>
-                } />
-                <Route path="/admin/plans" element={
-                  <AdminRoute>
-                    <PlanManagement />
-                  </AdminRoute>
-                } />
-                <Route path="/admin/deals" element={
-                  <AdminRoute>
-                    <DealList />
-                  </AdminRoute>
-                } />
-                <Route path="/admin/deals/create" element={
-                  <AdminRoute>
-                    <DealForm />
-                  </AdminRoute>
-                } />
-                <Route path="/admin/deals/:dealId" element={
-                  <AdminRoute>
-                    <DealDetail />
-                  </AdminRoute>
-                } />                <Route path="/admin/deals/:dealId/edit" element={
-                  <AdminRoute>
-                    <DealForm />
-                  </AdminRoute>
-                } />                <Route path="/admin/activities" element={
-                  <AdminRoute>
-                    <Activities />
-                  </AdminRoute>
-                } />
-              </Routes>            </main>            <Footer />
-          </div>
-        </Router>
-      </AuthProvider>
+        <AuthProvider>
+          <Router>
+            <AppContent />
+          </Router>
+        </AuthProvider>
       </NotificationProvider>
     </ErrorBoundary>
   );

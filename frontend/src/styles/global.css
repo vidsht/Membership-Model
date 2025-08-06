@@ -106,7 +106,7 @@ p {
 /* Header Styles */
 /* Header Styles - Modern & Professional */
 header {
-  background: linear-gradient(to right, var(--primary-dark), var(--primary-color), var(--primary-dark));
+  background: linear-gradient(to right, var(--primary-dark), var(--primary-color));
   box-shadow: var(--shadow-md);
   position: sticky;
   top: 0;
@@ -116,16 +116,16 @@ header {
   color: white;
 }
 
-header.scrolled {
+/* header.scrolled {
   box-shadow: var(--shadow-lg);
   background: linear-gradient(to right, var(--primary-dark), var(--primary-color));
-}
+} */
 
 .header-content {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--space-md) 0;
+  padding: var(--space-sm);
   margin: 0 auto;
 }
 
@@ -137,9 +137,7 @@ header.scrolled {
 }
 
 .logo-img {
-  height: 38px;
-  width: auto;
-  object-fit: contain;
+  height: 100 px;
   border-radius: 4px;
   box-shadow: var(--shadow-sm);
   transition: transform var(--transition-fast);
@@ -149,27 +147,7 @@ header.scrolled {
   transform: scale(1.05);
 }
 
-.logo-text {
-  display: flex;
-  flex-direction: column;
-}
 
-.logo h1 {
-  font-size: 1.35rem;
-  margin-bottom: 0;
-  color: white;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  line-height: 1.1;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-}
-
-.logo-tagline {
-  font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.85);
-  font-weight: 500;
-  letter-spacing: 0.02em;
-}
 
 /* Navigation styling */
 .main-nav ul {
@@ -324,7 +302,7 @@ header.scrolled {
 /* Authentication buttons */
 .auth-buttons {
   display: flex;
-  gap: var(--space-md);
+  gap: var(--space-sm);
 }
 
 .auth-btn {
@@ -334,8 +312,8 @@ header.scrolled {
   gap: var(--space-sm);
   padding: var(--space-sm) var(--space-lg);
   border-radius: var(--border-radius-md);
-  font-weight: 600;
-  font-size: 0.9rem;
+  font-weight: 500;
+  font-size: 0.5rem;
   cursor: pointer;
   transition: all var(--transition-normal);
   letter-spacing: 0.01em;
@@ -347,7 +325,7 @@ header.scrolled {
   color: var(--primary-color);
   box-shadow: var(--shadow-sm);
   border: 1px solid transparent;
-  font-weight: 700;
+  font-weight: 400;
 }
 
 .login-btn:hover {
@@ -374,7 +352,7 @@ footer {
   background-color: var(--primary-dark);
   color: white;
   padding: var(--space-xl) 0;
-  margin-top: var(--space-xxl);
+  
 }
 
 .footer-content {

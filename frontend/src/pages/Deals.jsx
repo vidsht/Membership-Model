@@ -42,10 +42,7 @@ const Deals = () => {
   const [filters, setFilters] = useState({
     status: 'all',
     category: 'all',
-    membershipLevel: 'all',
-    search: '',
-    dateFrom: '',
-    dateTo: ''
+    search: ''
   });
   const [loading, setLoading] = useState(true);
   const [redeemStatus, setRedeemStatus] = useState({});
@@ -95,35 +92,6 @@ const Deals = () => {
     // Category filter
     if (filters.category !== 'all') {
       result = result.filter(deal => deal.category === filters.category);
-    }
-    
-    // Membership Level filter - now using dynamic plan priorities
-    if (filters.membershipLevel !== 'all') {
-      result = result.filter(deal => {
-        // Find the plan by name/key from the filter
-        const filterPlan = plans.find(p => 
-          p.name.toLowerCase() === filters.membershipLevel.toLowerCase() || 
-          p.key === filters.membershipLevel
-        );
-        if (!filterPlan) return true; // If plan not found, show all
-        
-        // Show deals that require this plan priority or lower
-        return deal.minPlanPriority <= filterPlan.priority;
-      });
-    }
-    
-    // Date filters
-    if (filters.dateFrom) {
-      result = result.filter(deal => {
-        const expirationDate = deal.expirationDate || deal.validUntil || deal.expiration_date;
-        return expirationDate ? new Date(expirationDate) >= new Date(filters.dateFrom) : true;
-      });
-    }
-    if (filters.dateTo) {
-      result = result.filter(deal => {
-        const expirationDate = deal.expirationDate || deal.validUntil || deal.expiration_date;
-        return expirationDate ? new Date(expirationDate) <= new Date(filters.dateTo) : true;
-      });
     }
     
     // Search filter
@@ -194,12 +162,33 @@ const Deals = () => {
 
   return (
     <div className="deals-page">
-      <h1>Exclusive Deals</h1>      <DealFilters
-        filters={filters}
-        plans={plans}
-        onFilterChange={update => setFilters(prev => ({ ...prev, ...update }))}
-        onSearch={search => setFilters(prev => ({ ...prev, search }))}
-      />
+      {/* Hero Section */}
+      <div className="deals-hero">
+        <div className="deals-hero-content">
+          <h1>Exclusive Member Deals</h1>
+          <p>Discover amazing discounts and offers exclusively available to our community members</p>
+          {/* <div className="deals-stats">
+            <div className="stat">
+              <span className="stat-number">{filteredDeals.length}</span>
+              <span className="stat-label">Active Deals</span>
+            </div>
+            <div className="stat">
+              <span className="stat-number">{user ? user.membership || 'Guest' : 'Guest'}</span>
+              <span className="stat-label">Your Tier</span>
+            </div>
+          </div> */}
+        </div>
+      </div>
+
+      {/* Filters Section */}
+      <div className="deals-filters-container">
+        <DealFilters
+          filters={filters}
+          plans={plans}
+          onFilterChange={update => setFilters(prev => ({ ...prev, ...update }))}
+          onSearch={search => setFilters(prev => ({ ...prev, search }))}
+        />
+      </div>
       {loading ? (
         <div className="loading">Loading deals...</div>
       ) : filteredDeals.length === 0 ? (
@@ -208,71 +197,194 @@ const Deals = () => {
         <div className="deals-grid">
           {filteredDeals.map(deal => (
             <div className="deal-card" key={deal.id}>
-              {/* Business Info */}
+              {/* Business Info Header */}
               <div className="deal-business-info">
-                <h3 className="business-name">{deal.businessName}</h3>
-                {deal.businessDescription && <p className="business-desc">{deal.businessDescription}</p>}
+                <div className="business-header">
+                  <h3 className="business-name">{deal.businessName}</h3>
+                  {deal.businessCategory && (
+                    <span className="business-category">{deal.businessCategory}</span>
+                  )}
+                </div>
+                {deal.businessDescription && (
+                  <p className="business-desc">{deal.businessDescription}</p>
+                )}
                 <div className="business-meta">
-                  {deal.businessCategory && <span className="business-category">{deal.businessCategory}</span>}
-                  {deal.businessAddress && <span className="business-address">{deal.businessAddress}</span>}
-                  {deal.businessPhone && <span className="business-phone">{deal.businessPhone}</span>}
-                  {deal.businessEmail && <span className="business-email">{deal.businessEmail}</span>}
-                  {deal.website && <span className="business-website"><a href={deal.website} target="_blank" rel="noopener noreferrer">Website</a></span>}
+                  {deal.businessAddress && (
+                    <span className="business-address">
+                      <i className="fas fa-map-marker-alt"></i>
+                      {deal.businessAddress}
+                    </span>
+                  )}
+                  {deal.businessPhone && (
+                    <span className="business-phone">
+                      <i className="fas fa-phone"></i>
+                      {deal.businessPhone}
+                    </span>
+                  )}
+                  {deal.businessEmail && (
+                    <span className="business-email">
+                      <i className="fas fa-envelope"></i>
+                      {deal.businessEmail}
+                    </span>
+                  )}
+                  {deal.website && (
+                    <span className="business-website">
+                      <i className="fas fa-globe"></i>
+                      <a href={deal.website} target="_blank" rel="noopener noreferrer">
+                        Visit Website
+                      </a>
+                    </span>
+                  )}
                 </div>
               </div>
-              {/* Deal Info */}
-              <h2>{deal.title}</h2>
-              <p className="deal-desc">{deal.description}</p>              <div className="deal-meta">
-                <span className="deal-category">{deal.category}</span>
-                <span className="deal-expiry">Expires: {deal.expiration_date ? new Date(deal.expiration_date).toLocaleDateString() : ''}</span>
-                {/* Access Level Badge - Dynamic Plan Display */}
-                {deal.accessLevel && (
-                  <span className={`deal-badge ${deal.accessLevel.toLowerCase().replace(/\s+/g, '-')}`}>
-                    For {deal.accessLevel} Members & Above
-                  </span>
+
+              {/* Deal Content */}
+              <div className="deal-content">
+                <h2 className="deal-title">{deal.title}</h2>
+                <p className="deal-desc">{deal.description}</p>
+                
+                {/* Price Information */}
+                {(deal.originalPrice || deal.discountedPrice) && (
+                  <div className="deal-pricing">
+                    {deal.originalPrice && (
+                      <div className="price-section">
+                        <span className="original-price">
+                          Original: GHS {parseFloat(deal.originalPrice).toFixed(2)}
+                        </span>
+                        {deal.discountedPrice && (
+                          <span className="discounted-price">
+                            Now: GHS {parseFloat(deal.discountedPrice).toFixed(2)}
+                          </span>
+                        )}
+                        {deal.originalPrice && deal.discountedPrice && (
+                          <span className="savings">
+                            Save: GHS {(parseFloat(deal.originalPrice) - parseFloat(deal.discountedPrice)).toFixed(2)}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 )}
-                {/* Coupon Code */}
-                {deal.couponCode && <span className="deal-coupon">Code: {deal.couponCode}</span>}
-                {/* Valid From */}
-                {deal.validFrom && <span className="deal-valid-from">Valid from: {new Date(deal.validFrom).toLocaleDateString()}</span>}
-                {/* Discount Info */}
-                {deal.discount && <span className="deal-discount">Discount: {deal.discount} {deal.discountType === 'percentage' ? '%' : deal.discountType === 'fixed' ? 'GHS' : deal.discountType}</span>}
-                {/* Terms & Conditions */}
-                {deal.termsConditions && <span className="deal-terms">Terms: {deal.termsConditions}</span>}
+                
+                <div className="deal-meta">
+                  <div className="deal-info-grid">
+                    {deal.discount && (
+                      <div className="deal-info-item discount">
+                        <i className="fas fa-tag"></i>
+                        <span>
+                          {deal.discount}{deal.discountType === 'percentage' ? '%' : ' GHS'} OFF
+                        </span>
+                      </div>
+                    )}
+                    {deal.couponCode && (
+                      <div className="deal-info-item coupon">
+                        <i className="fas fa-ticket-alt"></i>
+                        <span>Code: <strong>{deal.couponCode}</strong></span>
+                      </div>
+                    )}
+                    {(deal.expiration_date || deal.expirationDate || deal.validUntil) && (
+                      <div className="deal-info-item expiry">
+                        <i className="fas fa-calendar-times"></i>
+                        <span>
+                          Expires: {new Date(deal.expiration_date || deal.expirationDate || deal.validUntil).toLocaleDateString('en-GB', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric'
+                          })}
+                        </span>
+                      </div>
+                    )}
+                    {deal.validFrom && (
+                      <div className="deal-info-item valid-from">
+                        <i className="fas fa-calendar-check"></i>
+                        <span>From {new Date(deal.validFrom).toLocaleDateString('en-GB', {
+                          day: '2-digit',
+                          month: 'short',
+                          year: 'numeric'
+                        })}</span>
+                      </div>
+                    )}
+                    {deal.maxRedemptions && (
+                      <div className="deal-info-item max-redemptions">
+                        <i className="fas fa-users"></i>
+                        <span>Limited to {deal.maxRedemptions} users</span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {deal.accessLevel && (
+                    <div className={`deal-badge ${deal.accessLevel.toLowerCase().replace(/\s+/g, '-')}`}>
+                      <i className="fas fa-crown"></i>
+                      For {deal.accessLevel} Members & Above
+                    </div>
+                  )}
+                  
+                  {deal.termsConditions && (
+                    <div className="deal-terms">
+                      <details className="terms-details">
+                        <summary className="terms-summary">
+                          <i className="fas fa-info-circle"></i>
+                          <span>Terms & Conditions</span>
+                          <i className="fas fa-chevron-down expand-icon"></i>
+                        </summary>
+                        <div className="terms-content">
+                          {deal.termsConditions}
+                        </div>
+                      </details>
+                    </div>
+                  )}
+                </div>
               </div>
-              <button
-                className="btn-redeem"
-                disabled={!user || !canRedeem(user, deal.minPlanPriority, plans)}
-                onClick={() => handleRedeem(deal.id, deal.minPlanPriority)}
-              >
-                Redeem
-              </button>
-              {/* Dynamic Upgrade Logic */}
-              {user && !canRedeem(user, deal.minPlanPriority, plans) && (
-                <div className="upgrade-toggle">
-                  {(() => {
-                    // Find the required plan for this deal
-                    const requiredPlan = plans.find(p => p.priority === deal.minPlanPriority);
-                    if (requiredPlan) {
+
+              {/* Action Section */}
+              <div className="deal-actions">
+                <button
+                  className={`btn-redeem ${!user || !canRedeem(user, deal.minPlanPriority, plans) ? 'disabled' : ''}`}
+                  disabled={!user || !canRedeem(user, deal.minPlanPriority, plans)}
+                  onClick={() => handleRedeem(deal.id, deal.minPlanPriority)}
+                >
+                  <i className="fas fa-gift"></i>
+                  Redeem Deal
+                </button>
+                
+                {user && !canRedeem(user, deal.minPlanPriority, plans) && (
+                  <div className="upgrade-prompt">
+                    {(() => {
+                      const requiredPlan = plans.find(p => p.priority === deal.minPlanPriority);
+                      if (requiredPlan) {
+                        return (
+                          <button className="btn-upgrade">
+                            <i className="fas fa-arrow-up"></i>
+                            Upgrade to {requiredPlan.name}
+                            {requiredPlan.price && requiredPlan.currency && 
+                              ` (${requiredPlan.currency} ${requiredPlan.price})`
+                            }
+                          </button>
+                        );
+                      }
                       return (
                         <button className="btn-upgrade">
-                          Upgrade to {requiredPlan.name} Plan
-                          {requiredPlan.price && requiredPlan.currency && ` (${requiredPlan.currency} ${requiredPlan.price})`}
+                          <i className="fas fa-lock"></i>
+                          Upgrade Required
                         </button>
                       );
-                    }
-                    return <button className="btn-upgrade">Upgrade Plan Required</button>;
-                  })()}
-                </div>
-              )}
-              {redeemStatus[deal.id] && (
-                <div className={`redeem-status ${
-                  redeemStatus[deal.id].includes('Upgrade') ? 'upgrade-required' : 
-                  redeemStatus[deal.id] === 'Redeemed!' ? 'success' : 'error'
-                }`}>
-                  {redeemStatus[deal.id]}
-                </div>
-              )}
+                    })()}
+                  </div>
+                )}
+                
+                {redeemStatus[deal.id] && (
+                  <div className={`redeem-status ${
+                    redeemStatus[deal.id].includes('Upgrade') ? 'upgrade-required' : 
+                    redeemStatus[deal.id] === 'Redeemed!' ? 'success' : 'error'
+                  }`}>
+                    <i className={`fas ${
+                      redeemStatus[deal.id] === 'Redeemed!' ? 'fa-check-circle' : 
+                      redeemStatus[deal.id].includes('Upgrade') ? 'fa-exclamation-triangle' : 'fa-times-circle'
+                    }`}></i>
+                    {redeemStatus[deal.id]}
+                  </div>
+                )}
+              </div>
             </div>
           ))}
         </div>

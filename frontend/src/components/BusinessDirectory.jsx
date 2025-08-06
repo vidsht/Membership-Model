@@ -49,32 +49,48 @@ const BusinessDirectory = () => {
 
   return (
     <div className="business-directory-container">
-      <div className="directory-header">
-        <h1>Business Directory</h1>
-        <p>Discover Indian businesses in Ghana. Connect with our community partners and find the services you need.</p>
+      {/* Hero Section */}
+      <div className="directory-hero">
+        <div className="directory-hero-content">
+          <h1>Business Directory</h1>
+          <p>Discover Indian businesses in Ghana. Connect with our community partners and find the services you need.</p>
+          <div className="directory-stats">
+            <div className="stat">
+              <span className="stat-number">{filteredBusinesses.length}</span>
+              <span className="stat-label">Listed Businesses</span>
+            </div>
+            <div className="stat">
+              <span className="stat-number">{categories.length}</span>
+              <span className="stat-label">Categories</span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div className="directory-filters">
-        <div className="search-bar">
-          <input
-            type="text"
-            placeholder="Search businesses..."
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-          />
-          <i className="fas fa-search"></i>
-        </div>
+      {/* Filters Section */}
+      <div className="directory-filters-container">
+        <div className="directory-filters">
+          <div className="search-bar">
+            <input
+              type="text"
+              placeholder="Search businesses..."
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+            />
+            <i className="fas fa-search"></i>
+          </div>
 
-        <div className="category-filter">
-          <select 
-            value={selectedCategory} 
-            onChange={(e) => setSelectedCategory(e.target.value)}
-          >
-            <option value="">All Categories</option>
-            {categories.map(category => (
-              <option key={category} value={category}>{category}</option>
-            ))}
-          </select>
+          <div className="category-filter">
+            <select 
+              value={selectedCategory} 
+              onChange={(e) => setSelectedCategory(e.target.value)}
+            >
+              <option value="">All Categories</option>
+              {categories.map(category => (
+                <option key={category} value={category}>{category}</option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
