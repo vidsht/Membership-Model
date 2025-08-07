@@ -110,7 +110,7 @@ header {
   box-shadow: var(--shadow-md);
   position: sticky;
   top: 0;
-  z-index: 100;
+  z-index: 1000;
   transition: all var(--transition-normal);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   color: white;
@@ -146,8 +146,6 @@ header {
 .logo:hover .logo-img {
   transform: scale(1.05);
 }
-
-
 
 /* Navigation styling */
 .main-nav ul {

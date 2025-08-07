@@ -54,7 +54,7 @@ const BusinessDirectory = () => {
         <div className="directory-hero-content">
           <h1>Business Directory</h1>
           <p>Discover Indian businesses in Ghana. Connect with our community partners and find the services you need.</p>
-          <div className="directory-stats">
+          {/* <div className="directory-stats">
             <div className="stat">
               <span className="stat-number">{filteredBusinesses.length}</span>
               <span className="stat-label">Listed Businesses</span>
@@ -63,13 +63,14 @@ const BusinessDirectory = () => {
               <span className="stat-number">{categories.length}</span>
               <span className="stat-label">Categories</span>
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
 
       {/* Filters Section */}
       <div className="directory-filters-container">
         <div className="directory-filters">
+          <i className="fas fa-search"></i>
           <div className="search-bar">
             <input
               type="text"
@@ -77,7 +78,6 @@ const BusinessDirectory = () => {
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
             />
-            <i className="fas fa-search"></i>
           </div>
 
           <div className="category-filter">

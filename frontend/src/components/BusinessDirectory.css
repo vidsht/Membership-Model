@@ -1,6 +1,5 @@
 .business-directory-container {
   width: 100%;
-  max-width: 1200px;
   margin: 0 auto;
   padding: 0;
 }
@@ -8,9 +7,9 @@
 /* Hero Section */
 .directory-hero {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 4rem 2rem;
   text-align: center;
   color: white;
+  padding: 3rem 0 3rem 0;
   position: relative;
   overflow: hidden;
 }
@@ -38,6 +37,7 @@
   font-weight: 700;
   margin-bottom: 1rem;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  color: white;
 }
 
 .directory-hero p {
@@ -107,14 +107,12 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-md);
-  margin-bottom: var(--space-xl);
   justify-content: center;
 }
 
 .search-bar {
   position: relative;
   flex: 1;
-  max-width: 500px;
 }
 
 .search-bar input {
@@ -135,12 +133,12 @@
   box-shadow: var(--shadow-md);
 }
 
-.search-bar i {
+.directory-filters i {
   position: absolute;
   left: var(--space-md);
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--neutral-medium);
+  top: 40%;
+  transform: translateY(-20%); 
+  transform: translateX(-30%); 
 }
 
 .category-filter select {
@@ -162,6 +160,8 @@
 }
 
 .businesses-grid {
+  max-width: 1200px;
+  margin: 5rem;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: var(--space-lg);
@@ -293,6 +293,8 @@
 
 .business-actions {
   margin-top: auto;
+  display: flex;
+  justify-content: center;
 }
 
 .website-link {

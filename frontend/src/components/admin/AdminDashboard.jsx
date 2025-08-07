@@ -283,7 +283,8 @@ const AdminDashboard = () => {
             Back to Dashboard
           </button>
         </div>
-      </div>      {/* Main Content */}
+      </div>  
+      {/* Main Content */}
       <div className="admin-main">
         <div className="admin-header">
           <div className="header-left">

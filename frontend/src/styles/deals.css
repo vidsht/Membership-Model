@@ -37,6 +37,7 @@
   margin-top: 1rem;
   font-weight: 800;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  color: white;
 }
 
 .deals-hero p {
@@ -51,7 +52,6 @@
   background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
   border-radius: 20px;
   box-shadow: 0 10px 40px rgba(102, 126, 234, 0.08);
-  padding: 2rem;
   margin: -2rem 2rem 2rem 2rem;
   position: relative;
   z-index: 10;
@@ -373,15 +373,11 @@
 }
 
 .deal-terms {
-  display: flex;
   align-items: flex-start;
   gap: 0.5rem;
-  padding: 0.8rem;
-  background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
-  border-radius: 10px;
   font-size: 0.85rem;
   color: #4b5563;
-  border-left: 3px solid #667eea;
+
 }
 
 .deal-terms i {
@@ -519,7 +515,6 @@
   
   .deals-filters-container {
     margin: -1rem 1rem 1rem 1rem;
-    padding: 1.5rem;
   }
   
   .business-header {

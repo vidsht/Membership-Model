@@ -136,8 +136,8 @@ const UnifiedLogin = () => {
           {/* Left Side - Hero Section */}
           <div className="login-hero-section">
             <div className="hero-content">
-              <div className="hero-logo">
-                <i className="fas fa-users"></i>
+              <div className="logo-login">
+                <img className="logo-img-login" src="./public/logo.jpeg" alt="logo" />
               </div>
               <h1 className="hero-title">Indians in Ghana</h1>
               <p className="hero-subtitle">
