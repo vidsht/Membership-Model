@@ -1,7 +1,7 @@
-// BulkActions.jsx - Bulk actions component for User Management
+// BulkActions.jsx - Complete Bulk Actions Component
 import React, { useState } from 'react';
 
-const BulkActions = ({ selectedCount, onBulkAction }) => {
+const BulkActions = ({ selectedCount, onBulkAction, onBulkDelete }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -19,6 +19,20 @@ const BulkActions = ({ selectedCount, onBulkAction }) => {
     }
   };
 
+  const handleBulkDelete = async () => {
+    if (onBulkDelete) {
+      try {
+        setLoading(true);
+        await onBulkDelete();
+        setIsOpen(false);
+      } catch (error) {
+        console.error('Bulk delete error:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
   const bulkActions = [
     {
       key: 'approve',
@@ -28,7 +42,7 @@ const BulkActions = ({ selectedCount, onBulkAction }) => {
       description: 'Approve all selected users'
     },
     {
-      key: 'reject', 
+      key: 'reject',
       label: 'Reject Selected',
       icon: 'fa-times',
       className: 'btn-danger',
@@ -36,7 +50,7 @@ const BulkActions = ({ selectedCount, onBulkAction }) => {
     },
     {
       key: 'suspend',
-      label: 'Suspend Selected', 
+      label: 'Suspend Selected',
       icon: 'fa-ban',
       className: 'btn-warning',
       description: 'Suspend all selected users'
@@ -44,7 +58,7 @@ const BulkActions = ({ selectedCount, onBulkAction }) => {
     {
       key: 'activate',
       label: 'Activate Selected',
-      icon: 'fa-check-circle', 
+      icon: 'fa-check-circle',
       className: 'btn-info',
       description: 'Activate all selected users'
     }
@@ -54,44 +68,71 @@ const BulkActions = ({ selectedCount, onBulkAction }) => {
     <div className="bulk-actions">
       <div className="bulk-actions-header">
         <div className="selection-info">
-          <i className="fas fa-users"></i>
+          <i className="fas fa-check-circle"></i>
           <span>{selectedCount} user{selectedCount !== 1 ? 's' : ''} selected</span>
         </div>
         
         <div className="bulk-actions-controls">
+          <div className="dropdown">
+            <button
+              onClick={() => setIsOpen(!isOpen)}
+              className="btn btn-primary dropdown-toggle"
+              disabled={loading || selectedCount === 0}
+            >
+              <i className="fas fa-cog"></i>
+              Bulk Actions
+              <i className={`fas fa-chevron-${isOpen ? 'up' : 'down'}`}></i>
+            </button>
+            
+            {isOpen && (
+              <div className="dropdown-menu show">
+                <div className="dropdown-header">
+                  Choose an action for {selectedCount} selected user{selectedCount !== 1 ? 's' : ''}
+                </div>
+                
+                {bulkActions.map((action) => (
+                  <button
+                    key={action.key}
+                    onClick={() => handleBulkAction(action.key)}
+                    className={`dropdown-item ${action.className}`}
+                    disabled={loading}
+                    title={action.description}
+                  >
+                    <i className={`fas ${action.icon}`}></i>
+                    {action.label}
+                  </button>
+                ))}
+                
+                <div className="dropdown-divider"></div>
+                
+                <button
+                  onClick={handleBulkDelete}
+                  className="dropdown-item btn-danger"
+                  disabled={loading}
+                  title="Permanently delete all selected users"
+                >
+                  <i className="fas fa-trash"></i>
+                  Delete Selected
+                </button>
+              </div>
+            )}
+          </div>
+          
           <button
-            className={`btn btn-primary ${isOpen ? 'active' : ''}`}
-            onClick={() => setIsOpen(!isOpen)}
+            onClick={() => setIsOpen(false)}
+            className="btn btn-secondary"
             disabled={loading}
           >
-            <i className="fas fa-tasks"></i>
-            Bulk Actions
-            <i className={`fas fa-chevron-${isOpen ? 'up' : 'down'}`}></i>
+            <i className="fas fa-times"></i>
+            Clear Selection
           </button>
         </div>
       </div>
-
-      {isOpen && (
-        <div className="bulk-actions-menu">
-          <div className="bulk-actions-grid">
-            {bulkActions.map(action => (
-              <button
-                key={action.key}
-                className={`bulk-action-item ${action.className}`}
-                onClick={() => handleBulkAction(action.key)}
-                disabled={loading}
-                title={action.description}
-              >
-                <i className={`fas ${action.icon}`}></i>
-                <span>{action.label}</span>
-              </button>
-            ))}
-          </div>
-          
-          <div className="bulk-actions-warning">
-            <i className="fas fa-exclamation-triangle"></i>
-            <span>Bulk actions will be applied to all {selectedCount} selected user(s)</span>
-          </div>
+      
+      {loading && (
+        <div className="bulk-actions-loading">
+          <div className="loading-spinner"></div>
+          <span>Processing bulk action...</span>
         </div>
       )}
     </div>

@@ -1,5 +1,6 @@
-// UserManagement.jsx - COMPLETE REBUILD - Indians in Ghana Membership System
-import React, { useState, useEffect } from 'react';
+// UserManagement.jsx - UPDATED with Route Navigation
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useNotification } from '../../../contexts/NotificationContext';
 import { useAuth } from '../../../contexts/AuthContext';
 import api from '../../../services/api';
@@ -9,25 +10,25 @@ import UserModal from './components/UserModal';
 import BulkActions from './components/BulkActions';
 import './UserManagement.css';
 
-/**
- * UserManagement Component - Complete Rebuild
- * Handles all user management operations: CRUD, Status Changes, Bulk Actions
- */
 const UserManagement = () => {
+  const navigate = useNavigate();
   const { showNotification } = useNotification();
   const { validateSession, handleSessionExpired } = useAuth();
 
-  // Core State
+  // Core State Management
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedUsers, setSelectedUsers] = useState([]);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  // Modal State
+  // Modal State Management - Only for delete and plan assignment
   const [modalState, setModalState] = useState({
     isOpen: false,
-    type: null, // 'add', 'edit', 'view', 'delete'
-    user: null
+    type: null,
+    user: null,
+    title: '',
+    data: null
   });
 
   // Filter & Pagination State
@@ -36,23 +37,546 @@ const UserManagement = () => {
     status: 'all',
     userType: 'all',
     membershipType: 'all',
+    community: 'all',
     dateFrom: '',
-    dateTo: ''
+    dateTo: '',
+    planExpired: 'all'
   });
 
   const [pagination, setPagination] = useState({
     page: 1,
-    limit: 10,
+    limit: 20,
     total: 0,
     totalPages: 0
   });
 
-  // Reference Data
+  // Reference Data State
   const [referenceData, setReferenceData] = useState({
     communities: [],
     plans: [],
-    userTypes: ['user', 'merchant', 'admin']
+    userPlans: [],
+    merchantPlans: [],
+    userTypes: ['user', 'merchant', 'admin'],
+    statuses: ['pending', 'approved', 'rejected', 'suspended']
   });
+
+  // Plan Assignment State
+  const [planAssignmentState, setPlanAssignmentState] = useState({
+    isLoading: false,
+    selectedUser: null,
+    availablePlans: [],
+    userType: null
+  });
+
+  // Memoized fallback plans
+  const fallbackPlans = useMemo(() => [
+    {
+      id: 1, key: 'community', name: 'Community Plan', type: 'user', price: 0,
+      currency: 'FREE', billingCycle: 'yearly', features: 'Basic directory access,Community updates,Basic support',
+      dealAccess: 'Limited community deals', isActive: true, priority: 1
+    },
+    {
+      id: 2, key: 'silver', name: 'Silver Plan', type: 'user', price: 50,
+      currency: 'GHS', billingCycle: 'yearly', features: 'All community features,Priority support,Exclusive deals',
+      dealAccess: 'Silver + Community deals', isActive: true, priority: 2
+    },
+    {
+      id: 3, key: 'gold', name: 'Gold Plan', type: 'user', price: 150,
+      currency: 'GHS', billingCycle: 'yearly', features: 'All silver features,VIP events,Premium support',
+      dealAccess: 'All exclusive deals', isActive: true, priority: 3
+    },
+    {
+      id: 4, key: 'basic_business', name: 'Basic Business', type: 'merchant', price: 100,
+      currency: 'GHS', billingCycle: 'monthly', features: 'Basic business listing,Contact information',
+      dealAccess: 'Basic deal posting', isActive: true, priority: 4
+    },
+    {
+      id: 5, key: 'premium_business', name: 'Premium Business', type: 'merchant', price: 200,
+      currency: 'GHS', billingCycle: 'monthly', features: 'Premium listing,Photos,Reviews,Analytics',
+      dealAccess: 'Unlimited deal posting', isActive: true, priority: 5
+    }
+  ], []);
+
+  // Memoized stats calculation
+  const stats = useMemo(() => {
+    const totalUsers = users.length;
+    const pendingApprovals = users.filter(user => user.status === 'pending').length;
+    const activeUsers = users.filter(user => user.status === 'approved').length;
+    const suspendedUsers = users.filter(user => user.status === 'suspended').length;
+    return { totalUsers, pendingApprovals, activeUsers, suspendedUsers };
+  }, [users]);
+
+  // Calculate plan validity
+  const calculatePlanValidity = useCallback((user, planDetails) => {
+    if (!user.validationDate) return 'No validity set';
+    try {
+      const validationDate = new Date(user.validationDate);
+      const now = new Date();
+      if (validationDate < now) {
+        return 'Expired';
+      }
+      return validationDate.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    } catch (error) {
+      return 'Invalid date';
+    }
+  }, []);
+
+  // Stable callback functions
+  const clearSelections = useCallback(() => {
+    setSelectedUsers([]);
+  }, []);
+
+  const refreshData = useCallback(() => {
+    console.log('🔄 Refreshing user data...');
+    setRefreshTrigger(prev => prev + 1);
+    clearSelections();
+  }, [clearSelections]);
+
+  const closeModal = useCallback(() => {
+    setModalState({
+      isOpen: false,
+      type: null,
+      user: null,
+      title: '',
+      data: null
+    });
+    setPlanAssignmentState({
+      isLoading: false,
+      selectedUser: null,
+      availablePlans: [],
+      userType: null
+    });
+  }, []);
+
+  // Initialize component
+  const initializeComponent = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const sessionValid = await validateSession();
+      if (!sessionValid) {
+        handleSessionExpired();
+        return;
+      }
+      await fetchReferenceData();
+      console.log('✅ User Management initialized successfully');
+    } catch (err) {
+      console.error('❌ Error initializing User Management:', err);
+      setError('Failed to initialize user management');
+      showNotification('Failed to load user management', 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Fetch reference data
+  const fetchReferenceData = useCallback(async () => {
+    try {
+      console.log('📋 Fetching reference data...');
+      const [communitiesRes, allPlansRes, userPlansRes, merchantPlansRes] = await Promise.allSettled([
+        api.get('/admin/communities'),
+        api.get('/admin/plans'),
+        api.get('/admin/plans?userType=user'),
+        api.get('/admin/plans?userType=merchant')
+      ]);
+
+      // Handle communities
+      let communities = [];
+      if (communitiesRes.status === 'fulfilled' && communitiesRes.value?.data?.success) {
+        communities = communitiesRes.value.data.communities || [];
+      } else {
+        communities = [
+          'Gujarati', 'Bengali', 'Tamil', 'Punjabi', 'Hindi', 'Marathi', 'Telugu',
+          'Kannada', 'Malayalam', 'Sindhi', 'Rajasthani', 'Other Indian', 'Mixed Heritage'
+        ].map(name => ({ name, isActive: true }));
+      }
+
+      // Handle all plans
+      let allPlans = [];
+      if (allPlansRes.status === 'fulfilled' && allPlansRes.value?.data?.success) {
+        allPlans = allPlansRes.value.data.plans || [];
+      } else {
+        allPlans = fallbackPlans;
+      }
+
+      // Handle user plans
+      let userPlans = [];
+      if (userPlansRes.status === 'fulfilled' && userPlansRes.value?.data?.success) {
+        userPlans = userPlansRes.value.data.plans.filter(plan => plan.type === 'user') || [];
+      } else {
+        userPlans = allPlans.filter(plan => plan.type === 'user');
+      }
+
+      // Handle merchant plans
+      let merchantPlans = [];
+      if (merchantPlansRes.status === 'fulfilled' && merchantPlansRes.value?.data?.success) {
+        merchantPlans = merchantPlansRes.value.data.plans.filter(plan => plan.type === 'merchant') || [];
+      } else {
+        merchantPlans = allPlans.filter(plan => plan.type === 'merchant');
+      }
+
+      setReferenceData({
+        communities,
+        plans: allPlans,
+        userPlans,
+        merchantPlans,
+        userTypes: ['user', 'merchant', 'admin'],
+        statuses: ['pending', 'approved', 'rejected', 'suspended']
+      });
+
+      console.log('✅ Reference data loaded:', {
+        communities: communities.length,
+        allPlans: allPlans.length,
+        userPlans: userPlans.length,
+        merchantPlans: merchantPlans.length
+      });
+    } catch (err) {
+      console.error('❌ Error fetching reference data:', err);
+      setReferenceData({
+        communities: [{ name: 'General', isActive: true }],
+        plans: fallbackPlans,
+        userPlans: fallbackPlans.filter(plan => plan.type === 'user'),
+        merchantPlans: fallbackPlans.filter(plan => plan.type === 'merchant'),
+        userTypes: ['user', 'merchant', 'admin'],
+        statuses: ['pending', 'approved', 'rejected', 'suspended']
+      });
+    }
+  }, [fallbackPlans]);
+
+  // Fetch users
+  const fetchUsers = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const queryParams = new URLSearchParams({
+        page: pagination.page.toString(),
+        limit: pagination.limit.toString()
+      });
+
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value && value !== 'all' && (typeof value !== 'string' || value.trim() !== '')) {
+          queryParams.set(key, value);
+        }
+      });
+
+      const response = await api.get(`/admin/users?${queryParams}`);
+      
+      if (response.data.success) {
+        const fetchedUsers = response.data.users || [];
+        const paginationData = response.data.pagination || {};
+
+        const processedUsers = fetchedUsers.map(user => {
+          const planDetails = referenceData.plans.find(plan => plan.key === user.membershipType);
+          return {
+            ...user,
+            planValidTill: calculatePlanValidity(user, planDetails),
+            isPlanExpired: user.validationDate ? new Date(user.validationDate) < new Date() : false
+          };
+        });
+
+        setUsers(processedUsers);
+        setPagination(prev => ({
+          ...prev,
+          total: paginationData.total || response.data.total || 0,
+          totalPages: paginationData.totalPages || response.data.totalPages || 1
+        }));
+
+        console.log('👥 Users loaded:', processedUsers.length);
+      } else {
+        throw new Error(response.data.message || 'Failed to fetch users');
+      }
+    } catch (err) {
+      console.error('❌ Error fetching users:', err);
+      setError(err.response?.data?.message || 'Failed to load users');
+      if (err.response?.status === 401) {
+        handleSessionExpired();
+        return;
+      }
+      showNotification('Failed to load users', 'error');
+      setUsers([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [filters, pagination.page, pagination.limit, showNotification, handleSessionExpired, referenceData.plans, calculatePlanValidity]);
+
+  // Enhanced plan fetching with proper filtering
+  const fetchPlansByUserType = useCallback(async (userType) => {
+    try {
+      console.log(`🎯 Fetching plans specifically for userType: ${userType}`);
+      setPlanAssignmentState(prev => ({ ...prev, isLoading: true, userType }));
+
+      const response = await api.get(`/admin/plans?userType=${userType}`);
+      
+      if (response.data.success) {
+        const plans = response.data.plans || [];
+        console.log(`✅ Plans fetched for ${userType}:`, plans);
+
+        const filteredPlans = plans.filter(plan => {
+          if (userType === 'merchant') {
+            return plan.type === 'merchant';
+          } else if (userType === 'user' || userType === 'admin') {
+            return plan.type === 'user';
+          }
+          return false;
+        });
+
+        console.log(`🔒 Filtered plans for ${userType}:`, filteredPlans);
+        setPlanAssignmentState(prev => ({
+          ...prev,
+          availablePlans: filteredPlans,
+          isLoading: false,
+          userType
+        }));
+
+        setReferenceData(prev => ({
+          ...prev,
+          [userType === 'merchant' ? 'merchantPlans' : 'userPlans']: filteredPlans
+        }));
+
+        return filteredPlans;
+      } else {
+        throw new Error(response.data.message || 'Failed to fetch plans');
+      }
+    } catch (err) {
+      console.error(`❌ Error fetching plans for ${userType}:`, err);
+      setPlanAssignmentState(prev => ({ ...prev, isLoading: false }));
+      
+      const fallback = userType === 'merchant' 
+        ? referenceData.merchantPlans.filter(plan => plan.type === 'merchant')
+        : referenceData.userPlans.filter(plan => plan.type === 'user');
+        
+      setPlanAssignmentState(prev => ({
+        ...prev,
+        availablePlans: fallback,
+        userType
+      }));
+      
+      return fallback;
+    }
+  }, [referenceData.merchantPlans, referenceData.userPlans]);
+
+  // Enhanced plan assignment opening
+  const handleOpenPlanAssignment = useCallback(async (user) => {
+    console.log('👑 Opening plan assignment for user:', user.id, 'type:', user.userType);
+    try {
+      const availablePlans = await fetchPlansByUserType(user.userType);
+      console.log(`🔒 Available plans for ${user.userType}:`, availablePlans);
+
+      if (availablePlans.length === 0) {
+        showNotification(`No plans available for ${user.userType} users`, 'warning');
+        return;
+      }
+
+      setPlanAssignmentState({
+        isLoading: false,
+        selectedUser: user,
+        availablePlans: availablePlans,
+        userType: user.userType
+      });
+
+      openModal('assignPlan', user, {
+        availablePlans: availablePlans,
+        userType: user.userType
+      });
+    } catch (err) {
+      console.error('❌ Error opening plan assignment:', err);
+      showNotification('Failed to load available plans', 'error');
+    }
+  }, [fetchPlansByUserType, showNotification]);
+
+  // Get plans for specific user type
+  const getPlansForUserType = useCallback((userType) => {
+    console.log(`🔍 Getting plans for userType: ${userType}`);
+    let plans = [];
+    if (userType === 'merchant') {
+      plans = referenceData.merchantPlans.filter(plan => plan.type === 'merchant');
+    } else if (userType === 'user' || userType === 'admin') {
+      plans = referenceData.userPlans.filter(plan => plan.type === 'user');
+    }
+    console.log(`✅ Filtered plans for ${userType}:`, plans);
+    return plans;
+  }, [referenceData.merchantPlans, referenceData.userPlans]);
+
+  // Plan assignment handler
+  const handlePlanAssignment = useCallback(async (userId, planKey) => {
+    try {
+      console.log('👑 Assigning plan:', planKey, 'to user:', userId);
+      const response = await api.post(`/admin/users/${userId}/assign-plan`, { planKey });
+      console.log('✅ Plan assignment response:', response.data);
+
+      if (response.data.success) {
+        showNotification('Plan assigned successfully', 'success');
+        refreshData();
+        closeModal();
+      } else {
+        throw new Error(response.data.message || 'Failed to assign plan');
+      }
+    } catch (err) {
+      console.error('❌ Error assigning plan:', err);
+      const message = err.response?.data?.message || 'Failed to assign plan';
+      showNotification(message, 'error');
+    }
+  }, [showNotification, refreshData, closeModal]);
+
+  // User action handlers
+  const handleDeleteUser = useCallback(async (userData) => {
+    try {
+      const userId = typeof userData === 'object' ? userData.id : userData;
+      const response = await api.delete(`/admin/users/${userId}`);
+      
+      if (response.data.success) {
+        showNotification('User deleted successfully', 'success');
+        closeModal();
+        refreshData();
+      } else {
+        throw new Error(response.data.message || 'Failed to delete user');
+      }
+    } catch (err) {
+      console.error('❌ Error deleting user:', err);
+      const message = err.response?.data?.message || 'Failed to delete user';
+      showNotification(message, 'error');
+    }
+  }, [showNotification, closeModal, refreshData]);
+
+  const handleStatusChange = useCallback(async (userId, status) => {
+    try {
+      const response = await api.put(`/admin/users/${userId}/status`, { status });
+      
+      if (response.data.success) {
+        showNotification(`User ${status} successfully`, 'success');
+        refreshData();
+      } else {
+        throw new Error(response.data.message || 'Failed to update status');
+      }
+    } catch (err) {
+      console.error('❌ Error updating status:', err);
+      const message = err.response?.data?.message || 'Failed to update status';
+      showNotification(message, 'error');
+    }
+  }, [showNotification, refreshData]);
+
+  const handleBulkAction = useCallback(async (action, userIds = selectedUsers) => {
+    if (!userIds.length) {
+      showNotification('No users selected', 'warning');
+      return;
+    }
+
+    try {
+      let response;
+      if (action === 'delete') {
+        const promises = userIds.map(id => api.delete(`/admin/users/${id}`));
+        await Promise.all(promises);
+        response = { data: { success: true } };
+      } else {
+        response = await api.post('/admin/users/bulk-action', { action, userIds });
+      }
+
+      if (response.data.success) {
+        const actionText = action === 'approve' ? 'approved' : 
+                          action === 'reject' ? 'rejected' : 
+                          action === 'suspend' ? 'suspended' : 
+                          action === 'activate' ? 'activated' : 
+                          action === 'delete' ? 'deleted' : action;
+        
+        showNotification(`Successfully ${actionText} ${userIds.length} users`, 'success');
+        refreshData();
+        closeModal();
+      } else {
+        throw new Error(response.data.message || 'Bulk action failed');
+      }
+    } catch (err) {
+      console.error('❌ Error performing bulk action:', err);
+      const message = err.response?.data?.message || 'Bulk action failed';
+      showNotification(message, 'error');
+    }
+  }, [selectedUsers, showNotification, refreshData, closeModal]);
+
+  // UI handlers
+  const handleFilterChange = useCallback((newFilters) => {
+    setFilters(prev => ({ ...prev, ...newFilters }));
+    setPagination(prev => ({ ...prev, page: 1 }));
+  }, []);
+
+  const handlePageChange = useCallback((page) => {
+    setPagination(prev => ({ ...prev, page }));
+  }, []);
+
+  const handlePageSizeChange = useCallback((limit) => {
+    setPagination(prev => ({ ...prev, limit, page: 1 }));
+  }, []);
+
+  const handleUserSelect = useCallback((userId) => {
+    setSelectedUsers(prev => 
+      prev.includes(userId) 
+        ? prev.filter(id => id !== userId)
+        : [...prev, userId]
+    );
+  }, []);
+
+  const handleSelectAll = useCallback(() => {
+    if (selectedUsers.length === users.length && users.length > 0) {
+      setSelectedUsers([]);
+    } else {
+      setSelectedUsers(users.map(user => user.id));
+    }
+  }, [selectedUsers.length, users]);
+
+  const openModal = useCallback((type, user = null, additionalData = {}) => {
+    const titles = {
+      delete: 'Delete User',
+      bulkDelete: `Delete ${selectedUsers.length} Users`,
+      assignPlan: `Assign Plan to ${user?.fullName || 'User'}`
+    };
+
+    setModalState({
+      isOpen: true,
+      type,
+      user,
+      title: titles[type] || 'User Action',
+      data: additionalData
+    });
+  }, [selectedUsers.length]);
+
+  const handleExportUsers = useCallback(async (exportFilters = filters) => {
+    try {
+      const queryParams = new URLSearchParams(exportFilters);
+      const response = await api.get(`/admin/users/export?${queryParams}`, {
+        responseType: 'blob'
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `users-export-${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      showNotification('Users exported successfully', 'success');
+    } catch (err) {
+      console.error('❌ Error exporting users:', err);
+      showNotification('Failed to export users', 'error');
+    }
+  }, [filters, showNotification]);
+
+  const clearFilters = useCallback(() => {
+    setFilters({
+      search: '',
+      status: 'all',
+      userType: 'all',
+      membershipType: 'all',
+      community: 'all',
+      dateFrom: '',
+      dateTo: '',
+      planExpired: 'all'
+    });
+    setPagination(prev => ({ ...prev, page: 1 }));
+  }, []);
 
   // Effects
   useEffect(() => {
@@ -60,339 +584,98 @@ const UserManagement = () => {
   }, []);
 
   useEffect(() => {
-    if (!loading) {
+    if (referenceData.plans.length > 0 || refreshTrigger > 0) {
       fetchUsers();
     }
-  }, [filters, pagination.page]);
+  }, [referenceData.plans.length, filters, pagination.page, refreshTrigger]);
 
-  /**
-   * Initialize component - fetch reference data first
-   */
-  const initializeComponent = async () => {
-    try {
-      setLoading(true);
-      await fetchReferenceData();
-      await fetchUsers(); // Ensure users are loaded on first mount
-    } catch (err) {
-      setError('Failed to initialize user management');
-      showNotification('Failed to load user management', 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
-  /**
-   * Fetch all reference data (communities, plans)
-   */
-  const fetchReferenceData = async () => {
-    try {
-      console.log('📋 Fetching reference data...');
-      const [communitiesRes, plansRes] = await Promise.all([
-        api.get('/admin/communities').catch(err => {
-          console.warn('⚠️ Failed to fetch communities:', err.response?.status);
-          return { data: { communities: ['Gujarati', 'Bengali', 'Tamil', 'Other'] } };
-        }),
-        api.get('/admin/plans').catch(err => {
-          console.warn('⚠️ Failed to fetch plans:', err.response?.status);
-          return { data: { plans: [
-            { id: 1, key: 'basic', name: 'Basic' },
-            { id: 2, key: 'premium', name: 'Premium' },
-            { id: 3, key: 'vip', name: 'VIP' }
-          ] } };
-        })
-      ]);
-
-      setReferenceData({
-        communities: communitiesRes.data.communities || [],
-        plans: plansRes.data.plans || [],
-        userTypes: ['user', 'merchant', 'admin']
-      });
-      console.log('✅ Reference data loaded');
-    } catch (err) {
-      console.error('❌ Error fetching reference data:', err);
-      // Set fallback data
-      setReferenceData({
-        communities: ['Gujarati', 'Bengali', 'Tamil', 'Other'],
-        plans: [
-          { id: 1, key: 'basic', name: 'Basic' },
-          { id: 2, key: 'premium', name: 'Premium' },
-          { id: 3, key: 'vip', name: 'VIP' }
-        ],
-        userTypes: ['user', 'merchant', 'admin']
-      });
-    }
-  };
-  /**
-   * Fetch users with current filters and pagination
-   */
-  const fetchUsers = async () => {
-    try {
-      setLoading(true);
-      console.log('🔄 Fetching users with pagination:', pagination, 'and filters:', filters);
-      
-      const queryParams = new URLSearchParams({
-        page: pagination.page,
-        limit: pagination.limit,
-        ...filters
-      });
-
-      // Remove empty filters
-      for (const [key, value] of queryParams.entries()) {
-        if (!value || value === 'all') {
-          queryParams.delete(key);
-        }
-      }
-
-      console.log('📡 API request URL:', `/admin/users?${queryParams}`);
-      const response = await api.get(`/admin/users?${queryParams}`);
-      console.log('✅ API response:', response.data);
-      
-      if (response.data.success) {
-        setUsers(response.data.users || []);
-        setPagination(prev => ({
-          ...prev,
-          total: response.data.total || 0,
-          totalPages: response.data.totalPages || 1
-        }));
-        setError(null);
-        console.log('👥 Users loaded:', response.data.users?.length || 0);
-      } else {
-        throw new Error(response.data.message || 'Failed to fetch users');
-      }
-    } catch (err) {
-      console.error('❌ Error fetching users:', err);
-      console.error('Response data:', err.response?.data);
-      console.error('Status:', err.response?.status);
-      setError('Failed to load users');
-      showNotification('Failed to load users', 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  /**
-   * Handle filter changes
-   */
-  const handleFilterChange = (newFilters) => {
-    setFilters(prev => ({ ...prev, ...newFilters }));
-    setPagination(prev => ({ ...prev, page: 1 }));
-  };
-
-  /**
-   * Handle pagination changes
-   */
-  const handlePageChange = (page) => {
-    setPagination(prev => ({ ...prev, page }));
-  };
-
-  /**
-   * Handle user selection
-   */
-  const handleUserSelect = (userId) => {
-    setSelectedUsers(prev => 
-      prev.includes(userId) 
-        ? prev.filter(id => id !== userId)
-        : [...prev, userId]
-    );
-  };
-
-  /**
-   * Handle select all users
-   */
-  const handleSelectAll = () => {
-    if (selectedUsers.length === users.length) {
-      setSelectedUsers([]);
-    } else {
-      setSelectedUsers(users.map(user => user.id));
-    }
-  };
-  /**
-   * Open modal for different operations
-   */
-  const openModal = (type, user = null) => {
-    console.log('🔓 Opening modal:', type, user ? `for user ${user.id}` : 'for new user');
-    setModalState({
-      isOpen: true,
-      type,
-      user
-    });
-  };
-
-  /**
-   * Close modal
-   */
-  const closeModal = () => {
-    setModalState({
-      isOpen: false,
-      type: null,
-      user: null
-    });
-  };
-  /**
-   * Handle adding a new user
-   */
-  const handleAddUser = async (userData) => {
-    try {
-      console.log('➕ Creating new user:', userData);
-      const response = await api.post('/admin/users', userData);
-      console.log('✅ User creation response:', response.data);
-      
-      if (response.data.success) {
-        showNotification('User added successfully', 'success');
-        closeModal();
-        fetchUsers(); // Refresh the list
-        
-        // Show temp password to admin
-        if (response.data.tempPassword) {
-          showNotification(
-            `User created with temporary password: ${response.data.tempPassword}. Please share this securely.`,
-            'info'
-          );
-        }
-      } else {
-        throw new Error(response.data.message || 'Failed to add user');
-      }
-    } catch (err) {
-      console.error('❌ Error adding user:', err);
-      console.error('Response details:', err.response?.data);
-      const message = err.response?.data?.message || err.message || 'Failed to add user';
-      showNotification(message, 'error');
-    }
-  };
-
-  /**
-   * Handle editing a user
-   */
-  const handleEditUser = async (userData) => {
-    try {
-      const response = await api.put(`/admin/users/${userData.id}`, userData);
-      
-      if (response.data.success) {
-        showNotification('User updated successfully', 'success');
-        closeModal();
-        fetchUsers(); // Refresh the list
-      } else {
-        throw new Error(response.data.message || 'Failed to update user');
-      }
-    } catch (err) {
-      console.error('Error updating user:', err);
-      const message = err.response?.data?.message || 'Failed to update user';
-      showNotification(message, 'error');
-    }
-  };
-
-  /**
-   * Handle deleting a user
-   */
-  const handleDeleteUser = async (userId) => {
-    try {
-      const response = await api.delete(`/admin/users/${userId}`);
-      
-      if (response.data.success) {
-        showNotification('User deleted successfully', 'success');
-        closeModal();
-        fetchUsers(); // Refresh the list
-        
-        // Remove from selected users if it was selected
-        setSelectedUsers(prev => prev.filter(id => id !== userId));
-      } else {
-        throw new Error(response.data.message || 'Failed to delete user');
-      }
-    } catch (err) {
-      console.error('Error deleting user:', err);
-      const message = err.response?.data?.message || 'Failed to delete user';
-      showNotification(message, 'error');
-    }
-  };
-
-  /**
-   * Handle user status change
-   */
-  const handleStatusChange = async (userId, status) => {
-    try {
-      const response = await api.put(`/admin/users/${userId}/status`, { status });
-      
-      if (response.data.success) {
-        showNotification(`User ${status} successfully`, 'success');
-        fetchUsers(); // Refresh the list
-      } else {
-        throw new Error(response.data.message || 'Failed to update status');
-      }
-    } catch (err) {
-      console.error('Error updating status:', err);
-      const message = err.response?.data?.message || 'Failed to update status';
-      showNotification(message, 'error');
-    }
-  };
-
-  /**
-   * Handle bulk actions
-   */
-  const handleBulkAction = async (action, userIds = selectedUsers) => {
-    if (!userIds.length) {
-      showNotification('No users selected', 'warning');
-      return;
-    }
-
-    try {
-      const response = await api.post('/admin/users/bulk-action', {
-        action,
-        userIds
-      });
-      
-      if (response.data.success) {
-        showNotification(`Successfully ${action}ed ${userIds.length} users`, 'success');
-        setSelectedUsers([]); // Clear selection
-        fetchUsers(); // Refresh the list
-      } else {
-        throw new Error(response.data.message || 'Bulk action failed');
-      }
-    } catch (err) {
-      console.error('Error performing bulk action:', err);
-      const message = err.response?.data?.message || 'Bulk action failed';
-      showNotification(message, 'error');
-    }
-  };
-
-  // Show loading state
+  // Loading state
   if (loading && users.length === 0) {
     return (
-      <div className="user-management-loading">
-        <div className="loading-spinner"></div>
-        <p>Loading user management...</p>
+      <div className="user-management-container">
+        <div className="loading-state">
+          <div className="loading-spinner"></div>
+          <p>Please wait while we load your user data...</p>
+        </div>
       </div>
     );
   }
 
-  // Show error state
+  // Error state
   if (error && users.length === 0) {
     return (
-      <div className="user-management-error">
-        <div className="error-icon">⚠️</div>
-        <h3>Failed to Load Users</h3>
-        <p>{error}</p>
-        <button onClick={initializeComponent} className="btn btn-primary">
-          Try Again
-        </button>
+      <div className="user-management-container">
+        <div className="error-state">
+          <i className="fas fa-exclamation-triangle"></i>
+          <h3>Error Loading Users</h3>
+          <p>{error}</p>
+          <button onClick={initializeComponent} className="btn btn-primary">
+            Try Again
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="user-management">
-      {/* Header */}
-      <div className="user-management-header">
-        <div className="header-info">
-          <h2>User Management</h2>
-          <p>Manage all users, their statuses, and perform bulk operations</p>
+    <div className="user-management-container">
+      {/* Page Header */}
+      <div className="page-header">
+        <div className="header-content">
+          <div className="header-left">
+            <h1>User Management</h1>
+            <p>Manage and monitor all user accounts</p>
+          </div>
+
+          <div className="header-actions">
+            <button
+              onClick={() => navigate('/admin/users/create')}
+              className="btn btn-primary"
+            >
+              <i className="fas fa-plus"></i>
+              Add User
+            </button>
+          </div>
         </div>
-        <div className="header-actions">
-          <button 
-            className="btn btn-primary"
-            onClick={() => openModal('add')}
-          >
-            <i className="fas fa-plus"></i>
-            Add User
-          </button>
+        
+        {/* Stats Cards */}
+        <div className="stats-grid">
+          <div className="stat-card">
+            <div className="stat-icon">
+              <i className="fas fa-users"></i>
+            </div>
+            <div className="stat-content">
+              <h3>{stats.totalUsers}</h3>
+              <p>Total Users</p>
+            </div>
+          </div>
+          <div className="stat-card pending">
+            <div className="stat-icon">
+              <i className="fas fa-clock"></i>
+            </div>
+            <div className="stat-content">
+              <h3>{stats.pendingApprovals}</h3>
+              <p>Pending Approvals</p>
+            </div>
+          </div>
+          <div className="stat-card active">
+            <div className="stat-icon">
+              <i className="fas fa-check-circle"></i>
+            </div>
+            <div className="stat-content">
+              <h3>{stats.activeUsers}</h3>
+              <p>Active Users</p>
+            </div>
+          </div>
+          <div className="stat-card suspended">
+            <div className="stat-icon">
+              <i className="fas fa-ban"></i>
+            </div>
+            <div className="stat-content">
+              <h3>{stats.suspendedUsers}</h3>
+              <p>Suspended Users</p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -400,6 +683,8 @@ const UserManagement = () => {
       <UserFilters
         filters={filters}
         onFilterChange={handleFilterChange}
+        onClearFilters={clearFilters}
+        onExport={handleExportUsers}
         referenceData={referenceData}
         loading={loading}
       />
@@ -409,6 +694,8 @@ const UserManagement = () => {
         <BulkActions
           selectedCount={selectedUsers.length}
           onBulkAction={handleBulkAction}
+          onClearSelection={clearSelections}
+          loading={loading}
         />
       )}
 
@@ -418,26 +705,40 @@ const UserManagement = () => {
         selectedUsers={selectedUsers}
         onUserSelect={handleUserSelect}
         onSelectAll={handleSelectAll}
-        onUserAction={openModal}
+        onUserAction={(userId, action) => {
+          const user = users.find(u => u.id === userId);
+          if (action === 'delete') {
+            openModal('delete', user);
+          } else if (action === 'assignPlan') {
+            handleOpenPlanAssignment(user);
+          }
+        }}
         onStatusChange={handleStatusChange}
+        onPlanAssignment={(userId, planKey) => handlePlanAssignment(userId, planKey)}
+        referenceData={referenceData}
         loading={loading}
         pagination={pagination}
         onPageChange={handlePageChange}
+        onPageSizeChange={handlePageSizeChange}
+        getPlansForUserType={getPlansForUserType}
+        calculatePlanValidity={calculatePlanValidity}
       />
 
-      {/* Modal */}
+      {/* Modal for Delete and Plan Assignment only */}
       {modalState.isOpen && (
         <UserModal
           type={modalState.type}
           user={modalState.user}
+          title={modalState.title}
           referenceData={referenceData}
+          selectedUsers={selectedUsers}
           onClose={closeModal}
-          onSubmit={
-            modalState.type === 'add' ? handleAddUser :
-            modalState.type === 'edit' ? handleEditUser :
-            modalState.type === 'delete' ? handleDeleteUser :
-            null
-          }
+          onSubmit={modalState.type === 'delete' ? handleDeleteUser :
+                   modalState.type === 'bulkDelete' ? () => handleBulkAction('delete') :
+                   modalState.type === 'assignPlan' ? (data) => handlePlanAssignment(modalState.user.id, data.planKey) :
+                   null}
+          planAssignmentState={planAssignmentState}
+          getPlansForUserType={getPlansForUserType}
         />
       )}
     </div>

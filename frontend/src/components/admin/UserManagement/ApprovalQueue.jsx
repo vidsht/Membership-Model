@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-// import { Link } from 'react-router-dom';
+// ApprovalQueue.jsx - Enhanced Approval Queue with all fixes
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useNotification } from '../../../contexts/NotificationContext';
 import api from '../../../services/api';
@@ -8,516 +8,560 @@ import './ApprovalQueue.css';
 const ApprovalQueue = () => {
   const { validateSession, handleSessionExpired } = useAuth();
   const { showNotification } = useNotification();
+
+  // State Management
   const [pendingUsers, setPendingUsers] = useState([]);
   const [pendingMerchants, setPendingMerchants] = useState([]);
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [selectedMerchants, setSelectedMerchants] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [showAddUserModal, setShowAddUserModal] = useState(false);
-  const [activeTab, setActiveTab] = useState('users'); // 'users' or 'merchants'
-  
-  React.useEffect(() => {
-    fetchPendingApprovals();
+  const [activeTab, setActiveTab] = useState('users');
+  const [stats, setStats] = useState({
+    totalPending: 0,
+    pendingUsers: 0,
+    pendingMerchants: 0,
+    todayRegistrations: 0
+  });
+
+  // Effects
+  useEffect(() => {
+    initializeComponent();
   }, []);
 
-  const fetchPendingApprovals = async () => {
+  /**
+   * Initialize the component
+   */
+  const initializeComponent = async () => {
+    try {
+      const sessionValid = await validateSession();
+      if (!sessionValid) {
+        handleSessionExpired();
+        return;
+      }
+      await fetchPendingApprovals();
+    } catch (error) {
+      console.error('Error initializing approval queue:', error);
+      showNotification('Failed to initialize approval queue', 'error');
+    }
+  };
+
+  /**
+   * Fetch all pending approvals
+   */
+  const fetchPendingApprovals = useCallback(async () => {
     try {
       setIsLoading(true);
       
-      // Fetch pending users
-      const usersResponse = await api.get('/admin/users?status=pending&userType=user');
-      setPendingUsers(usersResponse.data.users || []);
-      
-      // Fetch pending merchants
-      const merchantsResponse = await api.get('/admin/users?status=pending&userType=merchant');
-      setPendingMerchants(merchantsResponse.data.users || []);
-      
+      // Fetch pending users and merchants in parallel
+      const [usersResponse, merchantsResponse] = await Promise.all([
+        api.get('/admin/users?status=pending&userType=user'),
+        api.get('/admin/users?status=pending&userType=merchant')
+      ]);
+
+      const users = usersResponse.data.users || [];
+      const merchants = merchantsResponse.data.users || [];
+
+      setPendingUsers(users);
+      setPendingMerchants(merchants);
+
+      // Update stats
+      const today = new Date().toISOString().split('T')[0];
+      const todayRegistrations = [...users, ...merchants].filter(user => {
+        const userDate = new Date(user.createdAt).toISOString().split('T')[0];
+        return userDate === today;
+      }).length;
+
+      setStats({
+        totalPending: users.length + merchants.length,
+        pendingUsers: users.length,
+        pendingMerchants: merchants.length,
+        todayRegistrations
+      });
+
+      console.log('✅ Pending approvals loaded:', { users: users.length, merchants: merchants.length });
     } catch (error) {
-      console.error('Error fetching pending approvals:', error);
+      console.error('❌ Error fetching pending approvals:', error);
+      
+      if (error.response?.status === 401) {
+        handleSessionExpired();
+        return;
+      }
+      
       showNotification('Error loading pending approvals. Please try again.', 'error');
+      setPendingUsers([]);
+      setPendingMerchants([]);
     } finally {
       setIsLoading(false);
     }
-  };
-    const handleSelectUser = (userId) => {
+  }, [validateSession, handleSessionExpired, showNotification]);
+
+  /**
+   * Handle individual user selection
+   */
+  const handleSelectUser = useCallback((userId) => {
     if (activeTab === 'users') {
-      setSelectedUsers(prev => {
-        if (prev.includes(userId)) {
-          return prev.filter(id => id !== userId);
-        } else {
-          return [...prev, userId];
-        }
-      });
+      setSelectedUsers(prev => 
+        prev.includes(userId) 
+          ? prev.filter(id => id !== userId)
+          : [...prev, userId]
+      );
     } else {
-      setSelectedMerchants(prev => {
-        if (prev.includes(userId)) {
-          return prev.filter(id => id !== userId);
-        } else {
-          return [...prev, userId];
-        }
-      });
+      setSelectedMerchants(prev => 
+        prev.includes(userId) 
+          ? prev.filter(id => id !== userId)
+          : [...prev, userId]
+      );
     }
-  };
-  
-  const handleSelectAll = () => {
+  }, [activeTab]);
+
+  /**
+   * Handle select all toggle
+   */
+  const handleSelectAll = useCallback(() => {
     if (activeTab === 'users') {
-      if (selectedUsers.length === pendingUsers.length) {
+      if (selectedUsers.length === pendingUsers.length && pendingUsers.length > 0) {
         setSelectedUsers([]);
       } else {
-        setSelectedUsers(pendingUsers.map(user => user.id));
+        setSelectedUsers(pendingUsers.map(user => user.id)); // Fixed: use user.id
       }
     } else {
-      if (selectedMerchants.length === pendingMerchants.length) {
+      if (selectedMerchants.length === pendingMerchants.length && pendingMerchants.length > 0) {
         setSelectedMerchants([]);
       } else {
-        setSelectedMerchants(pendingMerchants.map(merchant => merchant.id));
+        setSelectedMerchants(pendingMerchants.map(merchant => merchant.id)); // Fixed: use merchant.id
       }
     }
-  };
-    const handleApproveUser = async (userId, userType) => {
+  }, [activeTab, selectedUsers, selectedMerchants, pendingUsers, pendingMerchants]);
+
+  /**
+   * Handle individual user approval
+   */
+  const handleApproveUser = useCallback(async (userId, userType, userName) => {
     try {
-      if (userType === 'merchant') {
-        await api.post(`/admin/merchants/${userId}/approve`);
-      } else {
-        await api.put(`/admin/users/${userId}/status`, { status: 'approved' });
+      console.log('✅ Approving user:', { userId, userType, userName });
+      
+      // Fixed: Use consistent endpoint
+      await api.put(`/admin/users/${userId}/status`, { status: 'approved' });
+      
+      await fetchPendingApprovals();
+      showNotification(`${userName || 'User'} approved successfully!`, 'success');
+    } catch (error) {
+      console.error('❌ Error approving user:', error);
+      
+      if (error.response?.status === 401) {
+        handleSessionExpired();
+        return;
       }
-      fetchPendingApprovals();
-      showNotification('User approved successfully!', 'success');
-    } catch (error) {
-      console.error('Error approving user:', error);
-      showNotification('Failed to approve user. Please try again.', 'error');
+      
+      const message = error.response?.data?.message || 'Failed to approve user. Please try again.';
+      showNotification(message, 'error');
     }
-  };
-  
-  const handleRejectUser = async (userId) => {
+  }, [fetchPendingApprovals, showNotification, handleSessionExpired]);
+
+  /**
+   * Handle individual user rejection
+   */
+  const handleRejectUser = useCallback(async (userId, userName) => {
     try {
-      await api.post(`/admin/users/${userId}/reject`);
-      fetchPendingApprovals();
-      showNotification('User rejected successfully!', 'success');
+      console.log('❌ Rejecting user:', { userId, userName });
+      
+      // Fixed: Use consistent endpoint
+      await api.put(`/admin/users/${userId}/status`, { status: 'rejected' });
+      
+      await fetchPendingApprovals();
+      showNotification(`${userName || 'User'} rejected successfully!`, 'success');
     } catch (error) {
-      console.error('Error rejecting user:', error);
-      showNotification('Failed to reject user. Please try again.', 'error');
+      console.error('❌ Error rejecting user:', error);
+      
+      if (error.response?.status === 401) {
+        handleSessionExpired();
+        return;
+      }
+      
+      const message = error.response?.data?.message || 'Failed to reject user. Please try again.';
+      showNotification(message, 'error');
     }
-  };  const handleBulkAction = async (action) => {
+  }, [fetchPendingApprovals, showNotification, handleSessionExpired]);
+
+  /**
+   * Handle bulk approval
+   */
+  const handleBulkApprove = useCallback(async () => {
     const selectedIds = activeTab === 'users' ? selectedUsers : selectedMerchants;
-    if (selectedIds.length === 0) {
-      showNotification('No users selected. Please select users first.', 'warning');
-      return;
-    }
+    const entityName = activeTab === 'users' ? 'users' : 'merchants';
     
-    try {
-      await api.post(`/admin/users/bulk-action`, { userIds: selectedIds, action });
-      fetchPendingApprovals();
-      setSelectedUsers([]);
-      setSelectedMerchants([]);
-      showNotification(`Selected users ${action}ed successfully!`, 'success');
-    } catch (error) {
-      console.error(`Error ${action}ing users:`, error);
-      showNotification(`Failed to ${action} users. Please try again.`, 'error');
-    }
-  };
-
-  const handleApproveSelected = async () => {
-    const selectedIds = activeTab === 'users' ? selectedUsers : selectedMerchants;
     if (selectedIds.length === 0) {
-      showNotification(`Please select ${activeTab} to approve`, 'warning');
+      showNotification(`Please select ${entityName} to approve`, 'warning');
       return;
     }
 
     try {
+      console.log('✅ Bulk approving:', { entityName, count: selectedIds.length, ids: selectedIds });
+      
+      // Fixed: Use correct bulk-action endpoint
       await api.post('/admin/users/bulk-action', {
         action: 'approve',
         userIds: selectedIds
       });
+
+      showNotification(`${selectedIds.length} ${entityName} approved successfully!`, 'success');
       
-      showNotification(`${selectedIds.length} ${activeTab} approved successfully!`, 'success');
+      // Clear selections and refresh
       setSelectedUsers([]);
       setSelectedMerchants([]);
-      fetchPendingApprovals();
+      await fetchPendingApprovals();
     } catch (error) {
-      console.error('Error approving users:', error);
+      console.error('❌ Error bulk approving:', error);
+      
       if (error.response?.status === 401) {
         handleSessionExpired();
         return;
       }
-      showNotification('Failed to approve selected users. Please try again.', 'error');
+      
+      const message = error.response?.data?.message || `Failed to approve selected ${entityName}. Please try again.`;
+      showNotification(message, 'error');
     }
-  };
+  }, [activeTab, selectedUsers, selectedMerchants, showNotification, fetchPendingApprovals, handleSessionExpired]);
 
-  const handleRejectSelected = async () => {
+  /**
+   * Handle bulk rejection
+   */
+  const handleBulkReject = useCallback(async () => {
     const selectedIds = activeTab === 'users' ? selectedUsers : selectedMerchants;
+    const entityName = activeTab === 'users' ? 'users' : 'merchants';
+    
     if (selectedIds.length === 0) {
-      showNotification(`Please select ${activeTab} to reject`, 'warning');
+      showNotification(`Please select ${entityName} to reject`, 'warning');
       return;
     }
 
     try {
+      console.log('❌ Bulk rejecting:', { entityName, count: selectedIds.length, ids: selectedIds });
+      
+      // Fixed: Use correct bulk-action endpoint
       await api.post('/admin/users/bulk-action', {
         action: 'reject',
         userIds: selectedIds
       });
+
+      showNotification(`${selectedIds.length} ${entityName} rejected successfully!`, 'success');
       
-      showNotification(`${selectedIds.length} ${activeTab} rejected successfully!`, 'success');
+      // Clear selections and refresh
       setSelectedUsers([]);
       setSelectedMerchants([]);
-      fetchPendingApprovals();
+      await fetchPendingApprovals();
     } catch (error) {
-      console.error('Error rejecting users:', error);
+      console.error('❌ Error bulk rejecting:', error);
+      
       if (error.response?.status === 401) {
         handleSessionExpired();
         return;
       }
-      showNotification('Failed to reject selected users. Please try again.', 'error');
+      
+      const message = error.response?.data?.message || `Failed to reject selected ${entityName}. Please try again.`;
+      showNotification(message, 'error');
     }
-  };
+  }, [activeTab, selectedUsers, selectedMerchants, showNotification, fetchPendingApprovals, handleSessionExpired]);
 
-  const handleAddUser = async (userData) => {
-    try {
-      const isSessionValid = await validateSession();
-      if (!isSessionValid) {
-        showNotification('Your session has expired. Please log in again.', 'error');
-        return;
-      }      const response = await api.post('/admin/users', userData);
-      showNotification('User added successfully!', 'success');
-      setShowAddUserModal(false);
-      fetchPendingApprovals();
-    } catch (error) {
-      console.error('Error adding user:', error);
-      if (error.response?.status === 401) {
-        handleSessionExpired();
-        return;
-      }
-      showNotification('Failed to add user. Please try again.', 'error');
-    }
-  };
-    const formatDate = (dateString) => {
+  /**
+   * Format date for display
+   */
+  const formatDate = useCallback((dateString) => {
     if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    if (isNaN(date.getTime())) return 'Invalid Date';
-    return new Intl.DateTimeFormat('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    }).format(date);
-  };
+    
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'Invalid Date';
+      
+      return new Intl.DateTimeFormat('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }).format(date);
+    } catch (error) {
+      return 'Invalid Date';
+    }
+  }, []);
+
+  /**
+   * Get time since registration
+   */
+  const getTimeSince = useCallback((dateString) => {
+    if (!dateString) return '';
+    
+    try {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffMs = now - date;
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+      
+      if (diffDays > 0) {
+        return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
+      } else if (diffHours > 0) {
+        return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
+      } else {
+        return 'Just now';
+      }
+    } catch (error) {
+      return '';
+    }
+  }, []);
+
+  // Get current data based on active tab
+  const currentData = activeTab === 'users' ? pendingUsers : pendingMerchants;
+  const selectedIds = activeTab === 'users' ? selectedUsers : selectedMerchants;
+  const entityName = activeTab === 'users' ? 'users' : 'merchants';
+
+  // Show loading state
+  if (isLoading && currentData.length === 0) {
     return (
+      <div className="approval-queue-loading">
+        <div className="loading-spinner"></div>
+        <h3>Loading approval queue...</h3>
+        <p>Please wait while we fetch pending approvals...</p>
+      </div>
+    );
+  }
+
+  return (
     <div className="approval-queue">
-      <div className="section-header">
-        <div className="header-content">
-          <h2>Pending Approvals</h2>
-          <p>
-            {pendingUsers.length} users and {pendingMerchants.length} merchants awaiting approval
-          </p>
+      {/* Header Section */}
+      <div className="approval-queue-header">
+        <div className="header-info">
+          <h2>Approval Queue</h2>
+          <p>Review and manage pending user registrations</p>
         </div>
-        <div className="header-actions">
-          <button className="button primary" onClick={() => setShowAddUserModal(true)}>
-            <i className="fas fa-plus"></i> Add User
+        <div className="header-stats">
+          <div className="stat-item">
+            <span className="stat-number">{stats.totalPending}</span>
+            <span className="stat-label">Total Pending</span>
+          </div>
+          <div className="stat-item">
+            <span className="stat-number">{stats.todayRegistrations}</span>
+            <span className="stat-label">Today</span>
+          </div>
+          <button
+            onClick={fetchPendingApprovals}
+            disabled={isLoading}
+            className="btn btn-secondary"
+          >
+            <i className={`fas fa-sync ${isLoading ? 'fa-spin' : ''}`}></i>
+            Refresh
           </button>
         </div>
       </div>
 
-      {/* Tabs */}
+      {/* Tab Navigation */}
       <div className="approval-tabs">
-        <button 
-          className={`tab-button ${activeTab === 'users' ? 'active' : ''}`}
+        <button
           onClick={() => setActiveTab('users')}
+          className={`tab-button ${activeTab === 'users' ? 'active' : ''}`}
         >
-          <i className="fas fa-user"></i> 
-          Users ({pendingUsers.length})
+          <i className="fas fa-users"></i>
+          Regular Users
+          {stats.pendingUsers > 0 && <span className="tab-badge">{stats.pendingUsers}</span>}
         </button>
-        <button 
-          className={`tab-button ${activeTab === 'merchants' ? 'active' : ''}`}
+        <button
           onClick={() => setActiveTab('merchants')}
+          className={`tab-button ${activeTab === 'merchants' ? 'active' : ''}`}
         >
-          <i className="fas fa-store"></i> 
-          Merchants ({pendingMerchants.length})
+          <i className="fas fa-store"></i>
+          Merchants
+          {stats.pendingMerchants > 0 && <span className="tab-badge">{stats.pendingMerchants}</span>}
         </button>
       </div>
 
       {/* Bulk Actions */}
-      {((activeTab === 'users' && selectedUsers.length > 0) || 
-        (activeTab === 'merchants' && selectedMerchants.length > 0)) && (
+      {selectedIds.length > 0 && (
         <div className="bulk-actions">
-          <span className="selected-count">
-            {activeTab === 'users' ? selectedUsers.length : selectedMerchants.length} selected
-          </span>
-          <button className="btn btn-success" onClick={handleApproveSelected}>
-            <i className="fas fa-check"></i> Approve Selected
-          </button>
-          <button className="btn btn-danger" onClick={handleRejectSelected}>
-            <i className="fas fa-times"></i> Reject Selected
-          </button>
+          <div className="bulk-actions-header">
+            <div className="selection-info">
+              <i className="fas fa-check-circle"></i>
+              <span>{selectedIds.length} {entityName} selected</span>
+            </div>
+            <div className="bulk-actions-buttons">
+              <button
+                onClick={handleBulkApprove}
+                className="btn btn-success"
+                disabled={isLoading}
+              >
+                <i className="fas fa-check"></i>
+                Approve Selected
+              </button>
+              <button
+                onClick={handleBulkReject}
+                className="btn btn-danger"
+                disabled={isLoading}
+              >
+                <i className="fas fa-times"></i>
+                Reject Selected
+              </button>
+              <button
+                onClick={() => {
+                  setSelectedUsers([]);
+                  setSelectedMerchants([]);
+                }}
+                className="btn btn-secondary"
+              >
+                <i className="fas fa-times"></i>
+                Clear Selection
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
-      <div className="section-content">
-        {isLoading ? (
-          <div className="loading-list">
-            <div className="loading-item"></div>
-            <div className="loading-item"></div>
-            <div className="loading-item"></div>
-          </div>
-        ) : (activeTab === 'users' ? pendingUsers : pendingMerchants).length > 0 ? (
+      {/* Approval List */}
+      <div className="approval-list-container">
+        {currentData.length > 0 ? (
           <>
-            {/* Select All Checkbox */}
-            <div className="select-all-container">
-              <label className="checkbox-label">
+            {/* Select All Header */}
+            <div className="select-all-header">
+              <label className="select-all-checkbox">
                 <input
                   type="checkbox"
-                  checked={(activeTab === 'users' ? selectedUsers : selectedMerchants).length === 
-                          (activeTab === 'users' ? pendingUsers : pendingMerchants).length}
+                  checked={selectedIds.length === currentData.length && currentData.length > 0}
                   onChange={handleSelectAll}
+                  disabled={isLoading}
                 />
-                Select All {activeTab}
+                <span>Select All ({currentData.length})</span>
               </label>
-            </div>            <ul className="activity-list approval-list">
-              {(activeTab === 'users' ? pendingUsers : pendingMerchants).map(user => (
-                <li key={user.id} className="activity-item approval-activity-item">
-                  <div className="activity-icon">
-                    <input
-                      type="checkbox"
-                      checked={(activeTab === 'users' ? selectedUsers : selectedMerchants).includes(user.id)}
-                      onChange={() => handleSelectUser(user.id)}
-                      className="user-checkbox"
-                    />
-                    <div className="user-avatar">
-                      {user.profilePicture ? (
-                        <img src={user.profilePicture} alt={user.fullName} />
-                      ) : (
-                        <div className="user-initials">
-                          {user.fullName.split(' ').map(n => n[0]).join('')}
+            </div>
+
+            {/* Approval Cards */}
+            <div className="approval-list">
+              {currentData.map((user) => (
+                <div
+                  key={user.id} // Fixed: use user.id consistently
+                  className={`approval-card ${selectedIds.includes(user.id) ? 'selected' : ''}`}
+                >
+                  <div className="card-header">
+                    <label className="card-checkbox">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.includes(user.id)} // Fixed: use user.id consistently
+                        onChange={() => handleSelectUser(user.id)}
+                        disabled={isLoading}
+                      />
+                    </label>
+                    <div className="user-info">
+                      <div className="user-avatar">
+                        {user.fullName ? user.fullName.charAt(0).toUpperCase() : '?'}
+                      </div>
+                      <div className="user-details">
+                        <h4 className="user-name">{user.fullName || 'No Name Provided'}</h4>
+                        <div className="user-meta">
+                          <span className="user-email">
+                            <i className="fas fa-envelope"></i>
+                            {user.email}
+                          </span>
+                          {user.phone && (
+                            <span className="user-phone">
+                              <i className="fas fa-phone"></i>
+                              {user.phone}
+                            </span>
+                          )}
+                          {user.community && (
+                            <span className="user-community">
+                              <i className="fas fa-globe"></i>
+                              {user.community}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="user-type-badge">
+                      <i className={`fas ${user.userType === 'merchant' ? 'fa-store' : 'fa-user'}`}></i>
+                      {user.userType || 'user'}
+                    </div>
+                  </div>
+
+                  <div className="card-body">
+                    <div className="registration-info">
+                      <div className="info-item">
+                        <label>Registered:</label>
+                        <span>{formatDate(user.createdAt)}</span> {/* Fixed: use createdAt consistently */}
+                        <small className="time-since">({getTimeSince(user.createdAt)})</small>
+                      </div>
+                      {user.address && (
+                        <div className="info-item">
+                          <label>Address:</label>
+                          <span>{typeof user.address === 'string' ? user.address : JSON.stringify(user.address)}</span>
+                        </div>
+                      )}
+                      {user.membershipType && (
+                        <div className="info-item">
+                          <label>Requested Plan:</label>
+                          <span className="plan-badge">{user.membershipType}</span>
                         </div>
                       )}
                     </div>
                   </div>
-                  <div className="activity-content">
-                    <div className="approval-user-details">
-                      <h3>{user.fullName}</h3>
-                      <p>{user.email}</p>
-                      <span className="approval-date">Registered: {formatDate(user.created_at || user.createdAt)}</span>
-                    </div>
-                    <div className="approval-meta">
-                      <span className={`plan-badge ${user.membershipType || 'none'}`}>
-                        {user.membershipType && typeof user.membershipType === 'string' ? 
-                          (user.membershipType.charAt(0).toUpperCase() + user.membershipType.slice(1)) : 
-                          'No Plan'
-                        }
-                      </span>
-                      {user.phone && (
-                        <span className="contact-info"><i className="fas fa-phone"></i> {user.phone}</span>
-                      )}
-                      {user.address?.city && (
-                        <span className="contact-info"><i className="fas fa-map-marker-alt"></i> {user.address.city}, {user.address.country}</span>
-                      )}
-                    </div>
-                    <div className="approval-actions">
-                      <button className="btn-approve" onClick={() => handleApproveUser(user.id, user.userType)}>
-                        <i className="fas fa-check"></i> Approve
-                      </button>
-                      <button className="btn-reject" onClick={() => handleRejectUser(user.id)}>
-                        <i className="fas fa-times"></i> Reject
-                      </button>
-                      <button className="btn-view">
-                        <i className="fas fa-eye"></i> View
-                      </button>
-                    </div>
+
+                  <div className="card-actions">
+                    <button
+                      onClick={() => handleApproveUser(user.id, user.userType, user.fullName)}
+                      disabled={isLoading}
+                      className="btn btn-success btn-sm"
+                    >
+                      <i className="fas fa-check"></i>
+                      Approve
+                    </button>
+                    <button
+                      onClick={() => handleRejectUser(user.id, user.fullName)}
+                      disabled={isLoading}
+                      className="btn btn-danger btn-sm"
+                    >
+                      <i className="fas fa-times"></i>
+                      Reject
+                    </button>
                   </div>
-                </li>
+                </div>
               ))}
-            </ul>
+            </div>
           </>
         ) : (
-          <div className="empty-activities">
-            <i className="fas fa-check-circle"></i>
-            <h3>No Pending Approvals</h3>
-            <p>All user registrations have been processed.</p>
+          // Empty State
+          <div className="empty-state">
+            <div className="empty-content">
+              <i className="fas fa-check-circle"></i>
+              <h3>No Pending {entityName.charAt(0).toUpperCase() + entityName.slice(1)}</h3>
+              <p>All {entityName} registrations have been processed.</p>
+              {stats.totalPending > 0 && activeTab === 'users' && (
+                <button
+                  onClick={() => setActiveTab('merchants')}
+                  className="btn btn-primary"
+                >
+                  View Pending Merchants ({stats.pendingMerchants})
+                </button>
+              )}
+              {stats.totalPending > 0 && activeTab === 'merchants' && (
+                <button
+                  onClick={() => setActiveTab('users')}
+                  className="btn btn-primary"
+                >
+                  View Pending Users ({stats.pendingUsers})
+                </button>
+              )}
+            </div>
           </div>
         )}
       </div>
 
-      {/* Add User Modal */}
-      {showAddUserModal && (
-        <AddUserModal 
-          onClose={() => setShowAddUserModal(false)}
-          onSubmit={handleAddUser}
-        />
-      )}
-    </div>
-  );
-};
-
-// Add User Modal Component (reused from UserList)
-const AddUserModal = ({ onClose, onSubmit }) => {
-  const [formData, setFormData] = useState({
-    fullName: '',
-    email: '',
-    phone: '',
-    userType: 'user', // Changed from 'member' to 'user'
-    membershipType: 'community',
-    address: {
-      street: '',
-      city: '',
-      state: '',
-      zipCode: '',
-      country: 'Ghana'
-    }
-  });
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    if (name.startsWith('address.')) {
-      const addressField = name.split('.')[1];
-      setFormData(prev => ({
-        ...prev,
-        address: {
-          ...prev.address,
-          [addressField]: value
-        }
-      }));
-    } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
-    }
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSubmit(formData);
-  };
-
-  return (
-    <div className="modal-overlay">
-      <div className="modal-content large">
-        <div className="modal-header">
-          <h3>Add New User</h3>
-          <button className="modal-close" onClick={onClose}>
-            <i className="fas fa-times"></i>
-          </button>
+      {/* Footer Stats */}
+      {currentData.length > 0 && (
+        <div className="approval-footer">
+          <div className="footer-stats">
+            <span>Showing {currentData.length} pending {entityName}</span>
+            {selectedIds.length > 0 && (
+              <span>{selectedIds.length} selected</span>
+            )}
+          </div>
         </div>
-        <form onSubmit={handleSubmit} className="modal-form">
-          <div className="form-section">
-            <h4>Personal Information</h4>
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="fullName">Full Name *</label>
-                <input
-                  type="text"
-                  id="fullName"
-                  name="fullName"
-                  value={formData.fullName}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="email">Email *</label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-            </div>
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="phone">Phone</label>
-                <input
-                  type="tel"
-                  id="phone"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="userType">User Type</label>                <select
-                  id="userType"
-                  name="userType"
-                  value={formData.userType}
-                  onChange={handleChange}
-                >
-                  <option value="user">User</option>
-                  <option value="merchant">Merchant</option>
-                </select>
-              </div>
-            </div>
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="membershipType">Membership Type</label>
-                <select
-                  id="membershipType"
-                  name="membershipType"
-                  value={formData.membershipType}
-                  onChange={handleChange}
-                >
-                  <option value="community">Community</option>
-                  <option value="silver">Silver</option>
-                  <option value="gold">Gold</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <div className="form-section">
-            <h4>Address Information</h4>
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="address.street">Street</label>
-                <input
-                  type="text"
-                  id="address.street"
-                  name="address.street"
-                  value={formData.address.street}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="address.city">City</label>
-                <input
-                  type="text"
-                  id="address.city"
-                  name="address.city"
-                  value={formData.address.city}
-                  onChange={handleChange}
-                />
-              </div>
-            </div>
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="address.state">State</label>
-                <input
-                  type="text"
-                  id="address.state"
-                  name="address.state"
-                  value={formData.address.state}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="address.zipCode">Zip Code</label>
-                <input
-                  type="text"
-                  id="address.zipCode"
-                  name="address.zipCode"
-                  value={formData.address.zipCode}
-                  onChange={handleChange}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="modal-actions">
-            <button type="button" className="button secondary" onClick={onClose}>
-              Cancel
-            </button>
-            <button type="submit" className="button primary">
-              Add User
-            </button>
-          </div>
-        </form>
-      </div>
+      )}
     </div>
   );
 };

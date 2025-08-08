@@ -1,176 +1,181 @@
-// UserFilters.jsx - Filter component for User Management
-import React from 'react';
+// UserFilters.jsx - COMPLETE FIXED Component
+import React, { useState } from 'react';
 
-const UserFilters = ({ filters, onFilterChange, referenceData, loading }) => {
-  
-  const handleInputChange = (key, value) => {
-    onFilterChange({ [key]: value });
+const UserFilters = ({ 
+  filters, 
+  onFilterChange, 
+  onClearFilters, 
+  onExport, 
+  referenceData, 
+  loading 
+}) => {
+  const [isExpanded, setIsExpanded] = useState(true);
+
+  const handleFilterChange = (field, value) => {
+    onFilterChange({ [field]: value });
   };
 
-  const clearFilters = () => {
-    onFilterChange({
-      search: '',
-      status: 'all',
-      userType: 'all',
-      membershipType: 'all',
-      dateFrom: '',
-      dateTo: ''
-    });
-  };
-
-  const hasActiveFilters = () => {
-    return Object.entries(filters).some(([key, value]) => {
-      if (key === 'search') return value.trim() !== '';
-      if (key === 'dateFrom' || key === 'dateTo') return value !== '';
-      return value !== 'all' && value !== '';
-    });
+  const handleClearFilters = () => {
+    onClearFilters();
   };
 
   return (
     <div className="user-filters">
-      <div className="filters-row">
-        {/* Search */}
-        <div className="filter-group search-group">
-          <div className="search-input">
-            <i className="fas fa-search"></i>
-            <input
-              type="text"
-              placeholder="Search by name, email, or phone..."
-              value={filters.search}
-              onChange={(e) => handleInputChange('search', e.target.value)}
-              disabled={loading}
-            />
-          </div>
-        </div>
-
-        {/* Status Filter */}
-        <div className="filter-group">
-          <label>Status</label>
-          <select
-            value={filters.status}
-            onChange={(e) => handleInputChange('status', e.target.value)}
-            disabled={loading}
+      <div className="filters-container">
+        <div className="filters-header">
+          <h3>Search & Filter Users</h3>
+          <button 
+            className="toggle-filters"
+            onClick={() => setIsExpanded(!isExpanded)}
+            type="button"
           >
-            <option value="all">All Statuses</option>
-            <option value="pending">Pending</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
-            <option value="suspended">Suspended</option>
-          </select>
+            {isExpanded ? 'Hide Filters' : 'Show Filters'}
+            <i className={`fas fa-chevron-${isExpanded ? 'up' : 'down'}`}></i>
+          </button>
         </div>
 
-        {/* User Type Filter */}
-        <div className="filter-group">
-          <label>User Type</label>
-          <select
-            value={filters.userType}
-            onChange={(e) => handleInputChange('userType', e.target.value)}
-            disabled={loading}
-          >
-            <option value="all">All Types</option>
-            {referenceData.userTypes.map(type => (
-              <option key={type} value={type}>
-                {type.charAt(0).toUpperCase() + type.slice(1)}
-              </option>
-            ))}
-          </select>
-        </div>
+        {isExpanded && (
+          <div className="filters-content">
+            {/* Search */}
+            <div className="filter-group">
+              <label htmlFor="search">Search Users</label>
+              <div className="search-container">
+                <i className="fas fa-search"></i>
+                <input
+                  id="search"
+                  type="text"
+                  placeholder="Search by name, email, or phone..."
+                  value={filters.search || ''}
+                  onChange={(e) => handleFilterChange('search', e.target.value)}
+                />
+              </div>
+            </div>
 
-        {/* Membership Plan Filter */}
-        <div className="filter-group">
-          <label>Plan</label>
-          <select
-            value={filters.membershipType}
-            onChange={(e) => handleInputChange('membershipType', e.target.value)}
-            disabled={loading}
-          >
-            <option value="all">All Plans</option>
-            <option value="none">No Plan</option>
-            {referenceData.plans.map(plan => (
-              <option key={plan.id} value={plan.key}>
-                {plan.name}
-              </option>
-            ))}
-          </select>
-        </div>
+            {/* Status Filter */}
+            <div className="filter-group">
+              <label htmlFor="status">Status</label>
+              <select
+                id="status"
+                value={filters.status || 'all'}
+                onChange={(e) => handleFilterChange('status', e.target.value)}
+              >
+                <option value="all">All Statuses</option>
+                <option value="approved">Approved</option>
+                <option value="pending">Pending</option>
+                <option value="rejected">Rejected</option>
+                <option value="suspended">Suspended</option>
+              </select>
+            </div>
 
-        {/* Date Range Filters */}
-        <div className="filter-group date-group">
-          <label>Registration Date</label>
-          <div className="date-inputs">
-            <input
-              type="date"
-              placeholder="From"
-              value={filters.dateFrom}
-              onChange={(e) => handleInputChange('dateFrom', e.target.value)}
-              disabled={loading}
-            />
-            <span className="date-separator">to</span>
-            <input
-              type="date"
-              placeholder="To"
-              value={filters.dateTo}
-              onChange={(e) => handleInputChange('dateTo', e.target.value)}
-              disabled={loading}
-            />
-          </div>
-        </div>
+            {/* User Type Filter */}
+            <div className="filter-group">
+              <label htmlFor="userType">User Type</label>
+              <select
+                id="userType"
+                value={filters.userType || 'all'}
+                onChange={(e) => handleFilterChange('userType', e.target.value)}
+              >
+                <option value="all">All Types</option>
+                <option value="user">Users</option>
+                <option value="merchant">Merchants</option>
+                <option value="admin">Admins</option>
+              </select>
+            </div>
 
-        {/* Clear Filters */}
-        {hasActiveFilters() && (
-          <div className="filter-group">
-            <button
-              className="btn btn-secondary btn-sm"
-              onClick={clearFilters}
-              disabled={loading}
-              title="Clear all filters"
-            >
-              <i className="fas fa-times"></i>
-              Clear
-            </button>
+            {/* Plan Filter */}
+            <div className="filter-group">
+              <label htmlFor="membershipType">Plan</label>
+              <select
+                id="membershipType"
+                value={filters.membershipType || 'all'}
+                onChange={(e) => handleFilterChange('membershipType', e.target.value)}
+              >
+                <option value="all">All Plans</option>
+                <option value="community">Community</option>
+                <option value="silver">Silver</option>
+                <option value="gold">Gold</option>
+                <option value="basic_business">Basic Business</option>
+                <option value="premium_business">Premium Business</option>
+              </select>
+            </div>
+
+            {/* Community Filter */}
+            <div className="filter-group">
+              <label htmlFor="community">Community</label>
+              <select
+                id="community"
+                value={filters.community || 'all'}
+                onChange={(e) => handleFilterChange('community', e.target.value)}
+              >
+                <option value="all">All Communities</option>
+                {referenceData?.communities?.map((community, index) => (
+                  <option key={index} value={community.name || community}>
+                    {community.name || community}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Date Filters */}
+            <div className="filter-group">
+              <label htmlFor="dateFrom">Registration Date From</label>
+              <input
+                id="dateFrom"
+                type="date"
+                value={filters.dateFrom || ''}
+                onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
+              />
+            </div>
+
+            <div className="filter-group">
+              <label htmlFor="dateTo">Registration Date To</label>
+              <input
+                id="dateTo"
+                type="date"
+                value={filters.dateTo || ''}
+                onChange={(e) => handleFilterChange('dateTo', e.target.value)}
+              />
+            </div>
+
+            {/* Plan Expiry Filter */}
+            <div className="filter-group">
+              <label htmlFor="planExpired">Plan Status</label>
+              <select
+                id="planExpired"
+                value={filters.planExpired || 'all'}
+                onChange={(e) => handleFilterChange('planExpired', e.target.value)}
+              >
+                <option value="all">All Plans</option>
+                <option value="active">Active Plans</option>
+                <option value="expired">Expired Plans</option>
+                <option value="expiring">Expiring Soon</option>
+              </select>
+            </div>
           </div>
         )}
-      </div>
 
-      {/* Filter Summary */}
-      {hasActiveFilters() && (
-        <div className="filter-summary">
-          <span className="summary-text">Active filters:</span>
-          {filters.search && (
-            <span className="filter-tag">
-              Search: "{filters.search}"
-              <button onClick={() => handleInputChange('search', '')}>×</button>
-            </span>
-          )}
-          {filters.status !== 'all' && (
-            <span className="filter-tag">
-              Status: {filters.status}
-              <button onClick={() => handleInputChange('status', 'all')}>×</button>
-            </span>
-          )}
-          {filters.userType !== 'all' && (
-            <span className="filter-tag">
-              Type: {filters.userType}
-              <button onClick={() => handleInputChange('userType', 'all')}>×</button>
-            </span>
-          )}
-          {filters.membershipType !== 'all' && (
-            <span className="filter-tag">
-              Plan: {filters.membershipType}
-              <button onClick={() => handleInputChange('membershipType', 'all')}>×</button>
-            </span>
-          )}
-          {(filters.dateFrom || filters.dateTo) && (
-            <span className="filter-tag">
-              Date: {filters.dateFrom || 'Any'} - {filters.dateTo || 'Any'}
-              <button onClick={() => {
-                handleInputChange('dateFrom', '');
-                handleInputChange('dateTo', '');
-              }}>×</button>
-            </span>
-          )}
+        {/* Filter Actions */}
+        <div className="filters-actions">
+          <button 
+            type="button" 
+            className="btn-reset"
+            onClick={handleClearFilters}
+            disabled={loading}
+          >
+            <i className="fas fa-times"></i>
+            Clear Filters
+          </button>
+          <button 
+            type="button" 
+            className="btn-apply"
+            onClick={onExport}
+            disabled={loading}
+          >
+            <i className="fas fa-download"></i>
+            Export Users
+          </button>
         </div>
-      )}
+      </div>
     </div>
   );
 };

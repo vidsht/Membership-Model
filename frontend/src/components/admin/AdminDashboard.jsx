@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotification } from '../../contexts/NotificationContext';
-import ApprovalQueue from './UserManagement/ApprovalQueueFixed.jsx';
+import ApprovalQueue from './UserManagement/ApprovalQueue.jsx';
 import UserManagement from './UserManagement/UserManagement';
 import MerchantManagementEnhanced from './BusinessPartners/MerchantManagementEnhanced';
 import DealList from './DealManagement/DealList';
