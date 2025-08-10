@@ -29,6 +29,7 @@ import UserForm from './components/admin/UserManagement/UserForm';
 import UserDetailPage from './components/admin/UserManagement/UserDetailPage';
 import PartnerList from './components/admin/BusinessPartners/PartnerList';
 import PartnerRegistration from './components/admin/BusinessPartners/PartnerRegistration';
+import PartnerDetail from './components/admin/BusinessPartners/PartnerDetail';
 import AdminSettings from './components/admin/Settings/AdminSettings';
 import PlanSettings from './components/admin/Settings/PlanSettings';
 import PlanAssignment from './components/admin/PlanManagement/PlanAssignment';
@@ -108,6 +109,12 @@ function AppContent() {
               <UserForm />
             </AdminRoute>
           } />
+
+          <Route path="/admin/users/:id/assign-plan" element={
+            <AdminRoute>
+              <PlanAssignment />
+            </AdminRoute>
+          } />
           
           <Route path="/admin/partners" element={
             <AdminRoute>
@@ -116,6 +123,24 @@ function AppContent() {
           } />
           
           <Route path="/admin/partners/register" element={
+            <AdminRoute>
+              <PartnerRegistration />
+            </AdminRoute>
+          } />
+
+          <Route path="/admin/partners/create" element={
+            <AdminRoute>
+              <PartnerRegistration />
+            </AdminRoute>
+          } />
+
+          <Route path="/admin/partners/:partnerId" element={
+            <AdminRoute>
+              <PartnerDetail />
+            </AdminRoute>
+          } />
+
+          <Route path="/admin/partners/:partnerId/edit" element={
             <AdminRoute>
               <PartnerRegistration />
             </AdminRoute>

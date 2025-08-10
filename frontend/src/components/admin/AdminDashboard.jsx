@@ -77,17 +77,27 @@ const AdminDashboard = () => {
     const fetchAdminStats = async () => {
       try {
         setIsLoading(true);
+        console.log('🔄 AdminDashboard - Starting to fetch admin stats...');
         
         // Fetch dashboard statistics with fallback
         try {
+          console.log('📊 AdminDashboard - Fetching stats from /admin/stats...');
           const statsResponse = await api.get('/admin/stats');
+          console.log('✅ AdminDashboard - Stats response:', statsResponse.data);
           if (statsResponse.data.success) {
             setStats(statsResponse.data.stats);
           }
         } catch (statsError) {
-          console.error('Error fetching stats:', statsError);
+          console.error('❌ AdminDashboard - Error fetching stats:', statsError);
+          console.error('Stats error details:', {
+            status: statsError.response?.status,
+            message: statsError.response?.data?.message,
+            url: statsError.config?.url
+          });
+          
           // Set fallback stats
-          setStats({            totalUsers: 0,
+          setStats({
+            totalUsers: 0,
             totalMerchants: 0,
             pendingApprovals: 0,
             activeBusinesses: 0,
@@ -98,46 +108,78 @@ const AdminDashboard = () => {
         
         // Fetch recent activities with fallback
         try {
+          console.log('📋 AdminDashboard - Fetching activities from /admin/activities...');
           const activitiesResponse = await api.get('/admin/activities');
+          console.log('✅ AdminDashboard - Activities response:', activitiesResponse.data);
           if (activitiesResponse.data.success) {
             setRecentActivities(activitiesResponse.data.activities || []);
           }
         } catch (activitiesError) {
-          console.error('Error fetching activities:', activitiesError);
-          setRecentActivities([]);        }
+          console.error('❌ AdminDashboard - Error fetching activities:', activitiesError);
+          console.error('Activities error details:', {
+            status: activitiesError.response?.status,
+            message: activitiesError.response?.data?.message,
+            url: activitiesError.config?.url
+          });
+          setRecentActivities([]);
+        }
         
       } catch (error) {
-        console.error('Error fetching admin data:', error);
-        showNotification('Some admin data could not be loaded. Please check your connection.', 'warning');
+        console.error('❌ AdminDashboard - General error fetching admin data:', error);
+        // Use a ref to avoid infinite re-renders
+        if (showNotification) {
+          showNotification('Some admin data could not be loaded. Please check your connection.', 'warning');
+        }
       } finally {
         setIsLoading(false);
+        console.log('✅ AdminDashboard - Finished loading admin stats');
       }
     };
     
-
     fetchAdminStats();
-    // eslint-disable-next-line
-  }, [showNotification]);
+  }, []); // Remove showNotification dependency to prevent re-renders
   const renderTabContent = () => {
-    switch (activeTab) {
-      case 'dashboard':
-        return renderDashboardContent();
-      case 'users':
-        return <UserManagement />;
-      case 'merchants':
-        return <MerchantManagementEnhanced />;
-      case 'deals':
-        return <DealList />;
-      case 'plans':
-        return <PlanManagement />;
-      case 'approvals':
-        return <ApprovalQueue />;
-      case 'activities':
-        return <Activities />;
-      case 'settings':
-        return <AdminSettings />;
-      default:
-        return renderDashboardContent();
+    console.log('AdminDashboard - Rendering tab content for:', activeTab);
+    
+    try {
+      switch (activeTab) {
+        case 'dashboard':
+          return renderDashboardContent();
+        case 'users':
+          console.log('AdminDashboard - Rendering UserManagement');
+          return <UserManagement />;
+        case 'merchants':
+          console.log('AdminDashboard - Rendering MerchantManagementEnhanced');
+          return <MerchantManagementEnhanced />;
+        case 'deals':
+          console.log('AdminDashboard - Rendering DealList');
+          return <DealList />;
+        case 'plans':
+          console.log('AdminDashboard - Rendering PlanManagement');
+          return <PlanManagement />;
+        case 'approvals':
+          console.log('AdminDashboard - Rendering ApprovalQueue');
+          return <ApprovalQueue />;
+        case 'activities':
+          console.log('AdminDashboard - Rendering Activities');
+          return <Activities />;
+        case 'settings':
+          console.log('AdminDashboard - Rendering AdminSettings');
+          return <AdminSettings />;
+        default:
+          console.log('AdminDashboard - Rendering default dashboard content');
+          return renderDashboardContent();
+      }
+    } catch (error) {
+      console.error('AdminDashboard - Error rendering tab content:', error);
+      return (
+        <div className="error-content">
+          <h3>Error Loading Content</h3>
+          <p>There was an error loading this section: {error.message}</p>
+          <p>Active Tab: {activeTab}</p>
+          <button onClick={() => setActiveTab('dashboard')}>Back to Dashboard</button>
+        </div>
+      );
     }
   };
 
@@ -260,7 +302,10 @@ const AdminDashboard = () => {
             {tabs.map(tab => (
               <li key={tab.id} className={activeTab === tab.id ? 'active' : ''}>
                 <button 
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => {
+                    console.log('AdminDashboard - Tab clicked:', tab.id, tab.label);
+                    setActiveTab(tab.id);
+                  }}
                   className="nav-button"
                 >
                   <i className={tab.icon}></i>

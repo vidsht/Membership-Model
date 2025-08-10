@@ -82,22 +82,6 @@ const UserFilters = ({
               </select>
             </div>
 
-            {/* Plan Filter */}
-            <div className="filter-group">
-              <label htmlFor="membershipType">Plan</label>
-              <select
-                id="membershipType"
-                value={filters.membershipType || 'all'}
-                onChange={(e) => handleFilterChange('membershipType', e.target.value)}
-              >
-                <option value="all">All Plans</option>
-                <option value="community">Community</option>
-                <option value="silver">Silver</option>
-                <option value="gold">Gold</option>
-                <option value="basic_business">Basic Business</option>
-                <option value="premium_business">Premium Business</option>
-              </select>
-            </div>
 
             {/* Community Filter */}
             <div className="filter-group">
@@ -116,41 +100,8 @@ const UserFilters = ({
               </select>
             </div>
 
-            {/* Date Filters */}
-            <div className="filter-group">
-              <label htmlFor="dateFrom">Registration Date From</label>
-              <input
-                id="dateFrom"
-                type="date"
-                value={filters.dateFrom || ''}
-                onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
-              />
-            </div>
 
-            <div className="filter-group">
-              <label htmlFor="dateTo">Registration Date To</label>
-              <input
-                id="dateTo"
-                type="date"
-                value={filters.dateTo || ''}
-                onChange={(e) => handleFilterChange('dateTo', e.target.value)}
-              />
-            </div>
 
-            {/* Plan Expiry Filter */}
-            <div className="filter-group">
-              <label htmlFor="planExpired">Plan Status</label>
-              <select
-                id="planExpired"
-                value={filters.planExpired || 'all'}
-                onChange={(e) => handleFilterChange('planExpired', e.target.value)}
-              >
-                <option value="all">All Plans</option>
-                <option value="active">Active Plans</option>
-                <option value="expired">Expired Plans</option>
-                <option value="expiring">Expiring Soon</option>
-              </select>
-            </div>
           </div>
         )}
 

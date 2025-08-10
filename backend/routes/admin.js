@@ -289,14 +289,7 @@ router.get('/users', auth, admin, async (req, res) => {
       params.push(userType);
     }
 
-    if (membershipType && membershipType !== 'all') {
-      if (membershipType === 'none') {
-        whereClause += ' AND (u.membershipType IS NULL OR u.membershipType = "")';
-      } else {
-        whereClause += ' AND u.membershipType = ?';
-        params.push(membershipType);
-      }
-    }
+
 
     if (community && community !== 'all') {
       whereClause += ' AND u.community = ?';
@@ -309,15 +302,7 @@ router.get('/users', auth, admin, async (req, res) => {
       params.push(searchTerm, searchTerm, searchTerm, searchTerm);
     }
 
-    if (dateFrom) {
-      whereClause += ' AND DATE(u.createdAt) >= ?';
-      params.push(dateFrom);
-    }
 
-    if (dateTo) {
-      whereClause += ' AND DATE(u.createdAt) <= ?';
-      params.push(dateTo);
-    }
 
     if (planExpired && planExpired !== 'all') {
       if (planExpired === 'yes') {
@@ -651,43 +636,7 @@ router.put('/users/:id', auth, admin, async (req, res) => {
   }
 });
 
-router.delete('/users/:id', auth, admin, async (req, res) => {
-  try {
-    const userId = parseInt(req.params.id);
-
-    if (!userId || isNaN(userId)) {
-      return res.status(400).json({ success: false, message: 'Valid user ID is required' });
-    }
-
-    const userCheck = await queryAsync('SELECT id, userType FROM users WHERE id = ?', [userId]);
-    if (!userCheck.length) {
-      return res.status(404).json({ success: false, message: 'User not found' });
-    }
-
-    if (userCheck[0].userType === 'admin') {
-      return res.status(403).json({ success: false, message: 'Cannot delete admin users' });
-    }
-
-    if (userCheck[0].userType === 'merchant' && await tableExists('businesses')) {
-      try {
-        await queryAsync('DELETE FROM businesses WHERE userId = ?', [userId]);
-      } catch (businessError) {
-        console.warn('Error deleting business data:', businessError);
-      }
-    }
-
-    const result = await queryAsync('DELETE FROM users WHERE id = ?', [userId]);
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ success: false, message: 'User not found' });
-    }
-
-    res.json({ success: true, message: 'User deleted successfully' });
-  } catch (err) {
-    console.error('Error deleting user:', err);
-    res.status(500).json({ success: false, message: 'Server error deleting user' });
-  }
-});
+// DELETE /users/:id endpoint removed as per requirements
 
 router.put('/users/:id/status', auth, admin, async (req, res) => {
   try {
@@ -820,29 +769,79 @@ router.post('/users/:id/assign-plan', auth, admin, async (req, res) => {
     const adminUserId = getAdminUserId(req);
 
     // STEP 3: Update user with validated plan
-    const updateQuery = `
-      UPDATE users SET 
-        membershipType = ?, 
-        currentPlan = ?,
-        planAssignedAt = NOW(), 
-        planAssignedBy = ?,
-        updated_at = NOW()
-      WHERE id = ?
-    `;
+
+    // Calculate validationDate based on billingCycle
+    let validationDate = new Date();
+    const billingCycle = (planDetails && planDetails.billingCycle) ? planDetails.billingCycle.toLowerCase() : 'yearly';
+    switch (billingCycle) {
+      case 'monthly':
+        validationDate.setMonth(validationDate.getMonth() + 1);
+        break;
+      case 'quarterly':
+        validationDate.setMonth(validationDate.getMonth() + 3);
+        break;
+      case 'yearly':
+      case 'annual':
+        validationDate.setFullYear(validationDate.getFullYear() + 1);
+        break;
+      case 'lifetime':
+        validationDate = null;
+        break;
+      case 'weekly':
+        validationDate.setDate(validationDate.getDate() + 7);
+        break;
+      default:
+        validationDate.setFullYear(validationDate.getFullYear() + 1);
+        break;
+    }
+
+    let updateQuery, updateParams;
+    if (validationDate) {
+      updateQuery = `
+        UPDATE users SET 
+          membershipType = ?, 
+          currentPlan = ?,
+          planAssignedAt = NOW(), 
+          planAssignedBy = ?,
+          validationDate = ?,
+          updated_at = NOW()
+        WHERE id = ?
+      `;
+      updateParams = [
+        finalPlanKey,
+        finalPlanKey,
+        adminUserId,
+        validationDate.toISOString().slice(0, 19).replace('T', ' '),
+        userId
+      ];
+    } else {
+      updateQuery = `
+        UPDATE users SET 
+          membershipType = ?, 
+          currentPlan = ?,
+          planAssignedAt = NOW(), 
+          planAssignedBy = ?,
+          validationDate = NULL,
+          updated_at = NOW()
+        WHERE id = ?
+      `;
+      updateParams = [
+        finalPlanKey,
+        finalPlanKey,
+        adminUserId,
+        userId
+      ];
+    }
 
     console.log('🔄 Executing plan assignment update...', {
       membershipType: finalPlanKey,
       currentPlan: finalPlanKey,
       planAssignedBy: adminUserId,
-      userId: userId
+      userId: userId,
+      validationDate: validationDate
     });
 
-    const result = await queryAsync(updateQuery, [
-      finalPlanKey,    // membershipType (varchar)
-      finalPlanKey,    // currentPlan (varchar) - keeping both for compatibility
-      adminUserId,     // planAssignedBy
-      userId          // WHERE condition
-    ]);
+    const result = await queryAsync(updateQuery, updateParams);
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ success: false, message: 'Failed to update user plan.' });
@@ -900,86 +899,15 @@ router.post('/users/:id/assign-plan', auth, admin, async (req, res) => {
   }
 });
 
-router.post('/users/bulk-action', auth, admin, async (req, res) => {
-  try {
-    const { action, userIds } = req.body;
-
-    if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
-      return res.status(400).json({ success: false, message: 'User IDs are required' });
-    }
-
-    if (!['approve', 'reject', 'suspend', 'activate'].includes(action)) {
-      return res.status(400).json({ success: false, message: 'Invalid action' });
-    }
-
-    const validUserIds = userIds.filter(id => !isNaN(parseInt(id))).map(id => parseInt(id));
-    if (validUserIds.length !== userIds.length) {
-      return res.status(400).json({ success: false, message: 'All user IDs must be valid numbers' });
-    }
-
-    const statusMap = {
-      approve: 'approved',
-      reject: 'rejected',
-      suspend: 'suspended',
-      activate: 'approved'
-    };
-
-    const newStatus = statusMap[action];
-    const adminUserId = getAdminUserId(req);
-    const placeholders = validUserIds.map(() => '?').join(',');
-
-    const hasStatusUpdatedAt = await columnExists('users', 'statusUpdatedAt');
-    const hasStatusUpdatedBy = await columnExists('users', 'statusUpdatedBy');
-
-    let updateQuery = `UPDATE users SET status = ?, updated_at = NOW()`;
-    let params = [newStatus];
-
-    if (hasStatusUpdatedAt) {
-      updateQuery += ', statusUpdatedAt = NOW()';
-    }
-
-    if (hasStatusUpdatedBy) {
-      updateQuery += ', statusUpdatedBy = ?';
-      params.push(adminUserId);
-    }
-
-    updateQuery += ` WHERE id IN (${placeholders})`;
-    params.push(...validUserIds);
-
-    const result = await queryAsync(updateQuery, params);
-
-    if (await tableExists('activities')) {
-      try {
-        await queryAsync(
-          'INSERT INTO activities (type, description, userId, timestamp) VALUES (?, ?, ?, NOW())',
-          [`bulk_${action}`, `Bulk ${action} performed on ${validUserIds.length} users by admin`, adminUserId]
-        );
-      } catch (activityError) {
-        console.warn('Error logging bulk activity:', activityError);
-      }
-    }
-
-    res.json({
-      success: true,
-      message: `Successfully ${action}d ${result.affectedRows} users`,
-      affectedCount: result.affectedRows
-    });
-  } catch (err) {
-    console.error('Error performing bulk action:', err);
-    res.status(500).json({ success: false, message: 'Server error performing bulk action' });
-  }
-});
+// POST /users/bulk-action endpoint delete logic removed as per requirements
 
 router.get('/users/export', auth, admin, async (req, res) => {
   try {
     const {
       status,
       userType,
-      membershipType,
       community,
-      search,
-      dateFrom,
-      dateTo
+      search
     } = req.query;
 
     let whereClause = 'WHERE 1=1';
@@ -995,15 +923,6 @@ router.get('/users/export', auth, admin, async (req, res) => {
       params.push(userType);
     }
 
-    if (membershipType && membershipType !== 'all') {
-      if (membershipType === 'none') {
-        whereClause += ' AND (u.membershipType IS NULL OR u.membershipType = "")';
-      } else {
-        whereClause += ' AND u.membershipType = ?';
-        params.push(membershipType);
-      }
-    }
-
     if (community && community !== 'all') {
       whereClause += ' AND u.community = ?';
       params.push(community);
@@ -1013,16 +932,6 @@ router.get('/users/export', auth, admin, async (req, res) => {
       whereClause += ' AND (u.fullName LIKE ? OR u.email LIKE ? OR u.phone LIKE ?)';
       const searchTerm = `%${search.trim()}%`;
       params.push(searchTerm, searchTerm, searchTerm);
-    }
-
-    if (dateFrom) {
-      whereClause += ' AND DATE(u.createdAt) >= ?';
-      params.push(dateFrom);
-    }
-
-    if (dateTo) {
-      whereClause += ' AND DATE(u.createdAt) <= ?';
-      params.push(dateTo);
     }
 
     let exportQuery = `
@@ -1122,10 +1031,14 @@ router.get('/communities', auth, admin, async (req, res) => {
 // UPDATED: Enhanced Plans Endpoint with User Type Filtering
 router.get('/plans', auth, admin, async (req, res) => {
   try {
-    const { userType } = req.query; // NEW: Optional userType filter
-    
+    let { userType } = req.query; // NEW: Optional userType filter
+    // Sanitize userType: only allow 'user' or 'merchant', default to 'user'
+    if (userType && userType !== 'user' && userType !== 'merchant') {
+      userType = 'user';
+    }
+
     let plans = [];
-    
+
     if (await tableExists('plans')) {
       // FIXED: Updated query to match your exact schema with optional filtering
       let plansQuery = `
@@ -1134,9 +1047,9 @@ router.get('/plans', auth, admin, async (req, res) => {
         FROM plans
         WHERE isActive = 1
       `;
-      
+
       const queryParams = [];
-      
+
       // NEW: Filter by user type if provided
       if (userType && userType !== 'all') {
         if (userType === 'merchant') {
@@ -1145,13 +1058,13 @@ router.get('/plans', auth, admin, async (req, res) => {
           plansQuery += ' AND type = "user"';
         }
       }
-      
+
       plansQuery += ' ORDER BY priority ASC, name ASC';
-      
+
       console.log('🔍 Plans query:', plansQuery, 'for userType:', userType);
-      
+
       plans = await queryAsync(plansQuery, queryParams);
-      
+
       console.log('✅ Plans fetched:', plans.length, 'plans');
     }
 
@@ -1272,4 +1185,1596 @@ router.get('/plans', auth, admin, async (req, res) => {
   }
 });
 
+// ===== MERCHANTS MANAGEMENT - DEPRECATED =====
+// NOTE: These routes have been replaced by /partners routes below for consistency
+// Commenting out to avoid confusion while keeping for reference
+
+/*
+router.get('/merchants', auth, admin, async (req, res) => {
+  try {
+    const {
+      status,
+      category,
+      search,
+      dateFrom,
+      dateTo,
+      limit = 20,
+      offset = 0
+    } = req.query;
+
+    let whereClause = 'WHERE u.userType = "merchant"';
+    const params = [];
+
+    // Apply filters
+    if (status && status !== 'all') {
+      whereClause += ' AND u.status = ?';
+      params.push(status);
+    }
+
+    if (search && search.trim()) {
+      whereClause += ' AND (u.fullName LIKE ? OR u.email LIKE ? OR b.businessName LIKE ? OR u.phone LIKE ?)';
+      const searchTerm = `%${search.trim()}%`;
+      params.push(searchTerm, searchTerm, searchTerm, searchTerm);
+    }
+
+    if (dateFrom) {
+      whereClause += ' AND DATE(u.createdAt) >= ?';
+      params.push(dateFrom);
+    }
+
+    if (dateTo) {
+      whereClause += ' AND DATE(u.createdAt) <= ?';
+      params.push(dateTo);
+    }
+
+    if (category && category !== 'all') {
+      whereClause += ' AND b.businessCategory = ?';
+      params.push(category);
+    }
+
+    // Check if businesses table exists
+    const businessTableExists = await tableExists('businesses');
+    
+    let query;
+    if (businessTableExists) {
+      query = `
+        SELECT 
+          u.id, u.fullName, u.email, u.phone, u.address, u.community, 
+          u.membershipType, u.status, u.createdAt, u.lastLogin,
+          b.businessId, b.businessName, b.businessDescription, b.businessCategory,
+          b.businessAddress, b.businessPhone, b.businessEmail, b.website,
+          b.businessLicense, b.taxId, b.status as businessStatus,
+          p.name as planName, p.price as planPrice, p.billingCycle, p.currency, p.features
+        FROM users u
+        LEFT JOIN businesses b ON u.id = b.userId
+        LEFT JOIN plans p ON u.membershipType = p.key
+        ${whereClause}
+        ORDER BY u.createdAt DESC
+        LIMIT ? OFFSET ?
+      `;
+    } else {
+      // Fallback query without businesses table
+      query = `
+        SELECT 
+          u.id, u.fullName, u.email, u.phone, u.address, u.community, 
+          u.membershipType, u.status, u.createdAt, u.lastLogin,
+          NULL as businessId, NULL as businessName, NULL as businessDescription, 
+          NULL as businessCategory, NULL as businessAddress, NULL as businessPhone, 
+          NULL as businessEmail, NULL as website, NULL as businessLicense, 
+          NULL as taxId, NULL as businessStatus,
+          p.name as planName, p.price as planPrice, p.billingCycle, p.currency, p.features
+        FROM users u
+        LEFT JOIN plans p ON u.membershipType = p.key
+        ${whereClause}
+        ORDER BY u.createdAt DESC
+        LIMIT ? OFFSET ?
+      `;
+    }
+
+    params.push(parseInt(limit), parseInt(offset));
+
+    const merchants = await queryAsync(query, params);
+
+    // Get total count for pagination
+    const countQuery = businessTableExists ? 
+      `SELECT COUNT(*) as total FROM users u LEFT JOIN businesses b ON u.id = b.userId ${whereClause}` :
+      `SELECT COUNT(*) as total FROM users u ${whereClause}`;
+    
+    const countParams = params.slice(0, -2); // Remove limit and offset
+    const countResult = await queryAsync(countQuery, countParams);
+    const total = countResult[0]?.total || 0;
+
+    res.json({
+      success: true,
+      merchants,
+      total,
+      hasBusinessTable: businessTableExists
+    });
+  } catch (err) {
+    console.error('Error fetching merchants:', err);
+    res.status(500).json({ success: false, message: 'Server error fetching merchants' });
+  }
+});
+
+router.get('/merchants/:id', auth, admin, async (req, res) => {
+  try {
+    const merchantId = parseInt(req.params.id);
+    if (!merchantId || isNaN(merchantId)) {
+      return res.status(400).json({ success: false, message: 'Valid merchant ID is required' });
+    }
+
+    const businessTableExists = await tableExists('businesses');
+    
+    let query;
+    if (businessTableExists) {
+      query = `
+        SELECT 
+          u.id, u.fullName, u.email, u.phone, u.address, u.community, 
+          u.membershipType, u.status, u.createdAt, u.lastLogin,
+          b.businessId, b.businessName, b.businessDescription, b.businessCategory,
+          b.businessAddress, b.businessPhone, b.businessEmail, b.website,
+          b.businessLicense, b.taxId, b.status as businessStatus,
+          p.name as planName, p.price as planPrice, p.billingCycle, p.currency, p.features
+        FROM users u
+        LEFT JOIN businesses b ON u.id = b.userId
+        LEFT JOIN plans p ON u.membershipType = p.key
+        WHERE u.id = ? AND u.userType = "merchant"
+      `;
+    } else {
+      query = `
+        SELECT 
+          u.id, u.fullName, u.email, u.phone, u.address, u.community, 
+          u.membershipType, u.status, u.createdAt, u.lastLogin,
+          NULL as businessId, NULL as businessName, NULL as businessDescription, 
+          NULL as businessCategory, NULL as businessAddress, NULL as businessPhone, 
+          NULL as businessEmail, NULL as website, NULL as businessLicense, 
+          NULL as taxId, NULL as businessStatus
+        FROM users u
+        WHERE u.id = ? AND u.userType = "merchant"
+      `;
+    }
+
+    const merchantRows = await queryAsync(query, [merchantId]);
+
+    if (!merchantRows.length) {
+      return res.status(404).json({ success: false, message: 'Merchant not found' });
+    }
+
+    res.json({ success: true, merchant: merchantRows[0] });
+  } catch (err) {
+    console.error('Error fetching merchant:', err);
+    res.status(500).json({ success: false, message: 'Server error fetching merchant' });
+  }
+});
+
+router.post('/merchants/create', auth, admin, async (req, res) => {
+  try {
+    const {
+      fullName,
+      email,
+      phone,
+      address,
+      community,
+      membershipType,
+      status,
+      businessInfo
+    } = req.body;
+
+    // Check if email already exists
+    const existingUser = await queryAsync('SELECT id FROM users WHERE email = ?', [email]);
+    if (existingUser.length > 0) {
+      return res.status(400).json({ success: false, message: 'User with this email already exists' });
+    }
+
+    // Generate temporary password
+    const tempPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
+    const bcrypt = require('bcryptjs');
+    const hashedPassword = await bcrypt.hash(tempPassword, 12);
+
+    // Generate membership number
+    const membershipNumber = `IGM${Date.now().toString().slice(-6)}${Math.floor(Math.random() * 100)}`;
+
+    const adminUserId = getAdminUserId(req);
+
+    // Create user account
+    const userResult = await queryAsync(`
+      INSERT INTO users (
+        fullName, email, password, phone, userType, membershipType, community,
+        address, status, membershipNumber, createdAt, planAssignedAt, planAssignedBy
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), ?)
+    `, [
+      fullName,
+      email,
+      hashedPassword,
+      phone || null,
+      'merchant',
+      membershipType || 'basic_business',
+      community || null,
+      address || null,
+      status || 'approved',
+      membershipNumber,
+      adminUserId
+    ]);
+
+    const newUserId = userResult.insertId;
+
+    // Create business record if businesses table exists and business info provided
+    if (businessInfo && await tableExists('businesses')) {
+      const businessId = `BIZ${Date.now().toString().slice(-6)}${Math.floor(Math.random() * 100)}`;
+      
+      await queryAsync(`
+        INSERT INTO businesses (
+          businessId, userId, businessName, businessDescription, businessCategory,
+          businessAddress, businessPhone, businessEmail, website, status, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+      `, [
+        businessId,
+        newUserId,
+        businessInfo.businessName || null,
+        businessInfo.businessDescription || null,
+        businessInfo.businessCategory || null,
+        businessInfo.businessAddress || null,
+        businessInfo.businessPhone || null,
+        businessInfo.businessEmail || null,
+        businessInfo.website || null,
+        'active'
+      ]);
+    }
+
+    res.status(201).json({
+      success: true,
+      message: 'Merchant created successfully',
+      merchantId: newUserId,
+      tempPassword: tempPassword
+    });
+  } catch (err) {
+    console.error('Error creating merchant:', err);
+    res.status(500).json({ success: false, message: 'Server error creating merchant' });
+  }
+});
+
+router.put('/merchants/:id', auth, admin, async (req, res) => {
+  try {
+    const merchantId = parseInt(req.params.id);
+    const { userInfo, businessInfo } = req.body;
+
+    if (!merchantId || isNaN(merchantId)) {
+      return res.status(400).json({ success: false, message: 'Valid merchant ID is required' });
+    }
+
+    // Verify merchant exists
+    const merchantCheck = await queryAsync('SELECT id FROM users WHERE id = ? AND userType = "merchant"', [merchantId]);
+    if (!merchantCheck.length) {
+      return res.status(404).json({ success: false, message: 'Merchant not found' });
+    }
+
+    // Update user information
+    if (userInfo) {
+      const allowedUserFields = ['fullName', 'email', 'phone', 'address', 'community', 'membershipType', 'status'];
+      const userUpdates = [];
+      const userValues = [];
+
+      Object.keys(userInfo).forEach(field => {
+        if (allowedUserFields.includes(field) && userInfo[field] !== undefined) {
+          userUpdates.push(`${field} = ?`);
+          userValues.push(userInfo[field]);
+        }
+      });
+
+      if (userUpdates.length > 0) {
+        userUpdates.push('updated_at = NOW()');
+        userValues.push(merchantId);
+        
+        const userUpdateQuery = `UPDATE users SET ${userUpdates.join(', ')} WHERE id = ?`;
+        await queryAsync(userUpdateQuery, userValues);
+      }
+    }
+
+    // Update business information if table exists
+    if (businessInfo && await tableExists('businesses')) {
+      const allowedBusinessFields = [
+        'businessName', 'businessDescription', 'businessCategory', 'businessAddress',
+        'businessPhone', 'businessEmail', 'website', 'businessLicense', 'taxId'
+      ];
+      
+      const businessUpdates = [];
+      const businessValues = [];
+
+      Object.keys(businessInfo).forEach(field => {
+        if (allowedBusinessFields.includes(field) && businessInfo[field] !== undefined) {
+          businessUpdates.push(`${field} = ?`);
+          businessValues.push(businessInfo[field]);
+        }
+      });
+
+      if (businessUpdates.length > 0) {
+        businessUpdates.push('updated_at = NOW()');
+        businessValues.push(merchantId);
+        
+        const businessUpdateQuery = `UPDATE businesses SET ${businessUpdates.join(', ')} WHERE userId = ?`;
+        await queryAsync(businessUpdateQuery, businessValues);
+      }
+    }
+
+    res.json({ success: true, message: 'Merchant updated successfully' });
+  } catch (err) {
+    console.error('Error updating merchant:', err);
+    res.status(500).json({ success: false, message: 'Server error updating merchant' });
+  }
+});
+
+router.post('/merchants/:id/approve', auth, admin, async (req, res) => {
+  try {
+    const merchantId = parseInt(req.params.id);
+    if (!merchantId || isNaN(merchantId)) {
+      return res.status(400).json({ success: false, message: 'Valid merchant ID is required' });
+    }
+
+    const result = await queryAsync('UPDATE users SET status = "approved", updated_at = NOW() WHERE id = ? AND userType = "merchant"', [merchantId]);
+    
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Merchant not found' });
+    }
+
+    res.json({ success: true, message: 'Merchant approved successfully' });
+  } catch (err) {
+    console.error('Error approving merchant:', err);
+    res.status(500).json({ success: false, message: 'Server error approving merchant' });
+  }
+});
+
+router.post('/merchants/:id/reject', auth, admin, async (req, res) => {
+  try {
+    const merchantId = parseInt(req.params.id);
+    if (!merchantId || isNaN(merchantId)) {
+      return res.status(400).json({ success: false, message: 'Valid merchant ID is required' });
+    }
+
+    const result = await queryAsync('UPDATE users SET status = "rejected", updated_at = NOW() WHERE id = ? AND userType = "merchant"', [merchantId]);
+    
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Merchant not found' });
+    }
+
+    res.json({ success: true, message: 'Merchant rejected successfully' });
+  } catch (err) {
+    console.error('Error rejecting merchant:', err);
+    res.status(500).json({ success: false, message: 'Server error rejecting merchant' });
+  }
+});
+
+// Generic status update endpoint for merchants
+router.put('/merchants/:id/status', auth, admin, async (req, res) => {
+  try {
+    const merchantId = parseInt(req.params.id);
+    const { status } = req.body;
+
+    if (!merchantId || isNaN(merchantId)) {
+      return res.status(400).json({ success: false, message: 'Valid merchant ID is required' });
+    }
+
+    if (!['pending', 'approved', 'rejected', 'suspended'].includes(status)) {
+      return res.status(400).json({ success: false, message: 'Invalid status' });
+    }
+
+    const result = await queryAsync('UPDATE users SET status = ?, updated_at = NOW() WHERE id = ? AND userType = "merchant"', [status, merchantId]);
+    
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Merchant not found' });
+    }
+
+    res.json({ success: true, message: 'Merchant status updated successfully' });
+  } catch (err) {
+    console.error('Error updating merchant status:', err);
+    res.status(500).json({ success: false, message: 'Server error updating merchant status' });
+  }
+});
+
+// DELETE /merchants/:id endpoint removed as per requirements
+
+router.post('/merchants/bulk-action', auth, admin, async (req, res) => {
+  try {
+    const { action, merchantIds } = req.body;
+
+    if (!merchantIds || !Array.isArray(merchantIds) || merchantIds.length === 0) {
+      return res.status(400).json({ success: false, message: 'Merchant IDs are required' });
+    }
+
+    if (!['approve', 'reject', 'suspend', 'delete'].includes(action)) {
+      return res.status(400).json({ success: false, message: 'Invalid action' });
+    }
+
+    const validMerchantIds = merchantIds.filter(id => !isNaN(parseInt(id))).map(id => parseInt(id));
+    if (validMerchantIds.length !== merchantIds.length) {
+      return res.status(400).json({ success: false, message: 'All merchant IDs must be valid numbers' });
+    }
+
+    const placeholders = validMerchantIds.map(() => '?').join(',');
+    let result;
+
+    if (action === 'delete') {
+      // Delete businesses first if table exists
+      if (await tableExists('businesses')) {
+        await queryAsync(`DELETE FROM businesses WHERE userId IN (${placeholders})`, validMerchantIds);
+      }
+      
+      // Delete deals if table exists
+      if (await tableExists('deals')) {
+        await queryAsync(`DELETE FROM deals WHERE userId IN (${placeholders})`, validMerchantIds);
+      }
+      
+      // Delete users
+      result = await queryAsync(`DELETE FROM users WHERE id IN (${placeholders}) AND userType = "merchant"`, validMerchantIds);
+    } else {
+      const statusMap = {
+        approve: 'approved',
+        reject: 'rejected',
+        suspend: 'suspended'
+      };
+      
+      const newStatus = statusMap[action];
+      result = await queryAsync(
+        `UPDATE users SET status = ?, updated_at = NOW() WHERE id IN (${placeholders}) AND userType = "merchant"`,
+        [newStatus, ...validMerchantIds]
+      );
+    }
+
+    res.json({
+      success: true,
+      message: `Successfully ${action}d ${result.affectedRows} merchants`,
+      affectedCount: result.affectedRows
+    });
+  } catch (err) {
+    console.error('Error performing bulk action on merchants:', err);
+    res.status(500).json({ success: false, message: 'Server error performing bulk action' });
+  }
+});
+*/
+
+// ===== PARTNER ROUTE ALIASES =====
+// These routes alias the merchant routes for admin partner management
+
+// Get all partners (alias for merchants)
+router.get('/partners', auth, admin, async (req, res) => {
+  try {
+    const {
+      status,
+      category,
+      search,
+      dateFrom,
+      dateTo,
+      limit = 20,
+      offset = 0
+    } = req.query;
+
+    let whereClause = 'WHERE u.userType = "merchant"';
+    const params = [];
+
+    // Apply filters
+    if (status && status !== 'all') {
+      whereClause += ' AND u.status = ?';
+      params.push(status);
+    }
+
+    if (search && search.trim()) {
+      whereClause += ' AND (u.fullName LIKE ? OR u.email LIKE ? OR b.businessName LIKE ? OR u.phone LIKE ?)';
+      const searchTerm = `%${search.trim()}%`;
+      params.push(searchTerm, searchTerm, searchTerm, searchTerm);
+    }
+
+    if (dateFrom) {
+      whereClause += ' AND DATE(u.createdAt) >= ?';
+      params.push(dateFrom);
+    }
+
+    if (dateTo) {
+      whereClause += ' AND DATE(u.createdAt) <= ?';
+      params.push(dateTo);
+    }
+
+    if (category && category !== 'all') {
+      whereClause += ' AND b.businessCategory = ?';
+      params.push(category);
+    }
+
+    // Check if businesses table exists
+    const businessTableExists = await tableExists('businesses');
+    
+    let query;
+    if (businessTableExists) {
+      query = `
+        SELECT 
+          u.id, u.fullName, u.email, u.phone, u.address, u.community, 
+          u.membershipType, u.status, u.createdAt, u.lastLogin,
+          b.businessId, b.businessName, b.businessDescription, b.businessCategory,
+          b.businessAddress, b.businessPhone, b.businessEmail, b.website,
+          b.businessLicense, b.taxId, b.status as businessStatus,
+          p.name as planName, p.price as planPrice, p.billingCycle, p.currency, p.features
+        FROM users u
+        LEFT JOIN businesses b ON u.id = b.userId
+        LEFT JOIN plans p ON u.membershipType = p.key
+        ${whereClause}
+        ORDER BY u.createdAt DESC
+        LIMIT ? OFFSET ?
+      `;
+    } else {
+      // Fallback query without businesses table
+      query = `
+        SELECT 
+          u.id, u.fullName, u.email, u.phone, u.address, u.community, 
+          u.membershipType, u.status, u.createdAt, u.lastLogin,
+          NULL as businessId, NULL as businessName, NULL as businessDescription, 
+          NULL as businessCategory, NULL as businessAddress, NULL as businessPhone, 
+          NULL as businessEmail, NULL as website, NULL as businessLicense, 
+          NULL as taxId, NULL as businessStatus,
+          p.name as planName, p.price as planPrice, p.billingCycle, p.currency, p.features
+        FROM users u
+        LEFT JOIN plans p ON u.membershipType = p.key
+        ${whereClause}
+        ORDER BY u.createdAt DESC
+        LIMIT ? OFFSET ?
+      `;
+    }
+
+    params.push(parseInt(limit), parseInt(offset));
+    const merchants = await queryAsync(query, params);
+
+    // Get total count
+    let countQuery = `SELECT COUNT(*) as total FROM users u`;
+    if (businessTableExists) {
+      countQuery += ' LEFT JOIN businesses b ON u.id = b.userId';
+    }
+    countQuery += ` ${whereClause}`;
+    
+    const countParams = params.slice(0, -2); // Remove limit and offset
+    const totalResult = await queryAsync(countQuery, countParams);
+    const totalMerchants = totalResult[0]?.total || 0;
+
+    res.json({
+      success: true,
+      merchants,
+      totalMerchants,
+      pagination: {
+        limit: parseInt(limit),
+        offset: parseInt(offset),
+        total: totalMerchants
+      }
+    });
+  } catch (err) {
+    console.error('Error fetching partners:', err);
+    res.status(500).json({ success: false, message: 'Server error fetching partners' });
+  }
+});
+
+// Get single partner (alias for merchant)
+router.get('/partners/:id', auth, admin, async (req, res) => {
+  try {
+    const merchantId = parseInt(req.params.id);
+    if (!merchantId || isNaN(merchantId)) {
+      return res.status(400).json({ success: false, message: 'Valid partner ID is required' });
+    }
+
+    const businessTableExists = await tableExists('businesses');
+    
+    let query;
+    if (businessTableExists) {
+      query = `
+        SELECT 
+          u.id, u.fullName, u.email, u.phone, u.address, u.community, 
+          u.membershipType, u.status, u.createdAt, u.lastLogin,
+          b.businessId, b.businessName, b.businessDescription, b.businessCategory,
+          b.businessAddress, b.businessPhone, b.businessEmail, b.website,
+          b.businessLicense, b.taxId, b.status as businessStatus,
+          p.name as planName, p.price as planPrice, p.billingCycle, p.currency, p.features
+        FROM users u
+        LEFT JOIN businesses b ON u.id = b.userId
+        LEFT JOIN plans p ON u.membershipType = p.key
+        WHERE u.id = ? AND u.userType = "merchant"
+      `;
+    } else {
+      query = `
+        SELECT 
+          u.id, u.fullName, u.email, u.phone, u.address, u.community, 
+          u.membershipType, u.status, u.createdAt, u.lastLogin,
+          NULL as businessId, NULL as businessName, NULL as businessDescription, 
+          NULL as businessCategory, NULL as businessAddress, NULL as businessPhone, 
+          NULL as businessEmail, NULL as website, NULL as businessLicense, 
+          NULL as taxId, NULL as businessStatus,
+          p.name as planName, p.price as planPrice, p.billingCycle, p.currency, p.features
+        FROM users u
+        LEFT JOIN plans p ON u.membershipType = p.key
+        WHERE u.id = ? AND u.userType = "merchant"
+      `;
+    }
+
+    const result = await queryAsync(query, [merchantId]);
+    
+    if (result.length === 0) {
+      return res.status(404).json({ success: false, message: 'Partner not found' });
+    }
+
+    res.json({ success: true, merchant: result[0] });
+  } catch (err) {
+    console.error('Error fetching partner:', err);
+    res.status(500).json({ success: false, message: 'Server error fetching partner' });
+  }
+});
+
+// Create partner (alias for merchant)
+router.post('/partners', auth, admin, async (req, res) => {
+  try {
+    const {
+      fullName,
+      email,
+      phone,
+      address,
+      community,
+      membershipType,
+      status,
+      businessInfo
+    } = req.body;
+
+    // Check if email already exists
+    const existingUser = await queryAsync('SELECT id FROM users WHERE email = ?', [email]);
+    if (existingUser.length > 0) {
+      return res.status(400).json({ success: false, message: 'User with this email already exists' });
+    }
+
+    // Create user
+    const hashedPassword = await bcrypt.hash('tempPassword123!', 10);
+    const userResult = await queryAsync(
+      'INSERT INTO users (fullName, email, password, phone, address, community, membershipType, userType, status) VALUES (?, ?, ?, ?, ?, ?, ?, "merchant", ?)',
+      [fullName, email, hashedPassword, phone, address, community, membershipType || 'business_basic', status || 'pending']
+    );
+
+    const userId = userResult.insertId;
+
+    // Create business record if businessInfo provided and table exists
+    let businessId = null;
+    if (businessInfo && await tableExists('businesses')) {
+      businessId = `BIZ${Date.now().toString().slice(-6)}${Math.floor(Math.random() * 100)}`;
+      await queryAsync(
+        'INSERT INTO businesses (businessId, userId, businessName, businessDescription, businessCategory, businessAddress, businessPhone, businessEmail, website, businessLicense, taxId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [
+          businessId,
+          userId,
+          businessInfo.businessName,
+          businessInfo.businessDescription,
+          businessInfo.businessCategory,
+          businessInfo.businessAddress,
+          businessInfo.businessPhone,
+          businessInfo.businessEmail,
+          businessInfo.website,
+          businessInfo.businessLicense,
+          businessInfo.taxId
+        ]
+      );
+    }
+
+    res.json({ 
+      success: true, 
+      message: 'Partner created successfully',
+      userId: userId,
+      businessId: businessId
+    });
+  } catch (err) {
+    console.error('Error creating partner:', err);
+    res.status(500).json({ success: false, message: 'Server error creating partner' });
+  }
+});
+
+// Update partner
+router.put('/partners/:id', auth, admin, async (req, res) => {
+  try {
+    const merchantId = parseInt(req.params.id);
+    if (!merchantId || isNaN(merchantId)) {
+      return res.status(400).json({ success: false, message: 'Valid partner ID is required' });
+    }
+
+    // Accept both legacy flat and new userInfo/businessInfo payloads
+    let userInfo = req.body.userInfo || {};
+    let businessInfo = req.body.businessInfo || {};
+    // If flat fields (from old frontend), map them to userInfo/businessInfo
+    const flat = req.body;
+    // User fields
+    const allowedUserFields = ['fullName', 'ownerName', 'email', 'phone', 'address', 'community', 'membershipType', 'status'];
+    allowedUserFields.forEach(field => {
+      if (flat[field] !== undefined && userInfo[field] === undefined) {
+        userInfo[field] = flat[field];
+      }
+    });
+    // Business fields
+    const allowedBusinessFields = [
+      'businessName', 'businessDescription', 'description', 'businessCategory', 'category', 'businessAddress',
+      'address', 'city', 'state', 'zipCode', 'businessPhone', 'phone', 'businessEmail', 'email', 'website', 'businessLicense', 'taxId', 'planType', 'plan'
+    ];
+    allowedBusinessFields.forEach(field => {
+      if (flat[field] !== undefined && businessInfo[field] === undefined) {
+        businessInfo[field] = flat[field];
+      }
+    });
+
+    // Map ownerName to fullName for userInfo
+    if (userInfo.ownerName && !userInfo.fullName) userInfo.fullName = userInfo.ownerName;
+    if (businessInfo.category && !businessInfo.businessCategory) businessInfo.businessCategory = businessInfo.category;
+    if (businessInfo.description && !businessInfo.businessDescription) businessInfo.businessDescription = businessInfo.description;
+    if (businessInfo.planType && !userInfo.membershipType) userInfo.membershipType = businessInfo.planType;
+    if (businessInfo.plan && !userInfo.membershipType) userInfo.membershipType = businessInfo.plan;
+
+    // Update user information
+    const userUpdates = [];
+    const userValues = [];
+    const userDbFields = ['fullName', 'email', 'phone', 'address', 'community', 'membershipType', 'status'];
+    userDbFields.forEach(field => {
+      if (userInfo[field] !== undefined) {
+        userUpdates.push(`${field} = ?`);
+        userValues.push(userInfo[field]);
+      }
+    });
+    if (userUpdates.length > 0) {
+      userUpdates.push('updated_at = NOW()');
+      userValues.push(merchantId);
+      const userUpdateQuery = `UPDATE users SET ${userUpdates.join(', ')} WHERE id = ? AND userType = "merchant"`;
+      await queryAsync(userUpdateQuery, userValues);
+    }
+
+    // Update business information if table exists
+    if (await tableExists('businesses')) {
+      const businessDbFields = [
+        'businessName', 'businessDescription', 'businessCategory', 'businessAddress',
+        'businessPhone', 'businessEmail', 'website', 'businessLicense', 'taxId'
+      ];
+      const businessUpdates = [];
+      const businessValues = [];
+      // Compose businessAddress if needed
+      if (!businessInfo.businessAddress) {
+        let addr = businessInfo.address || '';
+        if (businessInfo.city) addr += (addr ? ', ' : '') + businessInfo.city;
+        if (businessInfo.state) addr += (addr ? ', ' : '') + businessInfo.state;
+        if (businessInfo.zipCode) addr += (addr ? ', ' : '') + businessInfo.zipCode;
+        if (addr) businessInfo.businessAddress = addr;
+      }
+      businessDbFields.forEach(field => {
+        if (businessInfo[field] !== undefined) {
+          businessUpdates.push(`${field} = ?`);
+          businessValues.push(businessInfo[field]);
+        }
+      });
+      if (businessUpdates.length > 0) {
+        businessUpdates.push('updated_at = NOW()');
+        businessValues.push(merchantId);
+        const businessUpdateQuery = `UPDATE businesses SET ${businessUpdates.join(', ')} WHERE userId = ?`;
+        await queryAsync(businessUpdateQuery, businessValues);
+      }
+    }
+
+    res.json({ success: true, message: 'Partner updated successfully' });
+  } catch (err) {
+    console.error('Error updating partner:', err);
+    res.status(500).json({ success: false, message: 'Server error updating partner' });
+  }
+});
+
+// Approve partner
+router.post('/partners/:id/approve', auth, admin, async (req, res) => {
+  try {
+    const merchantId = parseInt(req.params.id);
+    if (!merchantId || isNaN(merchantId)) {
+      return res.status(400).json({ success: false, message: 'Valid partner ID is required' });
+    }
+
+    const result = await queryAsync(
+      'UPDATE users SET status = "approved", updated_at = NOW() WHERE id = ? AND userType = "merchant"',
+      [merchantId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Partner not found' });
+    }
+
+    res.json({ success: true, message: 'Partner approved successfully' });
+  } catch (err) {
+    console.error('Error approving partner:', err);
+    res.status(500).json({ success: false, message: 'Server error approving partner' });
+  }
+});
+
+// Reject partner
+router.post('/partners/:id/reject', auth, admin, async (req, res) => {
+  try {
+    const merchantId = parseInt(req.params.id);
+    if (!merchantId || isNaN(merchantId)) {
+      return res.status(400).json({ success: false, message: 'Valid partner ID is required' });
+    }
+
+    const result = await queryAsync(
+      'UPDATE users SET status = "rejected", updated_at = NOW() WHERE id = ? AND userType = "merchant"',
+      [merchantId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Partner not found' });
+    }
+
+    res.json({ success: true, message: 'Partner rejected successfully' });
+  } catch (err) {
+    console.error('Error rejecting partner:', err);
+    res.status(500).json({ success: false, message: 'Server error rejecting partner' });
+  }
+});
+
+// Update partner status
+router.put('/partners/:id/status', auth, admin, async (req, res) => {
+  try {
+    const merchantId = parseInt(req.params.id);
+    const { status } = req.body;
+
+    if (!merchantId || isNaN(merchantId)) {
+      return res.status(400).json({ success: false, message: 'Valid partner ID is required' });
+    }
+
+    if (!status || !['approved', 'rejected', 'suspended', 'pending'].includes(status)) {
+      return res.status(400).json({ success: false, message: 'Valid status is required' });
+    }
+
+    const result = await queryAsync(
+      'UPDATE users SET status = ?, updated_at = NOW() WHERE id = ? AND userType = "merchant"',
+      [status, merchantId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Partner not found' });
+    }
+
+    res.json({ success: true, message: 'Partner status updated successfully' });
+  } catch (err) {
+    console.error('Error updating partner status:', err);
+    res.status(500).json({ success: false, message: 'Server error updating partner status' });
+  }
+});
+
+// Delete partner
+// DELETE /partners/:id endpoint removed as per requirements
+
+// Bulk partner actions
+// POST /partners/bulk-action endpoint delete logic removed as per requirements
+
+// ===== DEALS MANAGEMENT =====
+router.get('/deals', auth, admin, async (req, res) => {
+  try {
+    if (!(await tableExists('deals'))) {
+      return res.json({
+        success: true,
+        deals: [],
+        message: 'Deals table not found'
+      });
+    }
+
+    const {
+      status,
+      category,
+      businessId,
+      search,
+      dateFrom,
+      dateTo,
+      limit = 20,
+      offset = 0
+    } = req.query;
+
+    let whereClause = 'WHERE 1=1';
+    const params = [];
+
+    if (status && status !== 'all') {
+      whereClause += ' AND d.status = ?';
+      params.push(status);
+    }
+
+    if (category && category !== 'all') {
+      whereClause += ' AND d.category = ?';
+      params.push(category);
+    }
+
+    if (businessId && businessId !== 'all') {
+      whereClause += ' AND d.businessId = ?';
+      params.push(businessId);
+    }
+
+    if (search && search.trim()) {
+      whereClause += ' AND (d.title LIKE ? OR d.description LIKE ?)';
+      const searchTerm = `%${search.trim()}%`;
+      params.push(searchTerm, searchTerm);
+    }
+
+    if (dateFrom) {
+      whereClause += ' AND DATE(d.created_at) >= ?';
+      params.push(dateFrom);
+    }
+
+    if (dateTo) {
+      whereClause += ' AND DATE(d.created_at) <= ?';
+      params.push(dateTo);
+    }
+
+    const businessTableExists = await tableExists('businesses');
+    
+    let query;
+    if (businessTableExists) {
+      query = `
+        SELECT 
+          d.*, 
+          b.businessName,
+          u.fullName as merchantName,
+          u.email as merchantEmail
+        FROM deals d
+        LEFT JOIN businesses b ON d.businessId = b.businessId
+        LEFT JOIN users u ON d.userId = u.id
+        ${whereClause}
+        ORDER BY d.created_at DESC
+        LIMIT ? OFFSET ?
+      `;
+    } else {
+      query = `
+        SELECT 
+          d.*,
+          u.fullName as merchantName,
+          u.email as merchantEmail,
+          NULL as businessName
+        FROM deals d
+        LEFT JOIN users u ON d.userId = u.id
+        ${whereClause}
+        ORDER BY d.created_at DESC
+        LIMIT ? OFFSET ?
+      `;
+    }
+
+    params.push(parseInt(limit), parseInt(offset));
+
+    const deals = await queryAsync(query, params);
+
+    // Get total count
+    const countQuery = `SELECT COUNT(*) as total FROM deals d ${whereClause}`;
+    const countParams = params.slice(0, -2);
+    const countResult = await queryAsync(countQuery, countParams);
+    const total = countResult[0]?.total || 0;
+
+    res.json({
+      success: true,
+      deals,
+      total
+    });
+  } catch (err) {
+    console.error('Error fetching deals:', err);
+    res.status(500).json({ success: false, message: 'Server error fetching deals' });
+  }
+});
+
+router.delete('/deals/:id', auth, admin, async (req, res) => {
+  try {
+    const dealId = parseInt(req.params.id);
+    if (!dealId || isNaN(dealId)) {
+      return res.status(400).json({ success: false, message: 'Valid deal ID is required' });
+    }
+
+    if (!(await tableExists('deals'))) {
+      return res.status(404).json({ success: false, message: 'Deals table not found' });
+    }
+
+    const result = await queryAsync('DELETE FROM deals WHERE id = ?', [dealId]);
+    
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Deal not found' });
+    }
+
+    res.json({ success: true, message: 'Deal deleted successfully' });
+  } catch (err) {
+    console.error('Error deleting deal:', err);
+    res.status(500).json({ success: false, message: 'Server error deleting deal' });
+  }
+});
+
+// ===== SETTINGS MANAGEMENT =====
+// Public settings endpoint for frontend
+router.get('/settings/public', async (req, res) => {
+  try {
+    let settings = {
+      socialMediaRequirements: {},
+      features: {
+        show_social_media_home: false,
+        show_statistics: true,
+        business_directory: true
+      },
+      content: {
+        terms_conditions: 'By using this service, you agree to abide by all rules and regulations set forth by the Indians in Ghana community. Membership benefits are subject to change without prior notice.'
+      }
+    };
+
+    console.log('📱 Loading public settings...');
+
+    // Try to load from database if settings table exists
+    if (await tableExists('settings')) {
+      try {
+        const dbSettings = await queryAsync('SELECT * FROM settings');
+        console.log('🔍 Database settings found:', dbSettings.length);
+        
+        if (dbSettings.length > 0) {
+          // Parse social media requirements
+          const socialMediaRows = dbSettings.filter(s => s.section === 'socialMediaRequirements');
+          if (socialMediaRows.length > 0) {
+            settings.socialMediaRequirements = {};
+            socialMediaRows.forEach(row => {
+              const key = row.key.replace('socialMediaRequirements.', '');
+              try {
+                settings.socialMediaRequirements[key] = JSON.parse(row.value);
+              } catch (e) {
+                settings.socialMediaRequirements[key] = row.value;
+              }
+            });
+            console.log('✅ Social media settings loaded:', Object.keys(settings.socialMediaRequirements));
+          }
+
+          // Parse features
+          const featureRows = dbSettings.filter(s => s.section === 'featureToggles');
+          featureRows.forEach(row => {
+            const key = row.key.replace('featureToggles.', '');
+            if (key === 'show_social_media_home') {
+              settings.features.show_social_media_home = row.value === 'true';
+            } else if (key === 'show_statistics') {
+              settings.features.show_statistics = row.value === 'true';
+            } else if (key === 'business_directory') {
+              settings.features.business_directory = row.value === 'true';
+            }
+          });
+
+          // Parse content
+          const contentRows = dbSettings.filter(s => s.section === 'content');
+          contentRows.forEach(row => {
+            const key = row.key.replace('content.', '');
+            settings.content[key] = row.value;
+          });
+        }
+      } catch (settingsError) {
+        console.warn('Error loading settings from database:', settingsError);
+      }
+    }
+
+    console.log('📤 Sending public settings:', {
+      hasSocialMedia: Object.keys(settings.socialMediaRequirements).length > 0,
+      showSocialHome: settings.features.show_social_media_home,
+      socialPlatforms: Object.keys(settings.socialMediaRequirements)
+    });
+
+    res.json({
+      success: true,
+      settings
+    });
+  } catch (err) {
+    console.error('Error fetching public admin settings:', err);
+    res.status(500).json({ success: false, message: 'Server error fetching settings' });
+  }
+});
+
+router.get('/settings', auth, admin, async (req, res) => {
+  try {
+    let settings = {
+      socialMediaRequirements: {
+        facebook: false,
+        instagram: false,
+        twitter: false,
+        linkedin: false,
+        youtube: false,
+        tiktok: false
+      },
+      featureToggles: {
+        userRegistration: true,
+        merchantRegistration: true,
+        dealPosting: true,
+        membershipCards: true,
+        socialLogin: false,
+        notifications: true,
+        analytics: true,
+        show_social_media_home: false
+      },
+      systemSettings: {
+        siteName: 'Indians in Ghana',
+        maintenanceMode: false,
+        maxUsersPerPlan: 1000,
+        sessionTimeout: 24,
+        enableEmailVerification: false,
+        defaultUserPlan: 'community',
+        defaultMerchantPlan: 'basic_business'
+      }
+    };
+
+    // Try to load from database if settings table exists
+    if (await tableExists('settings')) {
+      try {
+        const dbSettings = await queryAsync('SELECT * FROM settings');
+        if (dbSettings.length > 0) {
+          // Merge database settings with defaults
+          dbSettings.forEach(setting => {
+            const [section, key] = setting.key.split('.');
+            if (settings[section] && key) {
+              settings[section][key] = setting.value === 'true' ? true : 
+                                      setting.value === 'false' ? false : 
+                                      setting.value;
+            }
+          });
+        }
+      } catch (settingsError) {
+        console.warn('Error loading settings from database:', settingsError);
+      }
+    }
+
+    res.json({
+      success: true,
+      ...settings
+    });
+  } catch (err) {
+    console.error('Error fetching admin settings:', err);
+    res.status(500).json({ success: false, message: 'Server error fetching settings' });
+  }
+});
+
+router.put('/settings', auth, admin, async (req, res) => {
+  try {
+    const { settings } = req.body;
+    
+    if (!settings) {
+      return res.status(400).json({ success: false, message: 'Settings data is required' });
+    }
+
+    // Save to database if settings table exists
+    if (await tableExists('settings')) {
+      try {
+        // Clear existing settings
+        await queryAsync('DELETE FROM settings');
+        
+        // Insert new settings
+        const insertPromises = [];
+        
+        Object.keys(settings).forEach(section => {
+          if (typeof settings[section] === 'object') {
+            Object.keys(settings[section]).forEach(key => {
+              const value = settings[section][key];
+              insertPromises.push(
+                queryAsync(
+                  'INSERT INTO settings (`key`, value, section, updated_at) VALUES (?, ?, ?, NOW())',
+                  [`${section}.${key}`, value.toString(), section]
+                )
+              );
+            });
+          }
+        });
+        
+        await Promise.all(insertPromises);
+      } catch (settingsError) {
+        console.warn('Error saving settings to database:', settingsError);
+      }
+    }
+
+    res.json({ success: true, message: 'Settings updated successfully' });
+  } catch (err) {
+    console.error('Error updating admin settings:', err);
+    res.status(500).json({ success: false, message: 'Server error updating settings' });
+  }
+});
+
+// ===== ANALYTICS ENDPOINTS =====
+router.get('/analytics', auth, admin, async (req, res) => {
+  try {
+    const { period = '30' } = req.query;
+    const days = parseInt(period);
+
+    let analytics = {
+      userGrowth: [],
+      planDistribution: [],
+      dealPerformance: [],
+      revenueData: [],
+      conversionRates: {
+        userToMerchant: 0,
+        planUpgrades: 0,
+        dealRedemptions: 0
+      }
+    };
+
+    // User growth over time
+    try {
+      const userGrowth = await queryAsync(`
+        SELECT DATE(createdAt) as date, COUNT(*) as count
+        FROM users 
+        WHERE createdAt >= DATE_SUB(NOW(), INTERVAL ? DAY)
+        GROUP BY DATE(createdAt)
+        ORDER BY date ASC
+      `, [days]);
+      
+      analytics.userGrowth = userGrowth.map(row => ({
+        date: row.date,
+        users: row.count
+      }));
+    } catch (err) {
+      console.warn('Error fetching user growth:', err);
+    }
+
+    // Plan distribution
+    try {
+      const planDist = await queryAsync(`
+        SELECT membershipType as plan, COUNT(*) as count
+        FROM users 
+        WHERE membershipType IS NOT NULL
+        GROUP BY membershipType
+      `);
+      
+      analytics.planDistribution = planDist.map(row => ({
+        plan: row.plan,
+        users: row.count
+      }));
+    } catch (err) {
+      console.warn('Error fetching plan distribution:', err);
+    }
+
+    // Deal performance (if deals table exists)
+    if (await tableExists('deals')) {
+      try {
+        const dealPerf = await queryAsync(`
+          SELECT status, COUNT(*) as count
+          FROM deals 
+          WHERE created_at >= DATE_SUB(NOW(), INTERVAL ? DAY)
+          GROUP BY status
+        `, [days]);
+        
+        analytics.dealPerformance = dealPerf.map(row => ({
+          status: row.status,
+          count: row.count
+        }));
+      } catch (err) {
+        console.warn('Error fetching deal performance:', err);
+      }
+    }
+
+    res.json({ success: true, analytics });
+  } catch (err) {
+    console.error('Error fetching analytics:', err);
+    res.status(500).json({ success: false, message: 'Server error fetching analytics' });
+  }
+});
+
+router.get('/plan-analytics', auth, admin, async (req, res) => {
+  try {
+    let planAnalytics = {
+      planUsage: [],
+      upgradeConversions: [],
+      upcomingExpiries: { users: 0, merchants: 0 },
+      revenueByPlan: [],
+      planTrends: []
+    };
+
+    // Plan usage statistics
+    try {
+      const planUsage = await queryAsync(`
+        SELECT 
+          membershipType as plan,
+          userType,
+          COUNT(*) as count
+        FROM users 
+        WHERE membershipType IS NOT NULL
+        GROUP BY membershipType, userType
+      `);
+      
+      planAnalytics.planUsage = planUsage.map(row => ({
+        plan: row.plan,
+        userType: row.userType,
+        count: row.count
+      }));
+    } catch (err) {
+      console.warn('Error fetching plan usage:', err);
+    }
+
+    // Upcoming expiries
+    try {
+      const userExpiries = await queryAsync(`
+        SELECT COUNT(*) as count
+        FROM users 
+        WHERE validationDate IS NOT NULL 
+        AND validationDate <= DATE_ADD(NOW(), INTERVAL 30 DAY)
+        AND userType != 'merchant'
+      `);
+      
+      const merchantExpiries = await queryAsync(`
+        SELECT COUNT(*) as count
+        FROM users 
+        WHERE validationDate IS NOT NULL 
+        AND validationDate <= DATE_ADD(NOW(), INTERVAL 30 DAY)
+        AND userType = 'merchant'
+      `);
+      
+      planAnalytics.upcomingExpiries = {
+        users: userExpiries[0]?.count || 0,
+        merchants: merchantExpiries[0]?.count || 0
+      };
+    } catch (err) {
+      console.warn('Error fetching expiries:', err);
+    }
+
+    // Plan trends over last 6 months
+    try {
+      const planTrends = await queryAsync(`
+        SELECT 
+          DATE_FORMAT(planAssignedAt, '%Y-%m') as month,
+          membershipType as plan,
+          COUNT(*) as assignments
+        FROM users 
+        WHERE planAssignedAt >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+        AND planAssignedAt IS NOT NULL
+        GROUP BY DATE_FORMAT(planAssignedAt, '%Y-%m'), membershipType
+        ORDER BY month ASC
+      `);
+      
+      planAnalytics.planTrends = planTrends.map(row => ({
+        month: row.month,
+        plan: row.plan,
+        assignments: row.assignments
+      }));
+    } catch (err) {
+      console.warn('Error fetching plan trends:', err);
+    }
+
+    res.json({ success: true, analytics: planAnalytics });
+  } catch (err) {
+    console.error('Error fetching plan analytics:', err);
+    res.status(500).json({ success: false, message: 'Server error fetching plan analytics' });
+  }
+});
+
+// ===== PLAN MANAGEMENT ENDPOINTS =====
+router.put('/plans/:id', auth, admin, async (req, res) => {
+  try {
+    const planId = req.params.id;
+    const updateData = req.body;
+
+    if (!(await tableExists('plans'))) {
+      return res.status(404).json({ success: false, message: 'Plans table not found' });
+    }
+
+    const allowedFields = ['name', 'description', 'price', 'currency', 'billingCycle', 'features', 'dealAccess', 'isActive', 'priority', 'maxUsers', 'max_deals_per_month'];
+    const updates = [];
+    const values = [];
+
+    Object.keys(updateData).forEach(field => {
+      if (allowedFields.includes(field) && updateData[field] !== undefined) {
+        updates.push(`${field} = ?`);
+        values.push(updateData[field]);
+      }
+    });
+
+    if (updates.length === 0) {
+      return res.status(400).json({ success: false, message: 'No valid fields to update' });
+    }
+
+    updates.push('updated_at = NOW()');
+    values.push(planId);
+
+    const updateQuery = `UPDATE plans SET ${updates.join(', ')} WHERE id = ?`;
+    const result = await queryAsync(updateQuery, values);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Plan not found' });
+    }
+
+    res.json({ success: true, message: 'Plan updated successfully' });
+  } catch (err) {
+    console.error('Error updating plan:', err);
+    res.status(500).json({ success: false, message: 'Server error updating plan' });
+  }
+});
+
+router.post('/plans', auth, admin, async (req, res) => {
+  try {
+    const planData = req.body;
+
+    if (!(await tableExists('plans'))) {
+      return res.status(404).json({ success: false, message: 'Plans table not found' });
+    }
+
+    const requiredFields = ['key', 'name', 'type', 'price'];
+    const missingFields = requiredFields.filter(field => !planData[field]);
+    
+    if (missingFields.length > 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: `Missing required fields: ${missingFields.join(', ')}` 
+      });
+    }
+
+    const result = await queryAsync(`
+      INSERT INTO plans (
+        \`key\`, name, description, price, currency, billingCycle,
+        features, dealAccess, type, isActive, priority, maxUsers, max_deals_per_month,
+        created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+    `, [
+      planData.key,
+      planData.name,
+      planData.description || '',
+      planData.price || 0,
+      planData.currency || 'GHS',
+      planData.billingCycle || 'monthly',
+      planData.features || '',
+      planData.dealAccess || '',
+      planData.type || 'user',
+      planData.isActive !== false,
+      planData.priority || 999,
+      planData.maxUsers || null,
+      planData.max_deals_per_month || null
+    ]);
+
+    res.status(201).json({
+      success: true,
+      message: 'Plan created successfully',
+      planId: result.insertId
+    });
+  } catch (err) {
+    console.error('Error creating plan:', err);
+    if (err.code === 'ER_DUP_ENTRY') {
+      res.status(400).json({ success: false, message: 'Plan with this key already exists' });
+    } else {
+      res.status(500).json({ success: false, message: 'Server error creating plan' });
+    }
+  }
+});
+
+router.delete('/plans/:id', auth, admin, async (req, res) => {
+  try {
+    const planId = req.params.id;
+
+    if (!(await tableExists('plans'))) {
+      return res.status(404).json({ success: false, message: 'Plans table not found' });
+    }
+
+    // Check if plan is in use
+    const planInUse = await queryAsync('SELECT COUNT(*) as count FROM users WHERE membershipType = (SELECT `key` FROM plans WHERE id = ?)', [planId]);
+    
+    if (planInUse[0]?.count > 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Cannot delete plan that is currently assigned to users' 
+      });
+    }
+
+    const result = await queryAsync('DELETE FROM plans WHERE id = ?', [planId]);
+    
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Plan not found' });
+    }
+
+    res.json({ success: true, message: 'Plan deleted successfully' });
+  } catch (err) {
+    console.error('Error deleting plan:', err);
+    res.status(500).json({ success: false, message: 'Server error deleting plan' });
+  }
+});
+
+router.post('/plans/seed', auth, admin, async (req, res) => {
+  try {
+    const { force = false } = req.body;
+
+    if (!(await tableExists('plans'))) {
+      return res.status(404).json({ success: false, message: 'Plans table not found' });
+    }
+
+    // Check if plans already exist (unless force is true)
+    if (!force) {
+      const existingPlans = await queryAsync('SELECT COUNT(*) as count FROM plans');
+      if (existingPlans[0]?.count > 0) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Plans already exist. Use force=true to recreate.' 
+        });
+      }
+    }
+
+    // Clear existing plans if force is true
+    if (force) {
+      await queryAsync('DELETE FROM plans');
+    }
+
+    // Seed plans
+    const seedPlans = [
+      {
+        key: 'community',
+        name: 'Community Plan',
+        description: 'Basic community access',
+        price: 0,
+        currency: 'FREE',
+        billingCycle: 'lifetime',
+        features: 'Basic directory access,Community updates,Basic support',
+        dealAccess: 'Limited community deals',
+        type: 'user',
+        priority: 1,
+        maxUsers: null,
+        max_deals_per_month: null
+      },
+      {
+        key: 'silver',
+        name: 'Silver Plan',
+        description: 'Enhanced community features',
+        price: 50,
+        currency: 'GHS',
+        billingCycle: 'monthly',
+        features: 'All community features,Priority support,Exclusive deals,Event notifications',
+        dealAccess: 'Silver + Community deals',
+        type: 'user',
+        priority: 2,
+        maxUsers: null,
+        max_deals_per_month: null
+      },
+      {
+        key: 'gold',
+        name: 'Gold Plan',
+        description: 'Premium community experience',
+        price: 150,
+        currency: 'GHS',
+        billingCycle: 'monthly',
+        features: 'All silver features,VIP events,Premium support,Business networking,Priority customer service',
+        dealAccess: 'All exclusive deals',
+        type: 'user',
+        priority: 3,
+        maxUsers: null,
+        max_deals_per_month: null
+      },
+      {
+        key: 'basic_business',
+        name: 'Basic Business',
+        description: 'Essential business features',
+        price: 100,
+        currency: 'GHS',
+        billingCycle: 'monthly',
+        features: 'Basic business listing,Contact information,Business hours',
+        dealAccess: 'Basic deal posting',
+        type: 'merchant',
+        priority: 4,
+        maxUsers: null,
+        max_deals_per_month: 5
+      },
+      {
+        key: 'premium_business',
+        name: 'Premium Business',
+        description: 'Advanced business features',
+        price: 200,
+        currency: 'GHS',
+        billingCycle: 'monthly',
+        features: 'Premium listing,Photos,Reviews,Analytics,Priority support',
+        dealAccess: 'Unlimited deal posting',
+        type: 'merchant',
+        priority: 5,
+        maxUsers: null,
+        max_deals_per_month: null
+      }
+    ];
+
+    for (const plan of seedPlans) {
+      await queryAsync(`
+        INSERT INTO plans (
+          \`key\`, name, description, price, currency, billingCycle,
+          features, dealAccess, type, isActive, priority, maxUsers, max_deals_per_month,
+          created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+      `, [
+        plan.key, plan.name, plan.description, plan.price, plan.currency,
+        plan.billingCycle, plan.features, plan.dealAccess, plan.type,
+        true, plan.priority, plan.maxUsers, plan.max_deals_per_month
+      ]);
+    }
+
+    res.json({ 
+      success: true, 
+      message: `Successfully seeded ${seedPlans.length} plans`,
+      count: seedPlans.length
+    });
+  } catch (err) {
+    console.error('Error seeding plans:', err);
+    res.status(500).json({ success: false, message: 'Server error seeding plans' });
+  }
+});
+
 module.exports = router;
+

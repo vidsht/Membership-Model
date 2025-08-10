@@ -46,7 +46,10 @@
   flex: 1;
   padding: 0.5rem 1rem;
   border: 1px solid #ced4da;
-  border-right: none;.partner-table th {
+  border-right: none;
+}
+
+  .partner-table th {
   background-color: var(--neutral-lightest);
   font-weight: 600;
   font-size: 0.875rem;
@@ -905,4 +908,75 @@
     padding: 0.5rem;
     font-size: 0.875rem;
   }
+}
+
+/* Plan Info Styling */
+.plan-info {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  background: #e3f2fd;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #1976d2;
+}
+
+/* Plan Change Button */
+.btn-icon.plan-change {
+  background: #e3f2fd;
+  color: #1976d2;
+  border: 1px solid #bbdefb;
+}
+
+.btn-icon.plan-change:hover {
+  background: #1976d2;
+  color: white;
+  border-color: #1976d2;
+}
+
+/* Edit Button */
+.btn-icon.edit {
+  background: #fff3e0;
+  color: #f57c00;
+  border: 1px solid #ffcc02;
+}
+
+.btn-icon.edit:hover {
+  background: #f57c00;
+  color: white;
+  border-color: #f57c00;
+}
+
+/* Delete Button */
+.btn-icon.delete {
+  background: #ffebee;
+  color: #d32f2f;
+  border: 1px solid #ffcdd2;
+}
+
+.btn-icon.delete:hover {
+  background: #d32f2f;
+  color: white;
+  border-color: #d32f2f;
+}
+
+/* Plan Assignment Modal */
+.plan-assignment-modal {
+  width: 90%;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* Full Width Detail Items */
+.detail-item.full-width {
+  grid-column: 1 / -1;
+}
+
+.detail-item.full-width .detail-value {
+  max-width: none;
+  white-space: normal;
+  word-wrap: break-word;
 }

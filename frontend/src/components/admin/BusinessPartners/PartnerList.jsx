@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 import { useNotification } from '../../../contexts/NotificationContext';
 import { useAuth } from '../../../contexts/AuthContext';
 import api from '../../../services/api';
 import './PartnerList.css';
 import PartnerDetail from './PartnerDetail';
+import ConfirmationDialog from '../../common/ConfirmationDialog';
+import PlanAssignment from '../PlanManagement/PlanAssignment';
 
 /**
  * PartnerList component for displaying and managing business partners
@@ -19,6 +21,8 @@ const PartnerList = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showBulkActionModal, setShowBulkActionModal] = useState(false);
+  const [showPlanAssignmentModal, setShowPlanAssignmentModal] = useState(false);
+  const [planAssignmentUserId, setPlanAssignmentUserId] = useState(null);
   const [selectedPartners, setSelectedPartners] = useState([]);
   const [editingPartner, setEditingPartner] = useState(null);
   const [confirmationDialog, setConfirmationDialog] = useState({
@@ -69,11 +73,11 @@ const PartnerList = () => {
       
       const response = await api.get(`/admin/partners?${queryParams}`);
       
-      setPartners(response.data.partners || []);
+      setPartners(response.data.merchants || []);
       setPagination({
         ...pagination,
-        totalPages: Math.ceil((response.data.totalPartners || 0) / pagination.pageSize),
-        totalPartners: response.data.totalPartners || 0
+        totalPages: Math.ceil((response.data.totalMerchants || 0) / pagination.pageSize),
+        totalPartners: response.data.totalMerchants || 0
       });
     } catch (error) {
       console.error('Error fetching partners:', error);
@@ -168,7 +172,13 @@ const PartnerList = () => {
   
   const handleConfirmAction = async () => {
     const { partnerId, action } = confirmationDialog;
-    await executePartnerAction(partnerId, action);
+    
+    if (action === 'delete') {
+      await executeDeletePartner(partnerId);
+    } else {
+      await executePartnerAction(partnerId, action);
+    }
+    
     setConfirmationDialog({
       show: false,
       action: '',
@@ -197,7 +207,20 @@ const PartnerList = () => {
     const action = actionMapping[newStatus] || newStatus;
     await handlePartnerAction(partnerId, action);
   };
-    const handleBulkAction = async (action, partnerIds) => {
+
+  const handlePlanChange = (partnerId) => {
+    setPlanAssignmentUserId(partnerId);
+    setShowPlanAssignmentModal(true);
+  };
+
+  const handlePlanAssignmentClose = () => {
+    setShowPlanAssignmentModal(false);
+    setPlanAssignmentUserId(null);
+    // Refresh the partner list to show updated plan information
+    fetchPartners();
+  };
+    
+  const handleBulkAction = async (action, partnerIds) => {
     try {
       const isSessionValid = await validateSession();
       if (!isSessionValid) {
@@ -205,7 +228,7 @@ const PartnerList = () => {
         return;
       }
 
-      const response = await api.post(`/admin/partners/bulk-${action}`, { partnerIds });
+      const response = await api.post(`/admin/partners/bulk-action`, { action, merchantIds: partnerIds });
       showNotification(`Successfully ${action}ed ${partnerIds.length} partners.`, 'success');
       setShowBulkActionModal(false);
       setSelectedPartners([]);
@@ -235,9 +258,20 @@ const PartnerList = () => {
     }
   };
   
-  const handlePartnerEdit = (partner) => {
-    setEditingPartner({ ...partner });
-    setShowEditModal(true);
+  const handlePartnerEdit = async (partner) => {
+    try {
+      // Fetch fresh partner data from backend
+      const response = await api.get(`/admin/partners/${partner.id}`);
+      if (response.data.success) {
+        setEditingPartner(response.data.merchant);
+        setShowEditModal(true);
+      } else {
+        showNotification('Failed to load partner details for editing.', 'error');
+      }
+    } catch (error) {
+      console.error('Error fetching partner details for edit:', error);
+      showNotification('Failed to load partner details. Please try again.', 'error');
+    }
   };
 
   const handleEditSubmit = async (updatedPartner) => {
@@ -262,6 +296,44 @@ const PartnerList = () => {
     setShowEditModal(false);
     setEditingPartner(null);
   };
+
+  const handlePartnerDelete = async (partnerId, partnerName) => {
+    setConfirmationDialog({
+      show: true,
+      action: 'delete',
+      partnerId: partnerId,
+      partnerName: partnerName
+    });
+  };
+
+  const executeDeletePartner = async (partnerId) => {
+    try {
+      const isSessionValid = await validateSession();
+      if (!isSessionValid) {
+        showNotification('Your session has expired. Please log in again.', 'error');
+        return;
+      }
+
+      await api.delete(`/admin/partners/${partnerId}`);
+      
+      showNotification('Partner deleted successfully.', 'success');
+      
+      // Remove the partner from the list
+      setPartners(partners.filter(p => p.id !== partnerId));
+      
+      // Clear selection if deleted partner was selected
+      setSelectedPartners(selectedPartners.filter(id => id !== partnerId));
+      
+    } catch (error) {
+      console.error('Error deleting partner:', error);
+      if (error.response?.status === 401) {
+        handleSessionExpired();
+      } else {
+        showNotification('Failed to delete partner. Please try again.', 'error');
+      }
+    }
+  };
+  
   const handleAddPartner = async (partnerData) => {
     try {
       // Check if all required fields are present
@@ -301,6 +373,43 @@ const PartnerList = () => {
       month: 'short',
       day: 'numeric'
     }).format(date);
+  };
+  
+  const calculateValidityDate = (partner) => {
+    // Use plan assignment date if available, otherwise use created date
+    const baseDate = partner.planAssignedAt || partner.createdAt;
+    if (!baseDate) return 'N/A';
+    
+    const assignedDate = new Date(baseDate);
+    if (isNaN(assignedDate.getTime())) return 'N/A';
+    
+    // Get billing cycle from partner data
+    const billingCycle = partner.billingCycle || 'yearly';
+    let validityDate = new Date(assignedDate);
+    
+    switch (billingCycle.toLowerCase()) {
+      case 'monthly':
+        validityDate.setMonth(validityDate.getMonth() + 1);
+        break;
+      case 'quarterly':
+        validityDate.setMonth(validityDate.getMonth() + 3);
+        break;
+      case 'yearly':
+      case 'annual':
+        validityDate.setFullYear(validityDate.getFullYear() + 1);
+        break;
+      case 'lifetime':
+        return 'Lifetime';
+      case 'weekly':
+        validityDate.setDate(validityDate.getDate() + 7);
+        break;
+      default:
+        // Default to 1 year if unknown billing cycle
+        validityDate.setFullYear(validityDate.getFullYear() + 1);
+        break;
+    }
+    
+    return formatDate(validityDate);
   };
   
   const getStatusBadgeClass = (status) => {
@@ -453,8 +562,10 @@ const PartnerList = () => {
                   </th>
                   <th>Business Name</th>
                   <th>Owner</th>
+                  <th>Contact</th>
                   <th>Category</th>
                   <th>Plan</th>
+                  <th>Valid Till</th>
                   <th>Status</th>
                   <th>Registration Date</th>
                   <th>Actions</th>
@@ -482,13 +593,24 @@ const PartnerList = () => {
                       </div>
                     </td>
                     <td>{partner.ownerName}</td>
+                    <td>
+                      <div className="contact-info">
+                        <div>{partner.email}</div>
+                        <div className="phone-small">{partner.phone}</div>
+                      </div>
+                    </td>
                     <td>{partner.businessCategory}</td>
                     <td>
                       <span className={`plan-badge ${partner.membershipType || 'community'}`}>
-                        {partner.membershipType ? 
-                          (partner.membershipType.charAt(0).toUpperCase() + partner.membershipType.slice(1)) :
+                        {partner.planName || partner.membershipType ? 
+                          (partner.planName || partner.membershipType.charAt(0).toUpperCase() + partner.membershipType.slice(1)) :
                           'Community'
                         }
+                      </span>
+                    </td>
+                    <td>
+                      <span className="validity-date">
+                        {calculateValidityDate(partner)}
                       </span>
                     </td>
                     <td>
@@ -508,6 +630,22 @@ const PartnerList = () => {
                           title="View Details"
                         >
                           <i className="fas fa-eye"></i>
+                        </button>
+                        
+                        <button
+                          className="btn-icon edit"
+                          onClick={() => handlePartnerEdit(partner)}
+                          title="Edit Partner"
+                        >
+                          <i className="fas fa-edit"></i>
+                        </button>
+                        
+                        <button
+                          className="btn-icon plan-change"
+                          onClick={() => handlePlanChange(partner.id)}
+                          title="Change Plan"
+                        >
+                          <i className="fas fa-id-card"></i>
                         </button>
                           {partner.status === 'pending' && (
                           <>
@@ -547,6 +685,14 @@ const PartnerList = () => {
                             <i className="fas fa-check-circle"></i>
                           </button>
                         )}
+
+                        <button
+                          className="btn-icon delete"
+                          onClick={() => handlePartnerDelete(partner.id, partner.businessName || partner.fullName)}
+                          title="Delete Partner"
+                        >
+                          <i className="fas fa-trash"></i>
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -898,51 +1044,31 @@ const PartnerList = () => {
       )}
 
       {/* Confirmation Dialog */}
-      {confirmationDialog.show && (
-        <div className="modal-overlay">
-          <div className="confirmation-dialog">
-            <div className="dialog-header">
-              <i className={`fas ${confirmationDialog.action === 'suspend' ? 'fa-ban' : 'fa-times'}`}></i>
-              <h3>Confirm {confirmationDialog.action === 'suspend' ? 'Suspension' : 'Rejection'}</h3>
-            </div>
-            
-            <div className="dialog-content">
-              <p>
-                Are you sure you want to {confirmationDialog.action} <strong>{confirmationDialog.partnerName}</strong>?
-              </p>
-              
-              {confirmationDialog.action === 'suspend' && (
-                <div className="warning-message">
-                  <i className="fas fa-exclamation-triangle"></i>
-                  <span>This will prevent the partner from accessing their account until they are reactivated.</span>
-                </div>
-              )}
-              
-              {confirmationDialog.action === 'reject' && (
-                <div className="warning-message">
-                  <i className="fas fa-exclamation-triangle"></i>
-                  <span>This will permanently reject the partner's registration request.</span>
-                </div>
-              )}
-            </div>
-            
-            <div className="dialog-actions">
-              <button 
-                className="btn-secondary" 
-                onClick={handleCancelAction}
-              >
-                Cancel
-              </button>
-              <button 
-                className={`btn-${confirmationDialog.action === 'suspend' ? 'warning' : 'danger'}`}
-                onClick={handleConfirmAction}
-              >
-                {confirmationDialog.action === 'suspend' ? 'Suspend Partner' : 'Reject Partner'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmationDialog
+        isOpen={confirmationDialog.show}
+        type={confirmationDialog.action === 'suspend' ? 'warning' : 'danger'}
+        title={`Confirm ${
+          confirmationDialog.action === 'suspend' ? 'Suspension' : 
+          confirmationDialog.action === 'delete' ? 'Deletion' : 
+          'Rejection'
+        }`}
+        message={`Are you sure you want to ${confirmationDialog.action} ${confirmationDialog.partnerName}?`}
+        details={
+          confirmationDialog.action === 'suspend' 
+            ? 'This will prevent the partner from accessing their account until they are reactivated.'
+            : confirmationDialog.action === 'delete'
+            ? 'This action cannot be undone. All partner data and associated information will be permanently removed.'
+            : 'This will permanently reject the partner\'s registration request.'
+        }
+        confirmText={
+          confirmationDialog.action === 'suspend' ? 'Suspend Partner' : 
+          confirmationDialog.action === 'delete' ? 'Delete Partner' : 
+          'Reject Partner'
+        }
+        cancelText="Cancel"
+        onConfirm={handleConfirmAction}
+        onCancel={handleCancelAction}
+      />
 
       {/* Bulk Action Modal */}
       {showBulkActionModal && (
@@ -951,6 +1077,18 @@ const PartnerList = () => {
           onClose={() => setShowBulkActionModal(false)}
           onSubmit={handleBulkAction}
         />
+      )}
+
+      {/* Plan Assignment Modal */}
+      {showPlanAssignmentModal && planAssignmentUserId && (
+        <div className="modal-overlay">
+          <div className="modal-content plan-assignment-modal">
+            <PlanAssignment 
+              userId={planAssignmentUserId}
+              onClose={handlePlanAssignmentClose}
+            />
+          </div>
+        </div>
       )}
     </div>
   );

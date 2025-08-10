@@ -29,6 +29,93 @@
   gap: 1rem;
 }
 
+/* Plan Badge Styles */
+.plan-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-transform: capitalize;
+  border: 1px solid;
+}
+
+.plan-badge.community {
+  background-color: #e3f2fd;
+  color: #1976d2;
+  border-color: #bbdefb;
+}
+
+.plan-badge.basic_business,
+.plan-badge.business_basic {
+  background-color: #f3e5f5;
+  color: #7b1fa2;
+  border-color: #ce93d8;
+}
+
+.plan-badge.premium_business,
+.plan-badge.business_premium {
+  background-color: #fff3e0;
+  color: #f57c00;
+  border-color: #ffcc02;
+}
+
+.plan-badge.enterprise {
+  background-color: #e8f5e8;
+  color: #2e7d32;
+  border-color: #a5d6a7;
+}
+
+/* Validity Date Styles */
+
+/* Valid Till Column Styles (matching UserManagement) */
+.validity-date {
+  font-weight: 500;
+  white-space: nowrap;
+}
+.validity-active {
+  color: #10b981;
+  font-weight: 500;
+}
+.validity-expiring {
+  color: #f59e0b;
+  font-weight: 500;
+}
+.validity-expiring-soon {
+  color: #ef4444;
+  font-weight: 600;
+}
+.validity-expired {
+  color: #ef4444;
+  font-weight: 600;
+  background-color: #fef2f2;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+}
+.validity-none {
+  color: #6b7280;
+  font-style: italic;
+}
+.validity-error {
+  color: #ef4444;
+  font-style: italic;
+  font-size: 0.75rem;
+}
+.days-remaining {
+  display: block;
+  font-size: 0.7rem;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+/* Plan Assignment Modal */
+.plan-assignment-modal {
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
 /* Filters Section */
 .filters-section {
   background: white;

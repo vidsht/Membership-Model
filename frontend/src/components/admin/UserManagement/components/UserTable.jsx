@@ -9,13 +9,11 @@ const UserTable = ({
   onSelectAll,
   onUserAction,
   onStatusChange,
-  onPlanAssignment,
   referenceData,
   loading,
   pagination,
   onPageChange,
   onPageSizeChange,
-  getPlansForUserType,
   calculatePlanValidity
 }) => {
   const formatDate = (dateString) => {
@@ -41,52 +39,25 @@ const UserTable = ({
     }
   };
 
-  const getPlanBadgeClass = (plan) => {
-    switch (plan?.toLowerCase()) {
-      case 'community': return 'plan-community';
-      case 'silver': return 'plan-silver';
-      case 'gold': return 'plan-gold';
-      case 'basic': case 'basic_business': return 'plan-basic';
-      case 'premium': case 'premium_business': return 'plan-premium';
-      default: return 'plan-none';
-    }
-  };
+  // getPlanBadgeClass removed (plan assignment logic)
 
+
+  // Use planValidTill from user object, which is calculated in UserManagement.jsx using the correct logic
   const formatValidTill = (user) => {
-    if (!user.validationDate) {
+    if (!user.planValidTill || user.planValidTill === 'No validity set') {
       return <span className="validity-none">No validity set</span>;
     }
-    
-    try {
-      const validationDate = new Date(user.validationDate);
-      const now = new Date();
-      
-      if (validationDate < now) {
-        return <span className="validity-expired">Expired</span>;
-      }
-      
-      const diffTime = validationDate - now;
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
-      let className = 'validity-active';
-      if (diffDays <= 7) {
-        className = 'validity-expiring-soon';
-      } else if (diffDays <= 30) {
-        className = 'validity-expiring';
-      }
-      
-      return (
-        <span className={className}>
-          {validationDate.toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
-          })} ({diffDays} days)
-        </span>
-      );
-    } catch (error) {
+    if (user.planValidTill === 'Expired') {
+      return <span className="validity-expired">Expired</span>;
+    }
+    if (user.planValidTill === 'Lifetime') {
+      return <span className="validity-lifetime">Lifetime</span>;
+    }
+    if (user.planValidTill === 'Invalid date') {
       return <span className="validity-error">Invalid date</span>;
     }
+    // Otherwise, show the formatted date
+    return <span className="validity-active">{user.planValidTill}</span>;
   };
 
   const handleStatusChange = (userId, newStatus) => {
@@ -95,11 +66,7 @@ const UserTable = ({
     }
   };
 
-  const handlePlanChange = (userId, planKey) => {
-    if (onPlanAssignment) {
-      onPlanAssignment(userId, planKey);
-    }
-  };
+  // handlePlanChange removed (plan assignment logic)
 
   const renderPagination = () => {
     if (!pagination || pagination.totalPages <= 1) return null;
@@ -288,7 +255,7 @@ const UserTable = ({
                   </td>
                   <td>
                     <div className="plan-cell">
-                      <span className={`plan-badge ${getPlanBadgeClass(user.membershipType)}`}>
+                      <span className="plan-badge">
                         {user.membershipType ? user.membershipType.charAt(0).toUpperCase() + user.membershipType.slice(1) : 'None'}
                       </span>
                       {user.isPlanExpired && (
@@ -368,112 +335,9 @@ const UserTable = ({
                         </button>
                       )}
 
-                      {/* Plan Assignment */}
-                      <button
-                        onClick={() => onUserAction(user.id, 'assignPlan')}
-                        className="btn-icon btn-plan"
-                        title="Assign Plan"
-                      >
-                        <i className="fas fa-crown"></i>
-                      </button>
 
-                      {/* Delete Button */}
-                      <button
-                        onClick={() => onUserAction(user.id, 'delete')}
-                        className="btn-icon btn-delete"
-                        title="Delete User"
-                      >
-                        <i className="fas fa-trash"></i>
-                      </button>
 
-                      {/* More Actions Dropdown */}
-                      <div className="dropdown">
-                        <button className="btn-icon btn-more" title="More Actions">
-                          <i className="fas fa-ellipsis-v"></i>
-                        </button>
-                        <div className="dropdown-menu">
-                          {/* Plan Quick Assignment Options */}
-                          {getPlansForUserType && getPlansForUserType(user.userType)?.length > 0 && (
-                            <>
-                              <div className="dropdown-header">Quick Plan Assignment</div>
-                              {getPlansForUserType(user.userType).map((plan) => (
-                                <button
-                                  key={plan.key}
-                                  onClick={() => handlePlanChange(user.id, plan.key)}
-                                  className={`dropdown-item ${user.membershipType === plan.key ? 'active' : ''}`}
-                                >
-                                  <i className={`fas ${plan.key === 'community' ? 'fa-users' : plan.key === 'silver' ? 'fa-medal' : plan.key === 'gold' ? 'fa-crown' : 'fa-briefcase'}`}></i>
-                                  {plan.name}
-                                  {user.membershipType === plan.key && (
-                                    <i className="fas fa-check current-plan"></i>
-                                  )}
-                                </button>
-                              ))}
-                              <div className="dropdown-divider"></div>
-                            </>
-                          )}
-
-                          {/* Additional Actions */}
-                          <button
-                            onClick={() => navigator.clipboard.writeText(user.email)}
-                            className="dropdown-item"
-                          >
-                            <i className="fas fa-copy"></i>
-                            Copy Email
-                          </button>
-                          
-                          {user.phone && (
-                            <button
-                              onClick={() => navigator.clipboard.writeText(user.phone)}
-                              className="dropdown-item"
-                            >
-                              <i className="fas fa-phone"></i>
-                              Copy Phone
-                            </button>
-                          )}
-
-                          <button
-                            onClick={() => window.open(`mailto:${user.email}`, '_blank')}
-                            className="dropdown-item"
-                          >
-                            <i className="fas fa-envelope"></i>
-                            Send Email
-                          </button>
-
-                          <div className="dropdown-divider"></div>
-
-                          {/* Status Change Actions */}
-                          {user.status !== 'approved' && (
-                            <button
-                              onClick={() => handleStatusChange(user.id, 'approved')}
-                              className="dropdown-item text-success"
-                            >
-                              <i className="fas fa-check-circle"></i>
-                              Mark as Approved
-                            </button>
-                          )}
-
-                          {user.status !== 'suspended' && (
-                            <button
-                              onClick={() => handleStatusChange(user.id, 'suspended')}
-                              className="dropdown-item text-warning"
-                            >
-                              <i className="fas fa-ban"></i>
-                              Suspend User
-                            </button>
-                          )}
-
-                          {user.status !== 'rejected' && (
-                            <button
-                              onClick={() => handleStatusChange(user.id, 'rejected')}
-                              className="dropdown-item text-danger"
-                            >
-                              <i className="fas fa-times-circle"></i>
-                              Reject User
-                            </button>
-                          )}
-                        </div>
-                      </div>
+                      {/* More Actions Dropdown removed (plan assignment logic) */}
                     </div>
                   </td>
                 </tr>

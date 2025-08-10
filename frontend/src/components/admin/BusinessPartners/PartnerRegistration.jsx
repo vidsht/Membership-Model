@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useNotification } from '../../../contexts/NotificationContext';
 import api from '../../../services/api';
 import './PartnerRegistration.css';
@@ -11,7 +11,8 @@ import './PartnerRegistration.css';
 const PartnerRegistration = () => {
   const { showNotification } = useNotification();
   const navigate = useNavigate();
-    const [formData, setFormData] = useState({
+  const { partnerId } = useParams();
+  const [formData, setFormData] = useState({
     businessName: '',
     category: '',
     ownerName: '',
@@ -23,14 +24,13 @@ const PartnerRegistration = () => {
     zipCode: '',
     website: '',
     description: '',
-    establishedYear: '',
-    employeeCount: '',
     businessLicense: null,
     taxId: '',
     logoFile: null,
     hasAgreedToTerms: false,
     planType: 'basic_business' // Default to basic business plan
   });
+  const [isEditMode, setIsEditMode] = useState(false);
     const [formErrors, setFormErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [step, setStep] = useState(1);
@@ -41,17 +41,69 @@ const PartnerRegistration = () => {
   useEffect(() => {
     const fetchMerchantPlans = async () => {
       try {
-        const response = await api.get('/admin/plans?userType=merchant');
-        const plans = response.data || [];
-        setMerchantPlans(plans);
+        // Use the same endpoint and logic as UnifiedRegistration.jsx
+        const response = await fetch('/api/plans?type=merchant&isActive=true', { credentials: 'include' });
+        if (response.ok) {
+          const data = await response.json();
+          setMerchantPlans(data.plans || []);
+        } else {
+          setMerchantPlans([]);
+          showNotification('Error loading merchant plans', 'error');
+        }
       } catch (error) {
         console.error('Error fetching merchant plans:', error);
+        setMerchantPlans([]);
         showNotification('Error loading merchant plans', 'error');
       }
     };
-    
     fetchMerchantPlans();
   }, [showNotification]);
+
+  // Fetch merchant data for edit mode
+  useEffect(() => {
+    if (partnerId) {
+      setIsEditMode(true);
+      const fetchMerchant = async () => {
+        try {
+          setIsLoading(true);
+          const response = await api.get(`/admin/partners/${partnerId}`);
+          if (response.data && response.data.success && response.data.merchant) {
+            const m = response.data.merchant;
+            setFormData({
+              businessName: m.businessName || '',
+              category: m.businessCategory || m.category || '',
+              ownerName: m.ownerName || m.fullName || '',
+              email: m.businessEmail || m.email || '',
+              phone: m.businessPhone || m.phone || '',
+              address: m.businessAddress || m.address || '',
+              city: m.city || '',
+              state: m.state || '',
+              zipCode: m.zipCode || '',
+              website: m.website || '',
+              description: m.businessDescription || m.description || '',
+              businessLicense: m.businessLicense || null,
+              taxId: m.taxId || '',
+              logoFile: null, // File input cannot be pre-filled
+              hasAgreedToTerms: true, // Assume true for edit
+              planType: m.plan || m.planType || 'basic_business',
+            });
+          } else {
+            showNotification('Failed to load merchant details for editing.', 'error');
+            navigate('/admin/partners');
+          }
+        } catch (error) {
+          console.error('Error fetching merchant for edit:', error);
+          showNotification('Failed to load merchant details for editing.', 'error');
+          navigate('/admin/partners');
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      fetchMerchant();
+    } else {
+      setIsEditMode(false);
+    }
+  }, [partnerId, navigate, showNotification]);
   
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -131,9 +183,7 @@ const PartnerRegistration = () => {
         newErrors.taxId = 'Tax ID / Business Registration Number is required';
       }
       
-      if (!formData.businessLicense) {
-        newErrors.businessLicense = 'Business license document is required';
-      }
+      // Business license is now optional, so no validation here
     }
     
     setFormErrors(newErrors);
@@ -152,12 +202,10 @@ const PartnerRegistration = () => {
   
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
     // Validate final step
     if (!validateStep(step)) {
       return;
     }
-    
     // Validate terms agreement
     if (!formData.hasAgreedToTerms) {
       setFormErrors({
@@ -166,39 +214,61 @@ const PartnerRegistration = () => {
       });
       return;
     }
-    
     try {
       setIsLoading(true);
-      
-      // Create FormData object for file uploads
-      const formDataObj = new FormData();
-      
-      // Append all text fields
-      Object.keys(formData).forEach(key => {
-        if (key !== 'businessLicense' && key !== 'logoFile') {
-          formDataObj.append(key, formData[key]);
-        }
-      });
-      
-      // Append files
-      if (formData.businessLicense) {
-        formDataObj.append('businessLicense', formData.businessLicense);
+      const businessAddress = `${formData.address}, ${formData.city}, ${formData.state}, ${formData.zipCode}`;
+      if (isEditMode && partnerId) {
+        // Edit mode: update existing merchant
+        const payload = {
+          businessName: formData.businessName,
+          businessCategory: formData.category,
+          ownerName: formData.ownerName,
+          email: formData.email,
+          phone: formData.phone,
+          address: formData.address,
+          city: formData.city,
+          state: formData.state,
+          zipCode: formData.zipCode,
+          website: formData.website,
+          description: formData.description,
+          businessLicense: formData.businessLicense,
+          taxId: formData.taxId,
+          planType: formData.planType,
+        };
+        const response = await api.put(`/admin/partners/${partnerId}`, payload);
+  showNotification('Partner details updated successfully.', 'success');
+  navigate('/admin/');
+      } else {
+        // Add mode: register new merchant
+        const payload = {
+          fullName: formData.ownerName, // Use ownerName as fullName
+          email: formData.email,
+          password: 'tempPassword123', // Admin creates account with temp password
+          phone: formData.phone,
+          plan: formData.planType,
+          socialMediaFollowed: [], // Empty for admin-created accounts
+          businessInfo: {
+            businessName: formData.businessName,
+            businessDescription: formData.description,
+            businessCategory: formData.category,
+            businessPhone: formData.phone,
+            businessEmail: formData.email,
+            website: formData.website,
+            businessLicense: formData.businessLicense,
+            taxId: formData.taxId,
+            businessAddress
+          }
+        };
+        const response = await api.post('/auth/merchant/register', payload);
+  showNotification('Partner registration submitted successfully. It will be reviewed shortly.', 'success');
+  navigate('/admin/');
       }
-      
-      if (formData.logoFile) {
-        formDataObj.append('logoFile', formData.logoFile);
-      }
-      
-      const response = await api.post('/admin/partners/register', formDataObj);
-      
-      showNotification('Partner registration submitted successfully. It will be reviewed shortly.', 'success');
-      navigate('/admin/partners');
     } catch (error) {
-      console.error('Error registering partner:', error);
-      
-      // Handle validation errors from server
+      console.error('Error submitting partner:', error);
       if (error.response?.data?.errors) {
         setFormErrors(error.response.data.errors);
+      } else if (error.response?.data?.message) {
+        showNotification(error.response.data.message, 'error');
       } else {
         showNotification('Failed to submit partner registration. Please try again.', 'error');
       }
@@ -277,7 +347,7 @@ const PartnerRegistration = () => {
                   className={formErrors.planType ? 'error' : ''}
                 >
                   <option value="">Select a plan</option>
-                  {merchantPlans.map(plan => (
+                  {(Array.isArray(merchantPlans) ? merchantPlans : []).map(plan => (
                     <option key={plan.key} value={plan.key}>
                       {plan.name} - {plan.price > 0 ? `${plan.currency} ${plan.price}/${plan.billingCycle}` : 'Free'}
                     </option>
@@ -397,33 +467,6 @@ const PartnerRegistration = () => {
               </div>
             </div>
             
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="establishedYear">Year Established</label>
-                <input
-                  type="number"
-                  id="establishedYear"
-                  name="establishedYear"
-                  min="1900"
-                  max={new Date().getFullYear()}
-                  value={formData.establishedYear}
-                  onChange={handleChange}
-                />
-              </div>
-              
-              <div className="form-group">
-                <label htmlFor="employeeCount">Number of Employees</label>
-                <input
-                  type="number"
-                  id="employeeCount"
-                  name="employeeCount"
-                  min="1"
-                  value={formData.employeeCount}
-                  onChange={handleChange}
-                />
-              </div>
-            </div>
-            
             <div className="form-group">
               <label htmlFor="taxId">Tax ID / Business Registration Number *</label>
               <input
@@ -438,7 +481,7 @@ const PartnerRegistration = () => {
             </div>
             
             <div className="form-group">
-              <label htmlFor="businessLicense">Business License / Registration Document *</label>
+              <label htmlFor="businessLicense">Business License / Registration Document (optional)</label>
               <input
                 type="file"
                 id="businessLicense"
@@ -496,7 +539,7 @@ const PartnerRegistration = () => {
               <div className="review-row">
                 <div className="review-label">Business Plan:</div>
                 <div className="review-value">
-                  {merchantPlans.find(plan => plan.key === formData.planType)?.name || formData.planType}
+                  {(Array.isArray(merchantPlans) ? merchantPlans : []).find(plan => plan.key === formData.planType)?.name || formData.planType}
                 </div>
               </div>
               <div className="review-row">
@@ -526,14 +569,6 @@ const PartnerRegistration = () => {
               <div className="review-row">
                 <div className="review-label">Location:</div>
                 <div className="review-value">{`${formData.city}${formData.state ? ', ' + formData.state : ''}${formData.zipCode ? ' ' + formData.zipCode : ''}`}</div>
-              </div>
-              <div className="review-row">
-                <div className="review-label">Year Established:</div>
-                <div className="review-value">{formData.establishedYear || 'Not provided'}</div>
-              </div>
-              <div className="review-row">
-                <div className="review-label">Number of Employees:</div>
-                <div className="review-value">{formData.employeeCount || 'Not provided'}</div>
               </div>
               <div className="review-row">
                 <div className="review-label">Tax ID / Registration:</div>
@@ -575,15 +610,12 @@ const PartnerRegistration = () => {
       <div className="registration-header">
         <h2>
           <i className="fas fa-store"></i>
-          Business Partner Registration
+          {isEditMode ? 'Edit Business Partner' : 'Business Partner Registration'}
         </h2>
       </div>
-      
       {renderStepIndicator()}
-      
       <form onSubmit={handleSubmit} encType="multipart/form-data">
         {renderFormStep()}
-        
         <div className="form-actions">
           {step > 1 && (
             <button
@@ -595,7 +627,6 @@ const PartnerRegistration = () => {
               <i className="fas fa-arrow-left"></i> Previous
             </button>
           )}
-          
           {step < totalSteps ? (
             <button
               type="button"
@@ -613,11 +644,11 @@ const PartnerRegistration = () => {
             >
               {isLoading ? (
                 <>
-                  <i className="fas fa-spinner fa-spin"></i> Submitting...
+                  <i className="fas fa-spinner fa-spin"></i> {isEditMode ? 'Saving...' : 'Submitting...'}
                 </>
               ) : (
                 <>
-                  <i className="fas fa-check-circle"></i> Submit Registration
+                  <i className="fas fa-check-circle"></i> {isEditMode ? 'Save Changes' : 'Submit Registration'}
                 </>
               )}
             </button>

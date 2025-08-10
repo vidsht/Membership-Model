@@ -146,7 +146,7 @@ const UserForm = () => {
       }
       showNotification('Failed to load user data', 'error');
     }
-  }, [userId, handleSessionExpired, showNotification, navigate]);
+  }, [userId]); // Remove function dependencies to prevent re-rendering
 
   // Initialize component
   useEffect(() => {
@@ -172,7 +172,7 @@ const UserForm = () => {
     };
 
     initializeComponent();
-  }, [isEditMode, fetchReferenceData, fetchUserData, validateSession, handleSessionExpired, showNotification]);
+  }, [isEditMode]); // Remove function dependencies to prevent re-rendering
 
   // Form validation
   const validateForm = () => {

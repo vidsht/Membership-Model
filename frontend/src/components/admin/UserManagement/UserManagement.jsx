@@ -36,11 +36,7 @@ const UserManagement = () => {
     search: '',
     status: 'all',
     userType: 'all',
-    membershipType: 'all',
-    community: 'all',
-    dateFrom: '',
-    dateTo: '',
-    planExpired: 'all'
+    community: 'all'
   });
 
   const [pagination, setPagination] = useState({
@@ -60,13 +56,6 @@ const UserManagement = () => {
     statuses: ['pending', 'approved', 'rejected', 'suspended']
   });
 
-  // Plan Assignment State
-  const [planAssignmentState, setPlanAssignmentState] = useState({
-    isLoading: false,
-    selectedUser: null,
-    availablePlans: [],
-    userType: null
-  });
 
   // Memoized fallback plans
   const fallbackPlans = useMemo(() => [
@@ -108,21 +97,57 @@ const UserManagement = () => {
 
   // Calculate plan validity
   const calculatePlanValidity = useCallback((user, planDetails) => {
-    if (!user.validationDate) return 'No validity set';
-    try {
-      const validationDate = new Date(user.validationDate);
-      const now = new Date();
-      if (validationDate < now) {
-        return 'Expired';
+    // If validationDate is present, use it
+    if (user.validationDate) {
+      try {
+        const validationDate = new Date(user.validationDate);
+        const now = new Date();
+        if (validationDate < now) {
+          return 'Expired';
+        }
+        return validationDate.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric'
+        });
+      } catch (error) {
+        return 'Invalid date';
       }
-      return validationDate.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-      });
-    } catch (error) {
-      return 'Invalid date';
     }
+    // If no validationDate, fallback to planAssignedAt + billingCycle (like MerchantManagement)
+    const baseDate = user.planAssignedAt || user.createdAt;
+    if (!baseDate) return 'No validity set';
+    let validityDate = new Date(baseDate);
+    const billingCycle = (planDetails && planDetails.billingCycle) ? planDetails.billingCycle.toLowerCase() : 'yearly';
+    switch (billingCycle) {
+      case 'monthly':
+        validityDate.setMonth(validityDate.getMonth() + 1);
+        break;
+      case 'quarterly':
+        validityDate.setMonth(validityDate.getMonth() + 3);
+        break;
+      case 'yearly':
+      case 'annual':
+        validityDate.setFullYear(validityDate.getFullYear() + 1);
+        break;
+      case 'lifetime':
+        return 'Lifetime';
+      case 'weekly':
+        validityDate.setDate(validityDate.getDate() + 7);
+        break;
+      default:
+        validityDate.setFullYear(validityDate.getFullYear() + 1);
+        break;
+    }
+    const now = new Date();
+    if (validityDate < now) {
+      return 'Expired';
+    }
+    return validityDate.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
   }, []);
 
   // Stable callback functions
@@ -303,90 +328,7 @@ const UserManagement = () => {
     }
   }, [filters, pagination.page, pagination.limit, showNotification, handleSessionExpired, referenceData.plans, calculatePlanValidity]);
 
-  // Enhanced plan fetching with proper filtering
-  const fetchPlansByUserType = useCallback(async (userType) => {
-    try {
-      console.log(`🎯 Fetching plans specifically for userType: ${userType}`);
-      setPlanAssignmentState(prev => ({ ...prev, isLoading: true, userType }));
 
-      const response = await api.get(`/admin/plans?userType=${userType}`);
-      
-      if (response.data.success) {
-        const plans = response.data.plans || [];
-        console.log(`✅ Plans fetched for ${userType}:`, plans);
-
-        const filteredPlans = plans.filter(plan => {
-          if (userType === 'merchant') {
-            return plan.type === 'merchant';
-          } else if (userType === 'user' || userType === 'admin') {
-            return plan.type === 'user';
-          }
-          return false;
-        });
-
-        console.log(`🔒 Filtered plans for ${userType}:`, filteredPlans);
-        setPlanAssignmentState(prev => ({
-          ...prev,
-          availablePlans: filteredPlans,
-          isLoading: false,
-          userType
-        }));
-
-        setReferenceData(prev => ({
-          ...prev,
-          [userType === 'merchant' ? 'merchantPlans' : 'userPlans']: filteredPlans
-        }));
-
-        return filteredPlans;
-      } else {
-        throw new Error(response.data.message || 'Failed to fetch plans');
-      }
-    } catch (err) {
-      console.error(`❌ Error fetching plans for ${userType}:`, err);
-      setPlanAssignmentState(prev => ({ ...prev, isLoading: false }));
-      
-      const fallback = userType === 'merchant' 
-        ? referenceData.merchantPlans.filter(plan => plan.type === 'merchant')
-        : referenceData.userPlans.filter(plan => plan.type === 'user');
-        
-      setPlanAssignmentState(prev => ({
-        ...prev,
-        availablePlans: fallback,
-        userType
-      }));
-      
-      return fallback;
-    }
-  }, [referenceData.merchantPlans, referenceData.userPlans]);
-
-  // Enhanced plan assignment opening
-  const handleOpenPlanAssignment = useCallback(async (user) => {
-    console.log('👑 Opening plan assignment for user:', user.id, 'type:', user.userType);
-    try {
-      const availablePlans = await fetchPlansByUserType(user.userType);
-      console.log(`🔒 Available plans for ${user.userType}:`, availablePlans);
-
-      if (availablePlans.length === 0) {
-        showNotification(`No plans available for ${user.userType} users`, 'warning');
-        return;
-      }
-
-      setPlanAssignmentState({
-        isLoading: false,
-        selectedUser: user,
-        availablePlans: availablePlans,
-        userType: user.userType
-      });
-
-      openModal('assignPlan', user, {
-        availablePlans: availablePlans,
-        userType: user.userType
-      });
-    } catch (err) {
-      console.error('❌ Error opening plan assignment:', err);
-      showNotification('Failed to load available plans', 'error');
-    }
-  }, [fetchPlansByUserType, showNotification]);
 
   // Get plans for specific user type
   const getPlansForUserType = useCallback((userType) => {
@@ -401,46 +343,8 @@ const UserManagement = () => {
     return plans;
   }, [referenceData.merchantPlans, referenceData.userPlans]);
 
-  // Plan assignment handler
-  const handlePlanAssignment = useCallback(async (userId, planKey) => {
-    try {
-      console.log('👑 Assigning plan:', planKey, 'to user:', userId);
-      const response = await api.post(`/admin/users/${userId}/assign-plan`, { planKey });
-      console.log('✅ Plan assignment response:', response.data);
-
-      if (response.data.success) {
-        showNotification('Plan assigned successfully', 'success');
-        refreshData();
-        closeModal();
-      } else {
-        throw new Error(response.data.message || 'Failed to assign plan');
-      }
-    } catch (err) {
-      console.error('❌ Error assigning plan:', err);
-      const message = err.response?.data?.message || 'Failed to assign plan';
-      showNotification(message, 'error');
-    }
-  }, [showNotification, refreshData, closeModal]);
 
   // User action handlers
-  const handleDeleteUser = useCallback(async (userData) => {
-    try {
-      const userId = typeof userData === 'object' ? userData.id : userData;
-      const response = await api.delete(`/admin/users/${userId}`);
-      
-      if (response.data.success) {
-        showNotification('User deleted successfully', 'success');
-        closeModal();
-        refreshData();
-      } else {
-        throw new Error(response.data.message || 'Failed to delete user');
-      }
-    } catch (err) {
-      console.error('❌ Error deleting user:', err);
-      const message = err.response?.data?.message || 'Failed to delete user';
-      showNotification(message, 'error');
-    }
-  }, [showNotification, closeModal, refreshData]);
 
   const handleStatusChange = useCallback(async (userId, status) => {
     try {
@@ -569,11 +473,7 @@ const UserManagement = () => {
       search: '',
       status: 'all',
       userType: 'all',
-      membershipType: 'all',
-      community: 'all',
-      dateFrom: '',
-      dateTo: '',
-      planExpired: 'all'
+      community: 'all'
     });
     setPagination(prev => ({ ...prev, page: 1 }));
   }, []);
@@ -623,22 +523,7 @@ const UserManagement = () => {
       <div className="page-header">
         <div className="header-content">
           <div className="header-left">
-            <h1>User Management</h1>
-            <p>Manage and monitor all user accounts</p>
-          </div>
-
-          <div className="header-actions">
-            <button
-              onClick={() => navigate('/admin/users/create')}
-              className="btn btn-primary"
-            >
-              <i className="fas fa-plus"></i>
-              Add User
-            </button>
-          </div>
-        </div>
-        
-        {/* Stats Cards */}
+            {/* Stats Cards */}
         <div className="stats-grid">
           <div className="stat-card">
             <div className="stat-icon">
@@ -677,6 +562,18 @@ const UserManagement = () => {
             </div>
           </div>
         </div>
+          </div>
+
+          <div className="header-actions">
+            <button
+              onClick={() => navigate('/admin/users/create')}
+              className="btn btn-primary"
+            >
+              <i className="fas fa-plus"></i>
+              Add User
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Filters */}
@@ -705,16 +602,8 @@ const UserManagement = () => {
         selectedUsers={selectedUsers}
         onUserSelect={handleUserSelect}
         onSelectAll={handleSelectAll}
-        onUserAction={(userId, action) => {
-          const user = users.find(u => u.id === userId);
-          if (action === 'delete') {
-            openModal('delete', user);
-          } else if (action === 'assignPlan') {
-            handleOpenPlanAssignment(user);
-          }
-        }}
+  onUserAction={() => {}}
         onStatusChange={handleStatusChange}
-        onPlanAssignment={(userId, planKey) => handlePlanAssignment(userId, planKey)}
         referenceData={referenceData}
         loading={loading}
         pagination={pagination}
@@ -733,12 +622,7 @@ const UserManagement = () => {
           referenceData={referenceData}
           selectedUsers={selectedUsers}
           onClose={closeModal}
-          onSubmit={modalState.type === 'delete' ? handleDeleteUser :
-                   modalState.type === 'bulkDelete' ? () => handleBulkAction('delete') :
-                   modalState.type === 'assignPlan' ? (data) => handlePlanAssignment(modalState.user.id, data.planKey) :
-                   null}
-          planAssignmentState={planAssignmentState}
-          getPlansForUserType={getPlansForUserType}
+    onSubmit={null}
         />
       )}
     </div>

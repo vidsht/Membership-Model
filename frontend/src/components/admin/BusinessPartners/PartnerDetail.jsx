@@ -1,21 +1,67 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import api from '../../../services/api';
+import { useNotification } from '../../../contexts/NotificationContext';
 import './PartnerList.css'; // Reuse or create PartnerDetail.css for custom styles
 import PlanAssignment from '../PlanManagement/PlanAssignment';
-import RoleAssignment from '../RoleManagement/RoleAssignment';
+// import RoleAssignment from '../RoleManagement/RoleAssignment';
 
-const PartnerDetail = ({ partner, onClose }) => {
+const PartnerDetail = ({ partner: propPartner, onClose }) => {
+  const [partner, setPartner] = useState(propPartner);
+  const [loading, setLoading] = useState(!propPartner);
   const [showPlanModal, setShowPlanModal] = useState(false);
   const [showRoleModal, setShowRoleModal] = useState(false);
   const navigate = useNavigate();
+  const { partnerId } = useParams();
+  const { showNotification } = useNotification();
 
-  if (!partner) {
+  // If used as a route component, fetch partner data
+  useEffect(() => {
+    if (!propPartner && partnerId) {
+      fetchPartnerDetails();
+    }
+  }, [partnerId, propPartner]);
+
+  const fetchPartnerDetails = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get(`/admin/partners/${partnerId}`);
+      if (response.data.success) {
+        setPartner(response.data.merchant);
+      } else {
+        showNotification('Partner not found', 'error');
+        navigate('/admin/partners');
+      }
+    } catch (error) {
+      console.error('Error fetching partner details:', error);
+      showNotification('Error loading partner details', 'error');
+      navigate('/admin/partners');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleClose = () => {
+    if (onClose) {
+      onClose();
+    } else {
+      navigate('/admin/partners');
+    }
+  };
+
+  const handleEdit = () => {
+    if (partner) {
+      navigate(`/admin/partners/${partner.id}/edit`);
+    }
+  };
+
+  if (loading) {
     return (
-      <div className="user-detail-overlay">
-        <div className="user-detail-modal">
+      <div className={onClose ? "user-detail-overlay" : "admin-page"}>
+        <div className={onClose ? "user-detail-modal" : "admin-content"}>
           <div className="modal-header">
             <h3>Business Partner Details</h3>
-            <button className="btn-close" onClick={onClose}>
+            <button className="btn-close" onClick={handleClose}>
               <i className="fas fa-times"></i>
             </button>
           </div>
@@ -23,6 +69,27 @@ const PartnerDetail = ({ partner, onClose }) => {
             <div className="loading-state">
               <i className="fas fa-spinner fa-spin"></i>
               <p>Loading partner details...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!partner) {
+    return (
+      <div className={onClose ? "user-detail-overlay" : "admin-page"}>
+        <div className={onClose ? "user-detail-modal" : "admin-content"}>
+          <div className="modal-header">
+            <h3>Business Partner Details</h3>
+            <button className="btn-close" onClick={handleClose}>
+              <i className="fas fa-times"></i>
+            </button>
+          </div>
+          <div className="modal-body">
+            <div className="error-state">
+              <i className="fas fa-exclamation-triangle"></i>
+              <p>Partner not found</p>
             </div>
           </div>
         </div>
@@ -43,13 +110,18 @@ const PartnerDetail = ({ partner, onClose }) => {
   };
 
   return (
-    <div className="user-detail-overlay">
-      <div className="user-detail-modal">
+    <div className={onClose ? "user-detail-overlay" : "admin-page"}>
+      <div className={onClose ? "user-detail-modal" : "admin-content"}>
         <div className="modal-header">
           <h3>Business Partner Details</h3>
-          <button className="btn-close" onClick={onClose}>
-            <i className="fas fa-times"></i>
-          </button>
+          <div className="header-actions">
+            <button className="btn btn-primary" onClick={handleEdit}>
+              <i className="fas fa-edit"></i> Edit Partner
+            </button>
+            <button className="btn-close" onClick={handleClose}>
+              <i className="fas fa-times"></i>
+            </button>
+          </div>
         </div>
         <div className="modal-body">
           <div className="user-profile-header">
@@ -81,15 +153,27 @@ const PartnerDetail = ({ partner, onClose }) => {
                   <span className="detail-value">{partner.businessName || 'N/A'}</span>
                 </div>
                 <div className="detail-item">
-                  <span className="detail-label">Category</span>
-                  <span className="detail-value">{partner.category || 'N/A'}</span>
+                  <span className="detail-label">Owner Name</span>
+                  <span className="detail-value">{partner.fullName || 'N/A'}</span>
                 </div>
                 <div className="detail-item">
-                  <span className="detail-label">Phone</span>
+                  <span className="detail-label">Category</span>
+                  <span className="detail-value">{partner.businessCategory || 'N/A'}</span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Business Phone</span>
+                  <span className="detail-value">{partner.businessPhone || partner.phone || 'N/A'}</span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Business Email</span>
+                  <span className="detail-value">{partner.businessEmail || partner.email || 'N/A'}</span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Owner Phone</span>
                   <span className="detail-value">{partner.phone || 'N/A'}</span>
                 </div>
                 <div className="detail-item">
-                  <span className="detail-label">Email</span>
+                  <span className="detail-label">Owner Email</span>
                   <span className="detail-value">{partner.email || 'N/A'}</span>
                 </div>
                 <div className="detail-item">
@@ -97,13 +181,39 @@ const PartnerDetail = ({ partner, onClose }) => {
                   <span className="detail-value">{partner.website ? <a href={partner.website} target="_blank" rel="noopener noreferrer">{partner.website}</a> : 'N/A'}</span>
                 </div>
                 <div className="detail-item">
-                  <span className="detail-label">Address</span>
-                  <span className="detail-value">{partner.address || 'N/A'}</span>
+                  <span className="detail-label">Business Address</span>
+                  <span className="detail-value">{partner.businessAddress || partner.address || 'N/A'}</span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">TAX ID</span>
+                  <span className="detail-value">{partner.taxId || 'N/A'}</span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Business License</span>
+                  <span className="detail-value">{partner.businessLicense || 'N/A'}</span>
+                </div>
+                <div className="detail-item">
+                  <span className="detail-label">Business Plan</span>
+                  <span className="detail-value">
+                    {partner.planName ? (
+                      <span className="plan-info">
+                        {partner.planName} - {partner.currency} {partner.planPrice}/{partner.billingCycle}
+                      </span>
+                    ) : (
+                      partner.membershipType || 'No Plan'
+                    )}
+                  </span>
                 </div>
                 <div className="detail-item">
                   <span className="detail-label">Registered On</span>
                   <span className="detail-value">{formatDate(partner.createdAt)}</span>
                 </div>
+                {partner.businessDescription && (
+                  <div className="detail-item full-width">
+                    <span className="detail-label">Business Description</span>
+                    <span className="detail-value">{partner.businessDescription}</span>
+                  </div>
+                )}
               </div>
             </div>
             {partner.deals && partner.deals.length > 0 && (
