@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotification } from '../../contexts/NotificationContext';
 import ApprovalQueue from './UserManagement/ApprovalQueue.jsx';
@@ -16,8 +16,9 @@ const AdminDashboard = () => {
   const { user, validateSession } = useAuth();
   const { showNotification } = useNotification();
   const navigate = useNavigate();
-    // Navigation state
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const location = useLocation();
+    // Navigation state - check for activeTab in location state
+  const [activeTab, setActiveTab] = useState(location.state?.activeTab || 'dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(true);
     const [stats, setStats] = useState({
     totalUsers: 0,
@@ -72,28 +73,30 @@ const AdminDashboard = () => {
     return date.toLocaleDateString();
   };
 
+  // Handle navigation from other components (like deals returning to deals tab)
+  useEffect(() => {
+    if (location.state?.activeTab) {
+      setActiveTab(location.state.activeTab);
+      // Clear the state to prevent issues with back/forward navigation
+      window.history.replaceState(null, '');
+    }
+  }, [location.state]);
+
+
   // Load admin statistics
   useEffect(() => {
     const fetchAdminStats = async () => {
       try {
         setIsLoading(true);
-        console.log('🔄 AdminDashboard - Starting to fetch admin stats...');
         
         // Fetch dashboard statistics with fallback
         try {
-          console.log('📊 AdminDashboard - Fetching stats from /admin/stats...');
           const statsResponse = await api.get('/admin/stats');
-          console.log('✅ AdminDashboard - Stats response:', statsResponse.data);
           if (statsResponse.data.success) {
             setStats(statsResponse.data.stats);
           }
         } catch (statsError) {
           console.error('❌ AdminDashboard - Error fetching stats:', statsError);
-          console.error('Stats error details:', {
-            status: statsError.response?.status,
-            message: statsError.response?.data?.message,
-            url: statsError.config?.url
-          });
           
           // Set fallback stats
           setStats({
@@ -108,19 +111,12 @@ const AdminDashboard = () => {
         
         // Fetch recent activities with fallback
         try {
-          console.log('📋 AdminDashboard - Fetching activities from /admin/activities...');
           const activitiesResponse = await api.get('/admin/activities');
-          console.log('✅ AdminDashboard - Activities response:', activitiesResponse.data);
           if (activitiesResponse.data.success) {
             setRecentActivities(activitiesResponse.data.activities || []);
           }
         } catch (activitiesError) {
           console.error('❌ AdminDashboard - Error fetching activities:', activitiesError);
-          console.error('Activities error details:', {
-            status: activitiesError.response?.status,
-            message: activitiesError.response?.data?.message,
-            url: activitiesError.config?.url
-          });
           setRecentActivities([]);
         }
         
@@ -132,42 +128,31 @@ const AdminDashboard = () => {
         }
       } finally {
         setIsLoading(false);
-        console.log('✅ AdminDashboard - Finished loading admin stats');
       }
     };
     
     fetchAdminStats();
   }, []); // Remove showNotification dependency to prevent re-renders
   const renderTabContent = () => {
-    console.log('AdminDashboard - Rendering tab content for:', activeTab);
-    
     try {
       switch (activeTab) {
         case 'dashboard':
           return renderDashboardContent();
         case 'users':
-          console.log('AdminDashboard - Rendering UserManagement');
           return <UserManagement />;
         case 'merchants':
-          console.log('AdminDashboard - Rendering MerchantManagementEnhanced');
           return <MerchantManagementEnhanced />;
         case 'deals':
-          console.log('AdminDashboard - Rendering DealList');
           return <DealList />;
         case 'plans':
-          console.log('AdminDashboard - Rendering PlanManagement');
           return <PlanManagement />;
         case 'approvals':
-          console.log('AdminDashboard - Rendering ApprovalQueue');
           return <ApprovalQueue />;
         case 'activities':
-          console.log('AdminDashboard - Rendering Activities');
           return <Activities />;
         case 'settings':
-          console.log('AdminDashboard - Rendering AdminSettings');
           return <AdminSettings />;
         default:
-          console.log('AdminDashboard - Rendering default dashboard content');
           return renderDashboardContent();
       }
     } catch (error) {
@@ -303,7 +288,6 @@ const AdminDashboard = () => {
               <li key={tab.id} className={activeTab === tab.id ? 'active' : ''}>
                 <button 
                   onClick={() => {
-                    console.log('AdminDashboard - Tab clicked:', tab.id, tab.label);
                     setActiveTab(tab.id);
                   }}
                   className="nav-button"

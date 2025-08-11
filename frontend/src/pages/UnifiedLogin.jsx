@@ -21,7 +21,7 @@ const UnifiedLogin = () => {
   useEffect(() => {
     if (isAuthenticated) {
       if (user?.userType === 'merchant') {
-        navigate('/merchant/dashboard');
+        navigate('/merchant-dashboard');
       } else {
         navigate('/dashboard');
       }
@@ -94,7 +94,7 @@ const UnifiedLogin = () => {
         }
         
         showNotification('Login successful! Welcome to your merchant dashboard.', 'success');
-        navigate('/merchant/dashboard');
+        navigate('/merchant-dashboard');
       }
     } catch (error) {
       console.error('Login error details:', error);

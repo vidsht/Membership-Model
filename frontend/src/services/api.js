@@ -9,7 +9,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 10000, // 10 second timeout
+  timeout: 30000, // 30 second timeout
 });
 
 // ✅ FIXED: Simple response interceptor without loops
@@ -204,7 +204,7 @@ export const merchantApi = {
   },
   // Fetch business details by businessId (for admin/customer views)
   getBusinessById: async (businessId) => {
-    // Use admin endpoint for admin views
+    // Use new admin businesses endpoint for business details
     const response = await api.get(`/admin/businesses/${businessId}`);
     return response.data;
   },

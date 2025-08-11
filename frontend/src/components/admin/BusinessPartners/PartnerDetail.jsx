@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import api from '../../../services/api';
+import adminApi from '../../../services/adminApi';
 import { useNotification } from '../../../contexts/NotificationContext';
 import './PartnerList.css'; // Reuse or create PartnerDetail.css for custom styles
 import PlanAssignment from '../PlanManagement/PlanAssignment';
@@ -23,19 +23,27 @@ const PartnerDetail = ({ partner: propPartner, onClose }) => {
   }, [partnerId, propPartner]);
 
   const fetchPartnerDetails = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      const response = await api.get(`/admin/partners/${partnerId}`);
-      if (response.data.success) {
-        setPartner(response.data.merchant);
+      console.log('🔍 PartnerDetail: Fetching partner details for ID:', partnerId);
+      
+      const response = await adminApi.getPartner(partnerId);
+      console.log('📄 PartnerDetail: AdminAPI response:', response);
+      
+      if (response && response.success && response.merchant) {
+        console.log('✅ PartnerDetail: Partner data found:', response.merchant);
+        setPartner(response.merchant);
       } else {
+        console.log('❌ PartnerDetail: No partner data in response or success=false');
         showNotification('Partner not found', 'error');
-        navigate('/admin/partners');
+        setPartner(null);
+        setTimeout(() => navigate('/admin', { state: { activeTab: 'merchants' } }), 1500);
       }
     } catch (error) {
-      console.error('Error fetching partner details:', error);
+      console.error('❌ PartnerDetail: Error fetching partner details:', error);
       showNotification('Error loading partner details', 'error');
-      navigate('/admin/partners');
+      setPartner(null);
+      setTimeout(() => navigate('/admin', { state: { activeTab: 'merchants' } }), 1500);
     } finally {
       setLoading(false);
     }
@@ -45,7 +53,8 @@ const PartnerDetail = ({ partner: propPartner, onClose }) => {
     if (onClose) {
       onClose();
     } else {
-      navigate('/admin/partners');
+      // Navigate back to admin dashboard with merchants tab active
+      navigate('/admin', { state: { activeTab: 'merchants' } });
     }
   };
 

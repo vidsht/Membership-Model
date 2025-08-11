@@ -6,10 +6,16 @@ import Modal from '../../shared/Modal';
 import { useModal } from '../../../hooks/useModal';
 import './DealDetail.css';
 
-const DealDetail = () => {  const { dealId } = useParams();
+const DealDetail = () => {  
+  const { dealId } = useParams();
   const navigate = useNavigate();
   const { showNotification } = useNotification();
   const { modal, showDeleteConfirm, hideModal } = useModal();
+  
+  const navigateToDealsTab = () => {
+    // Navigate to admin dashboard with deals tab active
+    navigate('/admin', { state: { activeTab: 'deals' } });
+  };
   
   const [deal, setDeal] = useState(null);
   const [business, setBusiness] = useState(null);
@@ -42,30 +48,21 @@ const DealDetail = () => {  const { dealId } = useParams();
       // Fetch deal details
       const dealResponse = await api.get(`/admin/deals/${dealId}`);
       const dealData = dealResponse.data.deal;
-      // Explicit logging for debugging
-      // eslint-disable-next-line no-console
-      console.log('[DealDetail] dealData:', dealData);
       setDeal(dealData);
 
       // Fetch business details
-      if (dealData.businessId) {
-        try {
-          // Use merchantApi.getBusinessById for admin/business context
-          const businessResponse = await merchantApi.getBusinessById(dealData.businessId);
-          // eslint-disable-next-line no-console
-          console.log('[DealDetail] businessResponse:', businessResponse);
-          setBusiness(businessResponse.business);
-        } catch (businessError) {
-          console.error('Error fetching business details:', businessError);
-        }
-      }
+      // Use business info from dealData (already joined in backend)
+      setBusiness({
+        businessId: dealData.businessId,
+        businessName: dealData.businessName,
+        businessCategory: dealData.businessCategory,
+        // Add more fields as needed from dealData
+      });
 
       // Fetch redemptions with detailed stats
       try {
         const redemptionsResponse = await api.get(`/admin/deals/${dealId}/redemptions`);
         const redemptionsData = redemptionsResponse.data.redemptions || [];
-        // eslint-disable-next-line no-console
-        console.log('[DealDetail] redemptionsData:', redemptionsData);
         setRedemptions(redemptionsData);
         
         // Calculate redemption statistics
@@ -90,7 +87,7 @@ const DealDetail = () => {  const { dealId } = useParams();
     } catch (error) {
       console.error('Error fetching deal details:', error);
       showNotification('Could not load deal details', 'error');
-      navigate('/admin/deals');
+      navigateToDealsTab();
     } finally {
       setIsLoading(false);
     }
@@ -111,7 +108,7 @@ const DealDetail = () => {  const { dealId } = useParams();
       try {
         await api.delete(`/admin/deals/${dealId}`);
         showNotification('Deal deleted successfully', 'success');
-        navigate('/admin/deals');
+        navigateToDealsTab();
       } catch (error) {
         console.error('Error deleting deal:', error);
         showNotification('Failed to delete deal', 'error');
@@ -150,9 +147,9 @@ const DealDetail = () => {  const { dealId } = useParams();
         <i className="fas fa-exclamation-triangle"></i>
         <h2>Deal Not Found</h2>
         <p>The requested deal could not be found or may have been deleted.</p>
-        <Link to="/admin/deals" className="btn-primary">
+        <button onClick={() => navigateToDealsTab()} className="btn-primary">
           Back to Deals
-        </Link>
+        </button>
       </div>
     );
   }
@@ -171,7 +168,7 @@ const DealDetail = () => {  const { dealId } = useParams();
         <div className="page-actions">
           <button 
             className="btn-secondary" 
-            onClick={() => navigate('/admin/deals')}
+            onClick={() => navigateToDealsTab()}
           >
             <i className="fas fa-arrow-left"></i> Back to Deals
           </button>
@@ -183,9 +180,6 @@ const DealDetail = () => {  const { dealId } = useParams();
           </button>
         </div>
       </div>
-
-      {/* DEBUG: Confirm DealDetail is rendering */}
-      <div style={{background:'#ffeedd',color:'#a00',padding:'6px',marginBottom:'8px',border:'2px solid #a00',borderRadius:'6px',fontWeight:'bold'}}>DealDetail component loaded</div>
 
       <div className="deal-content">
         {tabList && tabList.length > 0 ? (

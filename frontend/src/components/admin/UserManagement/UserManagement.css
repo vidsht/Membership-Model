@@ -60,20 +60,27 @@
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
-.header-actions {
+.headers-content {
   display: flex;
+  flex-direction: row;
+  padding: 1rem 0 1rem 0;
+  gap: 15rem;
+}
+
+.headers-left {
+  display: flex;
+  align-items: center;
   gap: 1rem;
 }
 
-.header-content {
-  padding: 0 0 0 0;
-  gap: 3rem;
+/* Stats Container */
+.stats-grids {
+  display: flex;
+  flex-direction: row;
+  gap: 2rem;
+  margin-left: 3rem;
 }
 
-/* Stats Container */
-.stats.grid {
-  display: flex;
-}
 .stat-card {
   background: white;
   padding: 24px;

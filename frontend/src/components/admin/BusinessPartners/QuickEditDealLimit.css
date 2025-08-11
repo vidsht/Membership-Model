@@ -1,0 +1,196 @@
+/* Quick Edit Deal Limit Component Styles */
+.quick-edit-content {
+  padding: 20px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.partner-summary {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.partner-info h4 {
+  margin: 0 0 10px 0;
+  color: #2c3e50;
+  font-size: 1.2em;
+}
+
+.partner-owner {
+  margin: 5px 0;
+  color: #666;
+  font-size: 0.95em;
+}
+
+.partner-email {
+  margin: 5px 0;
+  color: #007bff;
+  font-size: 0.9em;
+}
+
+.divider {
+  height: 1px;
+  background: #e9ecef;
+  margin: 20px 0;
+}
+
+.deal-limit-form h5 {
+  margin: 0 0 10px 0;
+  color: #2c3e50;
+  font-size: 1.1em;
+}
+
+.form-description {
+  color: #666;
+  font-size: 0.9em;
+  margin-bottom: 20px;
+  line-height: 1.4;
+}
+
+.current-info {
+  background: #f1f3f4;
+  border-radius: 6px;
+  padding: 15px;
+  margin-bottom: 20px;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.info-row:last-child {
+  margin-bottom: 0;
+}
+
+.info-label {
+  font-weight: 500;
+  color: #495057;
+  font-size: 0.9em;
+}
+
+.info-value {
+  color: #212529;
+  font-size: 0.9em;
+}
+
+.custom-limit {
+  color: #fd7e14;
+  font-weight: 500;
+}
+
+.custom-limit i {
+  margin-right: 4px;
+}
+
+.plan-limit {
+  color: #6c757d;
+  font-style: italic;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #495057;
+}
+
+.form-control {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 0.95em;
+  transition: border-color 0.15s ease-in-out;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.form-hint {
+  display: block;
+  margin-top: 5px;
+  color: #6c757d;
+  font-size: 0.85em;
+}
+
+.modal-footer {
+  padding: 20px;
+  border-top: 1px solid #e9ecef;
+  background: #f8f9fa;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.modal-footer .btn {
+  padding: 8px 16px;
+  border-radius: 4px;
+  border: none;
+  font-size: 0.9em;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+}
+
+.modal-footer .btn-primary {
+  background: #007bff;
+  color: white;
+}
+
+.modal-footer .btn-primary:hover:not(:disabled) {
+  background: #0056b3;
+}
+
+.modal-footer .btn-primary:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+}
+
+.modal-footer .btn-secondary {
+  background: #6c757d;
+  color: white;
+}
+
+.modal-footer .btn-secondary:hover {
+  background: #545b62;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8em;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.status-badge.approved {
+  background: #d4edda;
+  color: #155724;
+}
+
+.status-badge.pending {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.status-badge.rejected {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.status-badge.suspended {
+  background: #e2e3e5;
+  color: #41464b;
+}

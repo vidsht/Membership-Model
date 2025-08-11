@@ -565,6 +565,7 @@ const PartnerList = () => {
                   <th>Contact</th>
                   <th>Category</th>
                   <th>Plan</th>
+                  <th>Deal Limit</th>
                   <th>Valid Till</th>
                   <th>Status</th>
                   <th>Registration Date</th>
@@ -607,6 +608,19 @@ const PartnerList = () => {
                           'Community'
                         }
                       </span>
+                    </td>
+                    <td>
+                      <div className="deal-limit-info">
+                        {partner.customDealLimit ? (
+                          <span className="custom-limit" title="Custom limit set by admin">
+                            <i className="fas fa-star"></i> {partner.customDealLimit}/month
+                          </span>
+                        ) : (
+                          <span className="plan-limit" title="Using plan default">
+                            Plan Default
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td>
                       <span className="validity-date">
@@ -976,6 +990,25 @@ const PartnerList = () => {
                     })}
                     className="form-control"
                   />
+                </div>
+                
+                <div className="form-group">
+                  <label>Custom Deal Limit (per month)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={editingPartner.customDealLimit || ''}
+                    onChange={(e) => setEditingPartner({
+                      ...editingPartner,
+                      customDealLimit: e.target.value ? parseInt(e.target.value) : null
+                    })}
+                    className="form-control"
+                    placeholder="Leave empty to use plan default"
+                  />
+                  <small className="form-text text-muted">
+                    Override the default monthly deal limit for this business. Leave empty to use their plan's default limit.
+                  </small>
                 </div>
                 
                 <div className="form-group">

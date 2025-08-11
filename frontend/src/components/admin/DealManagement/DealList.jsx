@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useNotification } from '../../../contexts/NotificationContext';
 import api from '../../../services/api';
 import DealFilters from './DealFilters';
@@ -7,10 +7,14 @@ import Modal from '../../shared/Modal';
 import { useModal } from '../../../hooks/useModal';
 import './DealList.css';
 
-const DealList = () => {
+const DealList = ({ onTabChange }) => {
   const { showNotification } = useNotification();
   const navigate = useNavigate();
+  const location = useLocation();
   const { modalState, closeModal, showDeleteConfirm } = useModal();
+  
+  // Check if we're in the admin dashboard context
+  const isInDashboard = location.pathname === '/admin';
   
   const [deals, setDeals] = useState([]);
   const [businesses, setBusinesses] = useState([]);
@@ -49,10 +53,10 @@ const DealList = () => {
     try {
       const [dealsResponse, businessesResponse] = await Promise.all([
         api.get('/admin/deals'),
-        api.get('/admin/merchants')
+        api.get('/admin/partners')
       ]);
       
-      setDeals(dealsResponse.data.deals || []);
+      setDeals(dealsResponse.data.deals  || []);
       setBusinesses(businessesResponse.data.merchants?.map(m => ({
         businessId: m.businessId,
         businessName: m.businessName
@@ -137,6 +141,46 @@ const DealList = () => {
       showNotification('Failed to update deal status', 'error');
     }
   };
+
+  const handleApproveDeal = async (dealId) => {
+    try {
+      await api.patch(`/admin/deals/${dealId}/approve`);
+      
+      // Update the deal in the local state
+      setDeals((deals || []).map(deal => 
+        deal.id === dealId ? { ...deal, status: 'active' } : deal
+      ));
+      
+      showNotification('Deal approved successfully', 'success');
+      // Recalculate stats
+      calculateStats(deals.map(deal => 
+        deal.id === dealId ? { ...deal, status: 'active' } : deal
+      ));
+    } catch (error) {
+      console.error('Error approving deal:', error);
+      showNotification('Error approving deal. Please try again.', 'error');
+    }
+  };
+
+  const handleRejectDeal = async (dealId, reason = '') => {
+    try {
+      await api.patch(`/admin/deals/${dealId}/reject`, { reason });
+      
+      // Update the deal in the local state
+      setDeals((deals || []).map(deal => 
+        deal.id === dealId ? { ...deal, status: 'rejected' } : deal
+      ));
+      
+      showNotification('Deal rejected successfully', 'success');
+      // Recalculate stats
+      calculateStats(deals.map(deal => 
+        deal.id === dealId ? { ...deal, status: 'rejected' } : deal
+      ));
+    } catch (error) {
+      console.error('Error rejecting deal:', error);
+      showNotification('Error rejecting deal. Please try again.', 'error');
+    }
+  };
     const handleDeleteDeal = async (dealId, dealTitle) => {
     const confirmed = await showDeleteConfirm(dealTitle, async () => {
       try {
@@ -153,15 +197,30 @@ const DealList = () => {
   };
   return (
     <div className="admin-deal-management">
-      <div className="page-header">
-        <h1>Deal Management</h1>
-        <button 
-          className="btn-primary" 
-          onClick={() => navigate('/admin/deals/create')}
-        >
-          <i className="fas fa-plus"></i> Create New Deal
-        </button>
-      </div>
+      {!isInDashboard && (
+        <div className="page-header">
+          <h1>Deal Management</h1>
+          <button 
+            className="btn-primary" 
+            onClick={() => navigate('/admin/deals/create')}
+          >
+            <i className="fas fa-plus"></i> Create New Deal
+          </button>
+        </div>
+      )}
+
+      {isInDashboard && (
+        <div className="page-header">
+          <div className="header-actions">
+            <button 
+              className="btn-primary" 
+              onClick={() => navigate('/admin/deals/create')}
+            >
+              <i className="fas fa-plus"></i> Create New Deal
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Deal statistics */}
       <div className="deal-stats-bar">
@@ -313,20 +372,46 @@ const DealList = () => {
                         >
                           <i className="fas fa-eye"></i>
                         </Link>
-                        <Link 
-                          to={`/admin/deals/${deal.id}/edit`}
-                          className="btn-sm btn-secondary"
-                          title="Edit Deal"
-                        >
-                          <i className="fas fa-edit"></i>
-                        </Link>
+                        
+                        {deal.status === 'pending_approval' ? (
+                          <>
+                            <button
+                              className="btn-sm btn-success"
+                              onClick={() => handleApproveDeal(deal.id)}
+                              title="Approve Deal"
+                            >
+                              <i className="fas fa-check"></i>
+                            </button>
+                            <button
+                              className="btn-sm btn-danger"
+                              onClick={() => handleRejectDeal(deal.id)}
+                              title="Reject Deal"
+                            >
+                              <i className="fas fa-times"></i>
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <Link 
+                              to={`/admin/deals/${deal.id}/edit`}
+                              className="btn-sm btn-secondary"
+                              title="Edit Deal"
+                            >
+                              <i className="fas fa-edit"></i>
+                            </Link>
+                            {(deal.status === 'active' || deal.status === 'inactive') && (
+                              <button
+                                className={`btn-sm ${deal.status === 'active' ? 'btn-warning' : 'btn-success'}`}
+                                onClick={() => handleStatusChange(deal.id, deal.status === 'active' ? 'inactive' : 'active')}
+                                title={deal.status === 'active' ? 'Deactivate' : 'Activate'}
+                              >
+                                <i className={`fas fa-${deal.status === 'active' ? 'pause' : 'play'}`}></i>
+                              </button>
+                            )}
+                          </>
+                        )}
+                        
                         <button
-                          className={`btn-sm ${deal.status === 'active' ? 'btn-warning' : 'btn-success'}`}
-                          onClick={() => handleStatusChange(deal.id, deal.status === 'active' ? 'inactive' : 'active')}
-                          title={deal.status === 'active' ? 'Deactivate' : 'Activate'}
-                        >
-                          <i className={`fas fa-${deal.status === 'active' ? 'pause' : 'play'}`}></i>
-                        </button>                        <button
                           className="btn-sm btn-danger"
                           onClick={() => handleDeleteDeal(deal.id, deal.title)}
                           title="Delete Deal"

@@ -50,7 +50,12 @@ const DealForm = () => {
         validUntil: formatDateForInput(nextMonth)
       }));
     }
-  }, [dealId]);  const fetchBusinesses = async () => {
+  }, [dealId]);  const navigateToDealsTab = () => {
+    // Navigate to admin dashboard with deals tab active
+    navigate('/admin', { state: { activeTab: 'deals' } });
+  };
+
+  const fetchBusinesses = async () => {
     try {
       const response = await api.get('/admin/businesses');
       setBusinesses(response.data.businesses || []);
@@ -101,7 +106,7 @@ const DealForm = () => {
     } catch (error) {
       console.error('Error fetching deal:', error);
       showNotification('Could not load deal details. Please try again.', 'error');
-      navigate('/admin/deals');
+      navigateToDealsTab();
     } finally {
       setIsLoading(false);
     }
@@ -250,7 +255,7 @@ const DealForm = () => {
         showNotification('Deal created successfully', 'success');
       }
       
-      navigate('/admin/deals');
+      navigateToDealsTab();
     } catch (error) {
       console.error('Error saving deal:', error);
       if (error.response?.data?.errors) {
@@ -287,7 +292,7 @@ const DealForm = () => {
         <h1>{isEditMode ? 'Edit Deal' : 'Create New Deal'}</h1>
         <button 
           className="btn-secondary" 
-          onClick={() => navigate('/admin/deals')}
+          onClick={() => navigateToDealsTab()}
         >
           <i className="fas fa-arrow-left"></i> Back to Deals
         </button>
@@ -561,7 +566,7 @@ const DealForm = () => {
           <button 
             type="button" 
             className="btn-secondary"
-            onClick={() => navigate('/admin/deals')}
+            onClick={() => navigateToDealsTab()}
           >
             Cancel
           </button>

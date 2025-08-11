@@ -14,8 +14,6 @@ const AdminRoute = ({ children }) => {
   const { isAuthenticated, user, isLoading } = useAuth();
   const { showNotification } = useNotification();
   const location = useLocation();
-
-  console.log('🔐 AdminRoute - Auth status:', { isAuthenticated, userType: user?.userType, isLoading });
   
   // Show loading state while checking authentication
   if (isLoading) {

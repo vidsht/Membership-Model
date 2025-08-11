@@ -87,7 +87,7 @@ const Header = () => {
             
             {/* Admin/Merchant specific links */}
             {isAuthenticated && user?.userType === 'merchant' && (
-              <li><Link to="/merchant/dashboard" className={`${isActive('/merchant/dashboard')} merchant-link`}>
+              <li><Link to="/merchant-dashboard" className={`${isActive('/merchant-dashboard')} merchant-link`}>
                 <i className="fas fa-store-alt nav-icon"></i> Merchant Panel
               </Link></li>
             )}

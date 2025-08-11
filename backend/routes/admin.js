@@ -1,3 +1,5 @@
+// ...existing code...
+// ...existing code...
 // Admin routes - Complete Enhanced MySQL implementation with all fixes
 const express = require('express');
 const bcrypt = require('bcryptjs');
@@ -656,7 +658,7 @@ router.put('/users/:id/status', auth, admin, async (req, res) => {
     const hasStatusUpdatedAt = await columnExists('users', 'statusUpdatedAt');
     const hasStatusUpdatedBy = await columnExists('users', 'statusUpdatedBy');
 
-    let updateQuery = 'UPDATE users SET status = ?, updated_at = NOW()';
+    let updateQuery = 'UPDATE users SET status = ?, updated_at = NOW(), statusUpdatedAt = NOW()';
     let params = [status];
 
     if (hasStatusUpdatedAt) {
@@ -1185,451 +1187,8 @@ router.get('/plans', auth, admin, async (req, res) => {
   }
 });
 
-// ===== MERCHANTS MANAGEMENT - DEPRECATED =====
-// NOTE: These routes have been replaced by /partners routes below for consistency
-// Commenting out to avoid confusion while keeping for reference
-
-/*
-router.get('/merchants', auth, admin, async (req, res) => {
-  try {
-    const {
-      status,
-      category,
-      search,
-      dateFrom,
-      dateTo,
-      limit = 20,
-      offset = 0
-    } = req.query;
-
-    let whereClause = 'WHERE u.userType = "merchant"';
-    const params = [];
-
-    // Apply filters
-    if (status && status !== 'all') {
-      whereClause += ' AND u.status = ?';
-      params.push(status);
-    }
-
-    if (search && search.trim()) {
-      whereClause += ' AND (u.fullName LIKE ? OR u.email LIKE ? OR b.businessName LIKE ? OR u.phone LIKE ?)';
-      const searchTerm = `%${search.trim()}%`;
-      params.push(searchTerm, searchTerm, searchTerm, searchTerm);
-    }
-
-    if (dateFrom) {
-      whereClause += ' AND DATE(u.createdAt) >= ?';
-      params.push(dateFrom);
-    }
-
-    if (dateTo) {
-      whereClause += ' AND DATE(u.createdAt) <= ?';
-      params.push(dateTo);
-    }
-
-    if (category && category !== 'all') {
-      whereClause += ' AND b.businessCategory = ?';
-      params.push(category);
-    }
-
-    // Check if businesses table exists
-    const businessTableExists = await tableExists('businesses');
-    
-    let query;
-    if (businessTableExists) {
-      query = `
-        SELECT 
-          u.id, u.fullName, u.email, u.phone, u.address, u.community, 
-          u.membershipType, u.status, u.createdAt, u.lastLogin,
-          b.businessId, b.businessName, b.businessDescription, b.businessCategory,
-          b.businessAddress, b.businessPhone, b.businessEmail, b.website,
-          b.businessLicense, b.taxId, b.status as businessStatus,
-          p.name as planName, p.price as planPrice, p.billingCycle, p.currency, p.features
-        FROM users u
-        LEFT JOIN businesses b ON u.id = b.userId
-        LEFT JOIN plans p ON u.membershipType = p.key
-        ${whereClause}
-        ORDER BY u.createdAt DESC
-        LIMIT ? OFFSET ?
-      `;
-    } else {
-      // Fallback query without businesses table
-      query = `
-        SELECT 
-          u.id, u.fullName, u.email, u.phone, u.address, u.community, 
-          u.membershipType, u.status, u.createdAt, u.lastLogin,
-          NULL as businessId, NULL as businessName, NULL as businessDescription, 
-          NULL as businessCategory, NULL as businessAddress, NULL as businessPhone, 
-          NULL as businessEmail, NULL as website, NULL as businessLicense, 
-          NULL as taxId, NULL as businessStatus,
-          p.name as planName, p.price as planPrice, p.billingCycle, p.currency, p.features
-        FROM users u
-        LEFT JOIN plans p ON u.membershipType = p.key
-        ${whereClause}
-        ORDER BY u.createdAt DESC
-        LIMIT ? OFFSET ?
-      `;
-    }
-
-    params.push(parseInt(limit), parseInt(offset));
-
-    const merchants = await queryAsync(query, params);
-
-    // Get total count for pagination
-    const countQuery = businessTableExists ? 
-      `SELECT COUNT(*) as total FROM users u LEFT JOIN businesses b ON u.id = b.userId ${whereClause}` :
-      `SELECT COUNT(*) as total FROM users u ${whereClause}`;
-    
-    const countParams = params.slice(0, -2); // Remove limit and offset
-    const countResult = await queryAsync(countQuery, countParams);
-    const total = countResult[0]?.total || 0;
-
-    res.json({
-      success: true,
-      merchants,
-      total,
-      hasBusinessTable: businessTableExists
-    });
-  } catch (err) {
-    console.error('Error fetching merchants:', err);
-    res.status(500).json({ success: false, message: 'Server error fetching merchants' });
-  }
-});
-
-router.get('/merchants/:id', auth, admin, async (req, res) => {
-  try {
-    const merchantId = parseInt(req.params.id);
-    if (!merchantId || isNaN(merchantId)) {
-      return res.status(400).json({ success: false, message: 'Valid merchant ID is required' });
-    }
-
-    const businessTableExists = await tableExists('businesses');
-    
-    let query;
-    if (businessTableExists) {
-      query = `
-        SELECT 
-          u.id, u.fullName, u.email, u.phone, u.address, u.community, 
-          u.membershipType, u.status, u.createdAt, u.lastLogin,
-          b.businessId, b.businessName, b.businessDescription, b.businessCategory,
-          b.businessAddress, b.businessPhone, b.businessEmail, b.website,
-          b.businessLicense, b.taxId, b.status as businessStatus,
-          p.name as planName, p.price as planPrice, p.billingCycle, p.currency, p.features
-        FROM users u
-        LEFT JOIN businesses b ON u.id = b.userId
-        LEFT JOIN plans p ON u.membershipType = p.key
-        WHERE u.id = ? AND u.userType = "merchant"
-      `;
-    } else {
-      query = `
-        SELECT 
-          u.id, u.fullName, u.email, u.phone, u.address, u.community, 
-          u.membershipType, u.status, u.createdAt, u.lastLogin,
-          NULL as businessId, NULL as businessName, NULL as businessDescription, 
-          NULL as businessCategory, NULL as businessAddress, NULL as businessPhone, 
-          NULL as businessEmail, NULL as website, NULL as businessLicense, 
-          NULL as taxId, NULL as businessStatus
-        FROM users u
-        WHERE u.id = ? AND u.userType = "merchant"
-      `;
-    }
-
-    const merchantRows = await queryAsync(query, [merchantId]);
-
-    if (!merchantRows.length) {
-      return res.status(404).json({ success: false, message: 'Merchant not found' });
-    }
-
-    res.json({ success: true, merchant: merchantRows[0] });
-  } catch (err) {
-    console.error('Error fetching merchant:', err);
-    res.status(500).json({ success: false, message: 'Server error fetching merchant' });
-  }
-});
-
-router.post('/merchants/create', auth, admin, async (req, res) => {
-  try {
-    const {
-      fullName,
-      email,
-      phone,
-      address,
-      community,
-      membershipType,
-      status,
-      businessInfo
-    } = req.body;
-
-    // Check if email already exists
-    const existingUser = await queryAsync('SELECT id FROM users WHERE email = ?', [email]);
-    if (existingUser.length > 0) {
-      return res.status(400).json({ success: false, message: 'User with this email already exists' });
-    }
-
-    // Generate temporary password
-    const tempPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
-    const bcrypt = require('bcryptjs');
-    const hashedPassword = await bcrypt.hash(tempPassword, 12);
-
-    // Generate membership number
-    const membershipNumber = `IGM${Date.now().toString().slice(-6)}${Math.floor(Math.random() * 100)}`;
-
-    const adminUserId = getAdminUserId(req);
-
-    // Create user account
-    const userResult = await queryAsync(`
-      INSERT INTO users (
-        fullName, email, password, phone, userType, membershipType, community,
-        address, status, membershipNumber, createdAt, planAssignedAt, planAssignedBy
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), ?)
-    `, [
-      fullName,
-      email,
-      hashedPassword,
-      phone || null,
-      'merchant',
-      membershipType || 'basic_business',
-      community || null,
-      address || null,
-      status || 'approved',
-      membershipNumber,
-      adminUserId
-    ]);
-
-    const newUserId = userResult.insertId;
-
-    // Create business record if businesses table exists and business info provided
-    if (businessInfo && await tableExists('businesses')) {
-      const businessId = `BIZ${Date.now().toString().slice(-6)}${Math.floor(Math.random() * 100)}`;
-      
-      await queryAsync(`
-        INSERT INTO businesses (
-          businessId, userId, businessName, businessDescription, businessCategory,
-          businessAddress, businessPhone, businessEmail, website, status, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
-      `, [
-        businessId,
-        newUserId,
-        businessInfo.businessName || null,
-        businessInfo.businessDescription || null,
-        businessInfo.businessCategory || null,
-        businessInfo.businessAddress || null,
-        businessInfo.businessPhone || null,
-        businessInfo.businessEmail || null,
-        businessInfo.website || null,
-        'active'
-      ]);
-    }
-
-    res.status(201).json({
-      success: true,
-      message: 'Merchant created successfully',
-      merchantId: newUserId,
-      tempPassword: tempPassword
-    });
-  } catch (err) {
-    console.error('Error creating merchant:', err);
-    res.status(500).json({ success: false, message: 'Server error creating merchant' });
-  }
-});
-
-router.put('/merchants/:id', auth, admin, async (req, res) => {
-  try {
-    const merchantId = parseInt(req.params.id);
-    const { userInfo, businessInfo } = req.body;
-
-    if (!merchantId || isNaN(merchantId)) {
-      return res.status(400).json({ success: false, message: 'Valid merchant ID is required' });
-    }
-
-    // Verify merchant exists
-    const merchantCheck = await queryAsync('SELECT id FROM users WHERE id = ? AND userType = "merchant"', [merchantId]);
-    if (!merchantCheck.length) {
-      return res.status(404).json({ success: false, message: 'Merchant not found' });
-    }
-
-    // Update user information
-    if (userInfo) {
-      const allowedUserFields = ['fullName', 'email', 'phone', 'address', 'community', 'membershipType', 'status'];
-      const userUpdates = [];
-      const userValues = [];
-
-      Object.keys(userInfo).forEach(field => {
-        if (allowedUserFields.includes(field) && userInfo[field] !== undefined) {
-          userUpdates.push(`${field} = ?`);
-          userValues.push(userInfo[field]);
-        }
-      });
-
-      if (userUpdates.length > 0) {
-        userUpdates.push('updated_at = NOW()');
-        userValues.push(merchantId);
-        
-        const userUpdateQuery = `UPDATE users SET ${userUpdates.join(', ')} WHERE id = ?`;
-        await queryAsync(userUpdateQuery, userValues);
-      }
-    }
-
-    // Update business information if table exists
-    if (businessInfo && await tableExists('businesses')) {
-      const allowedBusinessFields = [
-        'businessName', 'businessDescription', 'businessCategory', 'businessAddress',
-        'businessPhone', 'businessEmail', 'website', 'businessLicense', 'taxId'
-      ];
-      
-      const businessUpdates = [];
-      const businessValues = [];
-
-      Object.keys(businessInfo).forEach(field => {
-        if (allowedBusinessFields.includes(field) && businessInfo[field] !== undefined) {
-          businessUpdates.push(`${field} = ?`);
-          businessValues.push(businessInfo[field]);
-        }
-      });
-
-      if (businessUpdates.length > 0) {
-        businessUpdates.push('updated_at = NOW()');
-        businessValues.push(merchantId);
-        
-        const businessUpdateQuery = `UPDATE businesses SET ${businessUpdates.join(', ')} WHERE userId = ?`;
-        await queryAsync(businessUpdateQuery, businessValues);
-      }
-    }
-
-    res.json({ success: true, message: 'Merchant updated successfully' });
-  } catch (err) {
-    console.error('Error updating merchant:', err);
-    res.status(500).json({ success: false, message: 'Server error updating merchant' });
-  }
-});
-
-router.post('/merchants/:id/approve', auth, admin, async (req, res) => {
-  try {
-    const merchantId = parseInt(req.params.id);
-    if (!merchantId || isNaN(merchantId)) {
-      return res.status(400).json({ success: false, message: 'Valid merchant ID is required' });
-    }
-
-    const result = await queryAsync('UPDATE users SET status = "approved", updated_at = NOW() WHERE id = ? AND userType = "merchant"', [merchantId]);
-    
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ success: false, message: 'Merchant not found' });
-    }
-
-    res.json({ success: true, message: 'Merchant approved successfully' });
-  } catch (err) {
-    console.error('Error approving merchant:', err);
-    res.status(500).json({ success: false, message: 'Server error approving merchant' });
-  }
-});
-
-router.post('/merchants/:id/reject', auth, admin, async (req, res) => {
-  try {
-    const merchantId = parseInt(req.params.id);
-    if (!merchantId || isNaN(merchantId)) {
-      return res.status(400).json({ success: false, message: 'Valid merchant ID is required' });
-    }
-
-    const result = await queryAsync('UPDATE users SET status = "rejected", updated_at = NOW() WHERE id = ? AND userType = "merchant"', [merchantId]);
-    
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ success: false, message: 'Merchant not found' });
-    }
-
-    res.json({ success: true, message: 'Merchant rejected successfully' });
-  } catch (err) {
-    console.error('Error rejecting merchant:', err);
-    res.status(500).json({ success: false, message: 'Server error rejecting merchant' });
-  }
-});
-
-// Generic status update endpoint for merchants
-router.put('/merchants/:id/status', auth, admin, async (req, res) => {
-  try {
-    const merchantId = parseInt(req.params.id);
-    const { status } = req.body;
-
-    if (!merchantId || isNaN(merchantId)) {
-      return res.status(400).json({ success: false, message: 'Valid merchant ID is required' });
-    }
-
-    if (!['pending', 'approved', 'rejected', 'suspended'].includes(status)) {
-      return res.status(400).json({ success: false, message: 'Invalid status' });
-    }
-
-    const result = await queryAsync('UPDATE users SET status = ?, updated_at = NOW() WHERE id = ? AND userType = "merchant"', [status, merchantId]);
-    
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ success: false, message: 'Merchant not found' });
-    }
-
-    res.json({ success: true, message: 'Merchant status updated successfully' });
-  } catch (err) {
-    console.error('Error updating merchant status:', err);
-    res.status(500).json({ success: false, message: 'Server error updating merchant status' });
-  }
-});
-
-// DELETE /merchants/:id endpoint removed as per requirements
-
-router.post('/merchants/bulk-action', auth, admin, async (req, res) => {
-  try {
-    const { action, merchantIds } = req.body;
-
-    if (!merchantIds || !Array.isArray(merchantIds) || merchantIds.length === 0) {
-      return res.status(400).json({ success: false, message: 'Merchant IDs are required' });
-    }
-
-    if (!['approve', 'reject', 'suspend', 'delete'].includes(action)) {
-      return res.status(400).json({ success: false, message: 'Invalid action' });
-    }
-
-    const validMerchantIds = merchantIds.filter(id => !isNaN(parseInt(id))).map(id => parseInt(id));
-    if (validMerchantIds.length !== merchantIds.length) {
-      return res.status(400).json({ success: false, message: 'All merchant IDs must be valid numbers' });
-    }
-
-    const placeholders = validMerchantIds.map(() => '?').join(',');
-    let result;
-
-    if (action === 'delete') {
-      // Delete businesses first if table exists
-      if (await tableExists('businesses')) {
-        await queryAsync(`DELETE FROM businesses WHERE userId IN (${placeholders})`, validMerchantIds);
-      }
-      
-      // Delete deals if table exists
-      if (await tableExists('deals')) {
-        await queryAsync(`DELETE FROM deals WHERE userId IN (${placeholders})`, validMerchantIds);
-      }
-      
-      // Delete users
-      result = await queryAsync(`DELETE FROM users WHERE id IN (${placeholders}) AND userType = "merchant"`, validMerchantIds);
-    } else {
-      const statusMap = {
-        approve: 'approved',
-        reject: 'rejected',
-        suspend: 'suspended'
-      };
-      
-      const newStatus = statusMap[action];
-      result = await queryAsync(
-        `UPDATE users SET status = ?, updated_at = NOW() WHERE id IN (${placeholders}) AND userType = "merchant"`,
-        [newStatus, ...validMerchantIds]
-      );
-    }
-
-    res.json({
-      success: true,
-      message: `Successfully ${action}d ${result.affectedRows} merchants`,
-      affectedCount: result.affectedRows
-    });
-  } catch (err) {
-    console.error('Error performing bulk action on merchants:', err);
-    res.status(500).json({ success: false, message: 'Server error performing bulk action' });
-  }
-});
-*/
+// ===== MERCHANTS MANAGEMENT - REMOVED =====
+// All merchant routes have been consolidated under /partners routes for consistency
 
 // ===== PARTNER ROUTE ALIASES =====
 // These routes alias the merchant routes for admin partner management
@@ -1688,7 +1247,7 @@ router.get('/partners', auth, admin, async (req, res) => {
           u.membershipType, u.status, u.createdAt, u.lastLogin,
           b.businessId, b.businessName, b.businessDescription, b.businessCategory,
           b.businessAddress, b.businessPhone, b.businessEmail, b.website,
-          b.businessLicense, b.taxId, b.status as businessStatus,
+          b.businessLicense, b.taxId, b.status as businessStatus, b.customDealLimit,
           p.name as planName, p.price as planPrice, p.billingCycle, p.currency, p.features
         FROM users u
         LEFT JOIN businesses b ON u.id = b.userId
@@ -1706,7 +1265,7 @@ router.get('/partners', auth, admin, async (req, res) => {
           NULL as businessId, NULL as businessName, NULL as businessDescription, 
           NULL as businessCategory, NULL as businessAddress, NULL as businessPhone, 
           NULL as businessEmail, NULL as website, NULL as businessLicense, 
-          NULL as taxId, NULL as businessStatus,
+          NULL as taxId, NULL as businessStatus, NULL as customDealLimit,
           p.name as planName, p.price as planPrice, p.billingCycle, p.currency, p.features
         FROM users u
         LEFT JOIN plans p ON u.membershipType = p.key
@@ -1764,7 +1323,7 @@ router.get('/partners/:id', auth, admin, async (req, res) => {
           u.membershipType, u.status, u.createdAt, u.lastLogin,
           b.businessId, b.businessName, b.businessDescription, b.businessCategory,
           b.businessAddress, b.businessPhone, b.businessEmail, b.website,
-          b.businessLicense, b.taxId, b.status as businessStatus,
+          b.businessLicense, b.taxId, b.status as businessStatus, b.customDealLimit,
           p.name as planName, p.price as planPrice, p.billingCycle, p.currency, p.features
         FROM users u
         LEFT JOIN businesses b ON u.id = b.userId
@@ -1779,7 +1338,7 @@ router.get('/partners/:id', auth, admin, async (req, res) => {
           NULL as businessId, NULL as businessName, NULL as businessDescription, 
           NULL as businessCategory, NULL as businessAddress, NULL as businessPhone, 
           NULL as businessEmail, NULL as website, NULL as businessLicense, 
-          NULL as taxId, NULL as businessStatus,
+          NULL as taxId, NULL as businessStatus, NULL as customDealLimit,
           p.name as planName, p.price as planPrice, p.billingCycle, p.currency, p.features
         FROM users u
         LEFT JOIN plans p ON u.membershipType = p.key
@@ -1797,6 +1356,44 @@ router.get('/partners/:id', auth, admin, async (req, res) => {
   } catch (err) {
     console.error('Error fetching partner:', err);
     res.status(500).json({ success: false, message: 'Server error fetching partner' });
+  }
+});
+
+// Get all businesses (for deal forms and dropdowns)
+router.get('/businesses', auth, admin, async (req, res) => {
+  try {
+    if (!(await tableExists('businesses'))) {
+      return res.json({
+        success: true,
+        businesses: [],
+        message: 'Businesses table not found'
+      });
+    }
+
+    const query = `
+      SELECT 
+        b.businessId, 
+        b.businessName, 
+        b.businessCategory, 
+        b.status as businessStatus,
+        u.fullName as ownerName,
+        u.email as ownerEmail,
+        u.status as userStatus
+      FROM businesses b
+      LEFT JOIN users u ON b.userId = u.id
+      WHERE u.userType = "merchant" AND u.status = "approved"
+      ORDER BY b.businessName ASC
+    `;
+    
+    const businesses = await queryAsync(query);
+    
+    res.json({
+      success: true,
+      businesses
+    });
+  } catch (err) {
+    console.error('Error fetching businesses:', err);
+    res.status(500).json({ success: false, message: 'Server error fetching businesses' });
   }
 });
 
@@ -1886,7 +1483,8 @@ router.put('/partners/:id', auth, admin, async (req, res) => {
     // Business fields
     const allowedBusinessFields = [
       'businessName', 'businessDescription', 'description', 'businessCategory', 'category', 'businessAddress',
-      'address', 'city', 'state', 'zipCode', 'businessPhone', 'phone', 'businessEmail', 'email', 'website', 'businessLicense', 'taxId', 'planType', 'plan'
+      'address', 'city', 'state', 'zipCode', 'businessPhone', 'phone', 'businessEmail', 'email', 'website', 
+      'businessLicense', 'taxId', 'planType', 'plan', 'customDealLimit'
     ];
     allowedBusinessFields.forEach(field => {
       if (flat[field] !== undefined && businessInfo[field] === undefined) {
@@ -1922,7 +1520,7 @@ router.put('/partners/:id', auth, admin, async (req, res) => {
     if (await tableExists('businesses')) {
       const businessDbFields = [
         'businessName', 'businessDescription', 'businessCategory', 'businessAddress',
-        'businessPhone', 'businessEmail', 'website', 'businessLicense', 'taxId'
+        'businessPhone', 'businessEmail', 'website', 'businessLicense', 'taxId', 'customDealLimit'
       ];
       const businessUpdates = [];
       const businessValues = [];
@@ -2034,10 +1632,127 @@ router.put('/partners/:id/status', auth, admin, async (req, res) => {
 });
 
 // Delete partner
-// DELETE /partners/:id endpoint removed as per requirements
+router.delete('/partners/:id', auth, admin, async (req, res) => {
+  try {
+    const partnerId = parseInt(req.params.id);
+    if (!partnerId || isNaN(partnerId)) {
+      return res.status(400).json({ success: false, message: 'Valid partner ID is required' });
+    }
+
+    // Check if partner exists and is a merchant
+    const existingPartner = await queryAsync(
+      'SELECT id FROM users WHERE id = ? AND userType = "merchant"',
+      [partnerId]
+    );
+
+    if (existingPartner.length === 0) {
+      return res.status(404).json({ success: false, message: 'Partner not found' });
+    }
+
+    // Delete from businesses table first (if exists)
+    if (await tableExists('businesses')) {
+      await queryAsync('DELETE FROM businesses WHERE userId = ?', [partnerId]);
+    }
+
+    // Delete the user
+    const result = await queryAsync('DELETE FROM users WHERE id = ? AND userType = "merchant"', [partnerId]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Partner not found' });
+    }
+
+    res.json({ success: true, message: 'Partner deleted successfully' });
+  } catch (err) {
+    console.error('Error deleting partner:', err);
+    res.status(500).json({ success: false, message: 'Server error deleting partner' });
+  }
+});
 
 // Bulk partner actions
-// POST /partners/bulk-action endpoint delete logic removed as per requirements
+router.post('/partners/bulk-action', auth, admin, async (req, res) => {
+  try {
+    const { action, merchantIds } = req.body;
+
+    if (!action || !merchantIds || !Array.isArray(merchantIds) || merchantIds.length === 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Action and merchant IDs array are required' 
+      });
+    }
+
+    // Validate action
+    const validActions = ['approve', 'reject', 'suspend', 'activate', 'delete'];
+    if (!validActions.includes(action)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: `Invalid action. Must be one of: ${validActions.join(', ')}` 
+      });
+    }
+
+    // Validate all IDs are numbers
+    const validIds = merchantIds.filter(id => !isNaN(parseInt(id)));
+    if (validIds.length !== merchantIds.length) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'All merchant IDs must be valid numbers' 
+      });
+    }
+
+    const results = { success: 0, failed: 0, errors: [] };
+
+    for (const merchantId of validIds) {
+      try {
+        switch (action) {
+          case 'approve':
+            await queryAsync(
+              'UPDATE users SET status = "approved", updated_at = NOW() WHERE id = ? AND userType = "merchant"',
+              [merchantId]
+            );
+            break;
+          case 'reject':
+            await queryAsync(
+              'UPDATE users SET status = "rejected", updated_at = NOW() WHERE id = ? AND userType = "merchant"',
+              [merchantId]
+            );
+            break;
+          case 'suspend':
+            await queryAsync(
+              'UPDATE users SET status = "suspended", updated_at = NOW() WHERE id = ? AND userType = "merchant"',
+              [merchantId]
+            );
+            break;
+          case 'activate':
+            await queryAsync(
+              'UPDATE users SET status = "approved", updated_at = NOW() WHERE id = ? AND userType = "merchant"',
+              [merchantId]
+            );
+            break;
+          case 'delete':
+            // Delete from businesses table first (if exists)
+            if (await tableExists('businesses')) {
+              await queryAsync('DELETE FROM businesses WHERE userId = ?', [merchantId]);
+            }
+            // Delete the user
+            await queryAsync('DELETE FROM users WHERE id = ? AND userType = "merchant"', [merchantId]);
+            break;
+        }
+        results.success++;
+      } catch (error) {
+        results.failed++;
+        results.errors.push(`Failed to ${action} merchant ${merchantId}: ${error.message}`);
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `Bulk ${action} completed. ${results.success} successful, ${results.failed} failed.`,
+      results
+    });
+  } catch (err) {
+    console.error('Error performing bulk partner action:', err);
+    res.status(500).json({ success: false, message: 'Server error performing bulk action' });
+  }
+});
 
 // ===== DEALS MANAGEMENT =====
 router.get('/deals', auth, admin, async (req, res) => {
@@ -2057,6 +1772,8 @@ router.get('/deals', auth, admin, async (req, res) => {
       search,
       dateFrom,
       dateTo,
+      sortBy = 'created_at',
+      sortOrder = 'desc',
       limit = 20,
       offset = 0
     } = req.query;
@@ -2095,6 +1812,11 @@ router.get('/deals', auth, admin, async (req, res) => {
       params.push(dateTo);
     }
 
+    // Validate sortBy to prevent SQL injection
+    const allowedSortColumns = ['created_at', 'title', 'status', 'category', 'validUntil'];
+    const validSortBy = allowedSortColumns.includes(sortBy) ? sortBy : 'created_at';
+    const validSortOrder = sortOrder.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
+
     const businessTableExists = await tableExists('businesses');
     
     let query;
@@ -2107,22 +1829,21 @@ router.get('/deals', auth, admin, async (req, res) => {
           u.email as merchantEmail
         FROM deals d
         LEFT JOIN businesses b ON d.businessId = b.businessId
-        LEFT JOIN users u ON d.userId = u.id
+        LEFT JOIN users u ON d.businessId = u.id
         ${whereClause}
-        ORDER BY d.created_at DESC
+        ORDER BY d.${validSortBy} ${validSortOrder}
         LIMIT ? OFFSET ?
       `;
     } else {
       query = `
         SELECT 
           d.*,
-          u.fullName as merchantName,
-          u.email as merchantEmail,
+          NULL as merchantName,
+          NULL as merchantEmail,
           NULL as businessName
         FROM deals d
-        LEFT JOIN users u ON d.userId = u.id
         ${whereClause}
-        ORDER BY d.created_at DESC
+        ORDER BY d.${validSortBy} ${validSortOrder}
         LIMIT ? OFFSET ?
       `;
     }
@@ -2144,7 +1865,352 @@ router.get('/deals', auth, admin, async (req, res) => {
     });
   } catch (err) {
     console.error('Error fetching deals:', err);
-    res.status(500).json({ success: false, message: 'Server error fetching deals' });
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error fetching deals',
+      error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+    });
+  }
+});
+
+// Get individual deal details
+router.get('/deals/:id', auth, admin, async (req, res) => {
+  try {
+    const dealId = parseInt(req.params.id);
+    if (!dealId || isNaN(dealId)) {
+      return res.status(400).json({ success: false, message: 'Valid deal ID is required' });
+    }
+
+    if (!(await tableExists('deals'))) {
+      return res.status(404).json({ success: false, message: 'Deals table not found' });
+    }
+
+    const businessTableExists = await tableExists('businesses');
+    
+    let query;
+    if (businessTableExists) {
+      query = `
+        SELECT 
+          d.*, 
+          b.businessName,
+          b.businessCategory,
+          u.fullName as merchantName,
+          u.email as merchantEmail
+        FROM deals d
+        LEFT JOIN businesses b ON d.businessId = b.businessId
+        LEFT JOIN users u ON d.businessId = u.id
+        WHERE d.id = ?
+      `;
+    } else {
+      query = `
+        SELECT 
+          d.*,
+          NULL as merchantName,
+          NULL as merchantEmail,
+          NULL as businessName,
+          NULL as businessCategory
+        FROM deals d
+        WHERE d.id = ?
+      `;
+    }
+
+    const deals = await queryAsync(query, [dealId]);
+    
+    if (deals.length === 0) {
+      return res.status(404).json({ success: false, message: 'Deal not found' });
+    }
+
+    res.json({
+      success: true,
+      deal: deals[0]
+    });
+  } catch (err) {
+    console.error('Error fetching deal details:', err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error fetching deal details',
+      error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+    });
+  }
+});
+
+// Create new deal
+router.post('/deals', auth, admin, [
+  body('title').trim().isLength({ min: 1, max: 255 }).withMessage('Title is required and must be less than 255 characters'),
+  body('description').trim().isLength({ min: 1, max: 1000 }).withMessage('Description is required and must be less than 1000 characters'),
+  body('businessId').isString().notEmpty().withMessage('Valid business ID is required'),
+  body('discount').isFloat({ min: 0 }).withMessage('Discount must be a positive number'),
+  body('discountType').isIn(['percentage', 'fixed']).withMessage('Discount type must be percentage or fixed'),
+  body('category').trim().isLength({ min: 1 }).withMessage('Category is required'),
+  body('validFrom').isISO8601().withMessage('Valid from date is required'),
+  body('validUntil').isISO8601().withMessage('Valid until date is required'),
+  body('status').optional().isIn(['active', 'inactive', 'pending']).withMessage('Status must be active, inactive, or pending')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation errors',
+        errors: errors.array()
+      });
+    }
+
+    if (!(await tableExists('deals'))) {
+      return res.status(404).json({ success: false, message: 'Deals table not found' });
+    }
+
+    const {
+      title,
+      description,
+      businessId,
+      discount,
+      discountType,
+      originalPrice,
+      discountedPrice,
+      category,
+      validFrom,
+      validUntil,
+      requiredPlanPriority = 1,
+      termsConditions,
+      couponCode,
+      status = 'active'
+    } = req.body;
+
+    // Validate dates
+    const fromDate = new Date(validFrom);
+    const toDate = new Date(validUntil);
+    if (toDate <= fromDate) {
+      return res.status(400).json({
+        success: false,
+        message: 'Valid until date must be after valid from date'
+      });
+    }
+
+    const query = `
+      INSERT INTO deals (
+        title, description, businessId, discount, discountType, originalPrice, 
+        discountedPrice, category, validFrom, validUntil, requiredPlanPriority,
+        termsConditions, couponCode, status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    const params = [
+      title, description, businessId, discount, discountType, originalPrice,
+      discountedPrice, category, validFrom, validUntil, requiredPlanPriority,
+      termsConditions, couponCode, status
+    ];
+
+    const result = await queryAsync(query, params);
+
+    res.status(201).json({
+      success: true,
+      message: 'Deal created successfully',
+      dealId: result.insertId
+    });
+  } catch (err) {
+    console.error('Error creating deal:', err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error creating deal',
+      error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+    });
+  }
+});
+
+// Update deal
+router.put('/deals/:id', auth, admin, [
+  body('title').trim().isLength({ min: 1, max: 255 }).withMessage('Title is required and must be less than 255 characters'),
+  body('description').trim().isLength({ min: 1, max: 1000 }).withMessage('Description is required and must be less than 1000 characters'),
+  body('businessId').isString().notEmpty().withMessage('Valid business ID is required'),
+  body('discount').isFloat({ min: 0 }).withMessage('Discount must be a positive number'),
+  body('discountType').isIn(['percentage', 'fixed']).withMessage('Discount type must be percentage or fixed'),
+  body('category').trim().isLength({ min: 1 }).withMessage('Category is required'),
+  body('validFrom').isISO8601().withMessage('Valid from date is required'),
+  body('validUntil').isISO8601().withMessage('Valid until date is required'),
+  body('status').optional().isIn(['active', 'inactive', 'pending']).withMessage('Status must be active, inactive, or pending')
+], async (req, res) => {
+  try {
+    const dealId = parseInt(req.params.id);
+    if (!dealId || isNaN(dealId)) {
+      return res.status(400).json({ success: false, message: 'Valid deal ID is required' });
+    }
+
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation errors',
+        errors: errors.array()
+      });
+    }
+
+    if (!(await tableExists('deals'))) {
+      return res.status(404).json({ success: false, message: 'Deals table not found' });
+    }
+
+    const {
+      title,
+      description,
+      businessId,
+      discount,
+      discountType,
+      originalPrice,
+      discountedPrice,
+      category,
+      validFrom,
+      validUntil,
+      requiredPlanPriority = 1,
+      termsConditions,
+      couponCode,
+      status = 'active'
+    } = req.body;
+
+    // Validate dates
+    const fromDate = new Date(validFrom);
+    const toDate = new Date(validUntil);
+    if (toDate <= fromDate) {
+      return res.status(400).json({
+        success: false,
+        message: 'Valid until date must be after valid from date'
+      });
+    }
+
+    // Check if deal exists
+    const existingDeal = await queryAsync('SELECT id FROM deals WHERE id = ?', [dealId]);
+    if (existingDeal.length === 0) {
+      return res.status(404).json({ success: false, message: 'Deal not found' });
+    }
+
+    const query = `
+      UPDATE deals SET 
+        title = ?, description = ?, businessId = ?, discount = ?, discountType = ?, 
+        originalPrice = ?, discountedPrice = ?, category = ?, validFrom = ?, 
+        validUntil = ?, requiredPlanPriority = ?, termsConditions = ?, 
+        couponCode = ?, status = ?
+      WHERE id = ?
+    `;
+
+    const params = [
+      title, description, businessId, discount, discountType, originalPrice,
+      discountedPrice, category, validFrom, validUntil, requiredPlanPriority,
+      termsConditions, couponCode, status, dealId
+    ];
+
+    await queryAsync(query, params);
+
+    res.json({
+      success: true,
+      message: 'Deal updated successfully'
+    });
+  } catch (err) {
+    console.error('Error updating deal:', err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error updating deal',
+      error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+    });
+  }
+});
+
+// Update deal status
+router.patch('/deals/:id/status', auth, admin, [
+  body('status').isIn(['active', 'inactive', 'pending']).withMessage('Status must be active, inactive, or pending')
+], async (req, res) => {
+  try {
+    const dealId = parseInt(req.params.id);
+    if (!dealId || isNaN(dealId)) {
+      return res.status(400).json({ success: false, message: 'Valid deal ID is required' });
+    }
+
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Validation errors',
+        errors: errors.array()
+      });
+    }
+
+    if (!(await tableExists('deals'))) {
+      return res.status(404).json({ success: false, message: 'Deals table not found' });
+    }
+
+    const { status } = req.body;
+
+    // Check if deal exists
+    const existingDeal = await queryAsync('SELECT id FROM deals WHERE id = ?', [dealId]);
+    if (existingDeal.length === 0) {
+      return res.status(404).json({ success: false, message: 'Deal not found' });
+    }
+
+  await queryAsync('UPDATE deals SET status = ? WHERE id = ?', [status, dealId]);
+
+    res.json({
+      success: true,
+      message: `Deal ${status === 'active' ? 'activated' : 'deactivated'} successfully`
+    });
+  } catch (err) {
+    console.error('Error updating deal status:', err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error updating deal status',
+      error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+    });
+  }
+});
+
+// Get deal redemptions
+router.get('/deals/:id/redemptions', auth, admin, async (req, res) => {
+  try {
+    const dealId = parseInt(req.params.id);
+    if (!dealId || isNaN(dealId)) {
+      return res.status(400).json({ success: false, message: 'Valid deal ID is required' });
+    }
+
+    // Check if redemptions table exists, if not return empty array
+    if (!(await tableExists('deal_redemptions'))) {
+      return res.json({
+        success: true,
+        redemptions: [],
+        message: 'Deal redemptions table not found'
+      });
+    }
+
+    // Check if deal exists
+    if (!(await tableExists('deals'))) {
+      return res.status(404).json({ success: false, message: 'Deals table not found' });
+    }
+
+    const dealExists = await queryAsync('SELECT id FROM deals WHERE id = ?', [dealId]);
+    if (dealExists.length === 0) {
+      return res.status(404).json({ success: false, message: 'Deal not found' });
+    }
+
+    const query = `
+      SELECT 
+        dr.*,
+        u.fullName as userName,
+        u.email as userEmail
+      FROM deal_redemptions dr
+      LEFT JOIN users u ON dr.user_id = u.id
+      WHERE dr.deal_id = ?
+      ORDER BY dr.redeemed_at DESC
+    `;
+
+    const redemptions = await queryAsync(query, [dealId]);
+
+    res.json({
+      success: true,
+      redemptions
+    });
+  } catch (err) {
+    console.error('Error fetching deal redemptions:', err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error fetching deal redemptions',
+      error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+    });
   }
 });
 
@@ -2159,16 +2225,126 @@ router.delete('/deals/:id', auth, admin, async (req, res) => {
       return res.status(404).json({ success: false, message: 'Deals table not found' });
     }
 
+    // First delete related deal_redemptions (if any)
+    if (await tableExists('deal_redemptions')) {
+      await queryAsync('DELETE FROM deal_redemptions WHERE deal_id = ?', [dealId]);
+    }
+
     const result = await queryAsync('DELETE FROM deals WHERE id = ?', [dealId]);
-    
     if (result.affectedRows === 0) {
       return res.status(404).json({ success: false, message: 'Deal not found' });
     }
-
     res.json({ success: true, message: 'Deal deleted successfully' });
   } catch (err) {
     console.error('Error deleting deal:', err);
     res.status(500).json({ success: false, message: 'Server error deleting deal' });
+  }
+});
+
+// Deal approval by admin
+router.patch('/deals/:id/approve', auth, admin, async (req, res) => {
+  try {
+    const dealId = parseInt(req.params.id);
+    if (!dealId || isNaN(dealId)) {
+      return res.status(400).json({ success: false, message: 'Valid deal ID is required' });
+    }
+
+    if (!(await tableExists('deals'))) {
+      return res.status(404).json({ success: false, message: 'Deals table not found' });
+    }
+
+    // Check if deal exists and is pending
+    const existingDeal = await queryAsync('SELECT id, status, businessId FROM deals WHERE id = ?', [dealId]);
+    if (existingDeal.length === 0) {
+      return res.status(404).json({ success: false, message: 'Deal not found' });
+    }
+
+    if (existingDeal[0].status !== 'pending_approval') {
+      return res.status(400).json({ success: false, message: 'Deal is not pending approval' });
+    }
+
+    // Update deal status to active
+    await queryAsync('UPDATE deals SET status = ? WHERE id = ?', ['active', dealId]);
+
+    // TODO: Send notification to merchant about deal approval
+    // For now, we'll add a basic notification entry if notifications table exists
+    if (await tableExists('notifications')) {
+      try {
+        await queryAsync(
+          'INSERT INTO notifications (userId, type, title, message, relatedId, created_at) VALUES ((SELECT userId FROM businesses WHERE businessId = ?), ?, ?, ?, ?, NOW())',
+          [existingDeal[0].businessId, 'deal_approved', 'Deal Approved', 'Your deal has been approved and is now active.', dealId]
+        );
+      } catch (notificationError) {
+        console.warn('Failed to create notification:', notificationError);
+      }
+    }
+
+    res.json({
+      success: true,
+      message: 'Deal approved successfully'
+    });
+  } catch (err) {
+    console.error('Error approving deal:', err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error approving deal',
+      error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+    });
+  }
+});
+
+// Deal rejection by admin
+router.patch('/deals/:id/reject', auth, admin, async (req, res) => {
+  try {
+    const dealId = parseInt(req.params.id);
+    const { reason } = req.body;
+    
+    if (!dealId || isNaN(dealId)) {
+      return res.status(400).json({ success: false, message: 'Valid deal ID is required' });
+    }
+
+    if (!(await tableExists('deals'))) {
+      return res.status(404).json({ success: false, message: 'Deals table not found' });
+    }
+
+    // Check if deal exists and is pending
+    const existingDeal = await queryAsync('SELECT id, status, businessId FROM deals WHERE id = ?', [dealId]);
+    if (existingDeal.length === 0) {
+      return res.status(404).json({ success: false, message: 'Deal not found' });
+    }
+
+    if (existingDeal[0].status !== 'pending_approval') {
+      return res.status(400).json({ success: false, message: 'Deal is not pending approval' });
+    }
+
+    // Update deal status to rejected
+    await queryAsync('UPDATE deals SET status = ? WHERE id = ?', ['rejected', dealId]);
+
+    // TODO: Send notification to merchant about deal rejection
+    // For now, we'll add a basic notification entry if notifications table exists
+    if (await tableExists('notifications')) {
+      try {
+        const message = reason ? `Your deal has been rejected. Reason: ${reason}` : 'Your deal has been rejected.';
+        await queryAsync(
+          'INSERT INTO notifications (userId, type, title, message, relatedId, created_at) VALUES ((SELECT userId FROM businesses WHERE businessId = ?), ?, ?, ?, ?, NOW())',
+          [existingDeal[0].businessId, 'deal_rejected', 'Deal Rejected', message, dealId]
+        );
+      } catch (notificationError) {
+        console.warn('Failed to create notification:', notificationError);
+      }
+    }
+
+    res.json({
+      success: true,
+      message: 'Deal rejected successfully'
+    });
+  } catch (err) {
+    console.error('Error rejecting deal:', err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error rejecting deal',
+      error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+    });
   }
 });
 

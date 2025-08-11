@@ -148,7 +148,7 @@ const MerchantDealForm = ({ onDealCreated, onClose }) => {
         termsConditions: formData.termsConditions
       };
       await merchantApi.createDeal(dealData);
-      showNotification('Deal created successfully!', 'success');
+      showNotification('Deal submitted successfully! It will be reviewed by admin before going live.', 'success');
       
       if (onDealCreated) {
         onDealCreated();

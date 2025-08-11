@@ -104,6 +104,8 @@ const DealFilters = ({ filters, onFilterChange, onSearch, businesses = [] }) => 
                 <option value="all">All Statuses</option>
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
+                <option value="pending_approval">Pending Approval</option>
+                <option value="rejected">Rejected</option>
                 <option value="pending">Pending</option>
                 <option value="expired">Expired</option>
                 <option value="suspended">Suspended</option>

@@ -53,7 +53,36 @@
   border-color: #ce93d8;
 }
 
-.plan-badge.premium_business,
+/* Deal Limit Display */
+.deal-limit-info {
+  display: flex;
+  align-items: center;
+  font-size: 0.875rem;
+}
+
+.custom-limit {
+  color: #ff6b6b;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.custom-limit i {
+  font-size: 0.75rem;
+  color: #ffa726;
+}
+
+.plan-limit {
+  color: #666;
+  font-style: italic;
+}
+
+.plan-badge.premium_business {
+color: #7b1fa2;
+  border-color: #ce93d8;
+}
+
 .plan-badge.business_premium {
   background-color: #fff3e0;
   color: #f57c00;

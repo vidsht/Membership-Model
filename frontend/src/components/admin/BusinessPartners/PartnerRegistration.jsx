@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useNotification } from '../../../contexts/NotificationContext';
-import api from '../../../services/api';
+import adminApi from '../../../services/adminApi';
 import './PartnerRegistration.css';
 
 /**
@@ -65,10 +65,16 @@ const PartnerRegistration = () => {
       setIsEditMode(true);
       const fetchMerchant = async () => {
         try {
+          console.log('🔍 PartnerRegistration: Fetching merchant for edit, ID:', partnerId);
           setIsLoading(true);
-          const response = await api.get(`/admin/partners/${partnerId}`);
-          if (response.data && response.data.success && response.data.merchant) {
-            const m = response.data.merchant;
+          
+          const response = await adminApi.getPartner(partnerId);
+          console.log('📄 PartnerRegistration: AdminAPI response:', response);
+          
+          if (response && response.success && response.merchant) {
+            const m = response.merchant;
+            console.log('✅ PartnerRegistration: Merchant data for edit:', m);
+            
             setFormData({
               businessName: m.businessName || '',
               category: m.businessCategory || m.category || '',
@@ -85,16 +91,18 @@ const PartnerRegistration = () => {
               taxId: m.taxId || '',
               logoFile: null, // File input cannot be pre-filled
               hasAgreedToTerms: true, // Assume true for edit
-              planType: m.plan || m.planType || 'basic_business',
+              planType: m.plan || m.planType || m.membershipType || 'basic_business',
             });
+            console.log('✅ PartnerRegistration: Form data set for edit mode');
           } else {
+            console.error('❌ PartnerRegistration: Failed to load merchant details:', response);
             showNotification('Failed to load merchant details for editing.', 'error');
-            navigate('/admin/partners');
+            navigate('/admin', { state: { activeTab: 'merchants' } });
           }
         } catch (error) {
-          console.error('Error fetching merchant for edit:', error);
+          console.error('❌ PartnerRegistration: Error fetching merchant for edit:', error);
           showNotification('Failed to load merchant details for editing.', 'error');
-          navigate('/admin/partners');
+          navigate('/admin', { state: { activeTab: 'merchants' } });
         } finally {
           setIsLoading(false);
         }
@@ -236,8 +244,8 @@ const PartnerRegistration = () => {
           planType: formData.planType,
         };
         const response = await api.put(`/admin/partners/${partnerId}`, payload);
-  showNotification('Partner details updated successfully.', 'success');
-  navigate('/admin/');
+        showNotification('Partner details updated successfully.', 'success');
+        navigate('/admin', { state: { activeTab: 'merchants' } });
       } else {
         // Add mode: register new merchant
         const payload = {
@@ -259,9 +267,9 @@ const PartnerRegistration = () => {
             businessAddress
           }
         };
-        const response = await api.post('/auth/merchant/register', payload);
-  showNotification('Partner registration submitted successfully. It will be reviewed shortly.', 'success');
-  navigate('/admin/');
+        const response = await api.post('/admin/partners', payload);
+        showNotification('Partner created successfully', 'success');
+        navigate('/admin', { state: { activeTab: 'merchants' } });
       }
     } catch (error) {
       console.error('Error submitting partner:', error);

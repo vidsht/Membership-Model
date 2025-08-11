@@ -156,7 +156,6 @@ const UserManagement = () => {
   }, []);
 
   const refreshData = useCallback(() => {
-    console.log('🔄 Refreshing user data...');
     setRefreshTrigger(prev => prev + 1);
     clearSelections();
   }, [clearSelections]);
@@ -188,9 +187,7 @@ const UserManagement = () => {
         return;
       }
       await fetchReferenceData();
-      console.log('✅ User Management initialized successfully');
     } catch (err) {
-      console.error('❌ Error initializing User Management:', err);
       setError('Failed to initialize user management');
       showNotification('Failed to load user management', 'error');
     } finally {
@@ -201,7 +198,6 @@ const UserManagement = () => {
   // Fetch reference data
   const fetchReferenceData = useCallback(async () => {
     try {
-      console.log('📋 Fetching reference data...');
       const [communitiesRes, allPlansRes, userPlansRes, merchantPlansRes] = await Promise.allSettled([
         api.get('/admin/communities'),
         api.get('/admin/plans'),
@@ -253,14 +249,7 @@ const UserManagement = () => {
         statuses: ['pending', 'approved', 'rejected', 'suspended']
       });
 
-      console.log('✅ Reference data loaded:', {
-        communities: communities.length,
-        allPlans: allPlans.length,
-        userPlans: userPlans.length,
-        merchantPlans: merchantPlans.length
-      });
     } catch (err) {
-      console.error('❌ Error fetching reference data:', err);
       setReferenceData({
         communities: [{ name: 'General', isActive: true }],
         plans: fallbackPlans,
@@ -310,12 +299,10 @@ const UserManagement = () => {
           totalPages: paginationData.totalPages || response.data.totalPages || 1
         }));
 
-        console.log('👥 Users loaded:', processedUsers.length);
       } else {
         throw new Error(response.data.message || 'Failed to fetch users');
       }
     } catch (err) {
-      console.error('❌ Error fetching users:', err);
       setError(err.response?.data?.message || 'Failed to load users');
       if (err.response?.status === 401) {
         handleSessionExpired();
@@ -332,14 +319,12 @@ const UserManagement = () => {
 
   // Get plans for specific user type
   const getPlansForUserType = useCallback((userType) => {
-    console.log(`🔍 Getting plans for userType: ${userType}`);
     let plans = [];
     if (userType === 'merchant') {
       plans = referenceData.merchantPlans.filter(plan => plan.type === 'merchant');
     } else if (userType === 'user' || userType === 'admin') {
       plans = referenceData.userPlans.filter(plan => plan.type === 'user');
     }
-    console.log(`✅ Filtered plans for ${userType}:`, plans);
     return plans;
   }, [referenceData.merchantPlans, referenceData.userPlans]);
 
@@ -357,7 +342,6 @@ const UserManagement = () => {
         throw new Error(response.data.message || 'Failed to update status');
       }
     } catch (err) {
-      console.error('❌ Error updating status:', err);
       const message = err.response?.data?.message || 'Failed to update status';
       showNotification(message, 'error');
     }
@@ -393,7 +377,6 @@ const UserManagement = () => {
         throw new Error(response.data.message || 'Bulk action failed');
       }
     } catch (err) {
-      console.error('❌ Error performing bulk action:', err);
       const message = err.response?.data?.message || 'Bulk action failed';
       showNotification(message, 'error');
     }
@@ -463,7 +446,6 @@ const UserManagement = () => {
 
       showNotification('Users exported successfully', 'success');
     } catch (err) {
-      console.error('❌ Error exporting users:', err);
       showNotification('Failed to export users', 'error');
     }
   }, [filters, showNotification]);
@@ -481,13 +463,13 @@ const UserManagement = () => {
   // Effects
   useEffect(() => {
     initializeComponent();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (referenceData.plans.length > 0 || refreshTrigger > 0) {
+    if (referenceData.plans.length > 0) {
       fetchUsers();
     }
-  }, [referenceData.plans.length, filters, pagination.page, refreshTrigger]);
+  }, [referenceData.plans.length, filters, pagination.page, refreshTrigger]); // Removed fetchUsers dependency
 
   // Loading state
   if (loading && users.length === 0) {
@@ -520,11 +502,11 @@ const UserManagement = () => {
   return (
     <div className="user-management-container">
       {/* Page Header */}
-      <div className="page-header">
-        <div className="header-content">
-          <div className="header-left">
+      <div className="pages-header">
+        <div className="headers-content">
+          <div className="headers-left">
             {/* Stats Cards */}
-        <div className="stats-grid">
+        <div className="stats-grids">
           <div className="stat-card">
             <div className="stat-icon">
               <i className="fas fa-users"></i>

@@ -24,8 +24,8 @@ const checkMerchantAccess = async (req, res, next) => {
              b.businessLicense, b.taxId, b.isVerified, b.verificationDate,
              b.membershipLevel, b.status as businessStatus, b.socialMediaFollowed as businessSocial,
              b.customDealLimit, b.currentPlan, b.planExpiryDate, b.planStatus, b.dealsUsedThisMonth,
-             b.created_at as businessCreatedAt,
-             p.name as planName, p.dealPostingLimit, p.priority as planPriority, p.price as planPrice,
+             b.created_at as businessCreatedAt, b.maxDealsPerMonth,
+             p.name as planName, p.max_deals_per_month as dealPostingLimit, p.priority as planPriority, p.price as planPrice,
              p.features as planFeatures, p.billingCycle
       FROM users u
       LEFT JOIN businesses b ON u.id = b.userId
@@ -104,11 +104,11 @@ const checkMerchantAccess = async (req, res, next) => {
     const dealsThisMonth = await queryAsync(`
       SELECT COUNT(*) as count 
       FROM deals 
-      WHERE businessId = ? AND DATE_FORMAT(createdAt, '%Y-%m') = ?
+      WHERE businessId = ? AND DATE_FORMAT(created_at, '%Y-%m') = ?
     `, [user.businessId, currentMonth]);
 
     user.actualDealsThisMonth = dealsThisMonth[0].count;
-    user.dealLimit = user.customDealLimit || user.dealPostingLimit || 0;
+    user.dealLimit = user.customDealLimit || user.dealPostingLimit || user.maxDealsPerMonth || 0;
     user.canPostDeals = user.dealLimit === -1 || user.actualDealsThisMonth < user.dealLimit;
 
     req.merchant = user;
@@ -258,6 +258,15 @@ router.get('/dashboard', checkMerchantAccess, async (req, res) => {
           planStatus: merchant.planStatus,
           businessCreatedAt: merchant.businessCreatedAt
         },
+        user: {
+          id: merchant.id,
+          fullName: merchant.fullName,
+          email: merchant.email,
+          status: merchant.status,
+          userType: merchant.userType,
+          statusUpdatedAt: merchant.statusUpdatedAt,
+          statusUpdatedBy: merchant.statusUpdatedBy
+        },
         plan: {
           key: merchant.currentPlan || 'basic_business',
           name: merchant.planName || 'Basic Business',
@@ -378,8 +387,8 @@ router.post('/deals', checkMerchantAccess, checkDealPostingLimit, [
 
   const insertQuery = `
     INSERT INTO deals 
-    (businessId, title, description, category, discount, discountType, originalPrice, discountedPrice, termsConditions, expiration_date, couponCode, imageUrl, minPlanPriority, accessLevel, status)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending_approval')
+    (businessId, title, description, category, discount, discountType, originalPrice, discountedPrice, termsConditions, validFrom, validUntil, couponCode, requiredPlanPriority, status)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending_approval')
   `;
 
   const values = [
@@ -392,11 +401,11 @@ router.post('/deals', checkMerchantAccess, checkDealPostingLimit, [
     originalPrice || null,
     discountedPrice || null,
     termsConditions || null,
-    expiration_date,
+    expiration_date, // validFrom
+    expiration_date, // validUntil  
     couponCode || null,
-    imageUrl || null,
-    requiredPlanPriority || 1,
-    planName || 'Community'  ];
+    requiredPlanPriority || 1
+  ];
 
   db.query(insertQuery, values, (err, result) => {
     if (err) {
@@ -546,6 +555,82 @@ router.get('/analytics/deals/:dealId?', checkMerchantAccess, (req, res) => {
       res.json({ success: true, deals: results });
     }
   });
+});
+
+// Get merchant notifications
+router.get('/notifications', checkMerchantAccess, async (req, res) => {
+  try {
+    const merchant = req.merchant;
+    
+    if (!(await tableExists('notifications'))) {
+      return res.json({
+        success: true,
+        notifications: [],
+        message: 'Notifications table not found'
+      });
+    }
+
+    // Get notifications for this merchant
+    const query = `
+      SELECT n.*, d.title as dealTitle
+      FROM notifications n
+      LEFT JOIN deals d ON n.relatedId = d.id AND n.type IN ('deal_approved', 'deal_rejected')
+      WHERE n.userId = (SELECT userId FROM businesses WHERE businessId = ?)
+      ORDER BY n.created_at DESC
+      LIMIT 50
+    `;
+    
+    const notifications = await queryAsync(query, [merchant.businessId]);
+    
+    res.json({
+      success: true,
+      notifications
+    });
+  } catch (err) {
+    console.error('Error fetching notifications:', err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error fetching notifications',
+      error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+    });
+  }
+});
+
+// Mark notification as read
+router.patch('/notifications/:id/read', checkMerchantAccess, async (req, res) => {
+  try {
+    const notificationId = parseInt(req.params.id);
+    const merchant = req.merchant;
+    
+    if (!notificationId || isNaN(notificationId)) {
+      return res.status(400).json({ success: false, message: 'Valid notification ID is required' });
+    }
+
+    if (!(await tableExists('notifications'))) {
+      return res.status(404).json({ success: false, message: 'Notifications table not found' });
+    }
+
+    // Update notification as read, ensuring it belongs to this merchant
+    const result = await queryAsync(
+      'UPDATE notifications SET isRead = 1 WHERE id = ? AND userId = (SELECT userId FROM businesses WHERE businessId = ?)', 
+      [notificationId, merchant.businessId]
+    );
+    
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Notification not found' });
+    }
+
+    res.json({
+      success: true,
+      message: 'Notification marked as read'
+    });
+  } catch (err) {
+    console.error('Error updating notification:', err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error updating notification'
+    });
+  }
 });
 
 module.exports = router;

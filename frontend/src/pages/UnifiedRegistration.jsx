@@ -381,7 +381,7 @@ const UnifiedRegistration = () => {
       const response = await merchantRegister(merchantData);
       showNotification(response.message || 'Merchant account created successfully! Welcome to the platform.', 'success');
       setTimeout(() => {
-        navigate('/merchant/dashboard');
+        navigate('/merchant-dashboard');
       }, 1200);
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Registration failed. Please try again.';

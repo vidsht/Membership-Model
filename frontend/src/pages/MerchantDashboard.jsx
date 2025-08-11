@@ -11,7 +11,20 @@ const MerchantDashboard = () => {
   const [showDealForm, setShowDealForm] = useState(false);
   const [businessInfo, setBusinessInfo] = useState({});
   const [planInfo, setPlanInfo] = useState({});
+  const [userInfo, setUserInfo] = useState({});
   const [recentRedemptions, setRecentRedemptions] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  
+  // Plan-based feature access
+  const [featureAccess, setFeatureAccess] = useState({
+    analytics: false,
+    advancedStats: false,
+    businessDashboard: false,
+    dealPosting: 'none', // 'none', 'limited', 'enhanced', 'unlimited'
+    priorityListing: false,
+    featuredPlacement: false
+  });
   const [stats, setStats] = useState({
     totalDeals: 0,
     activeDeals: 0,
@@ -27,7 +40,54 @@ const MerchantDashboard = () => {
 
   useEffect(() => {
     fetchDashboardData();
-  }, []);  const fetchDashboardData = async () => {
+    fetchNotifications();
+  }, []);
+
+  // Determine feature access based on plan priority
+  const updateFeatureAccess = (planPriority = 0) => {
+    let access = {
+      analytics: false,
+      advancedStats: false,
+      businessDashboard: false,
+      dealPosting: 'none',
+      priorityListing: false,
+      featuredPlacement: false
+    };
+
+    if (planPriority === 0) {
+      // Basic plan (priority 0)
+      access = {
+        analytics: false,
+        advancedStats: false,
+        businessDashboard: false,
+        dealPosting: 'none', // No deal posting
+        priorityListing: false,
+        featuredPlacement: false
+      };
+    } else if (planPriority >= 1 && planPriority <= 2) {
+      // Premium plans (priority 1-2)
+      access = {
+        analytics: true,
+        advancedStats: false,
+        businessDashboard: true,
+        dealPosting: 'limited', // Limited deal posting
+        priorityListing: true,
+        featuredPlacement: false
+      };
+    } else if (planPriority >= 3 && planPriority <= 4) {
+      // Featured plans (priority 3-4)
+      access = {
+        analytics: true,
+        advancedStats: true,
+        businessDashboard: true,
+        dealPosting: 'unlimited', // Maximum deal posting
+        priorityListing: true,
+        featuredPlacement: true
+      };
+    }
+
+    setFeatureAccess(access);
+  };  const fetchDashboardData = async () => {
     try {
       setLoading(true);
       const response = await merchantApi.getDashboard();
@@ -37,7 +97,11 @@ const MerchantDashboard = () => {
         setDeals(response.data.deals || []);
         setBusinessInfo(response.data.business || {});
         setPlanInfo(response.data.plan || {});
+        setUserInfo(response.data.user || {});
         setRecentRedemptions(response.data.recentRedemptions || []);
+        
+        // Update feature access based on plan priority
+        updateFeatureAccess(response.data.plan?.priority || 0);
         
         // Store businessId for use in deal creation
         if (response.data.business?.businessId) {
@@ -46,41 +110,18 @@ const MerchantDashboard = () => {
       }
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
-      // Keep the existing mock data as fallback
-      setStats({
-        totalDeals: 5,
-        activeDeals: 3,
-        pendingDeals: 1,
-        expiredDeals: 1,
-        totalViews: 248,
-        totalRedemptions: 42,
-        todayRedemptions: 3,
-        thisMonthDeals: 2,
-        dealsUsedThisMonth: 2,
-        dealLimitRemaining: 8
-      });
       
-      setDeals([
-        {
-          id: 1,
-          title: "20% Off Traditional Indian Cuisine",
-          description: "Get 20% off on all traditional Indian dishes",
-          discount: "20%",
-          validUntil: "2024-03-31",
-          status: "active",
-          views: 156,
-          redemptions: 23
-        },
-        {
-          id: 2,
-          title: "Buy 2 Get 1 Free on Samosas",
-          description: "Purchase any 2 samosas and get the 3rd one free",
-          discount: "33%",
-          validUntil: "2024-02-28",
-          status: "active",
-          views: 92,
-          redemptions: 19        }
-      ]);
+      // Handle 403 status for pending business approval
+      if (error.response?.status === 403 && error.response?.data?.status === 'pending') {
+        setUserInfo({ status: 'pending' });
+        setBusinessInfo({ status: 'pending' });
+        setPlanInfo({ priority: 0 });
+        updateFeatureAccess(0);
+        return; // Don't set mock data for pending approval
+      }
+      
+      // Set default basic plan for other errors
+      updateFeatureAccess(0);
     } finally {
       setLoading(false);
     }
@@ -100,6 +141,43 @@ const MerchantDashboard = () => {
     }
   };
 
+  const fetchNotifications = async () => {
+    try {
+      const response = await axios.get('http://localhost:5001/api/merchant/notifications', { withCredentials: true });
+      setNotifications(response.data.notifications || []);
+      setUnreadCount(response.data.notifications?.filter(n => !n.read).length || 0);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+      // Don't log as error if it's just missing notifications endpoint or pending approval
+      if (error.response?.status === 404 || error.response?.status === 403) {
+        setNotifications([]);
+        setUnreadCount(0);
+      }
+    }
+  };
+
+  const markNotificationAsRead = async (notificationId) => {
+    try {
+      await axios.put(`http://localhost:5001/api/merchant/notifications/${notificationId}/read`, {}, { withCredentials: true });
+      setNotifications(prev => 
+        prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
+      );
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
+
+  const markAllNotificationsAsRead = async () => {
+    try {
+      await axios.put('http://localhost:5001/api/merchant/notifications/read-all', {}, { withCredentials: true });
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      setUnreadCount(0);
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+    }
+  };
+
   if (loading) {
     return (
       <div className="loading-container">
@@ -111,77 +189,266 @@ const MerchantDashboard = () => {
 
   return (
     <div className="merchant-dashboard">
+      {/* Status Badge - Show if profile is pending, rejected, or suspended */}
+      {(userInfo?.status && userInfo.status !== 'approved') || (businessInfo?.status && businessInfo.status !== 'active') ? (
+        <div className={`status-alert ${userInfo?.status || businessInfo?.status}`}>
+          <div className="status-alert-content">
+            <div className="status-info">
+              <i className={`fas ${
+                (userInfo?.status === 'pending' || businessInfo?.status === 'pending') ? 'fa-clock' :
+                (userInfo?.status === 'rejected' || businessInfo?.status === 'rejected') ? 'fa-times-circle' :
+                (userInfo?.status === 'suspended' || businessInfo?.status === 'suspended') ? 'fa-ban' : 'fa-info-circle'
+              }`}></i>
+              <div className="status-text">
+                <h4>
+                  {(userInfo?.status === 'pending' || businessInfo?.status === 'pending') && 'Business Pending Admin Approval'}
+                  {(userInfo?.status === 'rejected' || businessInfo?.status === 'rejected') && 'Business Rejected'}
+                  {(userInfo?.status === 'suspended' || businessInfo?.status === 'suspended') && 'Business Suspended'}
+                </h4>
+                <p>
+                  {(userInfo?.status === 'pending' || businessInfo?.status === 'pending') && 'Your business is not yet approved by the admin. Please wait for approval to access all merchant features.'}
+                  {(userInfo?.status === 'rejected' || businessInfo?.status === 'rejected') && 'Your business has been rejected by the admin. Please contact support for more information.'}
+                  {(userInfo?.status === 'suspended' || businessInfo?.status === 'suspended') && 'Your business has been suspended by the admin. Please contact support to resolve this issue.'}
+                </p>
+              </div>
+            </div>
+            {(userInfo?.status === 'pending' || businessInfo?.status === 'pending') && (
+              <div className="status-actions">
+                <span className="estimated-time">⏱️ Estimated review time: 1-3 business days</span>
+              </div>
+            )}
+            {((userInfo?.status === 'rejected' || businessInfo?.status === 'rejected') || 
+              (userInfo?.status === 'suspended' || businessInfo?.status === 'suspended')) && (
+              <div className="status-actions">
+                <button className="btn btn-outline btn-sm">
+                  <i className="fas fa-envelope"></i> Contact Support
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : null}
+
       <div className="dashboard-header">
         <h1>Merchant Dashboard</h1>
         <p>Welcome back, {user?.businessInfo?.businessName || user?.firstName}!</p>
-      </div>      {/* Enhanced Stats Cards */}
-      <div className="stats-grid">
-        <div className="stat-card primary">
-          <div className="stat-icon">
-            <i className="fas fa-tags"></i>
+      </div>
+
+      {/* Notifications Section */}
+      {notifications.length > 0 && (
+        <div className="notifications-section">
+          <div className="card-header">
+            <h2>
+              <i className="fas fa-bell"></i> Notifications
+              {unreadCount > 0 && <span className="notification-badge">{unreadCount}</span>}
+            </h2>
+            {unreadCount > 0 && (
+              <button className="btn btn-outline btn-sm" onClick={markAllNotificationsAsRead}>
+                <i className="fas fa-check-double"></i> Mark All Read
+              </button>
+            )}
           </div>
-          <div className="stat-content">
-            <h3>{stats.totalDeals || 0}</h3>
-            <p>Total Deals</p>
-            <small className="stat-subtext">All time</small>
-          </div>
-        </div>
-        
-        <div className="stat-card success">
-          <div className="stat-icon">
-            <i className="fas fa-play-circle"></i>
-          </div>
-          <div className="stat-content">
-            <h3>{stats.activeDeals || 0}</h3>
-            <p>Active Deals</p>
-            <small className="stat-subtext">Currently running</small>
-          </div>
-        </div>
-        
-        <div className="stat-card warning">
-          <div className="stat-icon">
-            <i className="fas fa-clock"></i>
-          </div>
-          <div className="stat-content">
-            <h3>{stats.pendingDeals || 0}</h3>
-            <p>Pending Approval</p>
-            <small className="stat-subtext">Awaiting admin review</small>
-          </div>
-        </div>
-        
-        <div className="stat-card info">
-          <div className="stat-icon">
-            <i className="fas fa-eye"></i>
-          </div>
-          <div className="stat-content">
-            <h3>{stats.totalViews || 0}</h3>
-            <p>Total Views</p>
-            <small className="stat-subtext">Deal impressions</small>
-          </div>
-        </div>
-        
-        <div className="stat-card accent">
-          <div className="stat-icon">
-            <i className="fas fa-shopping-cart"></i>
-          </div>
-          <div className="stat-content">
-            <h3>{stats.totalRedemptions || 0}</h3>
-            <p>Total Redemptions</p>
-            <small className="stat-subtext">All time</small>
+          <div className="notifications-list">
+            {notifications.slice(0, 5).map((notification) => (
+              <div 
+                key={notification.id} 
+                className={`notification-item ${!notification.read ? 'unread' : ''}`}
+                onClick={() => !notification.read && markNotificationAsRead(notification.id)}
+              >
+                <div className="notification-icon">
+                  <i className={`fas ${
+                    notification.type === 'deal_approved' ? 'fa-check-circle text-success' :
+                    notification.type === 'deal_rejected' ? 'fa-times-circle text-danger' :
+                    'fa-info-circle text-info'
+                  }`}></i>
+                </div>
+                <div className="notification-content">
+                  <h4>{notification.title}</h4>
+                  <p>{notification.message}</p>
+                  <small className="notification-time">
+                    {new Date(notification.created_at).toLocaleDateString()} at {new Date(notification.created_at).toLocaleTimeString()}
+                  </small>
+                </div>
+                {!notification.read && <div className="unread-indicator"></div>}
+              </div>
+            ))}
+            {notifications.length > 5 && (
+              <div className="notification-item view-all">
+                <div className="notification-content">
+                  <p><i className="fas fa-ellipsis-h"></i> View all notifications</p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
-        
-        <div className="stat-card secondary">
-          <div className="stat-icon">
-            <i className="fas fa-calendar-day"></i>
-          </div>
-          <div className="stat-content">
-            <h3>{stats.todayRedemptions || 0}</h3>
-            <p>Today's Redemptions</p>
-            <small className="stat-subtext">Last 24 hours</small>
+      )}
+
+      {/* Plan Access Information - Only show if business is approved */}
+      {(userInfo?.status === 'approved' || (!userInfo?.status && businessInfo?.status !== 'pending')) && (
+        <div className={`plan-access-banner ${planInfo.priority === 0 ? 'basic' : planInfo.priority <= 2 ? 'premium' : 'featured'}`}>
+          <div className="plan-access-content">
+            <div className="plan-info-left">
+              <h3>
+                <i className={`fas ${planInfo.priority === 0 ? 'fa-star-o' : planInfo.priority <= 2 ? 'fa-star-half-o' : 'fa-star'}`}></i>
+                {planInfo.name || 'Basic Plan'} - {planInfo.priority === 0 ? 'Basic' : planInfo.priority <= 2 ? 'Premium' : 'Featured'} Access
+              </h3>
+              <p>
+                {planInfo.priority === 0 && 'Basic business listing with standard visibility'}
+                {planInfo.priority >= 1 && planInfo.priority <= 2 && 'Enhanced listing with analytics and priority placement'}
+                {planInfo.priority >= 3 && 'Featured placement with full analytics and unlimited deals'}
+              </p>
+              <div className="plan-details">
+                <span className="plan-price">
+                  {planInfo.price ? `${planInfo.currency || 'GHS'} ${planInfo.price}/${planInfo.billingCycle || 'year'}` : 'Free'}
+                </span>
+                <span className="plan-limit">
+                  Deal Limit: {stats.dealLimit === -1 ? 'Unlimited' : `${stats.actualDealsThisMonth || 0}/${stats.dealLimit || 0} this month`}
+                </span>
+              </div>
+            </div>
+            <div className="plan-features-preview">
+              <div className="feature-items">
+                <span className={`feature-item ${featureAccess.analytics ? 'enabled' : 'disabled'}`}>
+                  <i className={`fas ${featureAccess.analytics ? 'fa-chart-line' : 'fa-ban'}`}></i>
+                  Analytics {featureAccess.analytics ? '✓' : '✗'}
+                </span>
+                <span className={`feature-item ${featureAccess.dealPosting !== 'none' ? 'enabled' : 'disabled'}`}>
+                  <i className={`fas ${featureAccess.dealPosting !== 'none' ? 'fa-tags' : 'fa-ban'}`}></i>
+                  Deal Posting {featureAccess.dealPosting !== 'none' ? '✓' : '✗'}
+                </span>
+                <span className={`feature-item ${featureAccess.featuredPlacement ? 'enabled' : 'disabled'}`}>
+                  <i className={`fas ${featureAccess.featuredPlacement ? 'fa-crown' : 'fa-ban'}`}></i>
+                  Featured {featureAccess.featuredPlacement ? '✓' : '✗'}
+                </span>
+              </div>
+              {planInfo.priority === 0 && (
+                <button className="btn btn-upgrade">
+                  <i className="fas fa-arrow-up"></i> Upgrade Plan
+                </button>
+              )}
+            </div>
           </div>
         </div>
-      </div>      {/* Enhanced Business Info */}
+      )}
+
+      {/* Enhanced Stats Cards - Conditional based on plan and approval status */}
+      {(userInfo?.status === 'approved' || (!userInfo?.status && businessInfo?.status !== 'pending')) ? (
+        featureAccess.analytics ? (
+          <div className="stats-grid">
+            <div className="stat-card primary">
+              <div className="stat-icon">
+                <i className="fas fa-tags"></i>
+              </div>
+              <div className="stat-content">
+                <h3>{stats.totalDeals || 0}</h3>
+                <p>Total Deals</p>
+                <small className="stat-subtext">All time</small>
+              </div>
+            </div>
+            
+            <div className="stat-card success">
+              <div className="stat-icon">
+                <i className="fas fa-play-circle"></i>
+              </div>
+              <div className="stat-content">
+                <h3>{stats.activeDeals || 0}</h3>
+                <p>Active Deals</p>
+                <small className="stat-subtext">Currently running</small>
+              </div>
+            </div>
+            
+            <div className="stat-card warning">
+              <div className="stat-icon">
+                <i className="fas fa-clock"></i>
+              </div>
+              <div className="stat-content">
+                <h3>{stats.pendingDeals || 0}</h3>
+                <p>Pending Approval</p>
+                <small className="stat-subtext">Awaiting admin review</small>
+              </div>
+            </div>
+            
+            <div className="stat-card info">
+              <div className="stat-icon">
+                <i className="fas fa-eye"></i>
+              </div>
+              <div className="stat-content">
+                <h3>{stats.totalViews || 0}</h3>
+                <p>Total Views</p>
+                <small className="stat-subtext">Deal impressions</small>
+              </div>
+            </div>
+            
+            <div className="stat-card accent">
+              <div className="stat-icon">
+                <i className="fas fa-shopping-cart"></i>
+              </div>
+              <div className="stat-content">
+                <h3>{stats.totalRedemptions || 0}</h3>
+                <p>Total Redemptions</p>
+                <small className="stat-subtext">All time</small>
+              </div>
+            </div>
+            
+            <div className="stat-card secondary">
+              <div className="stat-icon">
+                <i className="fas fa-calendar-day"></i>
+              </div>
+              <div className="stat-content">
+                <h3>{stats.todayRedemptions || 0}</h3>
+                <p>Today's Redemptions</p>
+                <small className="stat-subtext">Last 24 hours</small>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="basic-stats-message">
+            <div className="upgrade-prompt">
+              <h3><i className="fas fa-star"></i> Upgrade to Access Analytics</h3>
+              <p>Get detailed insights about your business performance with our Premium or Featured plans.</p>
+              <div className="basic-features">
+                <div className="basic-feature">
+                  <i className="fas fa-check"></i> Business listing included
+                </div>
+                <div className="basic-feature">
+                  <i className="fas fa-times"></i> Analytics & stats (Premium+)
+                </div>
+                <div className="basic-feature">
+                  <i className="fas fa-times"></i> Deal posting (Premium+)
+                </div>
+                <div className="basic-feature">
+                  <i className="fas fa-times"></i> Featured placement (Featured plans)
+                </div>
+              </div>
+              <button className="btn btn-primary">
+                <i className="fas fa-arrow-up"></i> Upgrade Your Plan
+              </button>
+            </div>
+          </div>
+        )
+      ) : (
+        <div className="pending-approval-message">
+          <div className="pending-content">
+            <i className="fas fa-hourglass-half pending-icon"></i>
+            <h3>Business Approval Pending</h3>
+            <p>Your business is currently under review by our admin team. Once approved, you'll have access to:</p>
+            <div className="pending-features">
+              <div className="pending-feature">
+                <i className="fas fa-chart-bar"></i> Business Analytics
+              </div>
+              <div className="pending-feature">
+                <i className="fas fa-tags"></i> Deal Management
+              </div>
+              <div className="pending-feature">
+                <i className="fas fa-users"></i> Customer Insights
+              </div>
+              <div className="pending-feature">
+                <i className="fas fa-crown"></i> Premium Features
+              </div>
+            </div>
+          </div>
+        </div>
+      )}      {/* Enhanced Business Info - Always shown, fully dynamic from DB */}
       <div className="dashboard-sections">
         <div className="business-info-card">
           <div className="card-header">
@@ -193,44 +460,74 @@ const MerchantDashboard = () => {
           <div className="business-details">
             <div className="detail-row">
               <div className="detail-item">
-                <strong><i className="fas fa-building"></i> Business Name:</strong> 
+                <strong><i className="fas fa-building"></i> Business Name:</strong>
                 <span>{businessInfo.businessName || 'Not provided'}</span>
               </div>
               <div className="detail-item">
-                <strong><i className="fas fa-tag"></i> Category:</strong> 
+                <strong><i className="fas fa-tag"></i> Category:</strong>
                 <span>{businessInfo.businessCategory || 'Not specified'}</span>
               </div>
             </div>
             <div className="detail-row">
               <div className="detail-item">
-                <strong><i className="fas fa-map-marker-alt"></i> Address:</strong> 
+                <strong><i className="fas fa-map-marker-alt"></i> Address:</strong>
                 <span>{businessInfo.businessAddress || 'Not provided'}</span>
               </div>
               <div className="detail-item">
-                <strong><i className="fas fa-phone"></i> Phone:</strong> 
+                <strong><i className="fas fa-phone"></i> Phone:</strong>
                 <span>{businessInfo.businessPhone || 'Not provided'}</span>
               </div>
             </div>
             <div className="detail-row">
               <div className="detail-item">
-                <strong><i className="fas fa-envelope"></i> Email:</strong> 
+                <strong><i className="fas fa-envelope"></i> Email:</strong>
                 <span>{businessInfo.businessEmail || 'Not provided'}</span>
               </div>
               <div className="detail-item">
-                <strong><i className="fas fa-globe"></i> Website:</strong> 
+                <strong><i className="fas fa-globe"></i> Website:</strong>
                 <span>{businessInfo.website || 'Not provided'}</span>
               </div>
             </div>
             <div className="detail-row">
               <div className="detail-item">
-                <strong><i className="fas fa-id-badge"></i> Business ID:</strong> 
+                <strong><i className="fas fa-id-badge"></i> Business ID:</strong>
                 <span>{businessInfo.businessId || 'Not assigned'}</span>
               </div>
               <div className="detail-item">
-                <strong><i className="fas fa-check-circle"></i> Status:</strong> 
+                <strong><i className="fas fa-check-circle"></i> Status:</strong>
                 <span className={`status-badge ${businessInfo.status || 'pending'}`}>
                   {businessInfo.status || 'Pending'}
                 </span>
+              </div>
+            </div>
+            <div className="detail-row">
+              <div className="detail-item">
+                <strong><i className="fas fa-calendar"></i> Created At:</strong>
+                <span>{businessInfo.businessCreatedAt ? new Date(businessInfo.businessCreatedAt).toLocaleDateString() : 'Not available'}</span>
+              </div>
+              <div className="detail-item">
+                <strong><i className="fas fa-user-shield"></i> Verified:</strong>
+                <span>{businessInfo.isVerified ? 'Yes' : 'No'}</span>
+              </div>
+            </div>
+            <div className="detail-row">
+              <div className="detail-item">
+                <strong><i className="fas fa-certificate"></i> License:</strong>
+                <span>{businessInfo.businessLicense || 'Not provided'}</span>
+              </div>
+              <div className="detail-item">
+                <strong><i className="fas fa-file-invoice"></i> Tax ID:</strong>
+                <span>{businessInfo.taxId || 'Not provided'}</span>
+              </div>
+            </div>
+            <div className="detail-row">
+              <div className="detail-item">
+                <strong><i className="fas fa-users"></i> Membership Level:</strong>
+                <span>{businessInfo.membershipLevel || 'Not set'}</span>
+              </div>
+              <div className="detail-item">
+                <strong><i className="fas fa-calendar-check"></i> Plan Expiry:</strong>
+                <span>{businessInfo.planExpiryDate ? new Date(businessInfo.planExpiryDate).toLocaleDateString() : 'Not set'}</span>
               </div>
             </div>
           </div>
@@ -251,22 +548,39 @@ const MerchantDashboard = () => {
             </div>
             <div className="plan-limits">
               <div className="limit-item">
-                <strong>Deals This Month:</strong>
+                <strong>
+                  Deals This Month:
+                  {businessInfo.customDealLimit && (
+                    <span className="custom-limit-badge" title="Custom limit set by admin">
+                      <i className="fas fa-star"></i> Custom
+                    </span>
+                  )}
+                </strong>
                 <div className="progress-bar">
                   <div 
                     className="progress-fill" 
                     style={{
-                      width: `${Math.min(100, ((stats.dealsUsedThisMonth || 0) / (planInfo.maxDealsPerMonth || 10)) * 100)}%`
+                      width: `${Math.min(100, stats.dealLimit === -1 ? 0 : ((stats.actualDealsThisMonth || 0) / (stats.dealLimit || 10)) * 100)}%`
                     }}
                   ></div>
                 </div>
                 <span className="progress-text">
-                  {stats.dealsUsedThisMonth || 0} / {planInfo.maxDealsPerMonth || 10}
+                  {stats.actualDealsThisMonth || 0} / {stats.dealLimit === -1 ? 'Unlimited' : (stats.dealLimit || 10)}
                 </span>
+                {businessInfo.customDealLimit && (
+                  <small className="limit-explanation">
+                    Custom limit: {businessInfo.customDealLimit} deals/month 
+                    {planInfo.dealPostingLimit && planInfo.dealPostingLimit !== businessInfo.customDealLimit && (
+                      <span> (Plan default: {planInfo.dealPostingLimit})</span>
+                    )}
+                  </small>
+                )}
               </div>
               <div className="limit-item">
                 <strong>Remaining:</strong>
-                <span className="remaining-count">{stats.dealLimitRemaining || 0} deals</span>
+                <span className="remaining-count">
+                  {stats.dealLimit === -1 ? 'Unlimited' : (stats.dealLimitRemaining || 0)} deals
+                </span>
               </div>
             </div>
             {planInfo.features && planInfo.features.length > 0 && (
@@ -287,8 +601,24 @@ const MerchantDashboard = () => {
       <div className="quick-actions">
         <h2>Quick Actions</h2>
         <div className="action-buttons">
-          <button className="btn btn-primary">
+          <button 
+            className={`btn ${stats.canPostDeals ? 'btn-primary' : 'btn-disabled'}`}
+            onClick={() => {
+              if (stats.canPostDeals) {
+                setShowDealForm(true);
+              } else {
+                alert(`You've reached your monthly deal limit of ${stats.dealLimit}. ${businessInfo.customDealLimit ? 'Contact admin to increase your custom limit.' : 'Upgrade your plan for more deals.'}`);
+              }
+            }}
+            disabled={!stats.canPostDeals}
+            title={!stats.canPostDeals ? `Deal limit reached (${stats.actualDealsThisMonth}/${stats.dealLimit})` : ''}
+          >
             <i className="fas fa-plus"></i> Create New Deal
+            {!stats.canPostDeals && (
+              <span className="limit-indicator">
+                <i className="fas fa-exclamation-triangle"></i>
+              </span>
+            )}
           </button>
           <button className="btn btn-secondary">
             <i className="fas fa-edit"></i> Edit Business Info
@@ -297,7 +627,9 @@ const MerchantDashboard = () => {
             <i className="fas fa-chart-bar"></i> View Analytics
           </button>
         </div>
-      </div>      {/* Recent Redemptions */}
+      </div>
+
+      {/* Recent Redemptions */}
       {recentRedemptions && recentRedemptions.length > 0 && (
         <div className="recent-redemptions-section">
           <div className="card-header">
@@ -331,66 +663,99 @@ const MerchantDashboard = () => {
         </div>
       )}
 
-      {/* Recent Deals */}
-      <div className="deals-section">
-        <div className="section-header">
-          <h2>Your Deals</h2>
-          <button className="btn btn-primary" onClick={() => setShowDealForm(true)}>
-            <i className="fas fa-plus"></i> Add New Deal
-          </button>
+      {/* Deal Management - Conditional based on plan */}
+      {featureAccess.dealPosting !== 'none' ? (
+        <div className="deals-section">
+          <div className="section-header">
+            <h2>Your Deals</h2>
+            <button className="btn btn-primary" onClick={() => setShowDealForm(true)}>
+              <i className="fas fa-plus"></i> Add New Deal
+            </button>
+          </div>
+          
+          {deals.length === 0 ? (
+            <div className="empty-state">
+              <i className="fas fa-tags"></i>
+              <h3>No Deals Yet</h3>
+              <p>Create your first deal to start attracting customers!</p>
+              <button className="btn btn-primary" onClick={() => setShowDealForm(true)}>Create Deal</button>
+            </div>
+          ) : (
+            <div className="deals-grid">
+              {deals.map(deal => (
+                <div key={deal.id} className="deal-card">
+                  <div className="deal-header">
+                    <h3>{deal.title}</h3>
+                    <span className={`status-badge ${deal.status}`}>
+                      {deal.status}
+                    </span>
+                  </div>
+                  <p className="deal-description">{deal.description}</p>
+                  <div className="deal-meta">
+                    <div className="deal-discount">
+                      <strong>{deal.discount} OFF</strong>
+                    </div>
+                    <div className="deal-expiry">
+                      Expires: {new Date(deal.validUntil).toLocaleDateString()}
+                    </div>
+                  </div>
+                  <div className="deal-stats">
+                    <div className="stat-item">
+                      <i className="fas fa-eye"></i>
+                      <span>{deal.views} views</span>
+                    </div>
+                    <div className="stat-item">
+                      <i className="fas fa-shopping-cart"></i>
+                      <span>{deal.redemptions} used</span>
+                    </div>
+                  </div>
+                  <div className="deal-actions">
+                    <button className="btn btn-sm btn-secondary">
+                      <i className="fas fa-edit"></i> Edit
+                    </button>
+                    <button className="btn btn-sm btn-danger">
+                      <i className="fas fa-trash"></i> Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-        
-        {deals.length === 0 ? (
-          <div className="empty-state">
-            <i className="fas fa-tags"></i>
-            <h3>No Deals Yet</h3>
-            <p>Create your first deal to start attracting customers!</p>
-            <button className="btn btn-primary" onClick={() => setShowDealForm(true)}>Create Deal</button>
+      ) : (
+        <div className="deals-section">
+          <div className="section-header">
+            <h2>Deal Management</h2>
           </div>
-        ) : (
-          <div className="deals-grid">
-            {deals.map(deal => (
-              <div key={deal.id} className="deal-card">
-                <div className="deal-header">
-                  <h3>{deal.title}</h3>
-                  <span className={`status-badge ${deal.status}`}>
-                    {deal.status}
-                  </span>
+          <div className="upgrade-deals-message">
+            <div className="upgrade-prompt">
+              <i className="fas fa-lock"></i>
+              <h3>Deal Posting Requires Plan Upgrade</h3>
+              <p>Upgrade to a Premium or Featured plan to start posting exclusive deals and attract more customers.</p>
+              <div className="upgrade-benefits">
+                <div className="benefit-item">
+                  <i className="fas fa-check text-success"></i>
+                  Post exclusive deals to attract customers
                 </div>
-                <p className="deal-description">{deal.description}</p>
-                <div className="deal-meta">
-                  <div className="deal-discount">
-                    <strong>{deal.discount} OFF</strong>
-                  </div>
-                  <div className="deal-expiry">
-                    Expires: {new Date(deal.validUntil).toLocaleDateString()}
-                  </div>
+                <div className="benefit-item">
+                  <i className="fas fa-check text-success"></i>
+                  Track deal performance and analytics
                 </div>
-                <div className="deal-stats">
-                  <div className="stat-item">
-                    <i className="fas fa-eye"></i>
-                    <span>{deal.views} views</span>
-                  </div>
-                  <div className="stat-item">
-                    <i className="fas fa-shopping-cart"></i>
-                    <span>{deal.redemptions} used</span>
-                  </div>
+                <div className="benefit-item">
+                  <i className="fas fa-check text-success"></i>
+                  Enhanced business visibility
                 </div>
-                <div className="deal-actions">
-                  <button className="btn btn-sm btn-secondary">
-                    <i className="fas fa-edit"></i> Edit
-                  </button>
-                  <button className="btn btn-sm btn-danger">
-                    <i className="fas fa-trash"></i> Delete
-                  </button>                </div>
               </div>
-            ))}
+              <button className="btn btn-primary">
+                <i className="fas fa-arrow-up"></i> Upgrade to Premium
+              </button>
+            </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
       
-      {/* Deal Creation Modal */}
-      {showDealForm && (
+      {/* Deal Creation Modal - Only for premium+ plans */}
+      {showDealForm && featureAccess.dealPosting !== 'none' && (
         <div className="modal-overlay">
           <div className="modal-content">
             <MerchantDealForm 
@@ -403,66 +768,5 @@ const MerchantDashboard = () => {
     </div>
   );
 };
-
-function DealWithRedemptions({ deal }) {
-  const [redemptions, setRedemptions] = React.useState([]);
-  React.useEffect(() => {
-    fetchRedemptions(deal.id).then(setRedemptions);
-  }, [deal.id]);
-
-  return (
-    <div className="deal-card">
-      <div className="deal-header">
-        <h3>{deal.title}</h3>
-        <span className={`status-badge ${deal.status}`}>{deal.status}</span>
-      </div>
-      <p className="deal-description">{deal.description}</p>
-      <div className="deal-meta">
-        <div className="deal-discount">
-          <strong>{deal.discount} OFF</strong>
-        </div>
-        <div className="deal-expiry">
-          Expires: {deal.expiration_date ? new Date(deal.expiration_date).toLocaleDateString() : ''}
-        </div>
-      </div>
-      <div className="deal-business-id">
-        <span className="business-id-label">Business ID:</span> <span className="business-id-value">{deal.businessId}</span>
-      </div>
-      <div className="deal-stats">
-        <div className="stat-item">
-          <i className="fas fa-eye"></i>
-          <span>{deal.views} views</span>
-        </div>
-        <div className="stat-item">
-          <i className="fas fa-shopping-cart"></i>
-          <span>{deal.redemptions} used</span>
-        </div>
-      </div>
-      <div className="deal-actions">
-        <button className="btn btn-sm btn-secondary">
-          <i className="fas fa-edit"></i> Edit
-        </button>
-        <button className="btn btn-sm btn-danger">
-          <i className="fas fa-trash"></i> Delete
-        </button>
-      </div>
-      {/* Redemptions List */}
-      <div className="deal-redemptions">
-        <h4>Redeemed By:</h4>
-        {redemptions.length === 0 ? (
-          <span className="no-redemptions">No users have redeemed this deal yet.</span>
-        ) : (
-          <ul className="redemptions-list">
-            {redemptions.map(user => (
-              <li key={user.id}>
-                <span>{user.name} ({user.email})</span> <span className="redeemed-date">{new Date(user.redeemedAt).toLocaleString()}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-    </div>
-  );
-}
 
 export default MerchantDashboard;

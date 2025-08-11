@@ -27,9 +27,6 @@ import AdminDashboard from './components/admin/AdminDashboard';
 import UserManagement from './components/admin/UserManagement/UserManagement';
 import UserForm from './components/admin/UserManagement/UserForm';
 import UserDetailPage from './components/admin/UserManagement/UserDetailPage';
-import PartnerList from './components/admin/BusinessPartners/PartnerList';
-import PartnerRegistration from './components/admin/BusinessPartners/PartnerRegistration';
-import PartnerDetail from './components/admin/BusinessPartners/PartnerDetail';
 import AdminSettings from './components/admin/Settings/AdminSettings';
 import PlanSettings from './components/admin/Settings/PlanSettings';
 import PlanAssignment from './components/admin/PlanManagement/PlanAssignment';
@@ -38,6 +35,9 @@ import DealList from './components/admin/DealManagement/DealList';
 import DealForm from './components/admin/DealManagement/DealForm';
 import DealDetail from './components/admin/DealManagement/DealDetail';
 import Activities from './components/admin/Activities/Activities';
+import PartnerRegistration from './components/admin/BusinessPartners/PartnerRegistration';
+import PartnerDetail from './components/admin/BusinessPartners/PartnerDetail';
+import QuickEditDealLimit from './components/admin/BusinessPartners/QuickEditDealLimit';
 
 function AppContent() {
   const location = useLocation();
@@ -116,9 +116,10 @@ function AppContent() {
             </AdminRoute>
           } />
           
+          {/* Business Partner Routes */}
           <Route path="/admin/partners" element={
             <AdminRoute>
-              <PartnerList />
+              <AdminDashboard />
             </AdminRoute>
           } />
           
@@ -127,22 +128,22 @@ function AppContent() {
               <PartnerRegistration />
             </AdminRoute>
           } />
-
-          <Route path="/admin/partners/create" element={
+          
+          <Route path="/admin/partners/:id/edit" element={
             <AdminRoute>
               <PartnerRegistration />
             </AdminRoute>
           } />
-
-          <Route path="/admin/partners/:partnerId" element={
+          
+          <Route path="/admin/partners/:id" element={
             <AdminRoute>
               <PartnerDetail />
             </AdminRoute>
           } />
-
-          <Route path="/admin/partners/:partnerId/edit" element={
+          
+          <Route path="/admin/partners/:id/quick-edit" element={
             <AdminRoute>
-              <PartnerRegistration />
+              <QuickEditDealLimit />
             </AdminRoute>
           } />
           
@@ -167,12 +168,6 @@ function AppContent() {
           <Route path="/admin/plan-management" element={
             <AdminRoute>
               <PlanManagement />
-            </AdminRoute>
-          } />
-          
-          <Route path="/admin/deals" element={
-            <AdminRoute>
-              <DealList />
             </AdminRoute>
           } />
           

@@ -1,18 +1,3 @@
-  // Handle modal cancel - UserManagement style
-  const handleCancelEdit = () => {
-    setShowAddMerchant(false);
-    setEditingMerchant(null);
-    setFormErrors({});
-    setFormData({
-      userInfo: {
-        fullName: '', email: '', phone: '', address: '', community: '', status: 'pending',
-      },
-      businessInfo: {
-        businessName: '', businessDescription: '', businessCategory: '',
-        businessAddress: '', businessPhone: '', businessEmail: '', website: ''
-      }
-    });
-  };
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../../services/api';
@@ -49,7 +34,8 @@ const MerchantManagementEnhanced = () => {
       businessAddress: '',
       businessPhone: '',
       businessEmail: '',
-      website: ''
+      website: '',
+      customDealLimit: ''
     }
   });
   const [selectedMerchants, setSelectedMerchants] = useState([]);
@@ -66,30 +52,23 @@ const MerchantManagementEnhanced = () => {
     pages: 0
   });
   const [showBulkActions, setShowBulkActions] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   // Removed confirmDialog state (delete functionality)
   useEffect(() => {
-    // Only fetch data on initial load and when pagination.page changes
+    // Only fetch data on initial load and when viewMode changes
     if (viewMode === 'cards') {
       fetchBusinesses();
     } else {
       fetchMerchants();
     }
-  }, [pagination.page, viewMode]); // Removed filters dependency to prevent constant re-renders
+  }, [viewMode]); // Simplified dependencies
   const fetchBusinesses = useCallback(async () => {
     try {
       setLoading(true);
-  console.log('🏪 MerchantManagement - Fetching businesses from /admin/partners...');
   const response = await api.get('/admin/partners');
-  console.log('✅ MerchantManagement - Businesses response:', response.data);
   setBusinesses(response.data?.merchants || []);
     } catch (err) {
       setError('Failed to fetch businesses');
-      console.error('❌ MerchantManagement - Error fetching businesses:', err);
-      console.error('Business fetch error details:', {
-        status: err.response?.status,
-        message: err.response?.data?.message,
-        url: err.config?.url
-      });
       showNotification('Error loading businesses', 'error');
     } finally {
       setLoading(false);
@@ -99,14 +78,12 @@ const MerchantManagementEnhanced = () => {
   const fetchMerchants = useCallback(async () => {
     try {
       setLoading(true);
-      console.log('👥 MerchantManagement - Fetching merchants from /admin/partners...');
       const params = new URLSearchParams({
         limit: pagination.limit,
         offset: (pagination.page - 1) * pagination.limit,
         ...filters
       });
       const response = await api.get(`/admin/partners?${params}`);
-      console.log('✅ MerchantManagement - Merchants response:', response.data);
       if (response.data.success) {
         setMerchants(response.data.merchants || []);
         setPagination(prev => ({
@@ -117,12 +94,6 @@ const MerchantManagementEnhanced = () => {
       }
     } catch (err) {
       setError('Failed to fetch merchants');
-      console.error('❌ MerchantManagement - Error fetching merchants:', err);
-      console.error('Merchants fetch error details:', {
-        status: err.response?.status,
-        message: err.response?.data?.message,
-        url: err.config?.url
-      });
       showNotification('Error loading merchants', 'error');
     } finally {
       setLoading(false);
@@ -203,44 +174,78 @@ const MerchantManagementEnhanced = () => {
     );
   };
 
-  // Route-based edit (like user management)
+  // Inline edit for custom deal limits - now using route
+  const handleInlineEdit = async (merchant) => {
+    try {
+      // Navigate to quick edit route
+      navigate(`/admin/partners/${merchant.id}/quick-edit`);
+    } catch (error) {
+      console.error('Error navigating to quick edit:', error);
+      showNotification('Failed to load quick edit. Please try again.', 'error');
+    }
+  };
+
+  // Route-based edit (like user management) - navigate to edit route
   const handleEditMerchant = useCallback((merchant) => {
     if (!merchant || !merchant.id) {
       showNotification('Invalid merchant data', 'error');
       return;
     }
-    navigate(`/admin/${merchant.id}/edit`);
+    // Navigate to edit route
+    navigate(`/admin/partners/${merchant.id}/edit`);
   }, [navigate, showNotification]);
 
+  const handleEditSubmit = async (updatedMerchant) => {
+    try {
+      const response = await api.put(`/admin/partners/${updatedMerchant.id}`, updatedMerchant);
+      
+      showNotification('Merchant details updated successfully.', 'success');
+      
+      // Update the merchant in the list
+      setMerchants(merchants.map(m => 
+        m.id === updatedMerchant.id ? { ...m, ...updatedMerchant } : m
+      ));
+      
+      setShowEditModal(false);
+      setEditingMerchant(null);
+    } catch (error) {
+      console.error('Error updating merchant:', error);
+      showNotification('Failed to update merchant details. Please try again.', 'error');
+    }
+  };
+
+  const handleEditCancel = () => {
+    setShowEditModal(false);
+    setEditingMerchant(null);
+  };
+
   const handleViewDetails = useCallback((merchant) => {
-    navigate(`/admin/${merchant.id}`);
+    // Navigate to details route
+    navigate(`/admin/partners/${merchant.id}`);
   }, [navigate]);
 
   const handleAddMerchant = useCallback(() => {
-    // Reset form for new merchant - UserManagement style
+    // Navigate to registration route
+    navigate('/admin/partners/register');
+  }, [navigate]);
+
+  // Handle modal cancel - UserManagement style
+  const handleCancelEdit = () => {
+    setShowAddMerchant(false);
     setEditingMerchant(null);
     setFormErrors({});
     setFormData({
       userInfo: {
-        fullName: '',
-        email: '',
-        phone: '',
-        address: '',
-        community: '',
-        status: 'pending',
+        fullName: '', email: '', phone: '', address: '', community: '', status: 'pending',
       },
       businessInfo: {
-        businessName: '',
-        businessDescription: '',
-        businessCategory: '',
-        businessAddress: '',
-        businessPhone: '',
-        businessEmail: '',
-        website: ''
+        businessName: '', businessDescription: '', businessCategory: '',
+        businessAddress: '', businessPhone: '', businessEmail: '', website: '', 
+        customDealLimit: ''
       }
     });
-    setShowAddMerchant(true);
-  }, []);
+  };
+  
   // Validate form - UserManagement style
   const validateForm = () => {
     const newErrors = {};
@@ -328,7 +333,6 @@ const MerchantManagementEnhanced = () => {
         throw new Error(response.data.message || `Failed to ${isEditMode ? 'update' : 'create'} merchant`);
       }
     } catch (err) {
-      console.error(`Error ${editingMerchant ? 'updating' : 'creating'} merchant:`, err);
       const message = err.response?.data?.message || `Failed to ${editingMerchant ? 'update' : 'create'} merchant`;
       showNotification(message, 'error');
     } finally {
@@ -338,13 +342,44 @@ const MerchantManagementEnhanced = () => {
 
   const handleStatusChange = async (merchantId, newStatus) => {
     try {
-      // If you have approve/reject endpoints for partners, use them. Otherwise, use a generic update.
-      await api.put(`/admin/partners/${merchantId}`, { status: newStatus });
+      // Use dedicated endpoints for approve/reject, otherwise use status update
+      if (newStatus === 'approved') {
+        await api.post(`/admin/partners/${merchantId}/approve`);
+      } else if (newStatus === 'rejected') {
+        await api.post(`/admin/partners/${merchantId}/reject`);
+      } else {
+        // For other status changes (suspended, pending), use the status endpoint
+        await api.put(`/admin/partners/${merchantId}/status`, { status: newStatus });
+      }
       showNotification(`Partner ${newStatus} successfully`, 'success');
       fetchMerchants();
     } catch (err) {
       console.error('Error updating merchant status:', err);
       showNotification('Error updating merchant status', 'error');
+    }
+  };
+
+  // Dedicated approve handler
+  const handleApproveMerchant = async (merchantId) => {
+    try {
+      await api.post(`/admin/partners/${merchantId}/approve`);
+      showNotification('Partner approved successfully', 'success');
+      fetchMerchants();
+    } catch (err) {
+      console.error('Error approving merchant:', err);
+      showNotification('Error approving partner', 'error');
+    }
+  };
+
+  // Dedicated reject handler
+  const handleRejectMerchant = async (merchantId) => {
+    try {
+      await api.post(`/admin/partners/${merchantId}/reject`);
+      showNotification('Partner rejected successfully', 'success');
+      fetchMerchants();
+    } catch (err) {
+      console.error('Error rejecting merchant:', err);
+      showNotification('Error rejecting partner', 'error');
     }
   };
 
@@ -362,7 +397,6 @@ const MerchantManagementEnhanced = () => {
 
   // Single useEffect for component mounting (reduced logging)
   useEffect(() => {
-    console.log('MerchantManagementEnhanced component mounted');
   }, []);
 
   if (loading) {
@@ -493,6 +527,19 @@ const MerchantManagementEnhanced = () => {
                 <input type="text" value={formData.businessInfo.website} onChange={e => setFormData(f => ({ ...f, businessInfo: { ...f.businessInfo, website: e.target.value } }))} className={formErrors.website ? 'error' : ''} />
                 {formErrors.website && <div className="error-message">{formErrors.website}</div>}
               </div>
+              
+              <div className="form-group">
+                <label>Custom Deal Limit (per month)</label>
+                <input 
+                  type="number" 
+                  min="0" 
+                  max="100"
+                  value={formData.businessInfo.customDealLimit} 
+                  onChange={e => setFormData(f => ({ ...f, businessInfo: { ...f.businessInfo, customDealLimit: e.target.value } }))} 
+                  placeholder="Leave empty to use plan default"
+                />
+                <small className="field-hint">Override the default monthly deal limit for this business. Leave empty to use their plan's default limit.</small>
+              </div>
               <div className="form-actions">
                 <button className="btn btn-primary" type="submit" disabled={formLoading}>{formLoading ? 'Saving...' : (editingMerchant ? 'Update Merchant' : 'Add Merchant')}</button>
                 <button className="btn btn-secondary" type="button" onClick={handleCancelEdit}>Cancel</button>
@@ -602,6 +649,7 @@ const MerchantManagementEnhanced = () => {
               <th>Contact</th>
               <th>Category</th>
               <th>Plan</th>
+              <th>Deal Limit</th>
               <th>Valid Till</th>
               <th>Status</th>
               <th>Joined</th>
@@ -650,6 +698,19 @@ const MerchantManagementEnhanced = () => {
                   </span>
                 </td>
                 <td>
+                  <div className="deal-limit-info">
+                    {merchant.customDealLimit ? (
+                      <span className="custom-limit" title="Custom limit set by admin">
+                        <i className="fas fa-star"></i> {merchant.customDealLimit}/month
+                      </span>
+                    ) : (
+                      <span className="plan-limit" title="Using plan default">
+                        Plan Default
+                      </span>
+                    )}
+                  </div>
+                </td>
+                <td>
                   {(() => {
                     const validity = calculateValidityInfo(merchant);
                     return (
@@ -696,6 +757,18 @@ const MerchantManagementEnhanced = () => {
                     >
                       <i className="fas fa-edit"></i>
                     </button>
+                    <button
+                      className="btn btn-sm btn-warning"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleInlineEdit(merchant);
+                      }}
+                      title="Quick Edit Deal Limit"
+                      type="button"
+                    >
+                      <i className="fas fa-bolt"></i>
+                    </button>
                     {merchant.status === 'pending' && (
                       <>
                         <button
@@ -703,7 +776,7 @@ const MerchantManagementEnhanced = () => {
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            handleStatusChange(merchant.id, 'approved');
+                            handleApproveMerchant(merchant.id);
                           }}
                           title="Approve"
                           type="button"
@@ -715,7 +788,7 @@ const MerchantManagementEnhanced = () => {
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            handleStatusChange(merchant.id, 'rejected');
+                            handleRejectMerchant(merchant.id);
                           }}
                           title="Reject"
                           type="button"
@@ -1006,6 +1079,114 @@ const MerchantManagementEnhanced = () => {
       {/* Confirmation Dialog */}
   {/* Delete confirmation dialog removed */}
 
+      {/* Edit Modal for Custom Deal Limits */}
+      {showEditModal && editingMerchant && (
+        <div className="modal-overlay">
+          <div className="modal-content large">
+            <div className="modal-header">
+              <h3>Edit Deal Limit - {editingMerchant.businessName || editingMerchant.fullName}</h3>
+              <button 
+                className="modal-close" 
+                onClick={handleEditCancel}
+              >
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            <div className="modal-body">
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                handleEditSubmit(editingMerchant);
+              }}>
+                <div className="form-grid">
+                  <div className="form-group">
+                    <label>Business Name</label>
+                    <input
+                      type="text"
+                      value={editingMerchant.businessName || ''}
+                      onChange={(e) => setEditingMerchant({
+                        ...editingMerchant,
+                        businessName: e.target.value
+                      })}
+                      className="form-control"
+                    />
+                  </div>
+                  
+                  <div className="form-group">
+                    <label>Owner Name</label>
+                    <input
+                      type="text"
+                      value={editingMerchant.fullName || ''}
+                      onChange={(e) => setEditingMerchant({
+                        ...editingMerchant,
+                        fullName: e.target.value
+                      })}
+                      className="form-control"
+                    />
+                  </div>
+                  
+                  <div className="form-group">
+                    <label>Email</label>
+                    <input
+                      type="email"
+                      value={editingMerchant.email || ''}
+                      onChange={(e) => setEditingMerchant({
+                        ...editingMerchant,
+                        email: e.target.value
+                      })}
+                      className="form-control"
+                    />
+                  </div>
+                  
+                  <div className="form-group">
+                    <label>Status</label>
+                    <select
+                      value={editingMerchant.status || ''}
+                      onChange={(e) => setEditingMerchant({
+                        ...editingMerchant,
+                        status: e.target.value
+                      })}
+                      className="form-control"
+                    >
+                      <option value="pending">Pending</option>
+                      <option value="approved">Approved</option>
+                      <option value="rejected">Rejected</option>
+                      <option value="suspended">Suspended</option>
+                    </select>
+                  </div>
+                  
+                  <div className="form-group">
+                    <label>Custom Deal Limit (per month)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={editingMerchant.customDealLimit || ''}
+                      onChange={(e) => setEditingMerchant({
+                        ...editingMerchant,
+                        customDealLimit: e.target.value ? parseInt(e.target.value) : null
+                      })}
+                      className="form-control"
+                      placeholder="Leave empty to use plan default"
+                    />
+                    <small className="form-text text-muted">
+                      Override the default monthly deal limit for this business. Leave empty to use their plan's default limit.
+                    </small>
+                  </div>
+                </div>
+                
+                <div className="modal-actions">
+                  <button type="submit" className="btn btn-primary">
+                    Save Changes
+                  </button>
+                  <button type="button" className="btn btn-secondary" onClick={handleEditCancel}>
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
