@@ -1,91 +1,34 @@
 import api from './api.js';
-import mockData from './mockData.js';
 
-const USE_MOCK_DATA = import.meta.env.VITE_USE_MOCK_DATA === 'true' || false;
-
-console.log('API Service with mock fallback initialized, USE_MOCK_DATA:', USE_MOCK_DATA);
+console.log('API Service initialized');
 
 const adminApi = {
-  // Partners endpoints with mock fallback
+  // Partners endpoints
   getPartners: async () => {
-    if (USE_MOCK_DATA) {
-      console.log('Using mock data for getPartners');
-      return {
-        success: true,
-        partners: [
-          mockData['/admin/partners/1'].merchant,
-          mockData['/admin/partners/2'].merchant
-        ]
-      };
-    }
-    
-    try {
-      const response = await api.get('/admin/partners');
-      return response.data;
-    } catch (error) {
-      console.error('API call failed, falling back to mock data:', error);
-      return {
-        success: true,
-        partners: [
-          mockData['/admin/partners/1'].merchant,
-          mockData['/admin/partners/2'].merchant
-        ]
-      };
-    }
+    const response = await api.get('/admin/partners');
+    return response.data;
   },
 
   getPartner: async (id) => {
     console.log(`AdminAPI: Getting partner with ID: ${id}`);
-    console.log('Mock data available:', USE_MOCK_DATA);
-    
-    if (USE_MOCK_DATA) {
-      const mockKey = `/admin/partners/${id}`;
-      const mockResponse = mockData[mockKey] || mockData['/admin/partners/1'];
-      console.log('Returning mock data:', mockResponse);
-      return mockResponse;
-    }
-    
-    try {
-      console.log(`Making API call to: /admin/partners/${id}`);
-      const response = await api.get(`/admin/partners/${id}`);
-      console.log('API response received:', response.data);
-      return response.data;
-    } catch (error) {
-      console.error('API call failed, falling back to mock data:', error);
-      const mockKey = `/admin/partners/${id}`;
-      const mockResponse = mockData[mockKey] || mockData['/admin/partners/1'];
-      console.log('Returning fallback mock data:', mockResponse);
-      return mockResponse;
-    }
+    const response = await api.get(`/admin/partners/${id}`);
+    console.log('API response received:', response.data);
+    return response.data;
   },
 
   updatePartner: async (id, updateData) => {
     console.log(`AdminAPI: Updating partner ${id} with data:`, updateData);
-    
-    if (USE_MOCK_DATA) {
-      console.log('Mock update completed successfully');
-      return {
-        success: true,
-        message: 'Partner updated successfully (mock)',
-        merchant: { ...mockData['/admin/partners/1'].merchant, ...updateData }
-      };
-    }
-    
-    try {
-      const response = await api.put(`/admin/partners/${id}`, updateData);
-      console.log('Update API response:', response.data);
-      return response.data;
-    } catch (error) {
-      console.error('Update API call failed, returning mock success:', error);
-      return {
-        success: true,
-        message: 'Partner updated successfully (mock fallback)',
-        merchant: { ...mockData['/admin/partners/1'].merchant, ...updateData }
-      };
-    }
+    const response = await api.put(`/admin/partners/${id}`, updateData);
+    console.log('Update API response:', response.data);
+    return response.data;
   },
 
-  // Other admin endpoints (without mock fallback for now)
+  createPartner: async (partnerData) => {
+    const response = await api.post('/admin/partners', partnerData);
+    return response.data;
+  },
+
+  // Other admin endpoints
   getUsers: async () => {
     const response = await api.get('/admin/users');
     return response.data;

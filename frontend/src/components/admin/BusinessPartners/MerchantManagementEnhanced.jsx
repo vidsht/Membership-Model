@@ -15,6 +15,8 @@ const MerchantManagementEnhanced = () => {
   const [selectedMerchant, setSelectedMerchant] = useState(null);
   const [showAddMerchant, setShowAddMerchant] = useState(false);
   const [showMerchantDetails, setShowMerchantDetails] = useState(false);
+  const [showQuickEditModal, setShowQuickEditModal] = useState(false);
+  const [quickEditMerchant, setQuickEditMerchant] = useState(null);
   const [editingMerchant, setEditingMerchant] = useState(null);
   const [formLoading, setFormLoading] = useState(false);
   const [formErrors, setFormErrors] = useState({});
@@ -174,14 +176,25 @@ const MerchantManagementEnhanced = () => {
     );
   };
 
-  // Inline edit for custom deal limits - now using route
+  // Inline edit for custom deal limits - navigate to route
   const handleInlineEdit = async (merchant) => {
     try {
-      // Navigate to quick edit route
+      // Navigate to quick edit route - this will render QuickEditDealLimit component
       navigate(`/admin/partners/${merchant.id}/quick-edit`);
     } catch (error) {
       console.error('Error navigating to quick edit:', error);
       showNotification('Failed to load quick edit. Please try again.', 'error');
+    }
+  };
+
+  const handleInlineEditModal = async (merchant) => {
+    try {
+      // Open quick edit modal instead of navigation (alternative option)
+      setQuickEditMerchant(merchant);
+      setShowQuickEditModal(true);
+    } catch (error) {
+      console.error('Error opening quick edit modal:', error);
+      showNotification('Failed to open quick edit. Please try again.', 'error');
     }
   };
 
@@ -191,9 +204,19 @@ const MerchantManagementEnhanced = () => {
       showNotification('Invalid merchant data', 'error');
       return;
     }
-    // Navigate to edit route
+    // Navigate to edit route - this will render PartnerRegistration component in edit mode
     navigate(`/admin/partners/${merchant.id}/edit`);
   }, [navigate, showNotification]);
+
+  const handleEditMerchantModal = useCallback((merchant) => {
+    if (!merchant || !merchant.id) {
+      showNotification('Invalid merchant data', 'error');
+      return;
+    }
+    // Open edit modal instead of navigation (alternative option)
+    setEditingMerchant(merchant);
+    setShowEditModal(true);
+  }, [showNotification]);
 
   const handleEditSubmit = async (updatedMerchant) => {
     try {
@@ -220,9 +243,15 @@ const MerchantManagementEnhanced = () => {
   };
 
   const handleViewDetails = useCallback((merchant) => {
-    // Navigate to details route
-    navigate(`/admin/partners/${merchant.id}`);
+    // Navigate to details route - this will render PartnerDetail component
+    navigate(`/admin/partners/${merchant.id}/details`);
   }, [navigate]);
+
+  const handleViewDetailsModal = useCallback((merchant) => {
+    // Open modal instead of navigation (alternative option)
+    setSelectedMerchant(merchant);
+    setShowMerchantDetails(true);
+  }, []);
 
   const handleAddMerchant = useCallback(() => {
     // Navigate to registration route
@@ -388,7 +417,46 @@ const MerchantManagementEnhanced = () => {
 
   // Removed confirmAction (delete functionality)
 
-  // Removed handleBulkAction (delete functionality)
+  // Bulk action handler for approve, reject, suspend operations
+  const handleBulkAction = async (action) => {
+    if (selectedMerchants.length === 0) {
+      showNotification('No merchants selected', 'warning');
+      return;
+    }
+
+    try {
+      const promises = selectedMerchants.map(merchantId => {
+        switch (action) {
+          case 'approve':
+            return api.post(`/admin/partners/${merchantId}/approve`);
+          case 'reject':
+            return api.post(`/admin/partners/${merchantId}/reject`);
+          case 'suspend':
+            return api.put(`/admin/partners/${merchantId}/status`, { status: 'suspended' });
+          default:
+            return Promise.resolve();
+        }
+      });
+
+      await Promise.all(promises);
+      
+      showNotification(`Successfully ${action}d ${selectedMerchants.length} merchant(s)`, 'success');
+      
+      // Reset selections and refresh data
+      setSelectedMerchants([]);
+      setShowBulkActions(false);
+      
+      // Refresh the merchants list
+      if (viewMode === 'cards') {
+        fetchBusinesses();
+      } else {
+        fetchMerchants();
+      }
+    } catch (error) {
+      console.error(`Error performing bulk ${action}:`, error);
+      showNotification(`Failed to ${action} merchants`, 'error');
+    }
+  };
 
   const handleFilterChange = (field, value) => {
     setFilters(prev => ({ ...prev, [field]: value }));
@@ -405,7 +473,7 @@ const MerchantManagementEnhanced = () => {
         <div className="loading-spinner"></div>
         <p>Loading merchants...</p>
       </div>
-    );
+    );  
   }
 
   if (error) {
@@ -612,19 +680,19 @@ const MerchantManagementEnhanced = () => {
           <div className="bulk-actions-buttons">
             <button 
               className="btn btn-success"
-              onClick={() => {/* approve logic here */}}
+              onClick={() => handleBulkAction('approve')}
             >
               <i className="fas fa-check"></i> Approve
             </button>
             <button 
               className="btn btn-warning"
-              onClick={() => {/* reject logic here */}}
+              onClick={() => handleBulkAction('reject')}
             >
               <i className="fas fa-times"></i> Reject
             </button>
             <button 
               className="btn btn-secondary"
-              onClick={() => {/* suspend logic here */}}
+              onClick={() => handleBulkAction('suspend')}
             >
               <i className="fas fa-pause"></i> Suspend
             </button>
@@ -705,7 +773,7 @@ const MerchantManagementEnhanced = () => {
                       </span>
                     ) : (
                       <span className="plan-limit" title="Using plan default">
-                        Plan Default
+                        {merchant.planMaxDeals ? `${merchant.planMaxDeals}/month` : 'Unlimited'}
                       </span>
                     )}
                   </div>
@@ -988,8 +1056,8 @@ const MerchantManagementEnhanced = () => {
               <div className="business-id-header">
                 <h3>Business ID: <span className="business-id">{selectedMerchant.businessId || 'N/A'}</span></h3>
                 <div className="business-status">
-                  <span className={`status-badge ${selectedMerchant.businessStatus || selectedMerchant.status}`}>
-                    {selectedMerchant.businessStatus || selectedMerchant.status}
+                  <span className={`status-badge ${selectedMerchant.status}`}>
+                    {selectedMerchant.status}
                   </span>
                 </div>
               </div>
@@ -1179,6 +1247,79 @@ const MerchantManagementEnhanced = () => {
                     Save Changes
                   </button>
                   <button type="button" className="btn btn-secondary" onClick={handleEditCancel}>
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Quick Edit Deal Limit Modal */}
+      {showQuickEditModal && quickEditMerchant && (
+        <div className="modal-overlay" onClick={() => setShowQuickEditModal(false)}>
+          <div className="modal-content quick-edit-modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Quick Edit Deal Limit</h3>
+              <button className="close-btn" onClick={() => setShowQuickEditModal(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              <div className="quick-edit-info">
+                <h4>{quickEditMerchant.businessName || quickEditMerchant.fullName}</h4>
+                <p>Current Plan: {quickEditMerchant.planName || quickEditMerchant.membershipType || 'N/A'}</p>
+                <p>Plan Deal Limit: {quickEditMerchant.planMaxDeals || 'N/A'}</p>
+              </div>
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                try {
+                  const formData = new FormData(e.target);
+                  const customDealLimit = formData.get('customDealLimit');
+                  
+                  const response = await api.put(`/admin/partners/${quickEditMerchant.id}`, {
+                    customDealLimit: customDealLimit ? parseInt(customDealLimit) : null
+                  });
+                  
+                  if (response.data.success) {
+                    showNotification('Deal limit updated successfully', 'success');
+                    setShowQuickEditModal(false);
+                    setQuickEditMerchant(null);
+                    // Refresh the merchants list
+                    if (viewMode === 'cards') {
+                      fetchBusinesses();
+                    } else {
+                      fetchMerchants();
+                    }
+                  } else {
+                    throw new Error(response.data.message || 'Failed to update deal limit');
+                  }
+                } catch (error) {
+                  console.error('Error updating deal limit:', error);
+                  showNotification('Failed to update deal limit', 'error');
+                }
+              }}>
+                <div className="form-group">
+                  <label htmlFor="customDealLimit">Custom Deal Limit:</label>
+                  <input
+                    type="number"
+                    id="customDealLimit"
+                    name="customDealLimit"
+                    min="0"
+                    max="100"
+                    defaultValue={quickEditMerchant.customDealLimit || ''}
+                    className="form-control"
+                    placeholder="Leave empty to use plan default"
+                  />
+                  <small className="form-text text-muted">
+                    Override the default monthly deal limit for this business. Leave empty to use their plan's default limit.
+                  </small>
+                </div>
+                
+                <div className="modal-actions">
+                  <button type="submit" className="btn btn-primary">
+                    Update Deal Limit
+                  </button>
+                  <button type="button" className="btn btn-secondary" onClick={() => setShowQuickEditModal(false)}>
                     Cancel
                   </button>
                 </div>

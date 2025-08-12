@@ -181,19 +181,103 @@ const DealList = ({ onTabChange }) => {
       showNotification('Error rejecting deal. Please try again.', 'error');
     }
   };
-    const handleDeleteDeal = async (dealId, dealTitle) => {
-    const confirmed = await showDeleteConfirm(dealTitle, async () => {
-      try {
+
+  const handleRejectDealWithReason = async (dealId, dealTitle) => {
+    // Show a custom modal to collect rejection reason
+    const reason = await showReasonModal(
+      'Reject Deal', 
+      `Please provide a reason for rejecting "${dealTitle}":`,
+      'Enter rejection reason...'
+    );
+    
+    if (reason !== null) { // User didn't cancel
+      await handleRejectDeal(dealId, reason);
+    }
+  };
+
+  const showReasonModal = (title, message, placeholder) => {
+    return new Promise((resolve) => {
+      const modalContainer = document.createElement('div');
+      modalContainer.className = 'modal-overlay modal-open';
+      modalContainer.innerHTML = `
+        <div class="modal-container modal-info">
+          <div class="modal-header">
+            <div class="modal-icon">
+              <i class="fas fa-comment-alt"></i>
+            </div>
+            <h3 class="modal-title">${title}</h3>
+          </div>
+          <div class="modal-body">
+            <p class="modal-message">${message}</p>
+            <textarea 
+              id="reason-input" 
+              placeholder="${placeholder}"
+              style="width: 100%; min-height: 80px; padding: 10px; border: 1px solid #ddd; border-radius: 5px; resize: vertical; font-family: inherit;"
+            ></textarea>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" id="cancel-btn">Cancel</button>
+            <button class="btn btn-primary" id="confirm-btn">Reject Deal</button>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(modalContainer);
+      document.body.style.overflow = 'hidden';
+
+      const reasonInput = modalContainer.querySelector('#reason-input');
+      const cancelBtn = modalContainer.querySelector('#cancel-btn');
+      const confirmBtn = modalContainer.querySelector('#confirm-btn');
+
+      reasonInput.focus();
+
+      const cleanup = () => {
+        document.body.removeChild(modalContainer);
+        document.body.style.overflow = 'unset';
+      };
+
+      cancelBtn.onclick = () => {
+        cleanup();
+        resolve(null);
+      };
+
+      confirmBtn.onclick = () => {
+        const reason = reasonInput.value.trim();
+        cleanup();
+        resolve(reason);
+      };
+
+      modalContainer.onclick = (e) => {
+        if (e.target === modalContainer) {
+          cleanup();
+          resolve(null);
+        }
+      };
+
+      document.addEventListener('keydown', function escapeHandler(e) {
+        if (e.key === 'Escape') {
+          document.removeEventListener('keydown', escapeHandler);
+          cleanup();
+          resolve(null);
+        }
+      });
+    });
+  };
+  const handleDeleteDeal = async (dealId, dealTitle) => {
+    try {
+      const confirmed = await showDeleteConfirm(dealTitle);
+      
+      if (confirmed) {
         await api.delete(`/admin/deals/${dealId}`);
         const updatedDeals = deals.filter(deal => deal.id !== dealId);
         setDeals(updatedDeals);
         calculateStats(updatedDeals);
         showNotification('Deal deleted successfully', 'success');
-      } catch (error) {
-        console.error('Error deleting deal:', error);
-        showNotification('Failed to delete deal', 'error');
       }
-    });
+    } catch (error) {
+      console.error('Error deleting deal:', error);
+      showNotification('Failed to delete deal', 'error');
+    }
   };
   return (
     <div className="admin-deal-management">
@@ -384,7 +468,7 @@ const DealList = ({ onTabChange }) => {
                             </button>
                             <button
                               className="btn-sm btn-danger"
-                              onClick={() => handleRejectDeal(deal.id)}
+                              onClick={() => handleRejectDealWithReason(deal.id, deal.title)}
                               title="Reject Deal"
                             >
                               <i className="fas fa-times"></i>
@@ -438,18 +522,20 @@ const DealList = ({ onTabChange }) => {
           </button>        </div>
       )}
       
-      {/* Modal for confirmations and alerts */}
-      <Modal
-        isOpen={modalState.isOpen}
-        title={modalState.title}
-        message={modalState.message}
-        type={modalState.type}
-        confirmText={modalState.confirmText}
-        cancelText={modalState.cancelText}
-        showCancel={modalState.showCancel}
-        onConfirm={modalState.onConfirm}
-        onCancel={modalState.onCancel}
-      />
+      {/* Modal for delete confirmations only */}
+      {modalState.isOpen && modalState.type === 'confirm' && (
+        <Modal
+          isOpen={modalState.isOpen}
+          title={modalState.title}
+          message={modalState.message}
+          type={modalState.type}
+          confirmText={modalState.confirmText}
+          cancelText={modalState.cancelText}
+          showCancel={modalState.showCancel}
+          onConfirm={modalState.onConfirm || closeModal}
+          onCancel={modalState.onCancel || closeModal}
+        />
+      )}
     </div>
   );
 };

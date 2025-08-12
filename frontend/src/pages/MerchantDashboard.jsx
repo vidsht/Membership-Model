@@ -1,14 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useNotification } from '../contexts/NotificationContext';
 import { merchantApi } from '../services/api';
 import MerchantDealForm from '../components/MerchantDealForm';
 import axios from 'axios';
 import '../styles/MerchantDashboard.css';
 
 const MerchantDashboard = () => {
-  const { user } = useAuth();  const [deals, setDeals] = useState([]);
+  const { user } = useAuth();
+  const { showNotification } = useNotification();
+  
+  const [deals, setDeals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showDealForm, setShowDealForm] = useState(false);
+  const [showBusinessForm, setShowBusinessForm] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
   const [businessInfo, setBusinessInfo] = useState({});
   const [planInfo, setPlanInfo] = useState({});
   const [userInfo, setUserInfo] = useState({});
@@ -127,8 +133,11 @@ const MerchantDashboard = () => {
     }
   };
 
-  const handleDealCreated = async () => {
+  const handleDealCreated = async (newDeal) => {
     setShowDealForm(false);
+    if (newDeal) {
+      setDeals(prev => [newDeal, ...prev]);
+    }
     await fetchDashboardData(); // Refresh the dashboard data
   };
 
@@ -178,7 +187,15 @@ const MerchantDashboard = () => {
     }
   };
 
+  const handleBusinessUpdate = (updatedBusiness) => {
+    setBusinessInfo(updatedBusiness);
+    setShowBusinessForm(false);
+    // Refresh dashboard data to get latest info
+    fetchDashboardData();
+  };
+
   if (loading) {
+    console.log('Component is in loading state, returning early');
     return (
       <div className="loading-container">
         <div className="loading-spinner"></div>
@@ -453,7 +470,7 @@ const MerchantDashboard = () => {
         <div className="business-info-card">
           <div className="card-header">
             <h2><i className="fas fa-store"></i> Business Information</h2>
-            <button className="btn btn-outline btn-sm">
+            <button className="btn btn-outline btn-sm" onClick={() => setShowBusinessForm(true)}>
               <i className="fas fa-edit"></i> Edit
             </button>
           </div>
@@ -604,8 +621,10 @@ const MerchantDashboard = () => {
           <button 
             className={`btn ${stats.canPostDeals ? 'btn-primary' : 'btn-disabled'}`}
             onClick={() => {
+              console.log('Create New Deal button clicked');
               if (stats.canPostDeals) {
                 setShowDealForm(true);
+                console.log('setShowDealForm(true)');
               } else {
                 alert(`You've reached your monthly deal limit of ${stats.dealLimit}. ${businessInfo.customDealLimit ? 'Contact admin to increase your custom limit.' : 'Upgrade your plan for more deals.'}`);
               }
@@ -620,10 +639,10 @@ const MerchantDashboard = () => {
               </span>
             )}
           </button>
-          <button className="btn btn-secondary">
+          <button className="btn btn-secondary" onClick={() => setShowBusinessForm(true)}>
             <i className="fas fa-edit"></i> Edit Business Info
           </button>
-          <button className="btn btn-accent">
+          <button className="btn btn-accent" onClick={() => setShowAnalytics(true)}>
             <i className="fas fa-chart-bar"></i> View Analytics
           </button>
         </div>
@@ -754,14 +773,272 @@ const MerchantDashboard = () => {
         </div>
       )}
       
-      {/* Deal Creation Modal - Only for premium+ plans */}
-      {showDealForm && featureAccess.dealPosting !== 'none' && (
+      {/* Deal Creation Modal */}
+      {showDealForm && (
         <div className="modal-overlay">
           <div className="modal-content">
             <MerchantDealForm 
               onDealCreated={handleDealCreated}
               onClose={() => setShowDealForm(false)}
             />
+          </div>
+        </div>
+      )}
+
+      {/* Business Info Edit Modal */}
+      {showBusinessForm && (
+        <div className="modal-overlay">
+          <div className="modal-content business-modal">
+            <div className="modal-header">
+              <h2><i className="fas fa-edit"></i> Edit Business Information</h2>
+              <button className="modal-close" onClick={() => setShowBusinessForm(false)}>
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              const formData = new FormData(e.target);
+              const businessData = {
+                businessName: formData.get('businessName'),
+                businessCategory: formData.get('businessCategory'),
+                businessAddress: formData.get('businessAddress'),
+                businessPhone: formData.get('businessPhone'),
+                businessEmail: formData.get('businessEmail'),
+                website: formData.get('website')
+              };
+              
+              try {
+                const response = await merchantApi.updateProfile(businessData);
+                showNotification('Business information updated successfully!', 'success');
+                handleBusinessUpdate(response.business || businessData);
+              } catch (error) {
+                console.error('Error updating business info:', error);
+                showNotification(error.response?.data?.message || 'Failed to update business information', 'error');
+              }
+            }}>
+              <div className="form-grid">
+                <div className="form-group">
+                  <label htmlFor="businessName">Business Name *</label>
+                  <input
+                    type="text"
+                    id="businessName"
+                    name="businessName"
+                    defaultValue={businessInfo.businessName || ''}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="businessCategory">Category *</label>
+                  <input
+                    type="text"
+                    id="businessCategory"
+                    name="businessCategory"
+                    defaultValue={businessInfo.businessCategory || ''}
+                    required
+                  />
+                </div>
+
+                <div className="form-group full-width">
+                  <label htmlFor="businessAddress">Address</label>
+                  <input
+                    type="text"
+                    id="businessAddress"
+                    name="businessAddress"
+                    defaultValue={businessInfo.businessAddress || ''}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="businessPhone">Phone</label>
+                  <input
+                    type="tel"
+                    id="businessPhone"
+                    name="businessPhone"
+                    defaultValue={businessInfo.businessPhone || ''}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="businessEmail">Email</label>
+                  <input
+                    type="email"
+                    id="businessEmail"
+                    name="businessEmail"
+                    defaultValue={businessInfo.businessEmail || ''}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="website">Website</label>
+                  <input
+                    type="url"
+                    id="website"
+                    name="website"
+                    defaultValue={businessInfo.website || ''}
+                    placeholder="https://"
+                  />
+                </div>
+              </div>
+
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={() => setShowBusinessForm(false)}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  Update Business Info
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Analytics Modal */}
+      {showAnalytics && (
+        <div className="modal-overlay">
+          <div className="modal-content analytics-modal">
+            <div className="modal-header">
+              <h2><i className="fas fa-chart-bar"></i> Business Analytics</h2>
+              <button className="modal-close" onClick={() => setShowAnalytics(false)}>
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            
+            <div className="analytics-content">
+              {/* Overview Stats - Using real data from props */}
+              <div className="analytics-section">
+                <h3>Overview</h3>
+                <div className="analytics-grid">
+                  <div className="analytics-card">
+                    <div className="analytics-icon">
+                      <i className="fas fa-eye"></i>
+                    </div>
+                    <div className="analytics-info">
+                      <div className="analytics-number">{stats.totalViews || 0}</div>
+                      <div className="analytics-label">Total Views</div>
+                    </div>
+                  </div>
+                  
+                  <div className="analytics-card">
+                    <div className="analytics-icon">
+                      <i className="fas fa-shopping-cart"></i>
+                    </div>
+                    <div className="analytics-info">
+                      <div className="analytics-number">{stats.totalRedemptions || 0}</div>
+                      <div className="analytics-label">Total Redemptions</div>
+                    </div>
+                  </div>
+                  
+                  <div className="analytics-card">
+                    <div className="analytics-icon">
+                      <i className="fas fa-percentage"></i>
+                    </div>
+                    <div className="analytics-info">
+                      <div className="analytics-number">
+                        {stats.totalViews > 0 ? ((stats.totalRedemptions / stats.totalViews) * 100).toFixed(2) : 0}%
+                      </div>
+                      <div className="analytics-label">Conversion Rate</div>
+                    </div>
+                  </div>
+                  
+                  <div className="analytics-card">
+                    <div className="analytics-icon">
+                      <i className="fas fa-tags"></i>
+                    </div>
+                    <div className="analytics-info">
+                      <div className="analytics-number">{deals.length || 0}</div>
+                      <div className="analytics-label">Total Deals</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Deal Performance - Using real deals data */}
+              {deals && deals.length > 0 ? (
+                <div className="analytics-section">
+                  <h3>Deal Performance</h3>
+                  <div className="deals-table">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Deal</th>
+                          <th>Views</th>
+                          <th>Redemptions</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {deals.slice(0, 10).map(deal => (
+                          <tr key={deal.id}>
+                            <td>{deal.title}</td>
+                            <td>{deal.views || 0}</td>
+                            <td>{deal.actualRedemptions || 0}</td>
+                            <td>
+                              <span className={`status-badge ${deal.status}`}>
+                                {deal.status}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ) : (
+                <div className="analytics-section">
+                  <h3>Deal Performance</h3>
+                  <div className="no-data">
+                    <i className="fas fa-chart-line"></i>
+                    <p>No deals available yet. Create your first deal to see performance analytics.</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Monthly Stats - Using real stats data */}
+              <div className="analytics-section">
+                <h3>This Month</h3>
+                <div className="trends-grid">
+                  <div className="trend-item">
+                    <i className="fas fa-plus-circle"></i>
+                    <div>
+                      <div className="trend-number">{stats.thisMonthDeals || 0}</div>
+                      <div className="trend-label">Deals Created</div>
+                    </div>
+                  </div>
+                  <div className="trend-item">
+                    <i className="fas fa-history"></i>
+                    <div>
+                      <div className="trend-number">{stats.todayRedemptions || 0}</div>
+                      <div className="trend-label">Today's Redemptions</div>
+                    </div>
+                  </div>
+                  <div className="trend-item">
+                    <i className="fas fa-calendar"></i>
+                    <div>
+                      <div className="trend-number">{stats.actualDealsThisMonth || 0}</div>
+                      <div className="trend-label">Deals This Month</div>
+                    </div>
+                  </div>
+                  <div className="trend-item">
+                    <i className="fas fa-chart-line"></i>
+                    <div>
+                      <div className="trend-number">
+                        {stats.dealLimit === -1 ? '∞' : `${stats.dealLimitRemaining || 0}`}
+                      </div>
+                      <div className="trend-label">Deals Remaining</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setShowAnalytics(false)}>
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

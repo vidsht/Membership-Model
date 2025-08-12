@@ -141,6 +141,12 @@ function AppContent() {
             </AdminRoute>
           } />
           
+          <Route path="/admin/partners/:id/details" element={
+            <AdminRoute>
+              <PartnerDetail />
+            </AdminRoute>
+          } />
+          
           <Route path="/admin/partners/:id/quick-edit" element={
             <AdminRoute>
               <QuickEditDealLimit />

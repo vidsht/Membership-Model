@@ -11,7 +11,7 @@ const QuickEditDealLimit = () => {
   const [saving, setSaving] = useState(false);
   const [customDealLimit, setCustomDealLimit] = useState('');
   const navigate = useNavigate();
-  const { partnerId } = useParams();
+  const { id: partnerId } = useParams();
   const { showNotification } = useNotification();
 
   useEffect(() => {
@@ -24,17 +24,14 @@ const QuickEditDealLimit = () => {
     setLoading(true);
     try {
       console.log('🔍 QuickEdit: Fetching partner for quick edit deal limit, ID:', partnerId);
-      
-      const response = await adminApi.getPartner(partnerId);
-      console.log('📄 QuickEdit: AdminAPI response:', response);
-      
-      if (response && response.success && response.merchant) {
-        const partnerData = response.merchant;
-        console.log('✅ QuickEdit: Partner data found:', partnerData);
-        setPartner(partnerData);
-        setCustomDealLimit(partnerData.customDealLimit || '');
+      const res = await adminApi.getPartner(partnerId);
+      console.log('📄 QuickEdit: Full API response:', res);
+      // Accept both {merchant: {...}} and {success: true, merchant: {...}}
+      if (res && res.merchant) {
+        setPartner(res.merchant);
+        setCustomDealLimit(res.merchant.customDealLimit || '');
       } else {
-        console.log('❌ QuickEdit: No partner data in response or success=false');
+        console.error('QuickEdit: Invalid response structure:', res);
         showNotification('Partner not found', 'error');
         setPartner(null);
         setTimeout(() => handleClose(), 1500);

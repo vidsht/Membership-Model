@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import MembershipCard from '../components/MembershipCard';
+import '../styles/MerchantDashboard.css'; // Import for status-alert styles
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -54,6 +55,33 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard-container">
+      {/* Status Alert - Show if user status is pending, rejected, or suspended */}
+      {user?.status && user.status !== 'approved' && (
+        <div className={`status-alert ${user.status}`}>
+          <div className="status-alert-content">
+            <div className="status-info">
+              <i className={`fas ${
+                user.status === 'pending' ? 'fa-clock' :
+                user.status === 'rejected' ? 'fa-times-circle' :
+                user.status === 'suspended' ? 'fa-ban' : 'fa-info-circle'
+              }`}></i>
+              <div className="status-text">
+                <h4>
+                  {user.status === 'pending' && 'Account Pending Approval'}
+                  {user.status === 'rejected' && 'Account Rejected'}
+                  {user.status === 'suspended' && 'Account Suspended'}
+                </h4>
+                <p>
+                  {user.status === 'pending' && 'Your account is pending approval. Some features may be limited until approved by an administrator.'}
+                  {user.status === 'rejected' && 'Your account has been rejected. Please contact support for more information.'}
+                  {user.status === 'suspended' && 'Your account has been suspended. Please contact support to resolve this issue.'}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      
       <div className="dashboard-header">
         <h1>Welcome back, {user.fullName}!</h1>
         <p>Manage your membership and explore community benefits</p>

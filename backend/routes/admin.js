@@ -1001,7 +1001,7 @@ router.get('/communities', auth, admin, async (req, res) => {
     let communities = [];
     
     if (await tableExists('communities')) {
-      communities = await queryAsync('SELECT * FROM communities ORDER BY displayOrder, name');
+  communities = await queryAsync('SELECT * FROM communities ORDER BY name');
     }
 
     if (communities.length === 0) {
@@ -1247,8 +1247,9 @@ router.get('/partners', auth, admin, async (req, res) => {
           u.membershipType, u.status, u.createdAt, u.lastLogin,
           b.businessId, b.businessName, b.businessDescription, b.businessCategory,
           b.businessAddress, b.businessPhone, b.businessEmail, b.website,
-          b.businessLicense, b.taxId, b.status as businessStatus, b.customDealLimit,
-          p.name as planName, p.price as planPrice, p.billingCycle, p.currency, p.features
+          b.businessLicense, b.taxId, b.customDealLimit,
+          p.name as planName, p.price as planPrice, p.billingCycle, p.currency, p.features,
+          p.max_deals_per_month as planMaxDeals
         FROM users u
         LEFT JOIN businesses b ON u.id = b.userId
         LEFT JOIN plans p ON u.membershipType = p.key
@@ -1265,8 +1266,9 @@ router.get('/partners', auth, admin, async (req, res) => {
           NULL as businessId, NULL as businessName, NULL as businessDescription, 
           NULL as businessCategory, NULL as businessAddress, NULL as businessPhone, 
           NULL as businessEmail, NULL as website, NULL as businessLicense, 
-          NULL as taxId, NULL as businessStatus, NULL as customDealLimit,
-          p.name as planName, p.price as planPrice, p.billingCycle, p.currency, p.features
+          NULL as taxId, NULL as customDealLimit,
+          p.name as planName, p.price as planPrice, p.billingCycle, p.currency, p.features,
+          p.max_deals_per_month as planMaxDeals
         FROM users u
         LEFT JOIN plans p ON u.membershipType = p.key
         ${whereClause}
@@ -1323,8 +1325,9 @@ router.get('/partners/:id', auth, admin, async (req, res) => {
           u.membershipType, u.status, u.createdAt, u.lastLogin,
           b.businessId, b.businessName, b.businessDescription, b.businessCategory,
           b.businessAddress, b.businessPhone, b.businessEmail, b.website,
-          b.businessLicense, b.taxId, b.status as businessStatus, b.customDealLimit,
-          p.name as planName, p.price as planPrice, p.billingCycle, p.currency, p.features
+          b.businessLicense, b.taxId, b.customDealLimit,
+          p.name as planName, p.price as planPrice, p.billingCycle, p.currency, p.features,
+          p.max_deals_per_month as planMaxDeals
         FROM users u
         LEFT JOIN businesses b ON u.id = b.userId
         LEFT JOIN plans p ON u.membershipType = p.key
@@ -1338,8 +1341,9 @@ router.get('/partners/:id', auth, admin, async (req, res) => {
           NULL as businessId, NULL as businessName, NULL as businessDescription, 
           NULL as businessCategory, NULL as businessAddress, NULL as businessPhone, 
           NULL as businessEmail, NULL as website, NULL as businessLicense, 
-          NULL as taxId, NULL as businessStatus, NULL as customDealLimit,
-          p.name as planName, p.price as planPrice, p.billingCycle, p.currency, p.features
+          NULL as taxId, NULL as customDealLimit,
+          p.name as planName, p.price as planPrice, p.billingCycle, p.currency, p.features,
+          p.max_deals_per_month as planMaxDeals
         FROM users u
         LEFT JOIN plans p ON u.membershipType = p.key
         WHERE u.id = ? AND u.userType = "merchant"
@@ -1375,7 +1379,7 @@ router.get('/businesses', auth, admin, async (req, res) => {
         b.businessId, 
         b.businessName, 
         b.businessCategory, 
-        b.status as businessStatus,
+        u.status as businessStatus,
         u.fullName as ownerName,
         u.email as ownerEmail,
         u.status as userStatus
@@ -1417,11 +1421,26 @@ router.post('/partners', auth, admin, async (req, res) => {
       return res.status(400).json({ success: false, message: 'User with this email already exists' });
     }
 
+
+    // Generate membership number for merchant
+    const membershipNumber = `IGM${Date.now().toString().slice(-6)}${Math.floor(Math.random() * 100)}`;
+
+    // Get default merchant plan key (fix ORDER BY displayOrder bug)
+    let defaultMerchantPlanKey = 'basic_business';
+    try {
+      const planRows = await queryAsync("SELECT `key` FROM plans WHERE type = 'merchant' AND isActive = 1 ORDER BY priority DESC LIMIT 1");
+      if (planRows.length > 0) {
+        defaultMerchantPlanKey = planRows[0].key;
+      }
+    } catch (e) {
+      // fallback to basic_business
+    }
+
     // Create user
     const hashedPassword = await bcrypt.hash('tempPassword123!', 10);
     const userResult = await queryAsync(
-      'INSERT INTO users (fullName, email, password, phone, address, community, membershipType, userType, status) VALUES (?, ?, ?, ?, ?, ?, ?, "merchant", ?)',
-      [fullName, email, hashedPassword, phone, address, community, membershipType || 'business_basic', status || 'pending']
+      'INSERT INTO users (fullName, email, password, phone, address, community, membershipType, userType, status, membershipNumber) VALUES (?, ?, ?, ?, ?, ?, ?, "merchant", ?, ?)',
+      [fullName, email, hashedPassword, phone, address, community, membershipType || defaultMerchantPlanKey, status || 'pending', membershipNumber]
     );
 
     const userId = userResult.insertId;
@@ -1452,7 +1471,8 @@ router.post('/partners', auth, admin, async (req, res) => {
       success: true, 
       message: 'Partner created successfully',
       userId: userId,
-      businessId: businessId
+      businessId: businessId,
+      membershipNumber: membershipNumber
     });
   } catch (err) {
     console.error('Error creating partner:', err);
@@ -1750,6 +1770,88 @@ router.post('/partners/bulk-action', auth, admin, async (req, res) => {
     });
   } catch (err) {
     console.error('Error performing bulk partner action:', err);
+    res.status(500).json({ success: false, message: 'Server error performing bulk action' });
+  }
+});
+
+// Bulk user actions
+router.post('/users/bulk-action', auth, admin, async (req, res) => {
+  try {
+    const { action, userIds } = req.body;
+
+    if (!action || !userIds || !Array.isArray(userIds) || userIds.length === 0) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Action and user IDs array are required' 
+      });
+    }
+
+    // Validate action
+    const validActions = ['approve', 'reject', 'suspend', 'activate', 'delete'];
+    if (!validActions.includes(action)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: `Invalid action. Must be one of: ${validActions.join(', ')}` 
+      });
+    }
+
+    // Validate all IDs are numbers
+    const validIds = userIds.filter(id => !isNaN(parseInt(id)));
+    if (validIds.length !== userIds.length) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'All user IDs must be valid numbers' 
+      });
+    }
+
+    const results = { success: 0, failed: 0, errors: [] };
+
+    for (const userId of validIds) {
+      try {
+        switch (action) {
+          case 'approve':
+            await queryAsync(
+              'UPDATE users SET status = "approved", updated_at = NOW() WHERE id = ? AND userType != "merchant"',
+              [userId]
+            );
+            break;
+          case 'reject':
+            await queryAsync(
+              'UPDATE users SET status = "rejected", updated_at = NOW() WHERE id = ? AND userType != "merchant"',
+              [userId]
+            );
+            break;
+          case 'suspend':
+            await queryAsync(
+              'UPDATE users SET status = "suspended", updated_at = NOW() WHERE id = ? AND userType != "merchant"',
+              [userId]
+            );
+            break;
+          case 'activate':
+            await queryAsync(
+              'UPDATE users SET status = "approved", updated_at = NOW() WHERE id = ? AND userType != "merchant"',
+              [userId]
+            );
+            break;
+          case 'delete':
+            // Delete the user (only non-merchants)
+            await queryAsync('DELETE FROM users WHERE id = ? AND userType != "merchant"', [userId]);
+            break;
+        }
+        results.success++;
+      } catch (error) {
+        results.failed++;
+        results.errors.push(`Failed to ${action} user ${userId}: ${error.message}`);
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `Bulk ${action} completed. ${results.success} successful, ${results.failed} failed.`,
+      results
+    });
+  } catch (err) {
+    console.error('Error performing bulk user action:', err);
     res.status(500).json({ success: false, message: 'Server error performing bulk action' });
   }
 });

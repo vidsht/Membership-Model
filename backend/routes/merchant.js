@@ -22,14 +22,14 @@ const checkMerchantAccess = async (req, res, next) => {
              b.businessId, b.businessName, b.businessDescription, b.businessCategory, 
              b.businessAddress, b.businessPhone, b.businessEmail, b.website,
              b.businessLicense, b.taxId, b.isVerified, b.verificationDate,
-             b.membershipLevel, b.status as businessStatus, b.socialMediaFollowed as businessSocial,
-             b.customDealLimit, b.currentPlan, b.planExpiryDate, b.planStatus, b.dealsUsedThisMonth,
+             b.membershipLevel, b.socialMediaFollowed as businessSocial,
+             b.customDealLimit, b.planExpiryDate, b.dealsUsedThisMonth,
              b.created_at as businessCreatedAt, b.maxDealsPerMonth,
              p.name as planName, p.max_deals_per_month as dealPostingLimit, p.priority as planPriority, p.price as planPrice,
              p.features as planFeatures, p.billingCycle
       FROM users u
       LEFT JOIN businesses b ON u.id = b.userId
-      LEFT JOIN plans p ON b.currentPlan = p.key AND p.type = 'merchant'
+      LEFT JOIN plans p ON u.membershipType = p.key AND p.type = 'merchant'
       WHERE u.id = ? AND u.userType = 'merchant'
     `;
 
@@ -41,10 +41,10 @@ const checkMerchantAccess = async (req, res, next) => {
 
     const user = results[0];
 
-    // Check user status
+    // Check user status from users table (this is where admin updates are made)
     if (user.status === 'pending') {
       return res.status(403).json({ 
-        message: 'Your profile is not yet accepted by the admin. Please wait for approval.',
+        message: 'Your profile is not yet approved by the admin. Please wait for approval.',
         status: 'pending'
       });
     }
@@ -63,29 +63,10 @@ const checkMerchantAccess = async (req, res, next) => {
       });
     }
 
-    if (!user.businessId) {
-      return res.status(404).json({ message: 'Business profile not found' });
-    }
-
-    // Check business status
-    if (user.businessStatus === 'pending') {
+    if (user.status !== 'approved') {
       return res.status(403).json({ 
-        message: 'Your business is not yet approved by the admin.',
-        status: 'pending'
-      });
-    }
-
-    if (user.businessStatus === 'suspended') {
-      return res.status(403).json({ 
-        message: 'Your business is temporarily suspended by admin.',
-        status: 'suspended'
-      });
-    }
-
-    if (user.businessStatus === 'rejected') {
-      return res.status(403).json({ 
-        message: 'Your business is rejected by admin.',
-        status: 'rejected'
+        message: 'Your account needs to be approved by admin before accessing merchant features.',
+        status: user.status
       });
     }
 
@@ -250,12 +231,11 @@ router.get('/dashboard', checkMerchantAccess, async (req, res) => {
           isVerified: merchant.isVerified,
           verificationDate: merchant.verificationDate,
           membershipLevel: merchant.membershipLevel,
-          status: merchant.businessStatus,
+          status: merchant.status, // Use status from users table
           socialMediaFollowed: merchant.businessSocial,
           customDealLimit: merchant.customDealLimit,
-          currentPlan: merchant.currentPlan,
+          currentPlan: merchant.membershipType, // Use membershipType from users table
           planExpiryDate: merchant.planExpiryDate,
-          planStatus: merchant.planStatus,
           businessCreatedAt: merchant.businessCreatedAt
         },
         user: {
@@ -268,7 +248,7 @@ router.get('/dashboard', checkMerchantAccess, async (req, res) => {
           statusUpdatedBy: merchant.statusUpdatedBy
         },
         plan: {
-          key: merchant.currentPlan || 'basic_business',
+          key: merchant.membershipType || 'basic_business', // Use membershipType from users table
           name: merchant.planName || 'Basic Business',
           dealPostingLimit: merchant.dealLimit,
           priority: merchant.planPriority || 1,
@@ -462,7 +442,24 @@ router.put('/profile', checkMerchantAccess, [
       console.error('Update business profile error:', err);
       return res.status(500).json({ message: 'Server error updating profile' });
     }
-    res.json({ success: true, message: 'Business profile updated successfully' });
+    
+    // Return updated business info
+    const updatedBusiness = {
+      businessId: merchant.businessId,
+      businessName,
+      businessDescription,
+      businessCategory,
+      businessAddress,
+      businessPhone,
+      businessEmail,
+      website
+    };
+    
+    res.json({ 
+      success: true, 
+      message: 'Business profile updated successfully',
+      business: updatedBusiness 
+    });
   });
 });
 

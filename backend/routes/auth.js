@@ -74,7 +74,7 @@ router.post('/register', async (req, res) => {
       if (!selectedPlan) {
         // Fetch the first available user plan
         const defaultPlanResult = await new Promise((resolve, reject) => {
-          db.query('SELECT `key` FROM plans WHERE type = ? AND isActive = 1 ORDER BY displayOrder, priority DESC LIMIT 1', ['user'], (err, results) => {
+          db.query('SELECT `key` FROM plans WHERE type = ? AND isActive = 1 ORDER BY priority DESC LIMIT 1', ['user'], (err, results) => {
             if (err) reject(err);
             else resolve(results);
           });
@@ -183,8 +183,9 @@ router.post('/login', async (req, res) => {
       
       const user = results[0];
       
-      // Check if user is approved
-      if (user.status !== 'approved' && user.status !== 'active') {
+      // Allow login for pending users but include status info in response
+      // Only block if status is rejected or suspended
+      if (user.status === 'rejected' || user.status === 'suspended') {
         return res.status(403).json({ 
           message: `Your account is ${user.status}. Please contact support for assistance.` 
         });
@@ -216,8 +217,15 @@ router.post('/login', async (req, res) => {
       
       req.session.save((err2) => {
         if (err2) return res.status(500).json({ message: 'Session error' });
+        
+        // Customize message based on user status
+        let loginMessage = 'Login successful! Welcome back to Indians in Ghana.';
+        if (user.status === 'pending') {
+          loginMessage = 'Login successful! Your account is pending approval - some features may be limited until approved.';
+        }
+        
         res.json({
-          message: 'Login successful! Welcome back to Indians in Ghana.',
+          message: loginMessage,
           user: {
             id: user.id,
             fullName: user.fullName,
@@ -237,7 +245,8 @@ router.post('/login', async (req, res) => {
             status: user.status,
             created_at: user.created_at
           },
-          success: true
+          success: true,
+          isPending: user.status === 'pending' // Add flag for frontend to show banner
         });
       });
     });
@@ -305,7 +314,7 @@ router.post('/merchant/register', async (req, res) => {
       if (!selectedPlan) {
         // Fetch the first available merchant plan
         const defaultPlanResult = await new Promise((resolve, reject) => {
-          db.query('SELECT `key` FROM plans WHERE type = ? AND isActive = 1 ORDER BY displayOrder, priority DESC LIMIT 1', ['merchant'], (err, results) => {
+          db.query('SELECT `key` FROM plans WHERE type = ? AND isActive = 1 ORDER BY priority DESC LIMIT 1', ['merchant'], (err, results) => {
             if (err) reject(err);
             else resolve(results);
           });
@@ -334,12 +343,16 @@ router.post('/merchant/register', async (req, res) => {
           if (errUpdate) console.error('Failed to update membershipNumber:', errUpdate);
         });
 
+        // Generate a unique businessId (timestamp + random)
+        const businessId = `BIZ${Date.now().toString().slice(-6)}${Math.floor(Math.random() * 1000)}`;
+
         // Insert business information
         const insertBusinessQuery = `INSERT INTO businesses
-          (userId, businessName, businessDescription, businessCategory, businessAddress, businessPhone, businessEmail, website, businessLicense, taxId, status)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`;
-        
+          (businessId, userId, businessName, businessDescription, businessCategory, businessAddress, businessPhone, businessEmail, website, businessLicense, taxId, status)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')`;
+
         const businessValues = [
+          businessId,
           userId,
           businessInfo.businessName,
           businessInfo.businessDescription || null,
@@ -351,7 +364,7 @@ router.post('/merchant/register', async (req, res) => {
           businessInfo.businessLicense || null,
           businessInfo.taxId || null
         ];
-        
+
         db.query(insertBusinessQuery, businessValues, (err3, businessResult) => {
           if (err3) {
             console.error('Merchant registration SQL error (INSERT business):', err3);
@@ -393,10 +406,17 @@ router.post('/merchant/register', async (req, res) => {
               if (errAct) {
                 console.error('Failed to log merchant registration activity:', errAct);
               }
-              res.status(201).json({ 
-                success: true, 
-                message: 'Merchant account created successfully! Your account is pending approval.', 
-                user 
+              // Auto-login: create session for the new merchant
+              req.session.userId = user.id;
+              req.session.save((err2) => {
+                if (err2) {
+                  return res.status(500).json({ success: false, message: 'Session error after registration' });
+                }
+                res.status(201).json({ 
+                  success: true, 
+                  message: 'Merchant account created successfully! Your account is pending approval.', 
+                  user 
+                });
               });
             });
           });
@@ -504,7 +524,7 @@ router.post('/reset-password', async (req, res) => {
 router.get('/communities', (req, res) => {
   try {
     // Simple query that works with basic table structure
-    const query = 'SELECT name, description FROM communities WHERE isActive = TRUE ORDER BY displayOrder, name';
+  const query = 'SELECT name, description FROM communities WHERE isActive = TRUE ORDER BY name';
     
     db.query(query, (err, results) => {
       if (err) {
@@ -556,7 +576,7 @@ router.get('/communities', (req, res) => {
 // Get user types for dropdown  
 router.get('/user-types', (req, res) => {
   try {
-    const query = 'SELECT name, description FROM user_types WHERE isActive = TRUE ORDER BY displayOrder, name';
+  const query = 'SELECT name, description FROM user_types WHERE isActive = TRUE ORDER BY name';
     
     db.query(query, (err, results) => {
       if (err) {

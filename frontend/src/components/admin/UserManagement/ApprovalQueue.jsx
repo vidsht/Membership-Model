@@ -199,10 +199,12 @@ const ApprovalQueue = () => {
       console.log('✅ Bulk approving:', { entityName, count: selectedIds.length, ids: selectedIds });
       
       // Fixed: Use correct bulk-action endpoint
-      await api.post('/admin/users/bulk-action', {
-        action: 'approve',
-        userIds: selectedIds
-      });
+      const endpoint = activeTab === 'users' ? '/admin/users/bulk-action' : '/admin/partners/bulk-action';
+      const payload = activeTab === 'users' 
+        ? { action: 'approve', userIds: selectedIds }
+        : { action: 'approve', merchantIds: selectedIds };
+      
+      await api.post(endpoint, payload);
 
       showNotification(`${selectedIds.length} ${entityName} approved successfully!`, 'success');
       
@@ -238,11 +240,12 @@ const ApprovalQueue = () => {
     try {
       console.log('❌ Bulk rejecting:', { entityName, count: selectedIds.length, ids: selectedIds });
       
-      // Fixed: Use correct bulk-action endpoint
-      await api.post('/admin/users/bulk-action', {
-        action: 'reject',
-        userIds: selectedIds
-      });
+      const endpoint = activeTab === 'users' ? '/admin/users/bulk-action' : '/admin/partners/bulk-action';
+      const payload = activeTab === 'users' 
+        ? { action: 'reject', userIds: selectedIds }
+        : { action: 'reject', merchantIds: selectedIds };
+      
+      await api.post(endpoint, payload);
 
       showNotification(`${selectedIds.length} ${entityName} rejected successfully!`, 'success');
       

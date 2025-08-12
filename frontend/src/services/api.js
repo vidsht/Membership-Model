@@ -186,7 +186,13 @@ export const merchantApi = {
 
   // Update merchant business info
   updateBusinessInfo: async (businessData) => {
-    const response = await api.put('/merchant/business-info', businessData);
+    const response = await api.put('/merchant/profile', businessData);
+    return response.data;
+  },
+
+  // Update merchant profile (alias for updateBusinessInfo)
+  updateProfile: async (businessData) => {
+    const response = await api.put('/merchant/profile', businessData);
     return response.data;
   },
 
@@ -218,6 +224,13 @@ export const merchantApi = {
   // Delete deal
   deleteDeal: async (dealId) => {
     const response = await api.delete(`/merchant/deals/${dealId}`);
+    return response.data;
+  },
+
+  // Get analytics data
+  getAnalytics: async (dealId = null) => {
+    const endpoint = dealId ? `/merchant/analytics/deals/${dealId}` : '/merchant/analytics/deals';
+    const response = await api.get(endpoint);
     return response.data;
   }
 };

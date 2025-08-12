@@ -46,11 +46,18 @@ const Modal = ({
   }, [isOpen]);
 
   const handleConfirm = () => {
-    if (onConfirm) onConfirm();
+    if (onConfirm) {
+      onConfirm();
+    } else {
+      // Fallback: if no onConfirm provided, try to close the modal
+      if (onCancel) onCancel();
+    }
   };
 
   const handleCancel = () => {
-    if (onCancel) onCancel();
+    if (onCancel) {
+      onCancel();
+    }
   };
 
   const handleBackdropClick = (e) => {
@@ -101,7 +108,7 @@ const Modal = ({
         </div>
         
         <div className="modal-body">
-          <p className="modal-message">{message}</p>
+          <p className="modal-message">{message || 'No message provided'}</p>
         </div>
         
         <div className="modal-footer">

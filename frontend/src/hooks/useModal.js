@@ -30,8 +30,8 @@ export const useModal = () => {
       confirmText: config.confirmText || 'OK',
       cancelText: config.cancelText || 'Cancel',
       showCancel: config.showCancel || false,
-      onConfirm: config.onConfirm || (() => closeModal()),
-      onCancel: config.onCancel || (() => closeModal())
+      onConfirm: config.onConfirm || closeModal,
+      onCancel: config.onCancel || closeModal
     });
   }, [closeModal]);
 

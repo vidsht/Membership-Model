@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deal Details Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .debug-box { background: #f0f0f0; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .login-section { background: #e8f4f8; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .result-section { background: #f8f8f8; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        button { padding: 10px 15px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        input { padding: 8px; margin: 5px; width: 200px; }
+        pre { background: #f9f9f9; padding: 10px; border-radius: 4px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Deal Details Debug Test</h1>
+        
+        <div class="login-section">
+            <h3>1. Login First</h3>
+            <input type="email" id="email" placeholder="Email" value="admin@example.com">
+            <input type="password" id="password" placeholder="Password" value="admin123">
+            <button onclick="login()">Login</button>
+            <div id="loginResult"></div>
+        </div>
+
+        <div class="debug-box">
+            <h3>2. Test Deal Details API</h3>
+            <input type="text" id="dealId" placeholder="Deal ID" value="24">
+            <button onclick="testDealDetails()">Fetch Deal Details</button>
+            <div id="dealResult"></div>
+        </div>
+
+        <div class="result-section">
+            <h3>3. API Response Data</h3>
+            <pre id="responseData">Click "Fetch Deal Details" above to see API response...</pre>
+        </div>
+    </div>
+
+    <script>
+        let sessionCookie = '';
+
+        async function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                const response = await fetch('http://localhost:5001/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ email, password })
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('loginResult').innerHTML = 
+                        `<span style="color: green;">✅ Login successful!</span>`;
+                    sessionCookie = 'authenticated';
+                } else {
+                    document.getElementById('loginResult').innerHTML = 
+                        `<span style="color: red;">❌ Login failed: ${result.message}</span>`;
+                }
+            } catch (error) {
+                document.getElementById('loginResult').innerHTML = 
+                    `<span style="color: red;">❌ Login error: ${error.message}</span>`;
+            }
+        }
+
+        async function testDealDetails() {
+            const dealId = document.getElementById('dealId').value;
+            
+            if (!sessionCookie) {
+                alert('Please login first!');
+                return;
+            }
+
+            try {
+                // Test the deal details API endpoint
+                const response = await fetch(`http://localhost:5001/api/admin/deals/${dealId}`, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const result = await response.json();
+                
+                document.getElementById('dealResult').innerHTML = 
+                    `<strong>Status:</strong> ${response.status}<br>
+                     <strong>Success:</strong> ${result.success}<br>
+                     <strong>Deal Title:</strong> ${result.deal?.title || 'No title'}<br>
+                     <strong>Business Name:</strong> ${result.deal?.businessName || 'No business name'}<br>
+                     <strong>Deal Keys:</strong> ${Object.keys(result.deal || {}).join(', ')}`;
+
+                // Show full response data
+                document.getElementById('responseData').textContent = JSON.stringify(result, null, 2);
+
+            } catch (error) {
+                document.getElementById('dealResult').innerHTML = 
+                    `<span style="color: red;">❌ Error: ${error.message}</span>`;
+                document.getElementById('responseData').textContent = `Error: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>

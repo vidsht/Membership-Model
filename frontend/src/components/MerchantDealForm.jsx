@@ -12,7 +12,10 @@ const MerchantDealForm = ({ onDealCreated, onClose }) => {
     title: '',
     description: '',
     discount: '',
-    discountType: 'percentage',    category: '',
+    discountType: 'percentage',
+    originalPrice: '',
+    discountedPrice: '',
+    category: '',
     validFrom: '',
     validUntil: '',
     requiredPlanPriority: 1, // Default to lowest priority
@@ -68,9 +71,36 @@ const MerchantDealForm = ({ onDealCreated, onClose }) => {
     if (!formData.title.trim()) errors.title = 'Title is required';
     if (!formData.description.trim()) errors.description = 'Description is required';
     if (!formData.discount) errors.discount = 'Discount value is required';
+    if (!formData.originalPrice) errors.originalPrice = 'Original price is required';
+    if (!formData.discountedPrice) errors.discountedPrice = 'Discounted price is required';
     if (!formData.category.trim()) errors.category = 'Category is required';
     if (!formData.validFrom) errors.validFrom = 'Start date is required';
     if (!formData.validUntil) errors.validUntil = 'End date is required';
+    
+    // Validate prices
+    if (formData.originalPrice) {
+      const originalPrice = parseFloat(formData.originalPrice);
+      if (isNaN(originalPrice) || originalPrice <= 0) {
+        errors.originalPrice = 'Original price must be greater than 0';
+      }
+    }
+    
+    if (formData.discountedPrice) {
+      const discountedPrice = parseFloat(formData.discountedPrice);
+      if (isNaN(discountedPrice) || discountedPrice < 0) {
+        errors.discountedPrice = 'Discounted price must be 0 or greater';
+      }
+    }
+    
+    // Validate that discounted price is less than original price
+    if (formData.originalPrice && formData.discountedPrice) {
+      const originalPrice = parseFloat(formData.originalPrice);
+      const discountedPrice = parseFloat(formData.discountedPrice);
+      
+      if (!isNaN(originalPrice) && !isNaN(discountedPrice) && discountedPrice >= originalPrice) {
+        errors.discountedPrice = 'Discounted price must be less than original price';
+      }
+    }
     
     // Check if end date is after start date
     if (formData.validFrom && formData.validUntil) {
@@ -108,10 +138,32 @@ const MerchantDealForm = ({ onDealCreated, onClose }) => {
         [name]: e.target.files[0]
       }));
     } else {
-      setFormData(prev => ({
-        ...prev,
+      const newFormData = {
+        ...formData,
         [name]: value
-      }));
+      };
+      
+      // Auto-calculate discounted price when original price or discount changes
+      if ((name === 'originalPrice' || name === 'discount' || name === 'discountType') 
+          && newFormData.originalPrice && newFormData.discount && newFormData.discountType) {
+        
+        const originalPrice = parseFloat(newFormData.originalPrice);
+        const discountValue = parseFloat(newFormData.discount);
+        
+        if (!isNaN(originalPrice) && !isNaN(discountValue)) {
+          let discountedPrice;
+          
+          if (newFormData.discountType === 'percentage') {
+            discountedPrice = originalPrice - (originalPrice * discountValue / 100);
+          } else {
+            discountedPrice = originalPrice - discountValue;
+          }
+          
+          newFormData.discountedPrice = Math.max(0, discountedPrice).toFixed(2);
+        }
+      }
+      
+      setFormData(newFormData);
     }
     
     // Clear error when field is edited
@@ -134,18 +186,18 @@ const MerchantDealForm = ({ onDealCreated, onClose }) => {
     try {
       setIsSaving(true);
           // Send JSON only (no file upload)
-      // Map validUntil to expiration_date and only send required fields
-      const businessId = localStorage.getItem('merchantBusinessId');
       const dealData = {
         title: formData.title,
         description: formData.description,
         category: formData.category,
-        expiration_date: formData.validUntil,
-        businessId,
-        requiredPlanPriority: parseInt(formData.requiredPlanPriority),
         discount: formData.discount,
         discountType: formData.discountType,
-        termsConditions: formData.termsConditions
+        originalPrice: formData.originalPrice,
+        discountedPrice: formData.discountedPrice,
+        termsConditions: formData.termsConditions,
+        expiration_date: formData.validUntil,
+        couponCode: formData.couponCode,
+        requiredPlanPriority: parseInt(formData.requiredPlanPriority)
       };
       await merchantApi.createDeal(dealData);
       showNotification('Deal submitted successfully! It will be reviewed by admin before going live.', 'success');
@@ -241,6 +293,8 @@ const MerchantDealForm = ({ onDealCreated, onClose }) => {
               onChange={handleChange}
               className={formErrors.discount ? 'error' : ''}
               placeholder="e.g., 20"
+              min="0"
+              step="0.01"
             />
             {formErrors.discount && <span className="error-message">{formErrors.discount}</span>}
           </div>
@@ -254,10 +308,43 @@ const MerchantDealForm = ({ onDealCreated, onClose }) => {
               onChange={handleChange}
             >
               <option value="percentage">Percentage (%)</option>
-              <option value="fixed">Fixed Amount</option>
-              <option value="buyOneGetOne">Buy One Get One</option>
-              <option value="freeItem">Free Item</option>
+              <option value="fixed">Fixed Amount (GHS)</option>
             </select>
+          </div>
+        </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label htmlFor="originalPrice">Original Price (GHS) <span className="required">*</span></label>
+            <input
+              type="number"
+              id="originalPrice"
+              name="originalPrice"
+              value={formData.originalPrice}
+              onChange={handleChange}
+              className={formErrors.originalPrice ? 'error' : ''}
+              placeholder="e.g., 100.00"
+              min="0"
+              step="0.01"
+            />
+            {formErrors.originalPrice && <span className="error-message">{formErrors.originalPrice}</span>}
+          </div>
+          
+          <div className="form-group">
+            <label htmlFor="discountedPrice">Discounted Price (GHS) <span className="required">*</span></label>
+            <input
+              type="number"
+              id="discountedPrice"
+              name="discountedPrice"
+              value={formData.discountedPrice}
+              onChange={handleChange}
+              className={formErrors.discountedPrice ? 'error' : ''}
+              placeholder="e.g., 80.00"
+              min="0"
+              step="0.01"
+            />
+            {formErrors.discountedPrice && <span className="error-message">{formErrors.discountedPrice}</span>}
+            <span className="help-text">This will be automatically calculated when you enter discount</span>
           </div>
         </div>
         

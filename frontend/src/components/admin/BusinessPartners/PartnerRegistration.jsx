@@ -11,7 +11,7 @@ import './PartnerRegistration.css';
 const PartnerRegistration = () => {
   const { showNotification } = useNotification();
   const navigate = useNavigate();
-  const { partnerId } = useParams();
+  const { id: partnerId } = useParams();
   const [formData, setFormData] = useState({
     businessName: '',
     category: '',
@@ -71,7 +71,7 @@ const PartnerRegistration = () => {
           const response = await adminApi.getPartner(partnerId);
           console.log('📄 PartnerRegistration: AdminAPI response:', response);
           
-          if (response && response.success && response.merchant) {
+          if (response && response.merchant) {
             const m = response.merchant;
             console.log('✅ PartnerRegistration: Merchant data for edit:', m);
             
@@ -243,7 +243,7 @@ const PartnerRegistration = () => {
           taxId: formData.taxId,
           planType: formData.planType,
         };
-        const response = await api.put(`/admin/partners/${partnerId}`, payload);
+        const response = await adminApi.updatePartner(partnerId, payload);
         showNotification('Partner details updated successfully.', 'success');
         navigate('/admin', { state: { activeTab: 'merchants' } });
       } else {
@@ -254,6 +254,7 @@ const PartnerRegistration = () => {
           password: 'tempPassword123', // Admin creates account with temp password
           phone: formData.phone,
           plan: formData.planType,
+          membershipType: formData.planType, // <-- ensure this is sent for backend
           socialMediaFollowed: [], // Empty for admin-created accounts
           businessInfo: {
             businessName: formData.businessName,
@@ -267,7 +268,7 @@ const PartnerRegistration = () => {
             businessAddress
           }
         };
-        const response = await api.post('/admin/partners', payload);
+        const response = await adminApi.createPartner(payload);
         showNotification('Partner created successfully', 'success');
         navigate('/admin', { state: { activeTab: 'merchants' } });
       }
