@@ -27,26 +27,35 @@ const DealDetail = () => {
       setError(null);
       
       // Fetch deal details
+      console.log('Fetching deal data for ID:', dealId);
       const dealResponse = await api.get(`/admin/deals/${dealId}`);
+      console.log('Raw API Response:', dealResponse);
+      console.log('Response Data:', dealResponse.data);
+      
       const dealData = dealResponse.data.deal;
+      console.log('Extracted Deal Data:', dealData);
       
       if (!dealData) {
         throw new Error('Deal not found');
       }
 
       setDeal(dealData);
+      console.log('Deal set to state:', dealData);
 
-      // Create business object from deal data
+      // Create business object from deal data (with field name fallbacks)
       const businessData = {
-        id: dealData.business_id,
-        business_name: dealData.businessName,
-        category: dealData.businessCategory,
-        location: dealData.location,
-        contact_phone: dealData.contactPhone,
-        email: dealData.email,
-        website: dealData.website,
-        description: dealData.businessDescription
+        id: dealData.businessId || dealData.business_id,
+        business_name: dealData.businessName || dealData.business_name,
+        category: dealData.businessCategory || dealData.category,
+        location: dealData.location || dealData.businessAddress || 'Location not specified',
+        contact_phone: dealData.contactPhone || dealData.businessPhone || dealData.phone,
+        email: dealData.email || dealData.businessEmail || dealData.merchantEmail,
+        website: dealData.website || dealData.businessWebsite,
+        description: dealData.businessDescription || dealData.description,
+        owner_name: dealData.ownerName || dealData.merchantName,
+        owner_email: dealData.ownerEmail || dealData.merchantEmail
       };
+      console.log('Business data created:', businessData);
       setBusiness(businessData);
 
       // Fetch redemptions
@@ -85,6 +94,11 @@ const DealDetail = () => {
 
   return (
     <div className="deal-detail-container">
+      {/* DEBUG: Component state */}
+      <div style={{position: 'fixed', top: '10px', right: '10px', background: 'red', color: 'white', padding: '5px', zIndex: 9999, fontSize: '12px'}}>
+        COMPONENT STATE: Loading={loading ? 'YES' : 'NO'} | Error={error ? 'YES' : 'NO'} | Deal={deal ? 'YES' : 'NO'} | ActiveTab={activeTab}
+      </div>
+      
       <div className="deal-detail-header">
         <button 
           className="back-button"
@@ -115,13 +129,13 @@ const DealDetail = () => {
           {/* Deal Header */}
           <div className="deal-header">
             <div className="deal-title-section">
-              <h1 className="deal-title">{deal.title}</h1>
-              <p className="deal-description">{deal.description}</p>
+              <h1 className="deal-title">{deal.title || 'No Title'}</h1>
+              <p className="deal-description">{deal.description || 'No Description'}</p>
               <div className="deal-badges">
                 <span className={`status-badge ${deal.status === 'active' ? 'active' : 'inactive'}`}>
-                  {deal.status.toUpperCase()}
+                  {(deal.status || 'N/A').toUpperCase()}
                 </span>
-                <span className="category-badge">{deal.category}</span>
+                <span className="category-badge">{deal.category || deal.businessCategory || 'N/A'}</span>
               </div>
             </div>
           </div>
@@ -144,7 +158,7 @@ const DealDetail = () => {
               className={`tab-button ${activeTab === 'redemptions' ? 'active' : ''}`}
               onClick={() => setActiveTab('redemptions')}
             >
-              Redemptions ({redemptions.length})
+              Redemptions ({(deal.redemptionCount || deal.redemptions || redemptions.length || 0)})
             </button>
             <button 
               className={`tab-button ${activeTab === 'analytics' ? 'active' : ''}`}
@@ -155,226 +169,44 @@ const DealDetail = () => {
           </div>
 
           {/* Tab Content */}
-          <div className="tab-content">
+          <div className="tab-content" style={{minHeight: '400px', border: '3px solid red', background: 'lightyellow'}}>
+            <div style={{padding: '20px', fontSize: '18px', fontWeight: 'bold'}}>
+              TAB CONTENT CONTAINER IS RENDERING! Current tab: {activeTab}
+            </div>
+            
             {activeTab === 'details' && (
-              <div className="details-tab">
-                {/* Pricing Section */}
-                <div className="pricing-section">
-                  <h3>Pricing Information</h3>
-                  <div className="pricing-grid">
-                    <div className="price-card original">
-                      <label>Original Price</label>
-                      <span className="price-value">GHS {deal.original_price}</span>
-                    </div>
-                    <div className="price-card discounted">
-                      <label>Deal Price</label>
-                      <span className="price-value">GHS {deal.discounted_price}</span>
-                    </div>
-                    <div className="price-card savings">
-                      <label>You Save</label>
-                      <span className="price-value">{deal.percentage}% OFF</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Validity Section */}
-                <div className="validity-section">
-                  <h3>Deal Validity</h3>
-                  <div className="validity-grid">
-                    <div className="validity-item">
-                      <label>Valid From</label>
-                      <span>{new Date(deal.valid_from).toLocaleDateString('en-US', {
-                        weekday: 'long',
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      })}</span>
-                    </div>
-                    <div className="validity-item">
-                      <label>Valid Until</label>
-                      <span>{new Date(deal.valid_until).toLocaleDateString('en-US', {
-                        weekday: 'long',
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric'
-                      })}</span>
-                    </div>
-                    <div className="validity-item">
-                      <label>Current Status</label>
-                      <span className={(() => {
-                        try {
-                          const now = new Date();
-                          const validUntil = new Date(deal.valid_until);
-                          return now > validUntil ? 'expired' : 'active';
-                        } catch {
-                          return 'unknown';
-                        }
-                      })()}>
-                        {(() => {
-                          try {
-                            const now = new Date();
-                            const validUntil = new Date(deal.valid_until);
-                            return now > validUntil ? 'EXPIRED' : 'ACTIVE';
-                          } catch {
-                            return 'UNKNOWN';
-                          }
-                        })()}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Deal Metadata */}
-                <div className="metadata-section">
-                  <h3>Deal Information</h3>
-                  <div className="detail-grid">
-                    <div className="detail-item">
-                      <label>Deal ID</label>
-                      <span>#{deal.id}</span>
-                    </div>
-                    <div className="detail-item">
-                      <label>Category</label>
-                      <span>{deal.category}</span>
-                    </div>
-                    <div className="detail-item">
-                      <label>Status</label>
-                      <span className={deal.status}>{deal.status}</span>
-                    </div>
-                    <div className="detail-item">
-                      <label>Created Date</label>
-                      <span>{new Date(deal.created_at).toLocaleDateString()}</span>
-                    </div>
-                    <div className="detail-item">
-                      <label>Last Updated</label>
-                      <span>{new Date(deal.updated_at).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-                </div>
+              <div style={{backgroundColor: 'lightgreen', padding: '20px', margin: '10px'}}>
+                <h2>DETAILS TAB CONTENT</h2>
+                <p>Title: {deal.title}</p>
+                <p>Description: {deal.description}</p>
+                <p>Category: {deal.category}</p>
+                <p>Status: {deal.status}</p>
               </div>
             )}
 
-            {activeTab === 'business' && business && (
-              <div className="business-tab">
-                <h3>Business Information</h3>
-                <div className="business-grid">
-                  <div className="business-item">
-                    <label>Business Name</label>
-                    <span>{business.business_name}</span>
-                  </div>
-                  <div className="business-item">
-                    <label>Category</label>
-                    <span>{business.category}</span>
-                  </div>
-                  <div className="business-item">
-                    <label>Location</label>
-                    <span>{business.location}</span>
-                  </div>
-                  {business.contact_phone && (
-                    <div className="business-item">
-                      <label>Phone</label>
-                      <span>{business.contact_phone}</span>
-                    </div>
-                  )}
-                  {business.email && (
-                    <div className="business-item">
-                      <label>Email</label>
-                      <span>{business.email}</span>
-                    </div>
-                  )}
-                  {business.description && (
-                    <div className="business-item full-width">
-                      <label>Description</label>
-                      <span>{business.description}</span>
-                    </div>
-                  )}
-                  {business.website && (
-                    <div className="business-item">
-                      <label>Website</label>
-                      <span>
-                        <a href={business.website} target="_blank" rel="noopener noreferrer">
-                          {business.website}
-                        </a>
-                      </span>
-                    </div>
-                  )}
-                </div>
+            {activeTab === 'business' && (
+              <div style={{backgroundColor: 'lightblue', padding: '20px', margin: '10px'}}>
+                <h2>BUSINESS TAB CONTENT</h2>
+                <p>Business Name: {deal.businessName}</p>
+                <p>Business Category: {deal.businessCategory}</p>
+                <p>Business ID: {deal.businessId}</p>
               </div>
             )}
 
             {activeTab === 'redemptions' && (
-              <div className="redemptions-tab">
-                <h3>Deal Redemptions ({redemptions.length})</h3>
-                {redemptions.length > 0 ? (
-                  <div className="redemptions-list">
-                    {redemptions.map((redemption, index) => (
-                      <div key={index} className="redemption-item">
-                        <div className="redemption-info">
-                          <span className="user-name">
-                            {redemption.userName || redemption.user_name || 'Anonymous User'}
-                          </span>
-                          <span className="redemption-date">
-                            {new Date(redemption.redeemedAt || redemption.redeemed_at).toLocaleDateString('en-US', {
-                              year: 'numeric',
-                              month: 'short',
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
-                          </span>
-                        </div>
-                        <div className="redemption-amount">
-                          GHS {redemption.amount || deal.discounted_price}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="no-redemptions">
-                    <p>No redemptions yet for this deal.</p>
-                  </div>
-                )}
+              <div style={{backgroundColor: 'lightcoral', padding: '20px', margin: '10px'}}>
+                <h2>REDEMPTIONS TAB CONTENT</h2>
+                <p>Total Redemptions: {deal.redemptions || 0}</p>
+                <p>Redemptions Array Length: {redemptions.length}</p>
               </div>
             )}
 
             {activeTab === 'analytics' && (
-              <div className="analytics-tab">
-                <h3>Deal Analytics</h3>
-                <div className="analytics-grid">
-                  <div className="analytics-card">
-                    <div className="analytics-number">{redemptions.length}</div>
-                    <div className="analytics-label">Total Redemptions</div>
-                  </div>
-                  <div className="analytics-card">
-                    <div className="analytics-number">
-                      GHS {(redemptions.length * parseFloat(deal.discounted_price || 0)).toFixed(2)}
-                    </div>
-                    <div className="analytics-label">Total Revenue</div>
-                  </div>
-                  <div className="analytics-card">
-                    <div className="analytics-number">
-                      {redemptionStats.today || 0}
-                    </div>
-                    <div className="analytics-label">Today's Redemptions</div>
-                  </div>
-                  <div className="analytics-card">
-                    <div className="analytics-number">
-                      {redemptionStats.thisWeek || 0}
-                    </div>
-                    <div className="analytics-label">This Week</div>
-                  </div>
-                  <div className="analytics-card">
-                    <div className="analytics-number">
-                      {redemptionStats.thisMonth || 0}
-                    </div>
-                    <div className="analytics-label">This Month</div>
-                  </div>
-                  <div className="analytics-card">
-                    <div className="analytics-number">
-                      {deal.percentage}%
-                    </div>
-                    <div className="analytics-label">Discount Rate</div>
-                  </div>
-                </div>
+              <div style={{backgroundColor: 'lightyellow', padding: '20px', margin: '10px'}}>
+                <h2>ANALYTICS TAB CONTENT</h2>
+                <p>Views: {deal.views}</p>
+                <p>Discount: {deal.discount}%</p>
+                <p>Discount Type: {deal.discountType}</p>
               </div>
             )}
           </div>
