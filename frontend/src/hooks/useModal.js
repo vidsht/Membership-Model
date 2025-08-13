@@ -18,7 +18,17 @@ export const useModal = () => {
   });
 
   const closeModal = useCallback(() => {
-    setModalState(prev => ({ ...prev, isOpen: false }));
+    setModalState({
+      isOpen: false,
+      title: '',
+      message: '',
+      type: 'info',
+      confirmText: 'OK',
+      cancelText: 'Cancel',
+      showCancel: false,
+      onConfirm: null,
+      onCancel: null
+    });
   }, []);
 
   const showModal = useCallback((config) => {
@@ -94,18 +104,33 @@ export const useModal = () => {
     });
   }, [showModal, closeModal]);
 
-  const showDeleteConfirm = useCallback((itemName, onConfirm) => {
-    return showConfirm(
-      `Are you sure you want to delete "${itemName}"? This action cannot be undone.`,
-      onConfirm,
-      'Delete Confirmation'
-    );
-  }, [showConfirm]);
+  const showDeleteConfirm = useCallback((itemName) => {
+    return new Promise((resolve) => {
+      showModal({
+        type: 'warning',
+        title: 'Delete Confirmation',
+        message: `Are you sure you want to delete "${itemName}"? This action cannot be undone.`,
+        confirmText: 'Delete',
+        cancelText: 'Cancel',
+        showCancel: true,
+        onConfirm: () => {
+          resolve(true);
+          closeModal();
+        },
+        onCancel: () => {
+          resolve(false);
+          closeModal();
+        }
+      });
+    });
+  }, [showModal, closeModal]);
 
   return {
+    modal: modalState, // Keep backward compatibility
     modalState,
     showModal,
     closeModal,
+    hideModal: closeModal, // Keep backward compatibility
     showSuccess,
     showError,
     showWarning,

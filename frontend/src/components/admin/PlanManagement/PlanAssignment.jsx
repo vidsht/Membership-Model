@@ -11,14 +11,17 @@ import './PlanAssignment.css';
 const PlanAssignment = (props) => {
   const params = useParams();
   const userId = props.userId || params.userId;
+  const navigate = useNavigate();
+  const { showNotification } = useNotification();
+  
   // Defensive: warn if userId is missing
   useEffect(() => {
     if (!userId) {
       console.error('PlanAssignment: userId is undefined. Cannot fetch user or assign plan.');
+      showNotification('No user ID provided. Redirecting to plan management.', 'error');
+      navigate('/admin/plan-management');
     }
-  }, [userId]);
-  const navigate = useNavigate();
-  const { showNotification } = useNotification();
+  }, [userId, navigate, showNotification]);
     const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [plans, setPlans] = useState([]);
@@ -41,13 +44,23 @@ const PlanAssignment = (props) => {
       return;
     }
     try {
-      setIsLoading(true);      // First get user data to determine userType
+      setIsLoading(true);
+      
+      // First get user data to determine userType
       const userResponse = await api.get(`/admin/users/${userId}`);
-      const userData = userResponse.data;
+      const userData = userResponse.data.user || userResponse.data;
       const userType = userData.userType || 'user';
       
-      // Then fetch plans filtered by userType from backend
-      const plansResponse = await api.get(`/admin/plans?userType=${userType}`);
+      // Fetch plans based on user type
+      let plansResponse;
+      if (userType === 'merchant') {
+        // Get merchant plans
+        plansResponse = await api.get('/plans?type=merchant&isActive=true');
+      } else {
+        // Get user plans
+        plansResponse = await api.get('/plans?type=user&isActive=true');
+      }
+      
       const plansData = plansResponse.data;
       
       // Ensure plans is always an array
@@ -57,6 +70,7 @@ const PlanAssignment = (props) => {
       setUser(userData);
       setPlans(filteredPlans);
       setSelectedPlan(userData.membershipType || '');
+      
       // Set default dates
       const today = new Date();
       setEffectiveDate(today.toISOString().split('T')[0]);
@@ -96,22 +110,24 @@ const PlanAssignment = (props) => {
       try {
       setIsSaving(true);
       
-      // Find the selected plan object to get its real _id
-      const planObj = plans.find(p => (p._id === selectedPlan || p.key === selectedPlan || p.membershipType === selectedPlan));
-      const planIdToSend = planObj?._id || selectedPlan;
+      // Find the selected plan object
+      const planObj = plans.find(p => p.key === selectedPlan || p.membershipType === selectedPlan);
+      
       await api.post(`/admin/users/${userId}/assign-plan`, {
-        planId: planIdToSend, // Always send a real planId
+        planKey: selectedPlan,
+        planId: planObj?.id || planObj?._id,
         effectiveDate,
         expiryDate,
         notes: notes || `Plan ${selectedPlan !== user.membershipType ? 'changed from ' + user.membershipType + ' to ' + selectedPlan : 'assigned'} by admin.`
       });
+      
       showNotification(`Plan successfully assigned to ${user.fullName}.`, 'success');
       
-      // Redirect to correct section after plan assignment
+      // Redirect based on user type
       if (user && user.userType === 'merchant') {
-        navigate('/admin/partners');
+        navigate('/admin/plan-management');
       } else {
-        navigate('/admin/users');
+        navigate('/admin/plan-management');
       }
     } catch (error) {
       console.error('Error assigning plan:', error);
@@ -141,9 +157,9 @@ const PlanAssignment = (props) => {
         <p>Could not load user data. The user may not exist.</p>
         <button
           className="button button-primary"
-          onClick={() => navigate('/admin/users')}
+          onClick={() => navigate('/admin/plan-management')}
         >
-          Back to User List
+          Back to Plan Management
         </button>
       </div>
     );
@@ -157,9 +173,9 @@ const PlanAssignment = (props) => {
         </h2>
         <button
           className="button button-secondary"
-          onClick={() => navigate('/admin/users')}
+          onClick={() => navigate('/admin/plan-management')}
         >
-          <i className="fas fa-arrow-left"></i> Back to {user.userType === 'merchant' ? 'Merchant' : 'User'} List
+          <i className="fas fa-arrow-left"></i> Back to Plan Management
         </button>
       </div>
       
@@ -220,14 +236,17 @@ const PlanAssignment = (props) => {
               value={selectedPlan}
               onChange={(e) => setSelectedPlan(e.target.value)}
               required
-            >              <option value="">-- Select a plan --</option>
+            >
+              <option value="">-- Select a plan --</option>
               {Array.isArray(plans) && plans.map(plan => (
-                <option key={plan.membershipType || plan.key} value={plan.membershipType || plan.key}>
-                  {plan.name || plan.displayName || (plan.membershipType ? plan.membershipType.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') : plan.key)}
+                <option key={plan.id || plan._id || plan.key} value={plan.key || plan.membershipType}>
+                  {plan.name} - {plan.currency || 'GHS'} {plan.price === 0 ? 'Free' : plan.price}/{plan.billingCycle}
                 </option>
               ))}
               {(!Array.isArray(plans) || plans.length === 0) && (
-                <option value="" disabled>No plans available</option>
+                <option value="" disabled>
+                  {user?.userType === 'merchant' ? 'No merchant plans available' : 'No user plans available'}
+                </option>
               )}
             </select>
           </div>
@@ -273,7 +292,7 @@ const PlanAssignment = (props) => {
           <div className="form-actions">            <button
               type="button"
               className="button button-secondary"
-              onClick={() => navigate('/admin/users')}
+              onClick={() => navigate('/admin/plan-management')}
             >
               Cancel
             </button>

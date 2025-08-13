@@ -756,3 +756,34 @@
     height: 150px;
   }
 }
+
+/* Empty Plans State */
+.empty-plans-state {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: var(--neutral-medium);
+  background: var(--neutral-lightest);
+  border-radius: 12px;
+  border: 2px dashed var(--neutral-light);
+}
+
+.empty-plans-state i {
+  font-size: 3rem;
+  color: var(--neutral-light);
+  margin-bottom: 1rem;
+}
+
+.empty-plans-state h3 {
+  margin: 0 0 0.5rem 0;
+  color: var(--neutral-dark);
+  font-size: 1.25rem;
+}
+
+.empty-plans-state p {
+  margin: 0 0 1.5rem 0;
+  color: var(--neutral-medium);
+}
+
+.empty-plans-state .btn {
+  text-decoration: none;
+}

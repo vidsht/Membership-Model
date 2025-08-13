@@ -16,7 +16,10 @@ const PlanSettings = () => {
   const { validateSession } = useAuth();
   const { modal, showConfirm, hideModal } = useModal();
   const [plans, setPlans] = useState([]);
+  const [userPlans, setUserPlans] = useState([]);
+  const [merchantPlans, setMerchantPlans] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSeedingPlans, setIsSeedingPlans] = useState(false);
   const [activeTab, setActiveTab] = useState('user');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -26,12 +29,14 @@ const PlanSettings = () => {
 
   useEffect(() => {
     fetchPlans();
-  }, [activeTab]);
+  }, []);
 
   const fetchPlans = async () => {
     try {
       setIsLoading(true);
-      const response = await api.get(`/admin/plans?userType=${activeTab}`);
+      // Fetch all plans regardless of tab, then filter in frontend
+      const response = await api.get('/admin/plans');
+      console.log('Plans API response:', response.data);
       setPlans(response.data || []);
     } catch (error) {
       console.error('Error fetching plans:', error);
@@ -73,21 +78,24 @@ const PlanSettings = () => {
   };
   const handleSeedPlans = async () => {
     try {
+      setIsSeedingPlans(true);
       const isSessionValid = await validateSession();
       if (!isSessionValid) {
         showNotification('Your session has expired. Please log in again.', 'error');
         return;
       }
 
-      // First try without force
+      // First try without force - but catch the expected 400 error silently
       try {
         await api.post('/admin/plans/seed');
         showNotification('Default plans created successfully.', 'success');
-        fetchPlans();      } catch (firstError) {
-        // If it fails due to existing plans, try with force
+        fetchPlans();
+      } catch (firstError) {
+        // Check if it's the expected "plans already exist" error
         if (firstError.response?.status === 400 && 
             firstError.response?.data?.message?.includes('already exist')) {
           
+          // Show confirmation modal without logging error
           const confirmed = await showConfirm(
             'Overwrite Existing Plans',
             'Plans already exist. Do you want to delete existing plans and seed new default plans?',
@@ -95,21 +103,28 @@ const PlanSettings = () => {
           );
           
           if (confirmed) {
-            await api.post('/admin/plans/seed', { force: true });
-            showNotification('Default plans created successfully (existing plans replaced).', 'success');
-            fetchPlans();
+            try {
+              await api.post('/admin/plans/seed', { force: true });
+              showNotification('Default plans created successfully (existing plans replaced).', 'success');
+              fetchPlans();
+            } catch (forceError) {
+              console.error('Error force seeding plans:', forceError);
+              showNotification('Error creating default plans. Please try again.', 'error');
+            }
           }
+          // If user cancels, do nothing - no error notification needed
         } else {
-          throw firstError; // Re-throw if it's a different error
+          // This is an unexpected error, show it
+          console.error('Unexpected seeding error:', firstError);
+          showNotification('Error creating default plans. Please try again.', 'error');
         }
       }
     } catch (error) {
-      console.error('Error seeding plans:', error);
-      if (error.response?.data?.message) {
-        showNotification(error.response.data.message, 'error');
-      } else {
-        showNotification('Error creating default plans. Please try again.', 'error');
-      }
+      // This catch is for session validation or other unexpected errors
+      console.error('Error in handleSeedPlans:', error);
+      showNotification('Error creating default plans. Please try again.', 'error');
+    } finally {
+      setIsSeedingPlans(false);
     }
   };
 
@@ -123,7 +138,7 @@ const PlanSettings = () => {
         return;
       }
 
-      await api.delete(`/admin/plans/${deletingPlan._id}`);
+      await api.delete(`/admin/plans/${deletingPlan.id || deletingPlan._id}`);
       showNotification('Plan deleted successfully.', 'success');
       setShowDeleteModal(false);
       setDeletingPlan(null);
@@ -141,10 +156,12 @@ const PlanSettings = () => {
     return cycle === 'lifetime' ? 'One-time' : cycle.charAt(0).toUpperCase() + cycle.slice(1);
   };
 
-  // Ensure plans is always an array before filtering
-  const plansArray = Array.isArray(plans) ? plans : [];
-  const userPlans = plansArray.filter(plan => !plan.metadata?.userType || plan.metadata.userType === 'user');
-  const merchantPlans = plansArray.filter(plan => plan.metadata?.userType === 'merchant');
+  // Update plan arrays whenever plans change
+  useEffect(() => {
+    const plansArray = Array.isArray(plans) ? plans : [];
+    setUserPlans(plansArray.filter(plan => (!plan.metadata?.userType && plan.type === 'user') || plan.metadata?.userType === 'user' || plan.type === 'user'));
+    setMerchantPlans(plansArray.filter(plan => (plan.metadata?.userType === 'merchant') || plan.type === 'merchant'));
+  }, [plans]);
 
   return (
     <div className="user-management">
@@ -152,6 +169,30 @@ const PlanSettings = () => {
         <div className="header-content">
           <h2>Plan Settings</h2>
           <p>Manage membership plans for users and business partners</p>
+          {!isLoading && (
+            <div className="plan-stats">
+              <span className="stat">
+                <i className="fas fa-users"></i>
+                {userPlans.length} User Plans
+              </span>
+              <span className="stat">
+                <i className="fas fa-store"></i>
+                {merchantPlans.length} Business Plans
+              </span>
+              <span className="stat">
+                <i className="fas fa-chart-line"></i>
+                {userPlans.length + merchantPlans.length} Total Plans
+              </span>
+              <span className="stat">
+                <i className="fas fa-check-circle"></i>
+                {[...userPlans, ...merchantPlans].filter(p => p.isActive).length} Active
+              </span>
+              <span className="stat">
+                <i className="fas fa-pause-circle"></i>
+                {[...userPlans, ...merchantPlans].filter(p => !p.isActive).length} Inactive
+              </span>
+            </div>
+          )}
         </div>        <div className="header-actions">
           <Link to="/admin" className="btn-secondary">
             <i className="fas fa-arrow-left"></i>
@@ -160,9 +201,10 @@ const PlanSettings = () => {
           <button 
             className="button secondary"
             onClick={handleSeedPlans}
+            disabled={isSeedingPlans}
           >
-            <i className="fas fa-seedling"></i>
-            Seed Default Plans
+            <i className={`fas ${isSeedingPlans ? 'fa-spinner fa-spin' : 'fa-seedling'}`}></i>
+            {isSeedingPlans ? 'Seeding Plans...' : 'Seed Default Plans'}
           </button>
           <button 
             className="button primary"
@@ -201,7 +243,7 @@ const PlanSettings = () => {
       ) : (
         <div className="plans-grid">
           {(activeTab === 'user' ? userPlans : merchantPlans).map((plan) => (
-            <div key={plan._id} className={`plan-card ${!plan.isActive ? 'inactive' : ''}`}>
+            <div key={plan.id || plan._id} className={`plan-card ${!plan.isActive ? 'inactive' : ''}`}>
               <div className="plan-header">
                 <div className="plan-title">
                   <h3>{plan.name}</h3>
@@ -212,7 +254,7 @@ const PlanSettings = () => {
                 <div className="plan-actions">
                   <button
                     className="btn-icon"
-                    onClick={() => handleTogglePlanStatus(plan._id, plan.isActive)}
+                    onClick={() => handleTogglePlanStatus(plan.id || plan._id, plan.isActive)}
                     title={plan.isActive ? 'Deactivate' : 'Activate'}
                   >
                     <i className={`fas ${plan.isActive ? 'fa-pause' : 'fa-play'}`}></i>
@@ -245,7 +287,9 @@ const PlanSettings = () => {
                 <div className="plan-features">
                   <h4>Features:</h4>
                   <ul>
-                    {plan.features.map((feature, index) => (
+                    {(Array.isArray(plan.features) ? plan.features : 
+                      (plan.features ? plan.features.split(',').map(f => f.trim()) : [])
+                    ).map((feature, index) => (
                       <li key={index}>
                         <i className="fas fa-check"></i>
                         {feature}
@@ -256,8 +300,12 @@ const PlanSettings = () => {
 
                 <div className="plan-meta">
                   <div className="meta-item">
+                    <label>Plan Key:</label>
+                    <span className="plan-key">{plan.key}</span>
+                  </div>
+                  <div className="meta-item">
                     <label>Priority:</label>
-                    <span>{plan.priority}</span>
+                    <span className="priority-badge">{plan.priority}</span>
                   </div>
                   {plan.maxUsers && (
                     <div className="meta-item">
@@ -265,10 +313,28 @@ const PlanSettings = () => {
                       <span>{plan.maxUsers}</span>
                     </div>
                   )}
+                  {plan.max_deals_per_month && (
+                    <div className="meta-item">
+                      <label>Max Deals/Month:</label>
+                      <span>{plan.max_deals_per_month}</span>
+                    </div>
+                  )}
+                  {plan.dealAccess && (
+                    <div className="meta-item">
+                      <label>Deal Access:</label>
+                      <span className="deal-access">{plan.dealAccess}</span>
+                    </div>
+                  )}
                   <div className="meta-item">
                     <label>Created:</label>
-                    <span>{new Date(plan.createdAt).toLocaleDateString()}</span>
+                    <span>{new Date(plan.createdAt || plan.created_at).toLocaleDateString()}</span>
                   </div>
+                  {plan.updatedAt || plan.updated_at ? (
+                    <div className="meta-item">
+                      <label>Updated:</label>
+                      <span>{new Date(plan.updatedAt || plan.updated_at).toLocaleDateString()}</span>
+                    </div>
+                  ) : null}
                 </div>
               </div>
             </div>
@@ -282,9 +348,9 @@ const PlanSettings = () => {
           <h3>No Plans Found</h3>
           <p>Get started by creating your first {activeTab === 'user' ? 'user' : 'business'} plan or seed default plans.</p>
           <div className="empty-actions">
-            <button className="btn-outline" onClick={handleSeedPlans}>
-              <i className="fas fa-seedling"></i>
-              Seed Default Plans
+            <button className="btn-outline" onClick={handleSeedPlans} disabled={isSeedingPlans}>
+              <i className={`fas ${isSeedingPlans ? 'fa-spinner fa-spin' : 'fa-seedling'}`}></i>
+              {isSeedingPlans ? 'Seeding Plans...' : 'Seed Default Plans'}
             </button>
             <button className="button primary" onClick={handleAddPlan}>
               <i className="fas fa-plus"></i>
@@ -391,13 +457,13 @@ const PlanModal = ({ isOpen, onClose, onSubmit, plan, userType }) => {
         key: plan.key || '',
         price: plan.price || 0,
         currency: plan.currency || 'GHS',
-        features: plan.features || [''],
+        features: plan.features ? (Array.isArray(plan.features) ? plan.features : plan.features.split(',').map(f => f.trim())) : [''],
         description: plan.description || '',
         isActive: plan.isActive !== undefined ? plan.isActive : true,
-        maxUsers: plan.maxUsers || '',
-        billingCycle: plan.billingCycle || 'monthly',
+        maxUsers: plan.maxUsers || plan.max_users || '',
+        billingCycle: plan.billingCycle || plan.billing_cycle || 'monthly',
         priority: plan.priority || 0,
-        userType: plan.metadata?.userType || userType || 'user'
+        userType: plan.metadata?.userType || plan.type || userType || 'user'
       });
       // If editing, set planKeyType and customKey accordingly
       if (defaultPlanKeys.includes(plan.key)) {
@@ -503,6 +569,7 @@ const PlanModal = ({ isOpen, onClose, onSubmit, plan, userType }) => {
         price: parseFloat(formData.price),
         priority: parseInt(formData.priority) || 0,
         maxUsers: formData.maxUsers ? parseInt(formData.maxUsers) : null,
+        type: formData.userType, // Backend uses 'type' field
         metadata: {
           userType: formData.userType
         }
@@ -510,7 +577,7 @@ const PlanModal = ({ isOpen, onClose, onSubmit, plan, userType }) => {
 
       if (plan) {
         // Update existing plan
-        await api.put(`/admin/plans/${plan._id}`, planData);
+        await api.put(`/admin/plans/${plan.id || plan._id}`, planData);
         showNotification('Plan updated successfully.', 'success');
       } else {
         // Create new plan

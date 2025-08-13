@@ -49,8 +49,10 @@ const Modal = ({
     if (onConfirm) {
       onConfirm();
     } else {
-      // Fallback: if no onConfirm provided, try to close the modal
-      if (onCancel) onCancel();
+      // Fallback: if no onConfirm provided, close the modal
+      if (onCancel) {
+        onCancel();
+      }
     }
   };
 
@@ -98,7 +100,9 @@ const Modal = ({
   };
 
   const modalContent = (
-    <div className={`modal-overlay ${isOpen ? 'modal-open' : ''}`} onClick={handleBackdropClick}>
+    <div className={`modal-overlay ${isOpen ? 'modal-open' : ''}`} onClick={handleBackdropClick} style={{
+      display: isOpen ? 'flex' : 'none'
+    }}>
       <div className={`modal-container modal-${type}`}>
         <div className="modal-header">
           <div className="modal-icon">
@@ -133,7 +137,7 @@ const Modal = ({
     </div>
   );
 
-  if (!mounted) return null;
+  if (!mounted || !isOpen) return null;
 
   return ReactDOM.createPortal(modalContent, document.body);
 };

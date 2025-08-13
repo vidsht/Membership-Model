@@ -110,7 +110,7 @@ function AppContent() {
             </AdminRoute>
           } />
 
-          <Route path="/admin/users/:id/assign-plan" element={
+          <Route path="/admin/users/:userId/assign-plan" element={
             <AdminRoute>
               <PlanAssignment />
             </AdminRoute>
@@ -159,7 +159,7 @@ function AppContent() {
             </AdminRoute>
           } />
           
-          <Route path="/admin/plan-settings" element={
+          <Route path="/admin/plans-settings" element={
             <AdminRoute>
               <PlanSettings />
             </AdminRoute>
@@ -174,6 +174,12 @@ function AppContent() {
           <Route path="/admin/plan-management" element={
             <AdminRoute>
               <PlanManagement />
+            </AdminRoute>
+          } />
+          
+          <Route path="/admin/plan-management/users/:userId/assign-plan" element={
+            <AdminRoute>
+              <PlanAssignment />
             </AdminRoute>
           } />
           

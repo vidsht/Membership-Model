@@ -1,4 +1,28 @@
 /* Plan Settings Styles */
+.plan-stats {
+  display: flex;
+  gap: 2rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.plan-stats .stat {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--neutral-medium);
+  background: var(--neutral-lightest);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  border: 1px solid var(--neutral-light);
+}
+
+.plan-stats .stat i {
+  color: var(--primary);
+  font-size: 0.8rem;
+}
+
 .plan-tabs {
   display: flex;
   gap: 1rem;
@@ -188,6 +212,36 @@
   color: var(--neutral-dark);
 }
 
+.plan-key {
+  background: var(--primary-light);
+  color: var(--primary);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.8rem !important;
+  font-weight: 600;
+}
+
+.priority-badge {
+  background: var(--accent);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.8rem !important;
+  font-weight: 600;
+  text-align: center;
+  min-width: 2rem;
+}
+
+.deal-access {
+  background: var(--success-light);
+  color: var(--success);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem !important;
+  font-weight: 500;
+}
+
 /* Plan Modal Styles */
 .modal-form .form-row {
   display: grid;
@@ -346,6 +400,16 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
+  .plan-stats {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .plan-stats .stat {
+    justify-content: center;
+    width: 100%;
+  }
+  
   .plan-tabs {
     flex-direction: column;
     gap: 0;
