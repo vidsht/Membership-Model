@@ -18,6 +18,11 @@ const PlanSettings = () => {
   const [plans, setPlans] = useState([]);
   const [userPlans, setUserPlans] = useState([]);
   const [merchantPlans, setMerchantPlans] = useState([]);
+  const [planStats, setPlanStats] = useState({
+    user: { total: 0, active: 0, subscribers: 0 },
+    merchant: { total: 0, active: 0, subscribers: 0 }
+  });
+  const [planSubscriptionStats, setPlanSubscriptionStats] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSeedingPlans, setIsSeedingPlans] = useState(false);
   const [activeTab, setActiveTab] = useState('user');
@@ -29,20 +34,101 @@ const PlanSettings = () => {
 
   useEffect(() => {
     fetchPlans();
+    fetchPlanStats();
+    fetchPlanSubscriptionStats();
   }, []);
 
   const fetchPlans = async () => {
     try {
       setIsLoading(true);
-      // Fetch all plans regardless of tab, then filter in frontend
-      const response = await api.get('/admin/plans');
+      // Use the working /plans endpoint that doesn't require admin auth for reading
+      const response = await api.get('/plans');
       console.log('Plans API response:', response.data);
-      setPlans(response.data || []);
+      // Backend returns { success: true, plans: [...] }
+      const allPlans = response.data.plans || [];
+      setPlans(allPlans);
+      
+      // Calculate stats from plans
+      const userPlansData = allPlans.filter(plan => plan.type === 'user');
+      const merchantPlansData = allPlans.filter(plan => plan.type === 'merchant');
+      
+      setUserPlans(userPlansData);
+      setMerchantPlans(merchantPlansData);
+      
+      // Update stats based on plans
+      setPlanStats(prev => ({
+        ...prev,
+        user: {
+          ...prev.user,
+          total: userPlansData.length,
+          active: userPlansData.filter(p => p.isActive).length
+        },
+        merchant: {
+          ...prev.merchant,
+          total: merchantPlansData.length,
+          active: merchantPlansData.filter(p => p.isActive).length
+        }
+      }));
     } catch (error) {
       console.error('Error fetching plans:', error);
       showNotification('Error loading plans. Please try again.', 'error');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchPlanStats = async () => {
+    try {
+      // Fetch subscriber counts for each plan type
+      const [userStatsResponse, merchantStatsResponse] = await Promise.all([
+        api.get('/admin/users?userType=user').catch(() => ({ data: { users: [] } })),
+        api.get('/admin/users?userType=merchant').catch(() => ({ data: { users: [] } }))
+      ]);
+      
+      const userSubscribers = userStatsResponse.data.users?.filter(u => u.membershipType && u.membershipType !== 'free').length || 0;
+      const merchantSubscribers = merchantStatsResponse.data.users?.filter(u => u.membershipType && u.membershipType !== 'basic').length || 0;
+      
+      setPlanStats(prev => ({
+        user: {
+          ...prev.user,
+          subscribers: userSubscribers
+        },
+        merchant: {
+          ...prev.merchant,
+          subscribers: merchantSubscribers
+        }
+      }));
+    } catch (error) {
+      console.error('Error fetching plan stats:', error);
+      // Don't show notification for stats error as it's secondary data
+    }
+  };
+
+  const fetchPlanSubscriptionStats = async () => {
+    try {
+      const response = await api.get('/admin/plans/statistics');
+      if (response.data.success) {
+        const stats = {};
+        response.data.statistics.planStats.forEach(plan => {
+          stats[plan.planKey] = plan.subscriberCount;
+        });
+        setPlanSubscriptionStats(stats);
+        
+        // Also update summary stats
+        setPlanStats(prev => ({
+          user: {
+            ...prev.user,
+            subscribers: response.data.statistics.summary.userPlans.totalSubscribers
+          },
+          merchant: {
+            ...prev.merchant,
+            subscribers: response.data.statistics.summary.merchantPlans.totalSubscribers
+          }
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching plan subscription stats:', error);
+      // Don't show notification for stats error as it's secondary data
     }
   };
 
@@ -71,6 +157,8 @@ const PlanSettings = () => {
       await api.put(`/admin/plans/${planId}`, { isActive: !isActive });
       showNotification('Plan status updated successfully.', 'success');
       fetchPlans();
+      fetchPlanStats();
+      fetchPlanSubscriptionStats();
     } catch (error) {
       console.error('Error updating plan status:', error);
       showNotification('Error updating plan status. Please try again.', 'error');
@@ -85,39 +173,16 @@ const PlanSettings = () => {
         return;
       }
 
-      // First try without force - but catch the expected 400 error silently
+      // Always send force: true to overwrite existing plans
       try {
-        await api.post('/admin/plans/seed');
-        showNotification('Default plans created successfully.', 'success');
+        await api.post('/admin/plans/seed', { force: true });
+        showNotification('Default plans created successfully. All existing plans have been replaced.', 'success');
         fetchPlans();
-      } catch (firstError) {
-        // Check if it's the expected "plans already exist" error
-        if (firstError.response?.status === 400 && 
-            firstError.response?.data?.message?.includes('already exist')) {
-          
-          // Show confirmation modal without logging error
-          const confirmed = await showConfirm(
-            'Overwrite Existing Plans',
-            'Plans already exist. Do you want to delete existing plans and seed new default plans?',
-            'Overwrite Plans'
-          );
-          
-          if (confirmed) {
-            try {
-              await api.post('/admin/plans/seed', { force: true });
-              showNotification('Default plans created successfully (existing plans replaced).', 'success');
-              fetchPlans();
-            } catch (forceError) {
-              console.error('Error force seeding plans:', forceError);
-              showNotification('Error creating default plans. Please try again.', 'error');
-            }
-          }
-          // If user cancels, do nothing - no error notification needed
-        } else {
-          // This is an unexpected error, show it
-          console.error('Unexpected seeding error:', firstError);
-          showNotification('Error creating default plans. Please try again.', 'error');
-        }
+        fetchPlanStats();
+        fetchPlanSubscriptionStats();
+      } catch (error) {
+        console.error('Error seeding plans:', error);
+        showNotification('Error creating default plans. Please try again.', 'error');
       }
     } catch (error) {
       // This catch is for session validation or other unexpected errors
@@ -143,6 +208,8 @@ const PlanSettings = () => {
       setShowDeleteModal(false);
       setDeletingPlan(null);
       fetchPlans();
+      fetchPlanStats();
+      fetchPlanSubscriptionStats();
     } catch (error) {
       console.error('Error deleting plan:', error);
       showNotification('Error deleting plan. Please try again.', 'error');
@@ -159,8 +226,15 @@ const PlanSettings = () => {
   // Update plan arrays whenever plans change
   useEffect(() => {
     const plansArray = Array.isArray(plans) ? plans : [];
-    setUserPlans(plansArray.filter(plan => (!plan.metadata?.userType && plan.type === 'user') || plan.metadata?.userType === 'user' || plan.type === 'user'));
-    setMerchantPlans(plansArray.filter(plan => (plan.metadata?.userType === 'merchant') || plan.type === 'merchant'));
+    console.log('Filtering plans:', plansArray);
+    console.log('Sample plan structure:', plansArray[0]);
+    // Use 'type' field from the /plans endpoint
+    const filteredUserPlans = plansArray.filter(plan => plan.type === 'user');
+    const filteredMerchantPlans = plansArray.filter(plan => plan.type === 'merchant');
+    console.log('User plans:', filteredUserPlans.length, filteredUserPlans);
+    console.log('Merchant plans:', filteredMerchantPlans.length, filteredMerchantPlans);
+    setUserPlans(filteredUserPlans);
+    setMerchantPlans(filteredMerchantPlans);
   }, [plans]);
 
   return (
@@ -173,23 +247,23 @@ const PlanSettings = () => {
             <div className="plan-stats">
               <span className="stat">
                 <i className="fas fa-users"></i>
-                {userPlans.length} User Plans
+                {planStats.user.total} User Plans ({planStats.user.active} active)
               </span>
               <span className="stat">
                 <i className="fas fa-store"></i>
-                {merchantPlans.length} Business Plans
+                {planStats.merchant.total} Business Plans ({planStats.merchant.active} active)
+              </span>
+              <span className="stat">
+                <i className="fas fa-crown"></i>
+                {planStats.user.subscribers} User Subscribers
+              </span>
+              <span className="stat">
+                <i className="fas fa-building"></i>
+                {planStats.merchant.subscribers} Business Subscribers
               </span>
               <span className="stat">
                 <i className="fas fa-chart-line"></i>
-                {userPlans.length + merchantPlans.length} Total Plans
-              </span>
-              <span className="stat">
-                <i className="fas fa-check-circle"></i>
-                {[...userPlans, ...merchantPlans].filter(p => p.isActive).length} Active
-              </span>
-              <span className="stat">
-                <i className="fas fa-pause-circle"></i>
-                {[...userPlans, ...merchantPlans].filter(p => !p.isActive).length} Inactive
+                {planStats.user.total + planStats.merchant.total} Total Plans
               </span>
             </div>
           )}
@@ -231,6 +305,23 @@ const PlanSettings = () => {
           Business Plans
         </button>
       </div>
+
+      {/* Individual Plan Statistics */}
+      {!isLoading && (
+        <div className="individual-plan-stats">
+          <h4>{activeTab === 'user' ? 'User Plan Subscribers' : 'Business Plan Subscribers'}</h4>
+          <div className="plan-stats-grid">
+            {(activeTab === 'user' ? userPlans : merchantPlans).map((plan) => (
+              <div key={plan.id || plan._id} className="plan-stat-item">
+                <span className="plan-stat-name">{plan.name}:</span>
+                <span className="plan-stat-count">
+                  {planSubscriptionStats[plan.key] || 0} {activeTab === 'user' ? 'users' : 'merchants'}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {isLoading ? (
         <div className="loading-table">
@@ -281,6 +372,33 @@ const PlanSettings = () => {
                   <span className="price">{formatPrice(plan.price, plan.currency)}</span>
                   <span className="billing-cycle">/ {formatBillingCycle(plan.billingCycle)}</span>
                 </div>
+
+                {/* Plan Limits Section */}
+                <div className="plan-limits">
+                  {plan.type === 'merchant' && plan.max_deals_per_month !== null && plan.max_deals_per_month !== undefined && (
+                    <div className="limit-badge deals">
+                      <i className="fas fa-tags"></i>
+                      <span>{plan.max_deals_per_month === -1 ? 'Unlimited Deals' : `${plan.max_deals_per_month} Deals/Month`}</span>
+                    </div>
+                  )}
+                  {plan.type === 'user' && plan.maxRedemptions !== null && plan.maxRedemptions !== undefined && (
+                    <div className="limit-badge redemptions">
+                      <i className="fas fa-ticket-alt"></i>
+                      <span>{plan.maxRedemptions === -1 ? 'Unlimited Redemptions' : `${plan.maxRedemptions} Redemptions/Month`}</span>
+                    </div>
+                  )}
+                  {plan.maxUsers && (
+                    <div className="limit-badge users">
+                      <i className="fas fa-users"></i>
+                      <span>{plan.maxUsers} Max Users</span>
+                    </div>
+                  )}
+                  {/* Current Subscribers Badge */}
+                  <div className="limit-badge subscribers">
+                    <i className="fas fa-user-check"></i>
+                    <span>{planSubscriptionStats[plan.key] || 0} Current {plan.type === 'user' ? 'Users' : 'Merchants'}</span>
+                  </div>
+                </div>
                 
                 <p className="plan-description">{plan.description}</p>
                 
@@ -313,10 +431,16 @@ const PlanSettings = () => {
                       <span>{plan.maxUsers}</span>
                     </div>
                   )}
-                  {plan.max_deals_per_month && (
+                  {(plan.max_deals_per_month !== null && plan.max_deals_per_month !== undefined) && (
                     <div className="meta-item">
                       <label>Max Deals/Month:</label>
-                      <span>{plan.max_deals_per_month}</span>
+                      <span>{plan.max_deals_per_month === -1 ? 'Unlimited' : plan.max_deals_per_month}</span>
+                    </div>
+                  )}
+                  {(plan.maxRedemptions !== null && plan.maxRedemptions !== undefined) && (
+                    <div className="meta-item">
+                      <label>Max Redemptions/Month:</label>
+                      <span>{plan.maxRedemptions === -1 ? 'Unlimited' : plan.maxRedemptions}</span>
                     </div>
                   )}
                   {plan.dealAccess && (
@@ -365,7 +489,11 @@ const PlanSettings = () => {
         <PlanModal
           isOpen={showAddModal}
           onClose={() => setShowAddModal(false)}
-          onSubmit={fetchPlans}
+          onSubmit={() => {
+            fetchPlans();
+            fetchPlanStats();
+            fetchPlanSubscriptionStats();
+          }}
           userType={activeTab}
         />
       )}
@@ -378,7 +506,11 @@ const PlanSettings = () => {
             setShowEditModal(false);
             setEditingPlan(null);
           }}
-          onSubmit={fetchPlans}
+          onSubmit={() => {
+            fetchPlans();
+            fetchPlanStats();
+            fetchPlanSubscriptionStats();
+          }}
           plan={editingPlan}
           userType={activeTab}
         />
@@ -447,7 +579,9 @@ const PlanModal = ({ isOpen, onClose, onSubmit, plan, userType }) => {
     maxUsers: '',
     billingCycle: 'monthly',
     priority: 0,
-    userType: userType || 'user'
+    userType: userType || 'user',
+    max_deals_per_month: '',
+    maxRedemptions: ''
   });
 
   useEffect(() => {
@@ -463,7 +597,9 @@ const PlanModal = ({ isOpen, onClose, onSubmit, plan, userType }) => {
         maxUsers: plan.maxUsers || plan.max_users || '',
         billingCycle: plan.billingCycle || plan.billing_cycle || 'monthly',
         priority: plan.priority || 0,
-        userType: plan.metadata?.userType || plan.type || userType || 'user'
+        userType: plan.metadata?.userType || plan.type || userType || 'user',
+        max_deals_per_month: plan.max_deals_per_month || '',
+        maxRedemptions: plan.maxRedemptions || ''
       });
       // If editing, set planKeyType and customKey accordingly
       if (defaultPlanKeys.includes(plan.key)) {
@@ -565,10 +701,12 @@ const PlanModal = ({ isOpen, onClose, onSubmit, plan, userType }) => {
       const planData = {
         ...formData,
         key: planKey,
-        features,
+        features: features.join(','), // Convert to comma-separated string for backend
         price: parseFloat(formData.price),
         priority: parseInt(formData.priority) || 0,
         maxUsers: formData.maxUsers ? parseInt(formData.maxUsers) : null,
+        max_deals_per_month: formData.max_deals_per_month ? parseInt(formData.max_deals_per_month) : null,
+        maxRedemptions: formData.maxRedemptions ? parseInt(formData.maxRedemptions) : null,
         type: formData.userType, // Backend uses 'type' field
         metadata: {
           userType: formData.userType
@@ -733,6 +871,35 @@ const PlanModal = ({ isOpen, onClose, onSubmit, plan, userType }) => {
                 onChange={handleInputChange}
                 min="1"
                 placeholder="Leave empty for unlimited"
+              />
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="max_deals_per_month">Max Deals Per Month (Merchants)</label>
+              <input
+                type="number"
+                id="max_deals_per_month"
+                name="max_deals_per_month"
+                value={formData.max_deals_per_month}
+                onChange={handleInputChange}
+                min="-1"
+                placeholder="-1 for unlimited, empty to ignore"
+                title="Maximum deals per month for merchant plans (-1 = unlimited)"
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="maxRedemptions">Max Redemptions Per Month (Users)</label>
+              <input
+                type="number"
+                id="maxRedemptions"
+                name="maxRedemptions"
+                value={formData.maxRedemptions}
+                onChange={handleInputChange}
+                min="-1"
+                placeholder="-1 for unlimited, empty to ignore"
+                title="Maximum redemptions per month for user plans (-1 = unlimited)"
               />
             </div>
           </div>

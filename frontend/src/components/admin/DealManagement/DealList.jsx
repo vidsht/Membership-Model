@@ -18,6 +18,7 @@ const DealList = ({ onTabChange }) => {
   
   const [deals, setDeals] = useState([]);
   const [businesses, setBusinesses] = useState([]);
+  const [activePlans, setActivePlans] = useState([]);
   const [stats, setStats] = useState({ 
     activeDeals: 0, 
     totalDeals: 0, 
@@ -51,9 +52,10 @@ const DealList = ({ onTabChange }) => {
 
   const fetchInitialData = async () => {
     try {
-      const [dealsResponse, businessesResponse] = await Promise.all([
+      const [dealsResponse, businessesResponse, plansResponse] = await Promise.all([
         api.get('/admin/deals'),
-        api.get('/admin/partners')
+        api.get('/admin/partners'),
+        api.get('/admin/plans/active')
       ]);
       
       setDeals(dealsResponse.data.deals  || []);
@@ -61,6 +63,7 @@ const DealList = ({ onTabChange }) => {
         businessId: m.businessId,
         businessName: m.businessName
       })) || []);
+      setActivePlans(plansResponse.data.plans || []);
       
       // Calculate stats from deals
       calculateStats(dealsResponse.data.deals || []);
@@ -110,7 +113,7 @@ const DealList = ({ onTabChange }) => {
       totalDeals: dealsData.length,
       activeDeals: dealsData.filter(deal => deal.status === 'active' && new Date(deal.validUntil) > now).length,
       expiredDeals: dealsData.filter(deal => new Date(deal.validUntil) <= now).length,
-      pendingDeals: dealsData.filter(deal => deal.status === 'pending').length,
+      pendingDeals: dealsData.filter(deal => deal.status === 'pending' || deal.status === 'pending_approval').length,
       totalRedemptions: dealsData.reduce((sum, deal) => sum + (deal.redemptionCount || 0), 0)
     };
     setStats(stats);
@@ -142,19 +145,33 @@ const DealList = ({ onTabChange }) => {
     }
   };
 
-  const handleApproveDeal = async (dealId) => {
+  const handleApproveDeal = async (dealId, minPlanPriority = null) => {
     try {
-      await api.patch(`/admin/deals/${dealId}/approve`);
+      const approvalData = minPlanPriority !== null ? { minPlanPriority } : {};
+      await api.patch(`/admin/deals/${dealId}/approve`, approvalData);
       
       // Update the deal in the local state
       setDeals((deals || []).map(deal => 
-        deal.id === dealId ? { ...deal, status: 'active' } : deal
+        deal.id === dealId ? { 
+          ...deal, 
+          status: 'active',
+          ...(minPlanPriority !== null && { minPlanPriority, requiredPlanPriority: minPlanPriority })
+        } : deal
       ));
       
-      showNotification('Deal approved successfully', 'success');
+      const selectedPlan = activePlans.find(plan => plan.priority === minPlanPriority);
+      const message = minPlanPriority !== null 
+        ? `Deal approved successfully - accessible to ${selectedPlan?.name || 'Unknown'} plan and higher priority plans` 
+        : 'Deal approved successfully';
+      showNotification(message, 'success');
+      
       // Recalculate stats
       calculateStats(deals.map(deal => 
-        deal.id === dealId ? { ...deal, status: 'active' } : deal
+        deal.id === dealId ? { 
+          ...deal, 
+          status: 'active',
+          ...(minPlanPriority !== null && { minPlanPriority, requiredPlanPriority: minPlanPriority })
+        } : deal
       ));
     } catch (error) {
       console.error('Error approving deal:', error);
@@ -162,19 +179,119 @@ const DealList = ({ onTabChange }) => {
     }
   };
 
-  const handleRejectDeal = async (dealId, reason = '') => {
+  const handleApproveWithAccessLevel = async (dealId, dealTitle, currentMinPriority) => {
+    // Show a custom modal to select access level based on plan priority
+    const minPlanPriority = await showPlanAccessModal(
+      'Approve Deal', 
+      `Approve "${dealTitle}" - Select minimum plan required to access this deal:`,
+      currentMinPriority
+    );
+    
+    if (minPlanPriority !== null) { // User didn't cancel
+      await handleApproveDeal(dealId, minPlanPriority);
+    }
+  };
+
+  const showPlanAccessModal = (title, message, currentMinPriority) => {
+    return new Promise((resolve) => {
+      const modalContainer = document.createElement('div');
+      modalContainer.className = 'modal-overlay modal-open';
+      
+      // Generate options from active plans
+      const planOptions = activePlans
+        .filter(plan => plan.type === 'user') // Only user plans for deal access
+        .sort((a, b) => a.priority - b.priority) // Sort by priority (lower = higher tier)
+        .map(plan => `
+          <option value="${plan.priority}" ${currentMinPriority === plan.priority ? 'selected' : ''}>
+            ${plan.name} (Priority ${plan.priority}) - ${plan.name} and higher priority plans can access
+          </option>
+        `).join('');
+
+      modalContainer.innerHTML = `
+        <div class="modal-container modal-info">
+          <div class="modal-header">
+            <div class="modal-icon">
+              <i class="fas fa-check-circle"></i>
+            </div>
+            <h3 class="modal-title">${title}</h3>
+          </div>
+          <div class="modal-body">
+            <p class="modal-message">${message}</p>
+            <div style="margin: 15px 0;">
+              <label for="plan-priority-select" style="display: block; margin-bottom: 5px; font-weight: bold;">Minimum Plan Required:</label>
+              <select 
+                id="plan-priority-select" 
+                style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;"
+              >
+                <option value="">Select Plan Access Level</option>
+                ${planOptions}
+              </select>
+              <small style="color: #666; margin-top: 5px; display: block;">
+                Users with the selected plan or higher priority plans will be able to access this deal.
+                Lower priority numbers = higher tier plans.
+              </small>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" id="cancel-btn">Cancel</button>
+            <button class="btn btn-success" id="approve-btn">Approve Deal</button>
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(modalContainer);
+      document.body.style.overflow = 'hidden';
+      
+      const cancelBtn = modalContainer.querySelector('#cancel-btn');
+      const approveBtn = modalContainer.querySelector('#approve-btn');
+      const selectElement = modalContainer.querySelector('#plan-priority-select');
+      
+      const cleanup = () => {
+        document.body.removeChild(modalContainer);
+        document.body.style.overflow = 'unset';
+      };
+      
+      cancelBtn.addEventListener('click', () => {
+        cleanup();
+        resolve(null);
+      });
+      
+      approveBtn.addEventListener('click', () => {
+        const selectedPriority = selectElement.value;
+        cleanup();
+        resolve(selectedPriority ? parseInt(selectedPriority) : null);
+      });
+      
+      modalContainer.addEventListener('click', (e) => {
+        if (e.target === modalContainer) {
+          cleanup();
+          resolve(null);
+        }
+      });
+
+      const handleEscape = (e) => {
+        if (e.key === 'Escape') {
+          cleanup();
+          resolve(null);
+        }
+      };
+      document.addEventListener('keydown', handleEscape);
+    });
+  };
+
+  const handleRejectDeal = async (dealId, rejectionReason = '') => {
     try {
-      await api.patch(`/admin/deals/${dealId}/reject`, { reason });
+      await api.patch(`/admin/deals/${dealId}/reject`, { rejectionReason });
       
       // Update the deal in the local state
       setDeals((deals || []).map(deal => 
-        deal.id === dealId ? { ...deal, status: 'rejected' } : deal
+        deal.id === dealId ? { ...deal, status: 'rejected', rejection_reason: rejectionReason } : deal
       ));
       
       showNotification('Deal rejected successfully', 'success');
       // Recalculate stats
       calculateStats(deals.map(deal => 
-        deal.id === dealId ? { ...deal, status: 'rejected' } : deal
+        deal.id === dealId ? { ...deal, status: 'rejected', rejection_reason: rejectionReason } : deal
       ));
     } catch (error) {
       console.error('Error rejecting deal:', error);
@@ -461,7 +578,7 @@ const DealList = ({ onTabChange }) => {
                           <>
                             <button
                               className="btn-sm btn-success"
-                              onClick={() => handleApproveDeal(deal.id)}
+                              onClick={() => handleApproveWithAccessLevel(deal.id, deal.title, deal.accessLevel)}
                               title="Approve Deal"
                             >
                               <i className="fas fa-check"></i>

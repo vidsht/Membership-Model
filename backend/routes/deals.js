@@ -7,6 +7,28 @@ const fs = require('fs');
 
 const router = express.Router();
 
+// Helper function to update expired deals
+const updateExpiredDeals = async () => {
+  try {
+    const updateQuery = `
+      UPDATE deals 
+      SET status = 'expired', updated_at = CURRENT_TIMESTAMP
+      WHERE status = 'active' 
+        AND ((validUntil IS NOT NULL AND validUntil < CURDATE()) 
+             OR (expiration_date IS NOT NULL AND expiration_date < CURDATE()))
+    `;
+    
+    const result = await queryAsync(updateQuery);
+    if (result.affectedRows > 0) {
+      console.log(`Updated ${result.affectedRows} expired deals to 'expired' status`);
+    }
+    return result.affectedRows;
+  } catch (error) {
+    console.error('Error updating expired deals:', error);
+    return 0;
+  }
+};
+
 // Configure multer for image uploads
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -141,6 +163,9 @@ const queryAsync = (sql, params = []) => {
 // Get all deals with plan-based filtering
 router.get('/', async (req, res) => {
   try {
+    // First, update expired deals to have status 'expired'
+    await updateExpiredDeals();
+    
     // Simplified query to show all active and non-expired deals to everyone
     const dealsQuery = `
       SELECT d.*, b.businessName, b.businessCategory, b.businessAddress,
@@ -721,6 +746,39 @@ router.get('/stats', async (req, res) => {
         totalRedemptions: 0
       }
     });
+  }
+});
+
+// Get available access levels based on current user plans
+router.get('/access-levels', async (req, res) => {
+  try {
+    // Get all active plans ordered by priority
+    const plansQuery = `
+      SELECT id, name, \`key\`, priority, type, isActive
+      FROM plans 
+      WHERE isActive = 1 AND type = 'user'
+      ORDER BY priority ASC, name ASC
+    `;
+
+    const plans = await queryAsync(plansQuery);
+
+    const accessLevels = plans.map(plan => ({
+      id: plan.id,
+      name: plan.name,
+      key: plan.key,
+      priority: plan.priority,
+      label: `${plan.name} (Priority ${plan.priority})`,
+      description: `Users with ${plan.name} plan or higher priority plans can access this deal`
+    }));
+
+    res.json({ 
+      success: true, 
+      accessLevels,
+      message: 'Access levels based on current user plans'
+    });
+  } catch (err) {
+    console.error('Error fetching access levels:', err);
+    res.status(500).json({ success: false, message: 'Server error fetching access levels' });
   }
 });
 

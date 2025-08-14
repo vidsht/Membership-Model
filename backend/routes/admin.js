@@ -1,11 +1,10 @@
-// ...existing code...
-// ...existing code...
 // Admin routes - Complete Enhanced MySQL implementation with all fixes
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const { body, validationResult } = require('express-validator');
 const { auth, admin } = require('../middleware/auth');
 const db = require('../db');
+const { generateMembershipNumber } = require('../utils/membershipGenerator');
 const router = express.Router();
 
 // Utility function to promisify db.query
@@ -497,7 +496,8 @@ router.post('/users', [
       state,
       country,
       dob,
-      status
+      status,
+      bloodGroup
     } = req.body;
 
     const existingUser = await queryAsync('SELECT id FROM users WHERE email = ?', [email]);
@@ -508,7 +508,8 @@ router.post('/users', [
     const tempPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
     const hashedPassword = await bcrypt.hash(tempPassword, 12);
 
-    const membershipNumber = `IGM${Date.now().toString().slice(-6)}${Math.floor(Math.random() * 100)}`;
+    // Generate new format membershipNumber only for users (not merchants)
+    const membershipNumber = generateMembershipNumber();
 
     let addressData = address;
     if (typeof address === 'object') {
@@ -520,9 +521,9 @@ router.post('/users', [
     const result = await queryAsync(`
       INSERT INTO users (
         fullName, email, password, phone, userType, membershipType, community,
-        address, city, state, country, dob, status, membershipNumber,
+        address, city, state, country, dob, status, membershipNumber, bloodGroup,
         createdAt, planAssignedAt, planAssignedBy
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), ?)
     `, [
       fullName,
       email,
@@ -538,6 +539,7 @@ router.post('/users', [
       dob || null,
       status || 'approved',
       membershipNumber,
+      bloodGroup || null,
       adminUserId
     ]);
 
@@ -1047,7 +1049,6 @@ router.get('/plans', auth, admin, async (req, res) => {
         SELECT id, \`key\`, name, description, price, currency, billingCycle,
                features, dealAccess, type, isActive, priority, created_at, maxUsers, max_deals_per_month
         FROM plans
-        WHERE isActive = 1
       `;
 
       const queryParams = [];
@@ -1055,9 +1056,9 @@ router.get('/plans', auth, admin, async (req, res) => {
       // NEW: Filter by user type if provided
       if (userType && userType !== 'all') {
         if (userType === 'merchant') {
-          plansQuery += ' AND type = "merchant"';
+          plansQuery += ' WHERE type = "merchant"';
         } else if (userType === 'user') {
-          plansQuery += ' AND type = "user"';
+          plansQuery += ' WHERE type = "user"';
         }
       }
 
@@ -1412,7 +1413,8 @@ router.post('/partners', auth, admin, async (req, res) => {
       community,
       membershipType,
       status,
-      businessInfo
+      businessInfo,
+      bloodGroup
     } = req.body;
 
     // Check if email already exists
@@ -1436,11 +1438,13 @@ router.post('/partners', auth, admin, async (req, res) => {
       // fallback to basic_business
     }
 
-    // Create user
-    const hashedPassword = await bcrypt.hash('tempPassword123!', 10);
+    // Generate random temp password for merchant
+    const tempPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
+    const hashedPassword = await bcrypt.hash(tempPassword, 12);
+
     const userResult = await queryAsync(
-      'INSERT INTO users (fullName, email, password, phone, address, community, membershipType, userType, status, membershipNumber) VALUES (?, ?, ?, ?, ?, ?, ?, "merchant", ?, ?)',
-      [fullName, email, hashedPassword, phone, address, community, membershipType || defaultMerchantPlanKey, status || 'pending', membershipNumber]
+      'INSERT INTO users (fullName, email, password, phone, address, community, membershipType, userType, status, membershipNumber, bloodGroup) VALUES (?, ?, ?, ?, ?, ?, ?, "merchant", ?, ?, ?)',
+      [fullName, email, hashedPassword, phone, address, community, membershipType || defaultMerchantPlanKey, status || 'pending', membershipNumber, bloodGroup || null]
     );
 
     const userId = userResult.insertId;
@@ -1472,7 +1476,8 @@ router.post('/partners', auth, admin, async (req, res) => {
       message: 'Partner created successfully',
       userId: userId,
       businessId: businessId,
-      membershipNumber: membershipNumber
+      membershipNumber: membershipNumber,
+      tempPassword: tempPassword
     });
   } catch (err) {
     console.error('Error creating partner:', err);
@@ -2716,6 +2721,102 @@ router.get('/analytics', auth, admin, async (req, res) => {
   }
 });
 
+// Get plan subscription statistics
+router.get('/plans/statistics', async (req, res) => {
+  try {
+    console.log('Fetching plan subscription statistics...');
+
+    // Get all plans with their current subscriber counts
+    const planStats = {};
+
+    // Get user plan statistics
+    if (await tableExists('users')) {
+      const userPlanStats = await queryAsync(`
+        SELECT 
+          u.membershipType as planKey,
+          COUNT(*) as subscriberCount,
+          p.name as planName,
+          p.type as planType
+        FROM users u
+        LEFT JOIN plans p ON u.membershipType = p.key
+        WHERE u.userType = 'user' 
+        AND u.membershipType IS NOT NULL 
+        AND u.membershipType != ''
+        AND u.membershipType != 'free'
+        GROUP BY u.membershipType, p.name, p.type
+      `);
+
+      // Get merchant plan statistics
+      const merchantPlanStats = await queryAsync(`
+        SELECT 
+          u.membershipType as planKey,
+          COUNT(*) as subscriberCount,
+          p.name as planName,
+          p.type as planType
+        FROM users u
+        LEFT JOIN plans p ON u.membershipType = p.key
+        WHERE u.userType = 'merchant' 
+        AND u.membershipType IS NOT NULL 
+        AND u.membershipType != ''
+        AND u.membershipType != 'basic'
+        GROUP BY u.membershipType, p.name, p.type
+      `);
+
+      // Get all plans to include those with 0 subscribers
+      const allPlans = await queryAsync(`
+        SELECT \`key\`, name, type FROM plans WHERE isActive = TRUE
+      `);
+
+      // Initialize stats for all plans
+      allPlans.forEach(plan => {
+        planStats[plan.key] = {
+          planKey: plan.key,
+          planName: plan.name,
+          planType: plan.type,
+          subscriberCount: 0
+        };
+      });
+
+      // Update with actual subscriber counts
+      [...userPlanStats, ...merchantPlanStats].forEach(stat => {
+        if (stat.planKey && planStats[stat.planKey]) {
+          planStats[stat.planKey].subscriberCount = stat.subscriberCount;
+        }
+      });
+    }
+
+    // Get summary statistics
+    const userPlansCount = Object.values(planStats).filter(p => p.planType === 'user').length;
+    const merchantPlansCount = Object.values(planStats).filter(p => p.planType === 'merchant').length;
+    const totalUserSubscribers = Object.values(planStats)
+      .filter(p => p.planType === 'user')
+      .reduce((sum, p) => sum + p.subscriberCount, 0);
+    const totalMerchantSubscribers = Object.values(planStats)
+      .filter(p => p.planType === 'merchant')
+      .reduce((sum, p) => sum + p.subscriberCount, 0);
+
+    const statistics = {
+      planStats: Object.values(planStats),
+      summary: {
+        userPlans: {
+          total: userPlansCount,
+          totalSubscribers: totalUserSubscribers
+        },
+        merchantPlans: {
+          total: merchantPlansCount,
+          totalSubscribers: totalMerchantSubscribers
+        }
+      }
+    };
+
+    console.log('Plan statistics:', statistics);
+    res.json({ success: true, statistics });
+  } catch (err) {
+    console.error('Error fetching plan statistics:', err);
+    res.status(500).json({ success: false, message: 'Server error fetching plan statistics' });
+  }
+});
+
 router.get('/plan-analytics', auth, admin, async (req, res) => {
   try {
     let planAnalytics = {
@@ -2813,7 +2914,7 @@ router.put('/plans/:id', auth, admin, async (req, res) => {
       return res.status(404).json({ success: false, message: 'Plans table not found' });
     }
 
-    const allowedFields = ['name', 'description', 'price', 'currency', 'billingCycle', 'features', 'dealAccess', 'isActive', 'priority', 'maxUsers', 'max_deals_per_month'];
+    const allowedFields = ['name', 'description', 'price', 'currency', 'billingCycle', 'features', 'dealAccess', 'isActive', 'priority', 'maxUsers', 'max_deals_per_month', 'maxRedemptions', 'type'];
     const updates = [];
     const values = [];
 
@@ -2867,8 +2968,8 @@ router.post('/plans', auth, admin, async (req, res) => {
       INSERT INTO plans (
         \`key\`, name, description, price, currency, billingCycle,
         features, dealAccess, type, isActive, priority, maxUsers, max_deals_per_month,
-        created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+        maxRedemptions, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
     `, [
       planData.key,
       planData.name,
@@ -2882,7 +2983,8 @@ router.post('/plans', auth, admin, async (req, res) => {
       planData.isActive !== false,
       planData.priority || 999,
       planData.maxUsers || null,
-      planData.max_deals_per_month || null
+      planData.max_deals_per_month || null,
+      planData.maxRedemptions || null
     ]);
 
     res.status(201).json({
@@ -2957,75 +3059,126 @@ router.post('/plans/seed', auth, admin, async (req, res) => {
 
     // Seed plans
     const seedPlans = [
+      // USER PLANS
       {
-        key: 'community',
-        name: 'Community Plan',
-        description: 'Basic community access',
-        price: 0,
-        currency: 'FREE',
-        billingCycle: 'lifetime',
-        features: 'Basic directory access,Community updates,Basic support',
-        dealAccess: 'Limited community deals',
+        key: 'silver',
+        name: 'Silver',
+        description: 'Access to all basic deals',
+        price: 50,
+        currency: 'GHS',
+        billingCycle: 'yearly',
+        features: 'Access to all basic deals,2 deals redeemptions,2-3 curated deals per month,Access to 2-3 business sectors,No flash deals access,No coupons available,No cashback offers,No event benefits,No community updates',
+        dealAccess: 'Basic deals access',
         type: 'user',
         priority: 1,
         maxUsers: null,
-        max_deals_per_month: null
-      },
-      {
-        key: 'silver',
-        name: 'Silver Plan',
-        description: 'Enhanced community features',
-        price: 50,
-        currency: 'GHS',
-        billingCycle: 'monthly',
-        features: 'All community features,Priority support,Exclusive deals,Event notifications',
-        dealAccess: 'Silver + Community deals',
-        type: 'user',
-        priority: 2,
-        maxUsers: null,
-        max_deals_per_month: null
+        max_deals_per_month: null,
+        maxRedemptions: 2
       },
       {
         key: 'gold',
-        name: 'Gold Plan',
-        description: 'Premium community experience',
+        name: 'Gold',
+        description: 'Access to gold deals',
+        price: 100,
+        currency: 'GHS',
+        billingCycle: 'yearly',
+        features: 'Access to gold deals,10 deals redeemptions,5-7 premium deals per month,Access to 5-7 business sectors,Occasional flash deals,Limited coupons available,5% cashback from select merchants,Basic event benefits,Monthly community updates,Referral bonus program',
+        dealAccess: 'Gold + Basic deals',
+        type: 'user',
+        priority: 2,
+        maxUsers: null,
+        max_deals_per_month: null,
+        maxRedemptions: 10
+      },
+      {
+        key: 'platinum',
+        name: 'Platinum',
+        description: 'Full access to all deals',
         price: 150,
         currency: 'GHS',
-        billingCycle: 'monthly',
-        features: 'All silver features,VIP events,Premium support,Business networking,Priority customer service',
-        dealAccess: 'All exclusive deals',
+        billingCycle: 'yearly',
+        features: 'Full access to all deals,Unlimited premium deals,Unlimited deals redeemptions,Access to all business sectors,Priority access to flash deals,All available coupons,10% cashback from more merchants,VIP event benefits,Weekly community updates,Enhanced referral bonus program',
+        dealAccess: 'All deals access',
         type: 'user',
         priority: 3,
         maxUsers: null,
-        max_deals_per_month: null
+        max_deals_per_month: null,
+        maxRedemptions: -1
+      },
+      // MERCHANT PLANS
+      {
+        key: 'basic',
+        name: 'Basic',
+        description: 'Free Forever',
+        price: 0,
+        currency: 'GHC',
+        billingCycle: 'yearly',
+        features: 'Basic Business Listing,Up to 2 Images,Social Media Links Setup,Content Writing,Newsletter Features,Facebook Ads,Instagram Ads,WhatsApp Channel Ads,WhatsApp Group Ads,Deals Post (dedicated page),Job Post (dedicated page),Website Ads,On Page Optimization,Google Indexing Support,Regular SEO Updates,Dedicated Account Manager,Promotion Campaigns',
+        dealAccess: 'Unlimited deal posting',
+        type: 'merchant',
+        priority: 1,
+        maxUsers: null,
+        max_deals_per_month: -1
       },
       {
-        key: 'basic_business',
-        name: 'Basic Business',
-        description: 'Essential business features',
-        price: 100,
-        currency: 'GHS',
-        billingCycle: 'monthly',
-        features: 'Basic business listing,Contact information,Business hours',
-        dealAccess: 'Basic deal posting',
+        key: 'silver_merchant',
+        name: 'Silver',
+        description: 'Standard Business Plan - Save 50%',
+        price: 300,
+        originalPrice: 600,
+        currency: 'GHC',
+        billingCycle: 'yearly',
+        features: 'Standard Business Listing,Up to 5 Images,Social Media Links Setup,Basic Content Writing,Newsletter Features,Facebook Ads: 1/Month,Instagram Ads: 1/Month,WhatsApp Channel Ads: 1/Month,WhatsApp Group Ads: 1/Month,1 Deal Post/Month,Job Post Included,Website Ads,Basic On Page Optimization,Basic Google Indexing Support,Half Yearly SEO Updates,Dedicated Account Manager,1 Promotion Campaign/Year',
+        dealAccess: '1 deal per month',
+        type: 'merchant',
+        priority: 2,
+        maxUsers: null,
+        max_deals_per_month: 1
+      },
+      {
+        key: 'gold_merchant',
+        name: 'Gold',
+        description: 'Featured Business Plan - Save 50%',
+        price: 500,
+        originalPrice: 1000,
+        currency: 'GHC',
+        billingCycle: 'yearly',
+        features: 'Featured Business Listing,Up to 8 Images,Social Media Links Setup,Professional Content Writing,Quarterly Newsletter,Facebook Ads: 2/Month,Instagram Ads: 2/Month,WhatsApp Channel Ads: 2/Month,WhatsApp Group Ads: 2/Month,2 Deals Posts/Month,Job Post Included,Inner Page Ads: 2/month,Standard On Page Optimization,Standard Google Indexing Support,Quarterly SEO Updates,Dedicated Account Manager,2 Promotion Campaigns/Year',
+        dealAccess: '2 deals per month',
+        type: 'merchant',
+        priority: 3,
+        maxUsers: null,
+        max_deals_per_month: 2
+      },
+      {
+        key: 'platinum_merchant',
+        name: 'Platinum',
+        description: 'Premium Business Plan - Save 50%',
+        price: 800,
+        originalPrice: 1600,
+        currency: 'GHC',
+        billingCycle: 'yearly',
+        features: 'Featured Business Listing,Up to 10+ Gallery Images,Social Media Links Setup,Professional Content Writing,2 Times Quarterly Newsletter,Facebook Ads: 3/Month,Instagram Ads: 3/Month,WhatsApp Channel Ads: 3/Month,WhatsApp Group Ads: 3/Month,3 Deals Posts/Month,Job Post Included,Inner Page Ads: 3/month + Homepage: 1,Advanced On Page Optimization,Standard Google Indexing Support,Monthly SEO Updates,Dedicated Account Manager,3 Promotion Campaigns/Year',
+        dealAccess: '3 deals per month',
         type: 'merchant',
         priority: 4,
         maxUsers: null,
-        max_deals_per_month: 5
+        max_deals_per_month: 3
       },
       {
-        key: 'premium_business',
-        name: 'Premium Business',
-        description: 'Advanced business features',
-        price: 200,
-        currency: 'GHS',
-        billingCycle: 'monthly',
-        features: 'Premium listing,Photos,Reviews,Analytics,Priority support',
-        dealAccess: 'Unlimited deal posting',
+        key: 'platinum_plus',
+        name: 'Platinum Plus',
+        description: 'Ultimate Business Plan - Save 50%',
+        price: 1000,
+        originalPrice: 2000,
+        currency: 'GHC',
+        billingCycle: 'yearly',
+        features: 'Featured Business Listing,Up to 15+ Gallery Images,Social Media Links Setup,Professional Content Writing + Blog,3 Times Quarterly Newsletter,Facebook Ads: 4/Month,Instagram Ads: 4/Month,WhatsApp Channel Ads: 4/Month,WhatsApp Group Ads: 4/Month,4 Deals Posts/Month,Job Post Included,Inner Page Ads: 4/month + Homepage: 1,Comprehensive On Page Optimization,Standard Google Indexing Support,Monthly SEO Updates,Dedicated Account Manager,4 Promotion Campaigns/Year',
+        dealAccess: '4 deals per month',
         type: 'merchant',
         priority: 5,
         maxUsers: null,
-        max_deals_per_month: null
+        max_deals_per_month: 4
       }
     ];
 
@@ -3034,12 +3187,13 @@ router.post('/plans/seed', auth, admin, async (req, res) => {
         INSERT INTO plans (
           \`key\`, name, description, price, currency, billingCycle,
           features, dealAccess, type, isActive, priority, maxUsers, max_deals_per_month,
-          created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+          maxRedemptions, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
       `, [
         plan.key, plan.name, plan.description, plan.price, plan.currency,
         plan.billingCycle, plan.features, plan.dealAccess, plan.type,
-        true, plan.priority, plan.maxUsers, plan.max_deals_per_month
+        true, plan.priority, plan.maxUsers, plan.max_deals_per_month,
+        plan.maxRedemptions
       ]);
     }
 
@@ -3051,6 +3205,291 @@ router.post('/plans/seed', auth, admin, async (req, res) => {
   } catch (err) {
     console.error('Error seeding plans:', err);
     res.status(500).json({ success: false, message: 'Server error seeding plans' });
+  }
+});
+
+// ===== DEAL APPROVAL ENDPOINTS =====
+
+// Get pending deals for approval
+router.get('/deals/pending', auth, admin, async (req, res) => {
+  try {
+    const pendingDeals = await queryAsync(`
+      SELECT d.*, b.businessName, u.fullName as merchantName, u.email as merchantEmail
+      FROM deals d
+      LEFT JOIN businesses b ON d.businessId = b.businessId
+      LEFT JOIN users u ON b.ownerId = u.id
+      WHERE d.status = 'pending_approval'
+      ORDER BY d.created_at DESC
+    `);
+
+    res.json({
+      success: true,
+      deals: pendingDeals,
+      count: pendingDeals.length
+    });
+  } catch (err) {
+    console.error('Error fetching pending deals:', err);
+    res.status(500).json({ success: false, message: 'Server error fetching pending deals' });
+  }
+});
+
+// Get all deals with status filter
+router.get('/deals', auth, admin, async (req, res) => {
+  try {
+    const { status, page = 1, limit = 10 } = req.query;
+    const offset = (page - 1) * limit;
+    
+    let whereClause = '';
+    const params = [];
+    
+    if (status) {
+      whereClause = 'WHERE d.status = ?';
+      params.push(status);
+    }
+    
+    const deals = await queryAsync(`
+      SELECT d.*, b.businessName, u.fullName as merchantName, u.email as merchantEmail
+      FROM deals d
+      LEFT JOIN businesses b ON d.businessId = b.businessId
+      LEFT JOIN users u ON b.ownerId = u.id
+      ${whereClause}
+      ORDER BY d.created_at DESC
+      LIMIT ? OFFSET ?
+    `, [...params, parseInt(limit), parseInt(offset)]);
+
+    // Get total count
+    const countResult = await queryAsync(`
+      SELECT COUNT(*) as total
+      FROM deals d
+      ${whereClause}
+    `, params);
+
+    res.json({
+      success: true,
+      deals: deals,
+      total: countResult[0].total,
+      page: parseInt(page),
+      limit: parseInt(limit)
+    });
+  } catch (err) {
+    console.error('Error fetching deals:', err);
+    res.status(500).json({ success: false, message: 'Server error fetching deals' });
+  }
+});
+
+// Get live plans for dynamic access level dropdown
+router.get('/plans/active', auth, admin, async (req, res) => {
+  try {
+    if (!(await tableExists('plans'))) {
+      return res.status(404).json({ success: false, message: 'Plans table not found' });
+    }
+
+    const plans = await queryAsync(`
+      SELECT id, name, \`key\`, priority, dealAccess, type, isActive 
+      FROM plans 
+      WHERE isActive = 1 
+      ORDER BY priority ASC, name ASC
+    `);
+
+    res.json({ 
+      success: true, 
+      plans: plans.map(plan => ({
+        id: plan.id,
+        name: plan.name,
+        key: plan.key,
+        priority: plan.priority,
+        dealAccess: plan.dealAccess,
+        type: plan.type
+      }))
+    });
+  } catch (err) {
+    console.error('Error fetching active plans:', err);
+    res.status(500).json({ success: false, message: 'Server error fetching active plans' });
+  }
+});
+
+// Approve deal
+router.patch('/deals/:id/approve', auth, admin, async (req, res) => {
+  try {
+    const dealId = parseInt(req.params.id);
+    const { accessLevel, minPlanPriority } = req.body;
+    
+    if (!dealId || isNaN(dealId)) {
+      return res.status(400).json({ success: false, message: 'Valid deal ID is required' });
+    }
+
+    // Prepare update query - include accessLevel and/or minPlanPriority if provided
+    let updateQuery = 'UPDATE deals SET status = "active", updated_at = NOW()';
+    let updateParams = [];
+    
+    // If minPlanPriority is provided, use it (priority-based access)
+    if (minPlanPriority !== undefined && minPlanPriority !== null) {
+      const priority = parseInt(minPlanPriority);
+      if (!isNaN(priority) && priority >= 0) {
+        updateQuery += ', minPlanPriority = ?, requiredPlanPriority = ?';
+        updateParams.push(priority, priority);
+      }
+    }
+    
+    // Legacy accessLevel support (kept for backward compatibility)
+    if (accessLevel && ['basic', 'premium', 'vip', 'all'].includes(accessLevel)) {
+      updateQuery += ', accessLevel = ?';
+      updateParams.push(accessLevel);
+    }
+    
+    updateQuery += ' WHERE id = ? AND status = "pending_approval"';
+    updateParams.push(dealId);
+
+    const result = await queryAsync(updateQuery, updateParams);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Pending deal not found' });
+    }
+
+    let approvalMessage = 'Deal approved successfully';
+    if (minPlanPriority !== undefined && minPlanPriority !== null) {
+      approvalMessage += ` with minimum plan priority ${minPlanPriority}`;
+    } else if (accessLevel) {
+      approvalMessage += ` with access level set to ${accessLevel}`;
+    }
+
+    res.json({ 
+      success: true, 
+      message: approvalMessage,
+      accessLevel,
+      minPlanPriority
+    });
+  } catch (err) {
+    console.error('Error approving deal:', err);
+    res.status(500).json({ success: false, message: 'Server error approving deal' });
+  }
+});
+
+// Reject deal
+router.patch('/deals/:id/reject', auth, admin, async (req, res) => {
+  try {
+    const dealId = parseInt(req.params.id);
+    const { rejectionReason } = req.body;
+    
+    if (!dealId || isNaN(dealId)) {
+      return res.status(400).json({ success: false, message: 'Valid deal ID is required' });
+    }
+
+    if (!rejectionReason || typeof rejectionReason !== 'string' || rejectionReason.trim().length === 0) {
+      return res.status(400).json({ success: false, message: 'Rejection reason is required' });
+    }
+
+    const result = await queryAsync(
+      'UPDATE deals SET status = "rejected", rejection_reason = ?, updated_at = NOW() WHERE id = ? AND status = "pending_approval"',
+      [rejectionReason.trim(), dealId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Pending deal not found' });
+    }
+
+    res.json({ success: true, message: 'Deal rejected successfully', rejectionReason: rejectionReason.trim() });
+  } catch (err) {
+    console.error('Error rejecting deal:', err);
+    res.status(500).json({ success: false, message: 'Server error rejecting deal' });
+  }
+});
+
+// Batch approve deals
+router.post('/deals/batch-approve', auth, admin, async (req, res) => {
+  try {
+    const { dealIds } = req.body;
+    
+    if (!Array.isArray(dealIds) || dealIds.length === 0) {
+      return res.status(400).json({ success: false, message: 'Deal IDs array is required' });
+    }
+
+    const placeholders = dealIds.map(() => '?').join(',');
+    const result = await queryAsync(
+      `UPDATE deals SET status = "active", updated_at = NOW() WHERE id IN (${placeholders}) AND status = "pending_approval"`,
+      dealIds
+    );
+
+    res.json({ 
+      success: true, 
+      message: `${result.affectedRows} deals approved successfully`,
+      approved: result.affectedRows
+    });
+  } catch (err) {
+    console.error('Error batch approving deals:', err);
+    res.status(500).json({ success: false, message: 'Server error batch approving deals' });
+  }
+});
+
+// Batch reject deals
+router.post('/deals/batch-reject', auth, admin, async (req, res) => {
+  try {
+    const { dealIds, rejectionReason } = req.body;
+    
+    if (!Array.isArray(dealIds) || dealIds.length === 0) {
+      return res.status(400).json({ success: false, message: 'Deal IDs array is required' });
+    }
+
+    if (!rejectionReason || typeof rejectionReason !== 'string' || rejectionReason.trim().length === 0) {
+      return res.status(400).json({ success: false, message: 'Rejection reason is required for batch rejection' });
+    }
+
+    const placeholders = dealIds.map(() => '?').join(',');
+    const result = await queryAsync(
+      `UPDATE deals SET status = "rejected", rejection_reason = ?, updated_at = NOW() WHERE id IN (${placeholders}) AND status = "pending_approval"`,
+      [rejectionReason.trim(), ...dealIds]
+    );
+
+    res.json({ 
+      success: true, 
+      message: `${result.affectedRows} deals rejected successfully`,
+      rejected: result.affectedRows,
+      rejectionReason: rejectionReason.trim()
+    });
+  } catch (err) {
+    console.error('Error batch rejecting deals:', err);
+    res.status(500).json({ success: false, message: 'Server error batch rejecting deals' });
+  }
+});
+
+// ===== DATABASE SCHEMA MANAGEMENT =====
+
+// Fix deals status enum (admin only)
+router.post('/fix-deals-status-enum', auth, admin, async (req, res) => {
+  try {
+    console.log('Admin requested deals status enum fix...');
+    
+    // First check current enum
+    const currentSchema = await queryAsync("SHOW COLUMNS FROM deals WHERE Field = 'status'");
+    console.log('Current status enum:', currentSchema[0]?.Type);
+    
+    // Update the enum to include pending_approval and rejected
+    const updateQuery = `
+      ALTER TABLE deals 
+      MODIFY COLUMN status ENUM('active', 'inactive', 'expired', 'scheduled', 'pending_approval', 'rejected') 
+      DEFAULT 'pending_approval'
+    `;
+    
+    await queryAsync(updateQuery);
+    
+    // Verify the change
+    const updatedSchema = await queryAsync("SHOW COLUMNS FROM deals WHERE Field = 'status'");
+    console.log('Updated status enum:', updatedSchema[0]?.Type);
+    
+    res.json({
+      success: true,
+      message: 'Deals status enum updated successfully',
+      before: currentSchema[0]?.Type,
+      after: updatedSchema[0]?.Type
+    });
+    
+  } catch (err) {
+    console.error('Error fixing deals status enum:', err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error fixing status enum',
+      error: err.message 
+    });
   }
 });
 

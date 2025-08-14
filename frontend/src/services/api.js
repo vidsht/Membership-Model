@@ -52,23 +52,38 @@ api.interceptors.response.use(
       // Removed forced redirect to login on 401
     }
     
-    // Add detailed error logging for debugging
-    console.error('API Error Details:', {
-      url: error.config?.url,
-      method: error.config?.method,
-      status: error.response?.status,
-      statusText: error.response?.statusText,
-      data: error.response?.data,
-      headers: error.response?.headers,
-      withCredentials: error.config?.withCredentials,
-      request: {
-        baseURL: error.config?.baseURL,
-        data: error.config?.data,
-        params: error.config?.params
-      }
-    });    
-    // Log the full error for debugging
-    console.log('Full error object:', error);
+    // Skip logging for expected errors that are handled gracefully
+    const isExpectedError = (
+      // Plan seeding "already exist" error is expected
+      (error.config?.url?.includes('/admin/plans/seed') && 
+       error.response?.status === 400 && 
+       error.response?.data?.message?.includes('already exist')) ||
+      // Add other expected errors here as needed
+      false
+    );
+    
+    // Add detailed error logging for debugging (skip expected errors)
+    if (!isExpectedError) {
+      console.error('API Error Details:', {
+        url: error.config?.url,
+        method: error.config?.method,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        headers: error.response?.headers,
+        withCredentials: error.config?.withCredentials,
+        request: {
+          baseURL: error.config?.baseURL,
+          data: error.config?.data,
+          params: error.config?.params
+        }
+      });    
+    }
+    
+    // Log the full error for debugging (skip expected errors)
+    if (!isExpectedError) {
+      console.log('Full error object:', error);
+    }
     
     // Don't redirect on 401 in API layer - let components handle it
     return Promise.reject(error);

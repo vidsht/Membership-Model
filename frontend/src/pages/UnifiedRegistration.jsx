@@ -27,6 +27,7 @@ const UnifiedRegistration = () => {
     state: '',
     city: '',
     plan: '',
+    bloodGroup: '',
     socialMediaFollowed: {
       facebook: false,
       instagram: false,
@@ -61,6 +62,7 @@ const UnifiedRegistration = () => {
     confirmPassword: '',
     phone: '',
     plan: '', // Add plan selection for merchants
+    bloodGroup: '',
     businessName: '',
     businessDescription: '',
     businessCategory: '',
@@ -656,6 +658,27 @@ const UnifiedRegistration = () => {
                   />
                 </div>
 
+                {/* Blood Group */}
+                <div className="form-group">
+                  <label htmlFor="bloodGroup">Blood Group</label>
+                  <select
+                    id="bloodGroup"
+                    name="bloodGroup"
+                    value={userForm.bloodGroup}
+                    onChange={handleUserInputChange}
+                  >
+                    <option value="">Select blood group (optional)</option>
+                    <option value="A+">A+</option>
+                    <option value="A-">A-</option>
+                    <option value="B+">B+</option>
+                    <option value="B-">B-</option>
+                    <option value="AB+">AB+</option>
+                    <option value="AB-">AB-</option>
+                    <option value="O+">O+</option>
+                    <option value="O-">O-</option>
+                  </select>
+                </div>
+
                 {/* Password */}
                 <div className="form-group">
                   <label htmlFor="password">Password <span className="required">*</span></label>
@@ -828,6 +851,27 @@ const UnifiedRegistration = () => {
                     />
                   </div>
                 </div>
+
+                <div className="form-group">
+                  <label htmlFor="bloodGroup">Blood Group</label>
+                  <select
+                    id="bloodGroup"
+                    name="bloodGroup"
+                    value={merchantForm.bloodGroup}
+                    onChange={handleMerchantInputChange}
+                  >
+                    <option value="">Select blood group (optional)</option>
+                    <option value="A+">A+</option>
+                    <option value="A-">A-</option>
+                    <option value="B+">B+</option>
+                    <option value="B-">B-</option>
+                    <option value="AB+">AB+</option>
+                    <option value="AB-">AB-</option>
+                    <option value="O+">O+</option>
+                    <option value="O-">O-</option>
+                  </select>
+                </div>
+
                 <div className="form-row">
                   <div className="form-group">
                     <label htmlFor="password">Password *</label>

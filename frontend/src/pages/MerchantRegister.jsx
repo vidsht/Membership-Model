@@ -11,6 +11,7 @@ const MerchantRegister = () => {
     password: '',
     confirmPassword: '',
     phone: '',
+    bloodGroup: '',
     
     // Business Information
     businessName: '',
@@ -264,6 +265,25 @@ const MerchantRegister = () => {
                         required 
                       />
                     </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="bloodGroup">Blood Group</label>
+                    <select
+                      id="bloodGroup"
+                      value={formData.bloodGroup}
+                      onChange={handleInputChange}
+                    >
+                      <option value="">Select blood group (optional)</option>
+                      <option value="A+">A+</option>
+                      <option value="A-">A-</option>
+                      <option value="B+">B+</option>
+                      <option value="B-">B-</option>
+                      <option value="AB+">AB+</option>
+                      <option value="AB-">AB-</option>
+                      <option value="O+">O+</option>
+                      <option value="O-">O-</option>
+                    </select>
                   </div>
                 </div>
 

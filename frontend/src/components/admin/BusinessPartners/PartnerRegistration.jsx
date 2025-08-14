@@ -28,7 +28,8 @@ const PartnerRegistration = () => {
     taxId: '',
     logoFile: null,
     hasAgreedToTerms: false,
-    planType: 'basic_business' // Default to basic business plan
+    planType: 'basic_business', // Default to basic business plan
+    bloodGroup: ''
   });
   const [isEditMode, setIsEditMode] = useState(false);
     const [formErrors, setFormErrors] = useState({});
@@ -255,6 +256,7 @@ const PartnerRegistration = () => {
           phone: formData.phone,
           plan: formData.planType,
           membershipType: formData.planType, // <-- ensure this is sent for backend
+          bloodGroup: formData.bloodGroup,
           socialMediaFollowed: [], // Empty for admin-created accounts
           businessInfo: {
             businessName: formData.businessName,
@@ -377,6 +379,26 @@ const PartnerRegistration = () => {
                 className={formErrors.ownerName ? 'error' : ''}
               />
               {formErrors.ownerName && <div className="error-message">{formErrors.ownerName}</div>}
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="bloodGroup">Owner Blood Group</label>
+              <select
+                id="bloodGroup"
+                name="bloodGroup"
+                value={formData.bloodGroup}
+                onChange={handleChange}
+              >
+                <option value="">Select blood group (optional)</option>
+                <option value="A+">A+</option>
+                <option value="A-">A-</option>
+                <option value="B+">B+</option>
+                <option value="B-">B-</option>
+                <option value="AB+">AB+</option>
+                <option value="AB-">AB-</option>
+                <option value="O+">O+</option>
+                <option value="O-">O-</option>
+              </select>
             </div>
             
             <div className="form-row">

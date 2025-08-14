@@ -10,7 +10,8 @@ const UserRegister = () => {
     password: '',
     phone: '',
     address: '',
-    plan: 'community'
+    plan: 'community',
+    bloodGroup: ''
   });
   
   const [loading, setLoading] = useState(false);
@@ -155,6 +156,26 @@ const UserRegister = () => {
                     placeholder="Enter your address"
                     rows="3"
                   />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="bloodGroup">Blood Group</label>
+                  <select
+                    id="bloodGroup"
+                    name="bloodGroup"
+                    value={formData.bloodGroup}
+                    onChange={handleInputChange}
+                  >
+                    <option value="">Select blood group (optional)</option>
+                    <option value="A+">A+</option>
+                    <option value="A-">A-</option>
+                    <option value="B+">B+</option>
+                    <option value="B-">B-</option>
+                    <option value="AB+">AB+</option>
+                    <option value="AB-">AB-</option>
+                    <option value="O+">O+</option>
+                    <option value="O-">O-</option>
+                  </select>
                 </div>
 
                 <div className="form-group">

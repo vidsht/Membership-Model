@@ -286,6 +286,8 @@
 .stat-icon.merchants { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
 .stat-icon.pending { background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); color: #d97706; }
 .stat-icon.deals { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); color: #059669; }
+.stat-icon.plans { background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%); color: #e17055; }
+.stat-icon.subscribers { background: linear-gradient(135deg, #81ecec 0%, #6c5ce7 100%); }
 
 .stat-info h3 {
   font-size: 2rem;

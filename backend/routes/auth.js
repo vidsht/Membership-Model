@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const db = require('../db');
 const { auth } = require('../middleware/auth');
+const { generateMembershipNumber } = require('../utils/membershipGenerator');
 
 const router = express.Router();
 
@@ -15,6 +16,7 @@ router.post('/register', async (req, res) => {
       phone,
       address,
       dob,
+      bloodGroup,
       community,
       country,
       state,
@@ -83,8 +85,8 @@ router.post('/register', async (req, res) => {
       }
       
       const insertQuery = `INSERT INTO users
-        (fullName, email, password, phone, address, dob, community, country, state, city, userCategory, profilePicture, preferences, membership, socialMediaFollowed, userType, status, adminRole, permissions, termsAccepted)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+        (fullName, email, password, phone, address, dob, bloodGroup, community, country, state, city, userCategory, profilePicture, preferences, membershipType, socialMediaFollowed, userType, status, adminRole, permissions, termsAccepted)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
       const insertValues = [
         fullName,
         email,
@@ -92,6 +94,7 @@ router.post('/register', async (req, res) => {
         phone || null,
         address || null,
         dob || null,
+        bloodGroup || null,
         community || null,
         country || 'Ghana',
         state || null,
@@ -99,7 +102,7 @@ router.post('/register', async (req, res) => {
         userCategory || null,
         profilePicture || null,
         preferences || null,
-        selectedPlan, // Use dynamic plan
+        selectedPlan, // Use dynamic plan and save to membershipType instead of membership
         socialMediaJson,
         userType || 'user',
         status || 'pending',
@@ -114,8 +117,8 @@ router.post('/register', async (req, res) => {
           return res.status(500).json({ success: false, message: 'Server error', error: err2.message });
         }
         
-        // Generate membershipNumber (e.g., IIG000123)
-        const membershipNumber = `IIG${String(result.insertId).padStart(6, '0')}`;
+        // Generate new format membershipNumber (16 digits: ABCD EFGH IJKL MNOP)
+        const membershipNumber = generateMembershipNumber();
         db.query('UPDATE users SET membershipNumber = ? WHERE id = ?', [membershipNumber, result.insertId], (errUpdate) => {
           if (errUpdate) {
             console.error('Registration SQL error (UPDATE membershipNumber):', errUpdate);
@@ -264,6 +267,7 @@ router.post('/merchant/register', async (req, res) => {
       email,
       password,
       phone,
+      bloodGroup,
       plan, // Add dynamic plan selection
       socialMediaFollowed,
       businessInfo
@@ -324,10 +328,10 @@ router.post('/merchant/register', async (req, res) => {
       
       // Insert user first
       const insertUserQuery = `INSERT INTO users
-        (fullName, email, password, phone, socialMediaFollowed, userType, status, membership)
-        VALUES (?, ?, ?, ?, ?, 'merchant', 'pending', ?)`;
+        (fullName, email, password, phone, bloodGroup, socialMediaFollowed, userType, status, membershipType)
+        VALUES (?, ?, ?, ?, ?, ?, 'merchant', 'pending', ?)`;
       
-      const userValues = [fullName, email, hashedPassword, phone || null, socialMediaJson, selectedPlan];
+      const userValues = [fullName, email, hashedPassword, phone || null, bloodGroup || null, socialMediaJson, selectedPlan];
       
       db.query(insertUserQuery, userValues, (err2, userResult) => {
         if (err2) {
@@ -337,8 +341,8 @@ router.post('/merchant/register', async (req, res) => {
 
         const userId = userResult.insertId;
         
-        // Generate membershipNumber
-        const membershipNumber = `IIG${String(userId).padStart(6, '0')}`;
+        // Generate new format membershipNumber (16 digits: ABCD EFGH IJKL MNOP)
+        const membershipNumber = generateMembershipNumber();
         db.query('UPDATE users SET membershipNumber = ? WHERE id = ?', [membershipNumber, userId], (errUpdate) => {
           if (errUpdate) console.error('Failed to update membershipNumber:', errUpdate);
         });

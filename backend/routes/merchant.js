@@ -8,6 +8,28 @@ const db = require('../db');
 
 const router = express.Router();
 
+// Helper function to update expired deals
+const updateExpiredDeals = async () => {
+  try {
+    const updateQuery = `
+      UPDATE deals 
+      SET status = 'expired', updated_at = CURRENT_TIMESTAMP
+      WHERE status = 'active' 
+        AND ((validUntil IS NOT NULL AND validUntil < CURDATE()) 
+             OR (expiration_date IS NOT NULL AND expiration_date < CURDATE()))
+    `;
+    
+    const result = await queryAsync(updateQuery);
+    if (result.affectedRows > 0) {
+      console.log(`Updated ${result.affectedRows} expired deals to 'expired' status`);
+    }
+    return result.affectedRows;
+  } catch (error) {
+    console.error('Error updating expired deals:', error);
+    return 0;
+  }
+};
+
 // Middleware to check merchant status and access
 const checkMerchantAccess = async (req, res, next) => {
   const userId = req.session.userId;
@@ -89,8 +111,24 @@ const checkMerchantAccess = async (req, res, next) => {
     `, [user.businessId, currentMonth]);
 
     user.actualDealsThisMonth = dealsThisMonth[0].count;
-    user.dealLimit = user.customDealLimit || user.dealPostingLimit || user.maxDealsPerMonth || 0;
+    
+    // Determine deal limit: customDealLimit (admin override) takes priority over plan limit
+    // If customDealLimit is not null/undefined, use it; otherwise use plan's max_deals_per_month
+    const planLimit = user.dealPostingLimit || user.maxDealsPerMonth || 0; // from plans.max_deals_per_month
+    const customLimit = user.customDealLimit; // from businesses.customDealLimit (admin override)
+    
+    if (customLimit !== null && customLimit !== undefined) {
+      user.dealLimit = customLimit;
+      user.isCustomLimit = true; // Flag to track if using admin override
+    } else {
+      user.dealLimit = planLimit;
+      user.isCustomLimit = false;
+    }
+    
     user.canPostDeals = user.dealLimit === -1 || user.actualDealsThisMonth < user.dealLimit;
+    
+    // Log important deal limit info for debugging
+    console.log(`Deal Limit Info - Business: ${user.businessId}, Custom: ${user.customDealLimit}, Plan: ${user.dealPostingLimit}, Final: ${user.dealLimit}, Used: ${user.actualDealsThisMonth}, CanPost: ${user.canPostDeals}`);
 
     req.merchant = user;
     next();
@@ -105,6 +143,8 @@ const checkDealPostingLimit = async (req, res, next) => {
   try {
     const merchant = req.merchant;
     
+    console.log(`Deal Posting Check - CanPost: ${merchant.canPostDeals}, Limit: ${merchant.dealLimit}, Used: ${merchant.actualDealsThisMonth}, Custom: ${merchant.isCustomLimit}`);
+    
     if (!merchant.canPostDeals) {
       // Get upgrade options
       const upgradeQuery = `
@@ -116,14 +156,19 @@ const checkDealPostingLimit = async (req, res, next) => {
       `;
       const upgradeOptions = await queryAsync(upgradeQuery, [merchant.planPriority || 1]);
 
+      const limitMessage = merchant.isCustomLimit 
+        ? `You've reached your monthly deal limit of ${merchant.dealLimit}. ${merchant.dealLimit === 0 ? 'Your deal posting has been disabled.' : 'Contact admin to increase your custom limit.'}`
+        : `You've reached your monthly deal limit of ${merchant.dealLimit}. Upgrade your plan for more deals.`;
+
       return res.status(403).json({
         success: false,
-        message: `You have reached your monthly deal posting limit of ${merchant.dealLimit}. Please upgrade your plan to post more deals.`,
+        message: limitMessage,
         limitReached: true,
         currentUsage: merchant.actualDealsThisMonth,
         dealLimit: merchant.dealLimit,
-        upgradeRequired: true,
-        upgradeOptions: upgradeOptions.map(plan => ({
+        isCustomLimit: merchant.isCustomLimit,
+        upgradeRequired: !merchant.isCustomLimit, // Only show upgrade if not using custom limit
+        upgradeOptions: merchant.isCustomLimit ? [] : upgradeOptions.map(plan => ({
           name: plan.name,
           key: plan.key,
           price: plan.price,
@@ -156,7 +201,12 @@ const queryAsync = (sql, params = []) => {
 // Merchant Dashboard - returns comprehensive stats and deals for the logged-in merchant
 router.get('/dashboard', checkMerchantAccess, async (req, res) => {
   try {
-    const merchant = req.merchant;    // Get deals for this business with detailed analytics
+    const merchant = req.merchant;
+    
+    // Update expired deals before fetching data
+    await updateExpiredDeals();
+    
+    // Get deals for this business with detailed analytics
     const dealsQuery = `
       SELECT d.*, 
              (SELECT COUNT(*) FROM deal_redemptions dr WHERE dr.deal_id = d.id) as actualRedemptions,
@@ -183,7 +233,10 @@ router.get('/dashboard', checkMerchantAccess, async (req, res) => {
       thisMonthDeals: dealResults.filter(d => new Date(d.createdAt) >= thisMonth).length,
       actualDealsThisMonth: merchant.actualDealsThisMonth,
       dealLimit: merchant.dealLimit,
+      isCustomLimit: merchant.isCustomLimit,
       dealLimitRemaining: merchant.dealLimit === -1 ? 'Unlimited' : Math.max(0, merchant.dealLimit - merchant.actualDealsThisMonth),
+      canPostDeals: merchant.canPostDeals,
+      nextMonthReset: new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString().split('T')[0], // Next month's first day
       canPostDeals: merchant.canPostDeals
     };    // Get recent redemptions with user details
     const recentRedemptionsQuery = `
@@ -202,7 +255,7 @@ router.get('/dashboard', checkMerchantAccess, async (req, res) => {
     let upgradeOptions = [];
     if (!merchant.canPostDeals || (merchant.dealLimit > 0 && merchant.actualDealsThisMonth >= merchant.dealLimit * 0.8)) {
       const upgradeQuery = `
-        SELECT name, \`key\`, price, currency, dealPostingLimit, features
+        SELECT name, \`key\`, price, currency, max_deals_per_month as dealPostingLimit, features
         FROM plans 
         WHERE type = 'merchant' AND isActive = 1 AND priority > ?
         ORDER BY priority ASC, price ASC

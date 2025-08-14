@@ -345,6 +345,14 @@ const MerchantManagementEnhanced = () => {
           message += ` (Business ID: ${response.data.businessId})`;
         }
         showNotification(message, 'success');
+        // Show temp password notification if present (like user creation)
+        if (!isEditMode && response.data.tempPassword) {
+          showNotification(
+            `Temporary password: ${response.data.tempPassword}. Please share this securely.`,
+            'info',
+            10000
+          );
+        }
         setShowAddMerchant(false);
         setEditingMerchant(null);
         setFormData({

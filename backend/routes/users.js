@@ -10,7 +10,7 @@ const router = express.Router();
 // Get user profile (MySQL)
 router.get('/profile', auth, (req, res) => {
   const userId = req.user.id;
-  db.query('SELECT id, fullName, email, phone, address, profilePicture, preferences, membership, socialMediaFollowed, created_at FROM users WHERE id = ?', [userId], (err, results) => {
+  db.query('SELECT id, fullName, email, phone, address, profilePicture, preferences, membership, socialMediaFollowed, membershipNumber, membershipType, bloodGroup, statusUpdatedAt, planExpiryDate, subscriptionEndDate, planEndDate, created_at FROM users WHERE id = ?', [userId], (err, results) => {
     if (err) {
       console.error('Get profile error:', err);
       return res.status(500).json({ message: 'Server error' });
@@ -49,7 +49,7 @@ router.put('/profile', auth, (req, res) => {
         [fullName, email, phone, addressStr, profilePicture, preferencesStr, socialMediaFollowed ? JSON.stringify(socialMediaFollowed) : null, userId],
         (err2) => {
           if (err2) return res.status(500).json({ message: 'Server error' });
-          db.query('SELECT id, fullName, email, phone, address, profilePicture, preferences, membership, socialMediaFollowed, created_at FROM users WHERE id = ?', [userId], (err3, results2) => {
+          db.query('SELECT id, fullName, email, phone, address, profilePicture, preferences, membership, socialMediaFollowed, membershipNumber, membershipType, bloodGroup, statusUpdatedAt, planExpiryDate, subscriptionEndDate, planEndDate, created_at FROM users WHERE id = ?', [userId], (err3, results2) => {
             if (err3) return res.status(500).json({ message: 'Server error' });
             const user = results2[0];
             // Parse JSON fields
@@ -73,7 +73,7 @@ router.put('/profile', auth, (req, res) => {
       [fullName, phone, addressStr, profilePicture, preferencesStr, socialMediaFollowed ? JSON.stringify(socialMediaFollowed) : null, userId],
       (err2) => {
         if (err2) return res.status(500).json({ message: 'Server error' });
-        db.query('SELECT id, fullName, email, phone, address, profilePicture, preferences, membership, socialMediaFollowed, created_at FROM users WHERE id = ?', [userId], (err3, results2) => {
+        db.query('SELECT id, fullName, email, phone, address, profilePicture, preferences, membership, socialMediaFollowed, membershipNumber, membershipType, bloodGroup, statusUpdatedAt, planExpiryDate, subscriptionEndDate, planEndDate, created_at FROM users WHERE id = ?', [userId], (err3, results2) => {
           if (err3) return res.status(500).json({ message: 'Server error' });
           const user = results2[0];
           // Parse JSON fields

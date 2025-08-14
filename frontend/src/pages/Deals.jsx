@@ -6,21 +6,23 @@ import '../styles/deals.css';
 
 /**
  * Determines if a user can redeem a deal based on plan priority.
- * Users with higher priority plans can access deals for lower priority plans.
+ * Higher priority numbers = higher tier plans (1=Silver, 2=Gold, 3=Platinum)
+ * Users with higher tier plans (higher priority numbers) can access deals for lower tier plans.
  * @param {Object} user - The user object
- * @param {number} dealMinPlanPriority - The deal's minimum plan priority requirement
+ * @param {number} dealRequiredPlanPriority - The deal's minimum plan priority requirement
  * @param {Array} plans - Available plans array
  * @returns {boolean}
  */
-function canRedeem(user, dealMinPlanPriority, plans) {
+function canRedeem(user, dealRequiredPlanPriority, plans) {
   if (!user || !plans || plans.length === 0) return false;
+  if (dealRequiredPlanPriority === null || dealRequiredPlanPriority === undefined) return true;
   
   // Find the user's current plan
   const userPlan = plans.find(plan => plan.key === user.membership || plan.name.toLowerCase() === user.membership?.toLowerCase());
   if (!userPlan) return false;
   
-  // User can redeem if their plan priority is >= deal's minimum required priority
-  return userPlan.priority >= dealMinPlanPriority;
+  // User can redeem if their plan priority is >= deal's required priority (higher number = higher tier)
+  return userPlan.priority >= dealRequiredPlanPriority;
 }
 
 /**
@@ -312,10 +314,10 @@ const Deals = () => {
                     )}
                   </div>
                   
-                  {deal.accessLevel && (
-                    <div className={`deal-badge ${deal.accessLevel.toLowerCase().replace(/\s+/g, '-')}`}>
+                  {(deal.requiredPlanPriority !== null && deal.requiredPlanPriority !== undefined) && (
+                    <div className={`deal-badge priority-${deal.requiredPlanPriority}`}>
                       <i className="fas fa-crown"></i>
-                      For {deal.accessLevel} Members & Above
+                      For {getPlanNameByPriority(deal.requiredPlanPriority, plans)} Members & Above
                     </div>
                   )}
                   
@@ -339,18 +341,18 @@ const Deals = () => {
               {/* Action Section */}
               <div className="deal-actions">
                 <button
-                  className={`btn-redeem ${!user || !canRedeem(user, deal.minPlanPriority, plans) ? 'disabled' : ''}`}
-                  disabled={!user || !canRedeem(user, deal.minPlanPriority, plans)}
-                  onClick={() => handleRedeem(deal.id, deal.minPlanPriority)}
+                  className={`btn-redeem ${!user || !canRedeem(user, deal.requiredPlanPriority, plans) ? 'disabled' : ''}`}
+                  disabled={!user || !canRedeem(user, deal.requiredPlanPriority, plans)}
+                  onClick={() => handleRedeem(deal.id, deal.requiredPlanPriority)}
                 >
                   <i className="fas fa-gift"></i>
                   Redeem Deal
                 </button>
                 
-                {user && !canRedeem(user, deal.minPlanPriority, plans) && (
+                {user && !canRedeem(user, deal.requiredPlanPriority, plans) && (
                   <div className="upgrade-prompt">
                     {(() => {
-                      const requiredPlan = plans.find(p => p.priority === deal.minPlanPriority);
+                      const requiredPlan = plans.find(p => p.priority === deal.requiredPlanPriority);
                       if (requiredPlan) {
                         return (
                           <button className="btn-upgrade">

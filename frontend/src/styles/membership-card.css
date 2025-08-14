@@ -1,229 +1,530 @@
-.card-premium-style {
-  background: linear-gradient(90deg, #2c2346 0%, #7e3fad 100%);
-  color: #fff;
-  position: relative;
-  min-height: 340px;
-  border-radius: 20px;
-  border-top: none;
-  box-shadow: 0 10px 30px rgba(70, 10, 100, 0.15);
-  padding: 0;
-  width: 430px;
-  max-width: 97vw;
-}
+/* Membership Card CSS - Complete Implementation */
 
-.card-row {
+.membership-card-container {
   display: flex;
-  flex-direction: row;
-  align-items: stretch;
-  width: 100%;
-}
-
-.card-premium-style .card-row:first-child {
-  padding: 12px 24px 0 24px;
+  flex-direction: column;
   align-items: center;
-  position: relative;
+  padding: 20px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  min-height: 100vh;
 }
 
-.card-logo-imgbox {
-  width: 64px;
-  height: 64px;
-  border-radius: 32px;
-  background: #221442;
+.loading-spinner {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  position: absolute;
-  left: 18px;
-  top: 14px;
-  box-shadow: 0 4px 20px rgba(30,10,50,0.03);
-  border: 4px solid #271856;
+  gap: 15px;
+  padding: 40px;
+  color: #6B46C1;
 }
-.logo-img {
-  width: 54px;
-  height: 54px;
+
+.loading-spinner i {
+  font-size: 2rem;
+}
+
+.loading-spinner p {
+  font-size: 1.1rem;
+  color: #666;
+  margin: 0;
+}
+
+/* Main Membership Card */
+.membership-card-new {
+  /* Standard ID card dimensions: 85.6mm × 53.98mm */
+  width: 600px; 
+  height: 350px;
+  max-width: 100%;
+  background: linear-gradient(135deg, #1e113b 0%, #55188e 50%, #7C3AED 100%);
+  border-radius: 12px;
+  padding: 15px;
+  box-shadow: 0 8px 32px rgba(107, 70, 193, 0.3);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  color: white;
+  font-family: 'Inter', 'Arial', sans-serif;
+}
+
+/* Header Section */
+.card-header-new {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  height: 60px;
+}
+
+.card-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.logo-circle img {
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
   object-fit: cover;
 }
 
-.indians-title-block {
+.logo-circle {
+  height: 65px;
+}
+
+.card-title-section {
   flex: 1;
-  text-align: right;
-  margin-left: auto;
-  margin-right: 0;
+  text-align: center;
+  margin: 0 15px;
+}
+
+.main-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: white;
+  margin: 0;
+  letter-spacing: 1px;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.subtitle {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 2px 0 0 0;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+}
+
+.membership-badge {
+  background: linear-gradient(45deg, #FFC107, #FF9800);
+  color: #000;
+  padding: 6px 12px;
+  border-radius: 15px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  box-shadow: 0 2px 8px rgba(255, 193, 7, 0.4);
+  border: 1px solid #FFB300;
+}
+
+/* Card Title Banner */
+.card-title-banner {
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.membership-card-title {
+  font-size: 18px;
+  font-weight: 900;
+  color: #FFC107;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  text-shadow: 
+    -1px -1px 0 #000,
+    1px -1px 0 #000,
+    -1px 1px 0 #000,
+    1px 1px 0 #000,
+    2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* Main Content Grid */
+.card-content-grid {
+  display: grid;
+  grid-template-columns: 50% 50%;
+  gap: 15px;
+  flex: 1;
+  align-items: start;
+}
+
+/* Left Column - Photo, QR, Barcode */
+.left-column {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
-  gap: 1px;
-}
-.indians-title {
-  font-size: 1.6rem;
-  font-weight: bold;
-  letter-spacing: 1px;
-  color: #fff;
-}
-.indians-tagline {
-  font-size: 0.9rem;
-  color: #d7c9ec;
-  margin-bottom: 2px;
-  letter-spacing: 0.5px;
-}
-.membership-badge {
-  margin-top: 3px;
-  font-size: 1rem;
-  color: #ffe94d;
-  padding: 3px 14px;
-  border-radius: 7px;
-  border: 2px solid #ffe94d;
-  background: rgba(111,68,255,0.10);
-  width: fit-content;
-  margin-left: auto;
-  font-weight: 700;
-  letter-spacing: 1px;
-}
-
-.premium-label {
-  position: absolute;
-  right: 32px;
-  top: 60px;
-  font-size: 1.15rem;
-  font-weight: 700;
-  color: #ffd700;
-  letter-spacing: 1.5px;
-  background: transparent;
-  border: none;
-  z-index: 3;
-}
-
-.card-mainrow {
-  padding: 15px 16px 4px 16px;
-  align-items: flex-start;
-  gap: 18px;
-}
-
-.card-photo-imgbox {
-  flex-shrink: 0;
-  width: 95px;
-  height: 102px;
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 3px 10px rgba(60, 10, 70, 0.11);
-  overflow: hidden;
-  display: flex;
-  justify-content: center;
   align-items: center;
-  margin-left: 2px;
+  gap: 8px;
+  height: 100%;
+  width: 100%;
 }
-.member-photo-img {
+
+.photo-qr-container{
+  margin: 15px 0 0 0;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.profile-photo {
+  width: 100px;
+  height: 100px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile-photo img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
-.default-avatar.large {
-  font-size: 3rem;
-  color: #9918c7;
+
+.default-avatar {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 30px;
 }
 
-.qr-box {
-  flex-shrink: 0;
-  width: 98px;
-  height: 98px;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px #c97aea08;
+.qr-code-section {
+  display: flex;
+  justify-content: center;
+}
+
+.qr-code {
+  background: white;
+  padding: 3px;
+  border-radius: 4px;
+  width: 100px;
+  height: 100px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 18px;
-  padding: 8px;
-}
-.membership-qrcode-img > canvas {
-  width: 80px !important;
-  height: 80px !important;
-  display: block;
 }
 
-.main-details-block {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-  min-width: 185px;
-  margin-left: 8px;
-}
-.card-label {
-  font-size: 1rem;
-  display: flex;
-  flex-direction: row;
-  justify-content: flex-end;
-  gap: 10px;
-  color: #fff;
-}
-.card-label span:first-child {
-  color: #ffe94d;
-  min-width: 120px;
-  text-align: right;
-  font-weight: 500;
-}
-.card-value {
-  font-weight: 700;
-  text-align: left;
-  color: #fff;
-}
-.card-name {
-  font-size: 1.2rem;
-}
-.card-mobile {
-  font-size: 1rem;
-  letter-spacing: 1px;
-}
-.card-blood {
-  color: #ffd2f3;
-  font-size: 1.05rem;
+.qr-code canvas {
+  max-width: 100%;
+  max-height: 100%;
 }
 
-.barcode-row {
-  justify-content: flex-end;
-  padding: 5px 14px 11px 14px;
-  margin-top: 6px;
-}
-.barcode-box {
+.barcode-section {
+  display: flex;
+  justify-content: center;
   width: 100%;
-  max-width: 330px;
+}
+
+.barcode {
+  background: white;
+  padding: 2px 4px;
+  border-radius: 3px;
+  max-width: 100%;
+}
+
+.membership-number {
+  font-size: 15px;
+  color: white;
+  text-align: center;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  margin-top: 4px;
+  line-height: 1.2;
+}
+
+/* Right Column - Personal Information */
+.right-column {
+  margin: 10px 0 0 0;
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
-  gap: 0;
+  gap: 15px;
+  padding-left: 10px;
+  justify-content: space-between;
 }
-.membership-barcode-svg {
-  width: 95%;
-  min-width: 220px;
-  max-width: 295px;
-  height: 38px;
-  background: #fff;
-  border-radius: 5px;
-  margin-bottom: 4px;
+
+.info-field {
+  display: flex;
+  gap: 1px;
 }
-.barcode-num-txt {
-  color: #fff;
-  font-family: 'Courier New', monospace;
-  font-size: 1.25rem;
-  letter-spacing: 1.3px;
-  margin-right: 11px;
+
+.info-label {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.8) !important;
+  font-weight: 500;
+  margin: 0;
 }
-@media (max-width: 520px) {
-  .card-premium-style { width: 99vw; min-width: unset; padding: 0;}
-  .card-logo-imgbox { width: 49px; height: 49px; left: 8px;}
-  .logo-img { width: 38px; height: 38px; }
-  .indians-title { font-size: 1.1rem;}
-  .indians-title-block { padding-left: 0; }
-  .indians-tagline {font-size: 0.64rem;}
-  .membership-badge { font-size: 0.85rem; padding: 2px 8px;}
-  .premium-label { font-size: 0.97rem; top: 48px; right: 10px;}
-  .card-mainrow { flex-direction: column; align-items: flex-end; gap: 7px;}
-  .main-details-block { min-width: 50vw;}
-  .card-photo-imgbox { width: 60px; height: 67px;}
-  .qr-box { width: 61px; height: 61px; min-width: 62px; margin:0 6px;}
-  .barcode-row { padding-right: 7px; }
-  .barcode-box { max-width: 92vw;}
-  .membership-barcode-svg { min-width: 101px; height: 30px;}
-  .barcode-num-txt { font-size: 0.99rem;}
+
+.info-value {
+  font-size: 12px;
+  color: white !important;
+  font-weight: 600;
+  margin: 0;
+  word-break: break-word;
+}
+
+/* Specific styling for different fields */
+.name-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: white !important;
+}
+
+.mobile-value {
+  font-size: 13px;
+  color: white !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+  display: inline-block;
+  margin-top: 2px;
+}
+
+.blood-group-field {
+  margin-top: auto;
+  padding-top: 5px;
+}
+
+.blood-group-value {
+  font-size: 16px;
+  font-weight: 800;
+  color: white !important;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* Card Actions */
+.card-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  min-width: 120px;
+  justify-content: center;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.btn-primary {
+  background: linear-gradient(45deg, #6B46C1, #9333EA);
+  color: white;
+}
+
+.btn-outline {
+  background: transparent;
+  color: #6B46C1;
+  border: 2px solid #6B46C1;
+}
+
+.btn-outline:hover {
+  background: #6B46C1;
+  color: white;
+}
+
+.btn-success {
+  background: linear-gradient(45deg, #25D366, #128C7E);
+  color: white;
+}
+
+.btn-secondary {
+  background: linear-gradient(45deg, #6c757d, #495057);
+  color: white;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .membership-card-new {
+    width: 100%;
+    max-width: 400px;
+    height: auto;
+    min-height: 250px;
+    padding: 12px;
+  }
+
+  .card-header-new {
+    height: auto;
+    flex-direction: column;
+    gap: 8px;
+    text-align: center;
+  }
+
+  .card-logo {
+    flex-direction: row;
+    justify-content: center;
+  }
+
+  .logo-text {
+    text-orientation: mixed;
+    font-size: 6px;
+  }
+
+  .main-title {
+    font-size: 16px;
+  }
+
+  .subtitle {
+    font-size: 8px;
+  }
+
+  .membership-card-title {
+    font-size: 14px;
+  }
+
+  .card-content-grid {
+    grid-template-columns: 35% 65%;
+    gap: 10px;
+  }
+
+  .profile-photo {
+    width: 60px;
+    height: 60px;
+  }
+
+  .qr-code {
+    width: 45px;
+    height: 45px;
+  }
+
+  .info-label {
+    font-size: 8px;
+  }
+
+  .info-value {
+    font-size: 10px;
+  }
+
+  .name-value {
+    font-size: 11px;
+  }
+
+  .mobile-value {
+    font-size: 10px;
+  }
+
+  .blood-group-value {
+    font-size: 12px;
+  }
+
+  .membership-number {
+    font-size: 6px;
+  }
+
+  .card-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .btn {
+    width: 100%;
+    max-width: 200px;
+  }
+}
+
+@media (max-width: 480px) {
+  .membership-card-container {
+    padding: 10px;
+  }
+
+  .membership-card-new {
+    padding: 8px;
+  }
+
+  .card-content-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+
+  .left-column {
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
+  }
+
+  .profile-photo {
+    width: 50px;
+    height: 50px;
+  }
+
+  .qr-code {
+    width: 40px;
+    height: 40px;
+  }
+
+  .right-column {
+    padding-left: 0;
+    gap: 6px;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .membership-card-container {
+    background: none;
+    padding: 0;
+  }
+
+  .card-actions {
+    display: none;
+  }
+
+  .membership-card-new {
+    width: 85.6mm;
+    height: 53.98mm;
+    max-width: none;
+    box-shadow: none;
+    break-inside: avoid;
+  }
+}
+
+/* High Resolution Display Support */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .membership-card-new {
+    /* Maintain crisp rendering on high-DPI displays */
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+}
+
+/* Animation for card loading */
+.membership-card-new {
+  animation: cardSlideIn 0.6s ease-out;
+}
+
+@keyframes cardSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Gradient overlay for enhanced visual appeal */
+.membership-card-new::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 50%, rgba(0, 0, 0, 0.1) 100%);
+  pointer-events: none;
+  border-radius: 12px;
+}
+
+/* Enhanced typography for better readability */
+.membership-card-new * {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }

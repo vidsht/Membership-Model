@@ -35,6 +35,7 @@ const MerchantDashboard = () => {
     totalDeals: 0,
     activeDeals: 0,
     pendingDeals: 0,
+    rejectedDeals: 0,
     expiredDeals: 0,
     totalViews: 0,
     totalRedemptions: 0,
@@ -191,6 +192,60 @@ const MerchantDashboard = () => {
     setBusinessInfo(updatedBusiness);
     setShowBusinessForm(false);
     // Refresh dashboard data to get latest info
+    fetchDashboardData();
+  };
+
+  // Deal management functions
+  const [editingDeal, setEditingDeal] = useState(null);
+
+  const handleEditDeal = (deal) => {
+    // Check if deal can be edited
+    if (!['pending_approval', 'rejected'].includes(deal.status)) {
+      showNotification('Can only edit deals that are pending approval or rejected', 'error');
+      return;
+    }
+    setEditingDeal(deal);
+    setShowDealForm(true);
+  };
+
+  const handleDeleteDeal = async (dealId, dealTitle) => {
+    if (!window.confirm(`Are you sure you want to delete "${dealTitle}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      await merchantApi.deleteDeal(dealId);
+      
+      // Remove deal from local state
+      setDeals(prev => prev.filter(deal => deal.id !== dealId));
+      
+      // Update stats
+      setStats(prev => ({
+        ...prev,
+        totalDeals: prev.totalDeals - 1,
+        activeDeals: prev.activeDeals - (deals.find(d => d.id === dealId)?.status === 'active' ? 1 : 0),
+        pendingDeals: prev.pendingDeals - (deals.find(d => d.id === dealId)?.status === 'pending_approval' ? 1 : 0)
+      }));
+      
+      showNotification('Deal deleted successfully', 'success');
+    } catch (error) {
+      console.error('Error deleting deal:', error);
+      showNotification(error.response?.data?.message || 'Failed to delete deal', 'error');
+    }
+  };
+
+  const handleDealUpdated = (updatedDeal) => {
+    setEditingDeal(null);
+    setShowDealForm(false);
+    
+    if (updatedDeal) {
+      // Update deal in local state
+      setDeals(prev => prev.map(deal => 
+        deal.id === updatedDeal.id ? { ...deal, ...updatedDeal } : deal
+      ));
+    }
+    
+    // Refresh dashboard data to get latest stats
     fetchDashboardData();
   };
 
@@ -685,10 +740,48 @@ const MerchantDashboard = () => {
       {/* Deal Management - Conditional based on plan */}
       {featureAccess.dealPosting !== 'none' ? (
         <div className="deals-section">
+          {/* Deal Limit Warning */}
+          {!stats.canPostDeals && (
+            <div className="warning-banner">
+              <i className="fas fa-exclamation-triangle"></i>
+              <div className="warning-content">
+                <h4>Deal Posting Limit Reached</h4>
+                <p>
+                  You've reached your monthly deal limit of {stats.dealLimit} deals. 
+                  {stats.isCustomLimit 
+                    ? ' Contact admin to increase your custom limit.'
+                    : ' Upgrade your plan for more deals.'
+                  }
+                  {stats.nextMonthReset && (
+                    <span className="reset-info">
+                      <br />Limit resets on: {new Date(stats.nextMonthReset).toLocaleDateString()}
+                    </span>
+                  )}
+                </p>
+              </div>
+            </div>
+          )}
+          
           <div className="section-header">
             <h2>Your Deals</h2>
-            <button className="btn btn-primary" onClick={() => setShowDealForm(true)}>
+            <button 
+              className={`btn ${stats.canPostDeals ? 'btn-primary' : 'btn-disabled'}`}
+              onClick={() => {
+                if (stats.canPostDeals) {
+                  setShowDealForm(true);
+                } else {
+                  alert(`You've reached your monthly deal limit of ${stats.dealLimit}. ${stats.isCustomLimit ? 'Contact admin to increase your custom limit.' : 'Upgrade your plan for more deals.'}`);
+                }
+              }}
+              disabled={!stats.canPostDeals}
+              title={!stats.canPostDeals ? `Deal limit reached (${stats.actualDealsThisMonth}/${stats.dealLimit})` : ''}
+            >
               <i className="fas fa-plus"></i> Add New Deal
+              {!stats.canPostDeals && (
+                <span className="limit-indicator">
+                  <i className="fas fa-exclamation-triangle"></i>
+                </span>
+              )}
             </button>
           </div>
           
@@ -697,7 +790,25 @@ const MerchantDashboard = () => {
               <i className="fas fa-tags"></i>
               <h3>No Deals Yet</h3>
               <p>Create your first deal to start attracting customers!</p>
-              <button className="btn btn-primary" onClick={() => setShowDealForm(true)}>Create Deal</button>
+              <button 
+                className={`btn ${stats.canPostDeals ? 'btn-primary' : 'btn-disabled'}`}
+                onClick={() => {
+                  if (stats.canPostDeals) {
+                    setShowDealForm(true);
+                  } else {
+                    alert(`You've reached your monthly deal limit of ${stats.dealLimit}. ${stats.isCustomLimit ? 'Contact admin to increase your custom limit.' : 'Upgrade your plan for more deals.'}`);
+                  }
+                }}
+                disabled={!stats.canPostDeals}
+                title={!stats.canPostDeals ? `Deal limit reached (${stats.actualDealsThisMonth}/${stats.dealLimit})` : ''}
+              >
+                Create Deal
+                {!stats.canPostDeals && (
+                  <span className="limit-indicator">
+                    <i className="fas fa-exclamation-triangle"></i>
+                  </span>
+                )}
+              </button>
             </div>
           ) : (
             <div className="deals-grid">
@@ -710,6 +821,18 @@ const MerchantDashboard = () => {
                     </span>
                   </div>
                   <p className="deal-description">{deal.description}</p>
+                  
+                  {/* Show rejection reason if deal is rejected */}
+                  {deal.status === 'rejected' && deal.rejection_reason && (
+                    <div className="rejection-reason">
+                      <div className="rejection-reason-header">
+                        <i className="fas fa-exclamation-triangle"></i>
+                        <strong>Rejection Reason:</strong>
+                      </div>
+                      <p className="rejection-reason-text">{deal.rejection_reason}</p>
+                    </div>
+                  )}
+                  
                   <div className="deal-meta">
                     <div className="deal-discount">
                       <strong>{deal.discount} OFF</strong>
@@ -729,10 +852,19 @@ const MerchantDashboard = () => {
                     </div>
                   </div>
                   <div className="deal-actions">
-                    <button className="btn btn-sm btn-secondary">
+                    <button 
+                      className="btn btn-sm btn-secondary" 
+                      onClick={() => handleEditDeal(deal)}
+                      disabled={!['pending_approval', 'rejected'].includes(deal.status)}
+                      title={['pending_approval', 'rejected'].includes(deal.status) ? 'Edit deal' : 'Can only edit pending or rejected deals'}
+                    >
                       <i className="fas fa-edit"></i> Edit
                     </button>
-                    <button className="btn btn-sm btn-danger">
+                    <button 
+                      className="btn btn-sm btn-danger" 
+                      onClick={() => handleDeleteDeal(deal.id, deal.title)}
+                      title="Delete deal"
+                    >
                       <i className="fas fa-trash"></i> Delete
                     </button>
                   </div>
@@ -778,8 +910,13 @@ const MerchantDashboard = () => {
         <div className="modal-overlay">
           <div className="modal-content">
             <MerchantDealForm 
-              onDealCreated={handleDealCreated}
-              onClose={() => setShowDealForm(false)}
+              deal={editingDeal}
+              onDealCreated={editingDeal ? handleDealUpdated : handleDealCreated}
+              onClose={() => {
+                setShowDealForm(false);
+                setEditingDeal(null);
+              }}
+              isEditing={!!editingDeal}
             />
           </div>
         </div>
@@ -967,6 +1104,7 @@ const MerchantDashboard = () => {
                           <th>Views</th>
                           <th>Redemptions</th>
                           <th>Status</th>
+                          <th>Notes</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -979,6 +1117,20 @@ const MerchantDashboard = () => {
                               <span className={`status-badge ${deal.status}`}>
                                 {deal.status}
                               </span>
+                            </td>
+                            <td>
+                              {deal.status === 'rejected' && deal.rejection_reason ? (
+                                <div className="rejection-reason-cell" title={deal.rejection_reason}>
+                                  <i className="fas fa-exclamation-triangle text-danger"></i>
+                                  <span className="rejection-text">
+                                    {deal.rejection_reason.length > 50 
+                                      ? `${deal.rejection_reason.substring(0, 50)}...` 
+                                      : deal.rejection_reason}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-muted">-</span>
+                              )}
                             </td>
                           </tr>
                         ))}

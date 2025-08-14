@@ -26,7 +26,8 @@ const UserForm = () => {
     city: '',
     userType: 'user',
     membershipType: 'community',
-    status: 'approved'
+    status: 'approved',
+    bloodGroup: ''
   });
 
   const [loading, setLoading] = useState(false);
@@ -367,6 +368,27 @@ const UserForm = () => {
                         {community.name}
                       </option>
                     ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="bloodGroup">Blood Group</label>
+                  <select
+                    id="bloodGroup"
+                    value={formData.bloodGroup}
+                    onChange={(e) => handleInputChange('bloodGroup', e.target.value)}
+                  >
+                    <option value="">Select blood group (optional)</option>
+                    <option value="A+">A+</option>
+                    <option value="A-">A-</option>
+                    <option value="B+">B+</option>
+                    <option value="B-">B-</option>
+                    <option value="AB+">AB+</option>
+                    <option value="AB-">AB-</option>
+                    <option value="O+">O+</option>
+                    <option value="O-">O-</option>
                   </select>
                 </div>
               </div>

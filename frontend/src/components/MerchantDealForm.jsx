@@ -4,7 +4,7 @@ import { merchantApi } from '../services/api';
 import api from '../services/api';
 import './MerchantDealForm.css';
 
-const MerchantDealForm = ({ onDealCreated, onClose }) => {
+const MerchantDealForm = ({ deal, onDealCreated, onClose, isEditing = false }) => {
   const { showNotification } = useNotification();
   const [isSaving, setIsSaving] = useState(false);
   const [userPlans, setUserPlans] = useState([]);
@@ -60,6 +60,27 @@ const MerchantDealForm = ({ onDealCreated, onClose }) => {
     
     fetchUserPlans();
   }, []);
+
+  // Populate form when editing
+  React.useEffect(() => {
+    if (isEditing && deal) {
+      setFormData({
+        title: deal.title || '',
+        description: deal.description || '',
+        discount: deal.discount || '',
+        discountType: deal.discountType || 'percentage',
+        originalPrice: deal.originalPrice || '',
+        discountedPrice: deal.discountedPrice || '',
+        category: deal.category || '',
+        validFrom: deal.validFrom ? formatDateForInput(new Date(deal.validFrom)) : '',
+        validUntil: deal.validUntil ? formatDateForInput(new Date(deal.validUntil)) : '',
+        requiredPlanPriority: deal.requiredPlanPriority || 1,
+        termsConditions: deal.termsConditions || '',
+        couponCode: deal.couponCode || '',
+        featuredImage: null // Don't populate image for editing
+      });
+    }
+  }, [isEditing, deal]);
   
   const formatDateForInput = (date) => {
     return date.toISOString().split('T')[0];
@@ -185,7 +206,7 @@ const MerchantDealForm = ({ onDealCreated, onClose }) => {
     
     try {
       setIsSaving(true);
-          // Send JSON only (no file upload)
+      // Send JSON only (no file upload)
       const dealData = {
         title: formData.title,
         description: formData.description,
@@ -199,11 +220,19 @@ const MerchantDealForm = ({ onDealCreated, onClose }) => {
         couponCode: formData.couponCode,
         requiredPlanPriority: parseInt(formData.requiredPlanPriority)
       };
-      await merchantApi.createDeal(dealData);
-      showNotification('Deal submitted successfully! It will be reviewed by admin before going live.', 'success');
+
+      if (isEditing && deal) {
+        // Update existing deal
+        await merchantApi.updateDeal(deal.id, dealData);
+        showNotification('Deal updated successfully! It will be reviewed by admin before going live.', 'success');
+      } else {
+        // Create new deal
+        await merchantApi.createDeal(dealData);
+        showNotification('Deal submitted successfully! It will be reviewed by admin before going live.', 'success');
+      }
       
       if (onDealCreated) {
-        onDealCreated();
+        onDealCreated(isEditing ? { ...deal, ...dealData } : null);
       }
       
       if (onClose) {
@@ -245,7 +274,7 @@ const MerchantDealForm = ({ onDealCreated, onClose }) => {
   return (
     <div className="merchant-deal-form-container">
       <div className="form-header">
-        <h2>Create New Deal</h2>
+        <h2>{isEditing ? 'Edit Deal' : 'Create New Deal'}</h2>
         {onClose && (
           <button className="close-btn" onClick={onClose}>
             <i className="fas fa-times"></i>
@@ -456,7 +485,10 @@ const MerchantDealForm = ({ onDealCreated, onClose }) => {
             </button>
           )}
           <button type="submit" className="btn-primary" disabled={isSaving}>
-            {isSaving ? 'Creating...' : 'Create Deal'}
+            {isSaving 
+              ? (isEditing ? 'Updating...' : 'Creating...') 
+              : (isEditing ? 'Update Deal' : 'Create Deal')
+            }
           </button>
         </div>
       </form>

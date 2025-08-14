@@ -26,7 +26,9 @@ const AdminDashboard = () => {
     pendingApprovals: 0,
     activeBusinesses: 0,
     totalRevenue: 0,
-    totalDeals: 0
+    totalDeals: 0,
+    totalPlans: 0,
+    planSubscribers: 0
   });
   
   const [recentActivities, setRecentActivities] = useState([]);
@@ -91,10 +93,24 @@ const AdminDashboard = () => {
         
         // Fetch dashboard statistics with fallback
         try {
-          const statsResponse = await api.get('/admin/stats');
+          const [statsResponse, planStatsResponse] = await Promise.all([
+            api.get('/admin/stats'),
+            api.get('/admin/plans/statistics').catch(() => ({ data: { success: false } }))
+          ]);
+          
+          let baseStats = {};
           if (statsResponse.data.success) {
-            setStats(statsResponse.data.stats);
+            baseStats = statsResponse.data.stats;
           }
+          
+          // Add plan statistics
+          if (planStatsResponse.data.success) {
+            const planStats = planStatsResponse.data.statistics;
+            baseStats.totalPlans = planStats.summary.userPlans.total + planStats.summary.merchantPlans.total;
+            baseStats.planSubscribers = planStats.summary.userPlans.totalSubscribers + planStats.summary.merchantPlans.totalSubscribers;
+          }
+          
+          setStats(baseStats);
         } catch (statsError) {
           console.error('❌ AdminDashboard - Error fetching stats:', statsError);
           
@@ -105,7 +121,9 @@ const AdminDashboard = () => {
             pendingApprovals: 0,
             activeBusinesses: 0,
             totalRevenue: 0,
-            totalDeals: 0
+            totalDeals: 0,
+            totalPlans: 0,
+            planSubscribers: 0
           });
         }
         
@@ -209,6 +227,26 @@ const AdminDashboard = () => {
           <div className="stat-info">
             <h3>{stats.totalDeals}</h3>
             <p>Active Deals</p>
+          </div>
+        </div>
+        
+        <div className="stat-card">
+          <div className="stat-icon plans">
+            <i className="fas fa-crown"></i>
+          </div>
+          <div className="stat-info">
+            <h3>{stats.totalPlans}</h3>
+            <p>Total Plans</p>
+          </div>
+        </div>
+        
+        <div className="stat-card">
+          <div className="stat-icon subscribers">
+            <i className="fas fa-user-check"></i>
+          </div>
+          <div className="stat-info">
+            <h3>{stats.planSubscribers}</h3>
+            <p>Plan Subscribers</p>
           </div>
         </div>      </div>
 

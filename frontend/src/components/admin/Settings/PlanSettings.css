@@ -145,6 +145,105 @@
   color: var(--neutral-medium);
 }
 
+/* Plan Limits Section */
+.plan-limits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 0.5rem 0;
+}
+
+.limit-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  border: 1px solid;
+}
+
+.limit-badge.deals {
+  background: #e3f2fd;
+  color: #1976d2;
+  border-color: #bbdefb;
+}
+
+.limit-badge.redemptions {
+  background: #f3e5f5;
+  color: #7b1fa2;
+  border-color: #ce93d8;
+}
+
+.limit-badge.users {
+  background: #e8f5e8;
+  color: #2e7d32;
+  border-color: #a5d6a7;
+}
+
+.limit-badge.subscribers {
+  background: #fff3e0;
+  color: #f57c00;
+  border-color: #ffcc02;
+}
+
+.limit-badge i {
+  font-size: 0.8rem;
+}
+
+/* Individual Plan Statistics */
+.individual-plan-stats {
+  margin: 1.5rem 0;
+  padding: 1.5rem;
+  background: var(--neutral-lightest);
+  border-radius: 8px;
+  border: 1px solid var(--neutral-light);
+}
+
+.individual-plan-stats h4 {
+  margin: 0 0 1rem 0;
+  color: var(--neutral-dark);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.plan-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 0.75rem;
+}
+
+.plan-stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid var(--neutral-light);
+  transition: all 0.2s ease;
+}
+
+.plan-stat-item:hover {
+  border-color: var(--primary);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.plan-stat-name {
+  font-weight: 500;
+  color: var(--neutral-dark);
+}
+
+.plan-stat-count {
+  font-weight: 600;
+  color: var(--primary);
+  background: var(--primary-light);
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.9rem;
+}
+
 .plan-description {
   color: var(--neutral-medium);
   line-height: 1.5;
