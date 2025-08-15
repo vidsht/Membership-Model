@@ -273,6 +273,9 @@ router.post('/merchant/register', async (req, res) => {
       businessInfo
     } = req.body;
 
+    // Debug logging for merchant registration
+    console.log('Merchant registration data:', { fullName, email, plan, bloodGroup });
+
     // Validate required fields
     if (!fullName || !email || !password) {
       return res.status(400).json({ success: false, message: 'Full name, email, and password are required.' });
@@ -316,15 +319,17 @@ router.post('/merchant/register', async (req, res) => {
       // Get default plan if none selected
       let selectedPlan = plan;
       if (!selectedPlan) {
-        // Fetch the first available merchant plan
+        // Fetch the lowest priority merchant plan (basic plan)
         const defaultPlanResult = await new Promise((resolve, reject) => {
-          db.query('SELECT `key` FROM plans WHERE type = ? AND isActive = 1 ORDER BY priority DESC LIMIT 1', ['merchant'], (err, results) => {
+          db.query('SELECT `key` FROM plans WHERE type = ? AND isActive = 1 ORDER BY dealPriority ASC LIMIT 1', ['merchant'], (err, results) => {
             if (err) reject(err);
             else resolve(results);
           });
         });
         selectedPlan = defaultPlanResult.length > 0 ? defaultPlanResult[0].key : 'basic';
       }
+
+      console.log('Selected plan for merchant:', selectedPlan);
       
       // Insert user first
       const insertUserQuery = `INSERT INTO users
@@ -449,7 +454,10 @@ router.get('/me', auth, (req, res) => {
     return res.status(401).json({ message: 'Not authenticated' });
   }
 
-  db.query('SELECT id, fullName, email, phone, address, dob, community, country, state, city, profilePicture, preferences, membership, membershipNumber, socialMediaFollowed, userType, status, adminRole, permissions, created_at, lastLogin FROM users WHERE id = ?', [userId], (err, results) => {
+  // Fetch user and include business details for merchants
+  const userQuery = `SELECT id, fullName, email, phone, address, dob, community, country, state, city, profilePicture, preferences, membership, membershipNumber, socialMediaFollowed, userType, status, adminRole, permissions, created_at, lastLogin FROM users WHERE id = ?`;
+
+  db.query(userQuery, [userId], (err, results) => {
     if (err) {
       console.error('Get user SQL error:', err);
       return res.status(500).json({ message: 'Server error' });
@@ -459,12 +467,39 @@ router.get('/me', auth, (req, res) => {
     }
 
     const user = results[0];
-    res.json({
-      user: {
-        ...user,
-        socialMediaFollowed: user.socialMediaFollowed ? JSON.parse(user.socialMediaFollowed) : {}
-      }
-    });
+
+    // If user is a merchant, fetch their business row and attach it
+    if (user.userType === 'merchant') {
+      db.query('SELECT businessId, businessName, businessDescription, businessCategory, businessAddress, businessPhone, businessEmail, website, businessLicense, taxId, isVerified, verificationDate, status as businessStatus, created_at as businessCreatedAt FROM businesses WHERE userId = ? LIMIT 1', [userId], (bizErr, bizResults) => {
+        if (bizErr) {
+          console.error('Error fetching business for /me:', bizErr);
+          // Return user without business on error
+          return res.json({
+            user: {
+              ...user,
+              socialMediaFollowed: user.socialMediaFollowed ? JSON.parse(user.socialMediaFollowed) : {}
+            }
+          });
+        }
+
+        const business = bizResults && bizResults[0] ? bizResults[0] : null;
+
+        return res.json({
+          user: {
+            ...user,
+            socialMediaFollowed: user.socialMediaFollowed ? JSON.parse(user.socialMediaFollowed) : {},
+            business
+          }
+        });
+      });
+    } else {
+      return res.json({
+        user: {
+          ...user,
+          socialMediaFollowed: user.socialMediaFollowed ? JSON.parse(user.socialMediaFollowed) : {}
+        }
+      });
+    }
   });
 });
 

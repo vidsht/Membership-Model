@@ -366,6 +366,8 @@ const UnifiedRegistration = () => {
         email: merchantForm.email,
         password: merchantForm.password,
         phone: merchantForm.phone,
+        plan: merchantForm.plan, // Include selected plan
+        bloodGroup: merchantForm.bloodGroup, // Include blood group
         // Send as array for backend compatibility
         socialMediaFollowed: followedPlatforms,
         businessInfo: {

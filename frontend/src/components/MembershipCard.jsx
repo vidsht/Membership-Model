@@ -210,7 +210,7 @@ const MembershipCard = () => {
           const file = new File([blob], 'membership-card.png', { type: 'image/png' });
           navigator.share({
             title: 'My Indians in Ghana Membership Card',
-            text: `I'm a proud member of Indians in Ghana! Member #${user.membershipNumber}`,
+            text: `I'm a proud member of Indians in Ghana! 🇮🇳🇬🇭\nMember #${user.membershipNumber}`,
             files: [file]
           });
         } else {
@@ -226,6 +226,76 @@ const MembershipCard = () => {
       // Fallback to text sharing
       const message = encodeURIComponent(`I'm a proud member of Indians in Ghana! 🇮🇳🇬🇭\nMember #${user.membershipNumber}\n\nJoin our community: ${window.location.origin}`);
       window.open(`https://wa.me/?text=${message}`, '_blank');
+    }
+  };
+
+  const shareCard = async () => {
+    if (!cardSettings.allow_share) {
+      showNotification('Card sharing is not enabled', 'error');
+      return;
+    }
+
+    try {
+      // Try to share with image if possible
+      if (navigator.share) {
+        const html2canvas = await import('html2canvas');
+        const canvas = await html2canvas.default(cardRef.current, {
+          scale: 2,
+          backgroundColor: null,
+          useCORS: true,
+          allowTaint: true,
+          width: 854,
+          height: 540
+        });
+
+        canvas.toBlob(async (blob) => {
+          if (blob && navigator.canShare && navigator.canShare({ files: [new File([blob], 'membership-card.png', { type: 'image/png' })] })) {
+            const file = new File([blob], 'membership-card.png', { type: 'image/png' });
+            await navigator.share({
+              title: 'My Indians in Ghana Membership Card',
+              text: `I'm a proud member of Indians in Ghana! 🇮🇳🇬🇭\nMember #${user.membershipNumber}`,
+              files: [file]
+            });
+          } else {
+            // Fallback to text sharing
+            await navigator.share({
+              title: 'My Indians in Ghana Membership Card',
+              text: `I'm a proud member of Indians in Ghana! 🇮🇳🇬🇭\nMember #${user.membershipNumber}\n\nJoin our community: ${window.location.origin}`,
+            });
+          }
+          showNotification('Card shared successfully!', 'success');
+        }, 'image/png');
+      } else {
+        // Fallback for browsers that don't support Web Share API
+        const shareText = `I'm a proud member of Indians in Ghana! 🇮🇳🇬🇭\nMember #${user.membershipNumber}\n\nJoin our community: ${window.location.origin}`;
+        
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(shareText);
+          showNotification('Share text copied to clipboard!', 'success');
+        } else {
+          // Even older browser fallback
+          const textArea = document.createElement('textarea');
+          textArea.value = shareText;
+          document.body.appendChild(textArea);
+          textArea.select();
+          document.execCommand('copy');
+          document.body.removeChild(textArea);
+          showNotification('Share text copied to clipboard!', 'success');
+        }
+      }
+    } catch (error) {
+      console.error('Error sharing card:', error);
+      // Ultimate fallback
+      const shareText = `I'm a proud member of Indians in Ghana! 🇮🇳🇬🇭\nMember #${user.membershipNumber}\n\nJoin our community: ${window.location.origin}`;
+      
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(shareText);
+          showNotification('Share text copied to clipboard!', 'success');
+        }
+      } catch (clipboardError) {
+        showNotification('Unable to share. Please try again.', 'error');
+      }
     }
   };
 
@@ -291,29 +361,37 @@ const MembershipCard = () => {
     return date.toLocaleDateString('en-GB'); // DD/MM/YYYY format
   };
 
-  // Calculate expiry date based on user's plan
+  // Calculate expiry date based on user's plan - same logic as admin panel
   const getExpiryDate = () => {
-    // If user has a plan with expiry date, use that
+    // Priority 1: validationDate (same as admin panel uses)
+    if (user.validationDate) {
+      return formatDate(user.validationDate);
+    }
+    
+    // Priority 2: planExpiryDate
     if (user.planExpiryDate) {
       return formatDate(user.planExpiryDate);
     }
     
-    // If user has a subscription with end date, use that
+    // Priority 3: subscriptionEndDate
     if (user.subscriptionEndDate) {
       return formatDate(user.subscriptionEndDate);
     }
     
-    // If user has planEndDate, use that
+    // Priority 4: planEndDate
     if (user.planEndDate) {
       return formatDate(user.planEndDate);
     }
     
-    // Otherwise, calculate 1 year from issue date
-    if (!user.statusUpdatedAt && !user.createdAt) return 'N/A';
-    const issueDate = new Date(user.statusUpdatedAt || user.createdAt);
-    const expiryDate = new Date(issueDate);
-    expiryDate.setFullYear(expiryDate.getFullYear() + 1);
-    return formatDate(expiryDate);
+    // Fallback: calculate 1 year from issue date
+    if (user.statusUpdatedAt || user.created_at) {
+      const issueDate = new Date(user.statusUpdatedAt || user.created_at);
+      const expiryDate = new Date(issueDate);
+      expiryDate.setFullYear(expiryDate.getFullYear() + 1);
+      return formatDate(expiryDate);
+    }
+    
+    return 'N/A';
   };
 
   return (
@@ -394,7 +472,7 @@ const MembershipCard = () => {
 
             <div className="info-field">
               <span className="info-label">Date of Issue :</span>
-              <span className="info-value">{formatDate(user.statusUpdatedAt || user.createdAt)}</span>
+              <span className="info-value">{formatDate(user.statusUpdatedAt || user.created_at)}</span>
             </div>
 
             <div className="info-field">
@@ -412,9 +490,6 @@ const MembershipCard = () => {
 
       {/* Card Actions */}
       <div className="card-actions">
-        <button className="btn btn-outline" onClick={() => window.print()}>
-          <i className="fas fa-print"></i> Print Card
-        </button>
         {cardSettings.allow_download && (
           <button className="btn btn-primary" onClick={downloadCard}>
             <i className="fas fa-download"></i> Download Card
@@ -425,15 +500,7 @@ const MembershipCard = () => {
             <i className="fab fa-whatsapp"></i> Share on WhatsApp
           </button>
         )}
-        <button className="btn btn-secondary" onClick={() => {
-          if (navigator.share) {
-            navigator.share({
-              title: 'My Indians in Ghana Membership Card',
-              text: `I'm a member of Indians in Ghana! Member #${user.membershipNumber}`,
-              url: window.location.href
-            });
-          }
-        }}>
+        <button className="btn btn-secondary" onClick={shareCard}>
           <i className="fas fa-share"></i> Share
         </button>
       </div>

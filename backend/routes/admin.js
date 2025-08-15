@@ -804,7 +804,6 @@ router.post('/users/:id/assign-plan', auth, admin, async (req, res) => {
       updateQuery = `
         UPDATE users SET 
           membershipType = ?, 
-          currentPlan = ?,
           planAssignedAt = NOW(), 
           planAssignedBy = ?,
           validationDate = ?,
@@ -812,7 +811,6 @@ router.post('/users/:id/assign-plan', auth, admin, async (req, res) => {
         WHERE id = ?
       `;
       updateParams = [
-        finalPlanKey,
         finalPlanKey,
         adminUserId,
         validationDate.toISOString().slice(0, 19).replace('T', ' '),
@@ -822,7 +820,6 @@ router.post('/users/:id/assign-plan', auth, admin, async (req, res) => {
       updateQuery = `
         UPDATE users SET 
           membershipType = ?, 
-          currentPlan = ?,
           planAssignedAt = NOW(), 
           planAssignedBy = ?,
           validationDate = NULL,
@@ -830,7 +827,6 @@ router.post('/users/:id/assign-plan', auth, admin, async (req, res) => {
         WHERE id = ?
       `;
       updateParams = [
-        finalPlanKey,
         finalPlanKey,
         adminUserId,
         userId
@@ -1424,8 +1420,8 @@ router.post('/partners', auth, admin, async (req, res) => {
     }
 
 
-    // Generate membership number for merchant
-    const membershipNumber = `IGM${Date.now().toString().slice(-6)}${Math.floor(Math.random() * 100)}`;
+    // Generate membership number for merchant using the same format as self-registration
+    const membershipNumber = generateMembershipNumber();
 
     // Get default merchant plan key (fix ORDER BY displayOrder bug)
     let defaultMerchantPlanKey = 'basic_business';
@@ -2001,11 +1997,22 @@ router.get('/deals/:id', auth, admin, async (req, res) => {
           d.*, 
           b.businessName,
           b.businessCategory,
+          b.businessPhone,
+          b.businessEmail,
+          b.businessAddress,
+          b.website,
+          b.businessLicense,
+          b.taxId,
+          b.isVerified,
+          b.verificationDate,
+          b.created_at as businessCreatedAt,
+          b.businessDescription,
           u.fullName as merchantName,
-          u.email as merchantEmail
+          u.email as merchantEmail,
+          u.membershipType
         FROM deals d
         LEFT JOIN businesses b ON d.businessId = b.businessId
-        LEFT JOIN users u ON d.businessId = u.id
+        LEFT JOIN users u ON b.userId = u.id
         WHERE d.id = ?
       `;
     } else {
@@ -3217,7 +3224,7 @@ router.get('/deals/pending', auth, admin, async (req, res) => {
       SELECT d.*, b.businessName, u.fullName as merchantName, u.email as merchantEmail
       FROM deals d
       LEFT JOIN businesses b ON d.businessId = b.businessId
-      LEFT JOIN users u ON b.ownerId = u.id
+      LEFT JOIN users u ON b.userId = u.id
       WHERE d.status = 'pending_approval'
       ORDER BY d.created_at DESC
     `);
@@ -3251,7 +3258,7 @@ router.get('/deals', auth, admin, async (req, res) => {
       SELECT d.*, b.businessName, u.fullName as merchantName, u.email as merchantEmail
       FROM deals d
       LEFT JOIN businesses b ON d.businessId = b.businessId
-      LEFT JOIN users u ON b.ownerId = u.id
+      LEFT JOIN users u ON b.userId = u.id
       ${whereClause}
       ORDER BY d.created_at DESC
       LIMIT ? OFFSET ?
@@ -3328,6 +3335,21 @@ router.patch('/deals/:id/approve', auth, admin, async (req, res) => {
       if (!isNaN(priority) && priority >= 0) {
         updateQuery += ', minPlanPriority = ?, requiredPlanPriority = ?';
         updateParams.push(priority, priority);
+        
+        // Convert priority to accessLevel for backward compatibility
+        let convertedAccessLevel;
+        if (priority === 1) {
+          convertedAccessLevel = 'all'; // Platinum Plus - highest priority, access for all
+        } else if (priority === 2) {
+          convertedAccessLevel = 'full'; // Platinum - full access
+        } else if (priority === 3) {
+          convertedAccessLevel = 'intermediate'; // Gold/Silver - intermediate access
+        } else {
+          convertedAccessLevel = 'basic'; // Community/Basic - basic access
+        }
+        
+        updateQuery += ', accessLevel = ?';
+        updateParams.push(convertedAccessLevel);
       }
     }
     

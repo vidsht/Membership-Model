@@ -8,6 +8,73 @@ const db = require('../db');
 
 const router = express.Router();
 
+// Required DB columns and tables used by merchant feature-access logic:
+// - users (u):
+//   - id: primary user id (used to join and identify merchant)
+//   - membershipType: primary source of truth for the merchant's plan (maps to plans.key)
+//   - status: account approval/suspension state ('approved','pending','suspended','rejected')
+//   - planExpiryDate: when the user's plan expires (used to block access when expired)
+//   - fullName, email, userType, statusUpdatedAt, statusUpdatedBy: meta fields returned in dashboard
+// - businesses (b):
+//   - businessId, businessName, businessDescription, businessCategory, businessAddress, businessPhone, businessEmail
+//   - membershipLevel: legacy/branding field (DO NOT use for access decisions) — kept for display only
+//   - customDealLimit: admin override that takes priority over plan's max_deals_per_month
+//   - maxDealsPerMonth / maxDealsPerMonth (business-level fallback for deal limits)
+//   - dealsUsedThisMonth (if present) / dealsUsedThisMonth may be tracked but we compute actual usage from deals table
+// - plans (p):
+//   - key: plan key used to join with users.membershipType
+//   - priority: numeric tier used for upgrade suggestions and feature tiers
+//   - max_deals_per_month: default deal posting limit for this plan
+//   - features: CSV string (or JSON) describing enabled features for the plan (e.g. 'analytics,featuredPlacement')
+//   - price, currency, billingCycle: display and upgrade information
+// Additional tables used at runtime:
+// - deals: used to count current month's postings for the business (to enforce monthly limit)
+// - deal_redemptions: analytics only
+//
+// Rule summary:
+// 1) The single source of truth for plan/feature decisions is users.membershipType joined to plans.key (p.type = 'merchant').
+// 2) Business.membershipLevel is a display/legacy field and must NOT be used for permission checks.
+// 3) Deal posting limit is determined in this priority: businesses.customDealLimit (if set) -> plans.max_deals_per_month -> business.maxDealsPerMonth or 0.
+// 4) A special value of -1 indicates "Unlimited" deals.
+// 5) If planExpiryDate is in the past, merchant access is blocked and upgradeRequired is set.
+// 6) plan.priority is used to suggest upgrades and decide feature tiers; plan.features provides granular feature flags.
+//
+// To centralize and make the logic explicit we compute derived fields from the DB row below.
+const computeMerchantAccess = (row = {}, actualDealsThisMonth = 0) => {
+  const access = {};
+  access.actualDealsThisMonth = Number(actualDealsThisMonth || 0);
+
+  // Plan-level posting limit (from plans.max_deals_per_month alias 'dealPostingLimit')
+  const planLimit = row.dealPostingLimit !== undefined && row.dealPostingLimit !== null
+    ? Number(row.dealPostingLimit)
+    : (row.maxDealsPerMonth !== undefined && row.maxDealsPerMonth !== null ? Number(row.maxDealsPerMonth) : 0);
+
+  // Custom business override
+  const customLimit = row.customDealLimit;
+  if (customLimit !== null && customLimit !== undefined) {
+    access.dealLimit = Number(customLimit);
+    access.isCustomLimit = true;
+  } else {
+    access.dealLimit = planLimit;
+    access.isCustomLimit = false;
+  }
+
+  // Can post deals if unlimited (-1) or under limit
+  access.canPostDeals = access.dealLimit === -1 || access.actualDealsThisMonth < access.dealLimit;
+
+  // Plan meta
+  access.planPriority = row.planPriority !== undefined && row.planPriority !== null ? Number(row.planPriority) : 1;
+  access.planFeatures = row.planFeatures ? String(row.planFeatures).split(',').map(f => f.trim()).filter(Boolean) : [];
+  access.membershipType = row.membershipType || 'basic';
+
+  // Derived flags for frontend convenience
+  access.isBasicPlan = !access.membershipType || ['basic'].includes(access.membershipType);
+  access.isFeatured = ['gold_merchant', 'gold_business', 'platinum_merchant', 'platinum_business', 'platinum_plus', 'platinum_plus_business'].includes(access.membershipType);
+  access.isPremium = ['silver_merchant', 'silver_business'].includes(access.membershipType);
+
+  return access;
+};
+
 // Helper function to update expired deals
 const updateExpiredDeals = async () => {
   try {
@@ -44,7 +111,7 @@ const checkMerchantAccess = async (req, res, next) => {
              b.businessId, b.businessName, b.businessDescription, b.businessCategory, 
              b.businessAddress, b.businessPhone, b.businessEmail, b.website,
              b.businessLicense, b.taxId, b.isVerified, b.verificationDate,
-             b.membershipLevel, b.socialMediaFollowed as businessSocial,
+             b.socialMediaFollowed as businessSocial,
              b.customDealLimit, b.planExpiryDate, b.dealsUsedThisMonth,
              b.created_at as businessCreatedAt, b.maxDealsPerMonth,
              p.name as planName, p.max_deals_per_month as dealPostingLimit, p.priority as planPriority, p.price as planPrice,
@@ -52,7 +119,7 @@ const checkMerchantAccess = async (req, res, next) => {
       FROM users u
       LEFT JOIN businesses b ON u.id = b.userId
       LEFT JOIN plans p ON u.membershipType = p.key AND p.type = 'merchant'
-      WHERE u.id = ? AND u.userType = 'merchant'
+      WHERE u.id = ?
     `;
 
     const results = await queryAsync(query, [userId]);
@@ -112,23 +179,9 @@ const checkMerchantAccess = async (req, res, next) => {
 
     user.actualDealsThisMonth = dealsThisMonth[0].count;
     
-    // Determine deal limit: customDealLimit (admin override) takes priority over plan limit
-    // If customDealLimit is not null/undefined, use it; otherwise use plan's max_deals_per_month
-    const planLimit = user.dealPostingLimit || user.maxDealsPerMonth || 0; // from plans.max_deals_per_month
-    const customLimit = user.customDealLimit; // from businesses.customDealLimit (admin override)
-    
-    if (customLimit !== null && customLimit !== undefined) {
-      user.dealLimit = customLimit;
-      user.isCustomLimit = true; // Flag to track if using admin override
-    } else {
-      user.dealLimit = planLimit;
-      user.isCustomLimit = false;
-    }
-    
-    user.canPostDeals = user.dealLimit === -1 || user.actualDealsThisMonth < user.dealLimit;
-    
-    // Log important deal limit info for debugging
-    console.log(`Deal Limit Info - Business: ${user.businessId}, Custom: ${user.customDealLimit}, Plan: ${user.dealPostingLimit}, Final: ${user.dealLimit}, Used: ${user.actualDealsThisMonth}, CanPost: ${user.canPostDeals}`);
+    // Compute and normalize merchant access fields
+    const access = computeMerchantAccess(user, user.actualDealsThisMonth);
+    Object.assign(user, access);
 
     req.merchant = user;
     next();
@@ -283,11 +336,10 @@ router.get('/dashboard', checkMerchantAccess, async (req, res) => {
           taxId: merchant.taxId,
           isVerified: merchant.isVerified,
           verificationDate: merchant.verificationDate,
-          membershipLevel: merchant.membershipLevel,
+          membershipLevel: merchant.membershipType, // Use membershipType from users table
           status: merchant.status, // Use status from users table
           socialMediaFollowed: merchant.businessSocial,
           customDealLimit: merchant.customDealLimit,
-          currentPlan: merchant.membershipType, // Use membershipType from users table
           planExpiryDate: merchant.planExpiryDate,
           businessCreatedAt: merchant.businessCreatedAt
         },
@@ -295,20 +347,43 @@ router.get('/dashboard', checkMerchantAccess, async (req, res) => {
           id: merchant.id,
           fullName: merchant.fullName,
           email: merchant.email,
+          membershipType: merchant.membershipType, // Single source of truth for plan
           status: merchant.status,
           userType: merchant.userType,
           statusUpdatedAt: merchant.statusUpdatedAt,
           statusUpdatedBy: merchant.statusUpdatedBy
         },
         plan: {
-          key: merchant.membershipType || 'basic_business', // Use membershipType from users table
+          key: merchant.membershipType || 'basic', // Use membershipType from users table
           name: merchant.planName || 'Basic Business',
           dealPostingLimit: merchant.dealLimit,
           priority: merchant.planPriority || 1,
           price: merchant.planPrice || 0,
           currency: 'GHS',
           billingCycle: merchant.billingCycle || 'monthly',
-          features: merchant.planFeatures ? merchant.planFeatures.split(',') : []
+          features: (() => {
+            const pf = merchant.planFeatures;
+            if (pf === null || pf === undefined) return [];
+            if (Array.isArray(pf)) return pf;
+            if (typeof pf === 'string') {
+              try {
+                const parsed = JSON.parse(pf);
+                if (Array.isArray(parsed)) return parsed;
+                return pf.split(',').map(s => s.trim()).filter(Boolean);
+              } catch (e) {
+                return pf.split(',').map(s => s.trim()).filter(Boolean);
+              }
+            }
+            if (typeof pf === 'object') {
+              // If it's an object, return its stringified values or keys
+              try {
+                return Object.values(pf).map(v => String(v));
+              } catch (e) {
+                return Object.keys(pf);
+              }
+            }
+            return [];
+          })()
         },
         upgradeOptions: upgradeOptions.length > 0 ? upgradeOptions : null
       }
@@ -516,6 +591,79 @@ router.put('/profile', checkMerchantAccess, [
   });
 });
 
+// Get merchant business information for certificates
+router.get('/business-info', checkMerchantAccess, async (req, res) => {
+  try {
+    const merchant = req.merchant;
+
+    // Format business information for certificate display
+    const businessInfo = {
+      // Business Details
+      businessId: merchant.businessId,
+      businessName: merchant.businessName,
+      businessDescription: merchant.businessDescription,
+      businessCategory: merchant.businessCategory,
+      businessAddress: merchant.businessAddress,
+      businessPhone: merchant.businessPhone,
+      businessEmail: merchant.businessEmail,
+      website: merchant.website,
+      businessLicense: merchant.businessLicense,
+      taxId: merchant.taxId,
+      
+      // Personal Details (Owner/Contact)
+      ownerName: merchant.fullName,
+      ownerEmail: merchant.email,
+      ownerPhone: merchant.phone,
+      bloodGroup: merchant.bloodGroup,
+      
+      // Membership Details
+      membershipNumber: `BIZ-${merchant.businessId.toString().padStart(6, '0')}`,
+      membershipLevel: merchant.membershipType || 'basic_business', // Use membershipType from users table
+      membershipType: merchant.membershipType || 'basic_business',
+      planName: merchant.planName || 'Basic Business',
+      
+      // Status and Verification
+      status: merchant.status,
+      isVerified: merchant.isVerified,
+      verificationDate: merchant.verificationDate,
+      registrationDate: merchant.businessCreatedAt || merchant.created_at,
+      
+      // Certificate Details
+      certificateNumber: `CERT-${merchant.businessId}-${new Date().getFullYear()}`,
+      issueDate: new Date().toISOString().split('T')[0],
+      validityPeriod: merchant.planExpiryDate || 'Ongoing',
+      
+      // QR Code and Barcode data
+      qrCodeData: JSON.stringify({
+        type: 'business_verification',
+        businessId: merchant.businessId,
+        businessName: merchant.businessName,
+        membershipNumber: `BIZ-${merchant.businessId.toString().padStart(6, '0')}`,
+        verificationUrl: `https://indiansinghana.com/verify/business/${merchant.businessId}`,
+        issuedAt: new Date().toISOString()
+      }),
+      barcodeData: `BIZ${merchant.businessId.toString().padStart(8, '0')}`,
+      
+      // Additional Certificate Information
+      communityName: 'Indians in Ghana',
+      authoritySignature: 'Community Administration',
+      certificateType: 'Business Membership Certificate',
+      validationNote: 'This certificate validates the business membership in the Indians in Ghana community.'
+    };
+
+    res.json({ 
+      success: true, 
+      businessInfo 
+    });
+  } catch (error) {
+    console.error('Business info error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error fetching business information' 
+    });
+  }
+});
+
 // Get merchant certificate (for approved merchants)
 router.get('/certificate', checkMerchantAccess, (req, res) => {
   const merchant = req.merchant;
@@ -679,6 +827,149 @@ router.patch('/notifications/:id/read', checkMerchantAccess, async (req, res) =>
     res.status(500).json({ 
       success: false, 
       message: 'Server error updating notification'
+    });
+  }
+});
+
+// Get pending redemption requests for merchant
+router.get('/redemption-requests', checkMerchantAccess, async (req, res) => {
+  try {
+    const merchant = req.merchant;
+    
+    if (!(await tableExists('deal_redemptions'))) {
+      return res.json({
+        success: true,
+        requests: [],
+        message: 'Redemptions table not found'
+      });
+    }
+
+    // Get pending redemption requests for this merchant's deals
+    const query = `
+      SELECT dr.*, u.phone, u.membershipNumber, d.title as dealTitle, d.discount, d.discountType,
+             u.fullName as userName
+      FROM deal_redemptions dr
+      JOIN deals d ON dr.deal_id = d.id
+      JOIN users u ON dr.user_id = u.id
+      WHERE d.businessId = ? AND dr.status = 'pending'
+      ORDER BY dr.redeemed_at DESC
+    `;
+    
+    const results = await queryAsync(query, [merchant.businessId]);
+    
+    res.json({
+      success: true,
+      requests: results,
+      count: results.length
+    });
+  } catch (err) {
+    console.error('Error fetching redemption requests:', err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error fetching redemption requests'
+    });
+  }
+});
+
+// Approve redemption request
+router.patch('/redemption-requests/:requestId/approve', checkMerchantAccess, async (req, res) => {
+  try {
+    const merchant = req.merchant;
+    const requestId = parseInt(req.params.requestId);
+    
+    if (!requestId || isNaN(requestId)) {
+      return res.status(400).json({ success: false, message: 'Valid request ID is required' });
+    }
+
+    // Verify request belongs to merchant's deals and is pending
+    const checkQuery = `
+      SELECT dr.*, d.title, d.businessId
+      FROM deal_redemptions dr
+      JOIN deals d ON dr.deal_id = d.id
+      WHERE dr.id = ? AND d.businessId = ? AND dr.status = 'pending'
+    `;
+    
+    const checkResults = await queryAsync(checkQuery, [requestId, merchant.businessId]);
+    
+    if (checkResults.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Redemption request not found or already processed' 
+      });
+    }
+
+    // Update request status to approved
+    await queryAsync(
+      'UPDATE deal_redemptions SET status = "approved", updated_at = NOW() WHERE id = ?',
+      [requestId]
+    );
+
+    // Update deal redemption count
+    await queryAsync('UPDATE deals SET redemptions = redemptions + 1 WHERE id = ?', [checkResults[0].deal_id]);
+
+    res.json({
+      success: true,
+      message: 'Redemption request approved successfully!'
+    });
+  } catch (err) {
+    console.error('Error approving redemption request:', err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error approving redemption request'
+    });
+  }
+});
+
+// Reject redemption request
+router.patch('/redemption-requests/:requestId/reject', checkMerchantAccess, async (req, res) => {
+  try {
+    const merchant = req.merchant;
+    const requestId = parseInt(req.params.requestId);
+    const { reason } = req.body;
+    
+    if (!requestId || isNaN(requestId)) {
+      return res.status(400).json({ success: false, message: 'Valid request ID is required' });
+    }
+
+    // Verify request belongs to merchant's deals and is pending
+    const checkQuery = `
+      SELECT dr.*, d.title, d.businessId
+      FROM deal_redemptions dr
+      JOIN deals d ON dr.deal_id = d.id
+      WHERE dr.id = ? AND d.businessId = ? AND dr.status = 'pending'
+    `;
+    
+    const checkResults = await queryAsync(checkQuery, [requestId, merchant.businessId]);
+    
+    if (checkResults.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Redemption request not found or already processed' 
+      });
+    }
+
+    // Update request status to rejected
+    let updateQuery = 'UPDATE deal_redemptions SET status = "rejected", updated_at = NOW()';
+    let params = [requestId];
+    
+    if (reason && reason.trim()) {
+      updateQuery += ', rejection_reason = ? WHERE id = ?';
+      params = [reason.trim(), requestId];
+    } else {
+      updateQuery += ' WHERE id = ?';
+    }
+    
+    await queryAsync(updateQuery, params);
+
+    res.json({
+      success: true,
+      message: 'Redemption request rejected'
+    });
+  } catch (err) {
+    console.error('Error rejecting redemption request:', err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error rejecting redemption request'
     });
   }
 });

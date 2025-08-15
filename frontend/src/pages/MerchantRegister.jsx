@@ -100,6 +100,7 @@ const MerchantRegister = () => {
         email: formData.email,
         password: formData.password,
         phone: formData.phone,
+        bloodGroup: formData.bloodGroup,
         businessInfo: {
           businessName: formData.businessName,
           businessDescription: formData.businessDescription,

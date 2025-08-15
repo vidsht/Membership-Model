@@ -71,7 +71,7 @@ const DealDetail = () => {
         status: dealData.businessStatus,
         isVerified: dealData.isVerified,
         verificationDate: dealData.verificationDate,
-        membershipLevel: dealData.membershipLevel,
+        membershipLevel: dealData.membershipType, // Use membershipType from users table
         businessCreatedAt: dealData.businessCreatedAt,
         businessDescription: dealData.businessDescription
       };
@@ -1335,8 +1335,8 @@ const DealDetail = () => {
                         </div>
                         <div className="info-item">
                           <label>Membership Level:</label>
-                          <span className={`membership-level ${business.businessMembershipLevel || business.membershipLevel}`}>
-                            {(business.businessMembershipLevel || business.membershipLevel || 'basic').toUpperCase()}
+                          <span className={`membership-level ${business.membershipLevel}`}>
+                            {(business.membershipLevel || 'basic').toUpperCase()}
                           </span>
                         </div>
                         {business.verificationDate && (

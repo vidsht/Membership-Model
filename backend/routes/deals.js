@@ -434,14 +434,18 @@ router.post('/:id/redeem', checkDealAccess, (req, res) => {
     return res.status(400).json({ message: 'Invalid user or deal information' });
   }
   // First check if user has already redeemed this deal
-  db.query('SELECT * FROM deal_redemptions WHERE deal_id = ? AND user_id = ?', [dealId, userId], (err, existingRedemptions) => {
+  // Note: Allow multiple redemptions (changed requirement)
+  db.query('SELECT * FROM deal_redemptions WHERE deal_id = ? AND user_id = ? AND status = "pending"', [dealId, userId], (err, pendingRedemptions) => {
     if (err) {
       console.error('Check redemption error:', err);
       return res.status(500).json({ message: 'Server error' });
     }
 
-    if (existingRedemptions.length > 0) {
-      return res.status(400).json({ message: 'You have already redeemed this deal' });
+    if (pendingRedemptions.length > 0) {
+      return res.status(400).json({ 
+        message: 'You already have a pending redemption request for this deal. Please wait for merchant approval.',
+        isPending: true
+      });
     }
     // Check monthly redemption limit
     const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
@@ -491,10 +495,10 @@ router.post('/:id/redeem', checkDealAccess, (req, res) => {
         const expirationDate = deal.validUntil || deal.expiration_date;
         if (expirationDate && new Date(expirationDate) < new Date()) {
           return res.status(403).json({ message: 'This deal has expired' });
-        }        // Check plan access based on deal priority - using dynamic plan lookup
-        if (deal.minPlanPriority && deal.minPlanPriority > (user.priority || 1)) {
-          // Get the lowest priority plan that can access this deal
-          db.query('SELECT name, `key`, price, currency, features FROM plans WHERE priority >= ? AND type = "user" AND isActive = 1 ORDER BY priority ASC, price ASC LIMIT 1', 
+        }        // Check plan access based on deal priority - enhanced dynamic plan lookup with better error messages
+        if (deal.minPlanPriority && deal.minPlanPriority < (user.priority || 999)) {
+          // Get the required plan that can access this deal
+          db.query('SELECT name, `key`, price, currency, features FROM plans WHERE priority <= ? AND type = "user" AND isActive = 1 ORDER BY priority DESC, price DESC LIMIT 1', 
             [deal.minPlanPriority], (planErr, planResults) => {
             
             let upgradeMessage = 'This deal requires a higher membership plan.';
@@ -509,15 +513,15 @@ router.post('/:id/redeem', checkDealAccess, (req, res) => {
                 currency: requiredPlan.currency,
                 features: requiredPlan.features ? requiredPlan.features.split(',') : []
               };
-              upgradeMessage = `Upgrade to ${requiredPlan.name} plan to redeem this exclusive deal! Starting at ${requiredPlan.currency} ${requiredPlan.price}`;
+              upgradeMessage = `🔒 Upgrade Required! This exclusive deal is available for ${requiredPlan.name} members and above. Upgrade now starting at ${requiredPlan.currency} ${requiredPlan.price} to unlock this offer!`;
             } else {
-              // Fallback to get all higher priority plans if specific lookup fails
-              db.query('SELECT name, `key`, price, currency FROM plans WHERE priority > ? AND type = "user" AND isActive = 1 ORDER BY priority ASC LIMIT 3', 
-                [user.priority || 1], (fallbackErr, fallbackResults) => {
+              // Fallback to get higher priority plans if specific lookup fails
+              db.query('SELECT name, `key`, price, currency FROM plans WHERE priority <= ? AND type = "user" AND isActive = 1 ORDER BY priority DESC LIMIT 3', 
+                [deal.minPlanPriority], (fallbackErr, fallbackResults) => {
                 
                 if (!fallbackErr && fallbackResults.length > 0) {
                   const planOptions = fallbackResults.map(plan => plan.name).join(', ');
-                  upgradeMessage = `Upgrade to ${planOptions} to access this deal.`;
+                  upgradeMessage = `🔒 Upgrade Required! This deal is available for ${planOptions} members. Upgrade your plan to access this exclusive offer!`;
                   suggestedPlan = {
                     name: fallbackResults[0].name,
                     key: fallbackResults[0].key,
@@ -528,7 +532,7 @@ router.post('/:id/redeem', checkDealAccess, (req, res) => {
                   return res.status(403).json({ 
                   message: upgradeMessage,
                   upgradeRequired: true,
-                  currentPlanPriority: user.priority || 1,
+                  currentPlanPriority: user.priority || 999,
                   requiredPlanPriority: deal.minPlanPriority,
                   suggestedPlan: suggestedPlan,
                   availablePlans: fallbackResults || []
@@ -540,7 +544,7 @@ router.post('/:id/redeem', checkDealAccess, (req, res) => {
             return res.status(403).json({ 
               message: upgradeMessage,
               upgradeRequired: true,
-              currentPlanPriority: user.priority || 1,
+              currentPlanPriority: user.priority || 999,
               requiredPlanPriority: deal.minPlanPriority,
               suggestedPlan: suggestedPlan
             });
@@ -571,21 +575,24 @@ router.post('/:id/redeem', checkDealAccess, (req, res) => {
 
         function performRedemption() {
           // Generate redemption code
-          const redemptionCode = `RDM${Date.now()}${Math.random().toString(36).substr(2, 5).toUpperCase()}`;          // Insert redemption record
-          const insertQuery = 'INSERT INTO deal_redemptions (deal_id, user_id, redeemed_at, status) VALUES (?, ?, NOW(), "redeemed")';
+          const redemptionCode = `RDM${Date.now()}${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
+
+          // Insert redemption request with PENDING status - merchant approval required
+          const insertQuery = 'INSERT INTO deal_redemptions (deal_id, user_id, redeemed_at, status) VALUES (?, ?, NOW(), "pending")';
           
           db.query(insertQuery, [dealId, userId], (err5) => {
             if (err5) {
-              console.error('Redemption insert error:', err5);
-              return res.status(500).json({ message: 'Server error processing redemption' });
+              console.error('Redemption request insert error:', err5);
+              return res.status(500).json({ message: 'Server error processing redemption request' });
             }
 
-            // Update deal redemption count
-            db.query('UPDATE deals SET redemptions = redemptions + 1 WHERE id = ?', [dealId], (updateErr) => {
-              if (updateErr) console.error('Failed to update redemption count:', updateErr);
-            });            res.json({ 
+            // Don't update deal redemption count yet - wait for merchant approval
+            
+            res.json({ 
               success: true, 
-              message: 'Deal redeemed successfully!',
+              message: '🎉 Redemption request submitted! The merchant will review your request and contact you for verification. You will be notified once approved.',
+              isPending: true,
+              requiresApproval: true,
               deal: {
                 id: deal.id,
                 title: deal.title,

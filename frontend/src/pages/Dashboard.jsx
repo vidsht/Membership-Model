@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import MembershipCard from '../components/MembershipCard';
+import MerchantCertificate from '../components/MerchantCertificate';
 import '../styles/MerchantDashboard.css'; // Import for status-alert styles
 
 const Dashboard = () => {
@@ -88,53 +89,19 @@ const Dashboard = () => {
       </div>
 
       <div className="dashboard-grid">
-        {/* Membership Card Section */}
+        {/* Membership Card/Certificate Section */}
         <div className="dashboard-section">
           <h2>
-            <i className="fas fa-id-card"></i> Your Membership Card
+            {user.userType === 'merchant' ? 'Your Business Certificate' : 'Your Membership Card'}
           </h2>
-          <MembershipCard />
+          {user.userType === 'merchant' ? <MerchantCertificate /> : <MembershipCard />}
         </div>
 
-        {/* Member Benefits Section */}
-        <div className="dashboard-section">
-          <h2>
-            <i className="fas fa-star"></i> Your Benefits
-          </h2>
-          <div className="benefits-card">
-            <h3>
-              {user.membershipType === 'community' ? 'Community' : 
-               user.membershipType === 'silver' ? 'Silver' : 'Gold'} Member Benefits
-            </h3>
-            <ul className="benefits-list">
-              {getMembershipBenefits(user.membershipType).map((benefit, index) => (
-                <li key={index}>
-                  <i className="fas fa-check"></i>
-                  {benefit}
-                </li>
-              ))}
-            </ul>
-            
-            {getNextMembershipType(user.membershipType) && (
-              <div className="upgrade-prompt">
-                <p>Want more benefits?</p>
-                <button className="btn btn-primary">
-                  {(() => {
-                    const nextType = getNextMembershipType(user?.membershipType);
-                    return nextType
-                      ? `Upgrade to ${nextType.charAt(0).toUpperCase() + nextType.slice(1)}`
-                      : 'Upgrade';
-                  })()}
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
 
         {/* Quick Stats Section */}
         <div className="dashboard-section">
           <h2>
-            <i className="fas fa-chart-line"></i> Your Activity
+             Your Activity
           </h2>
           <div className="stats-grid">
             <div className="stat-item">
@@ -183,7 +150,7 @@ const Dashboard = () => {
         {/* Quick Actions Section */}
         <div className="dashboard-section">
           <h2>
-            <i className="fas fa-bolt"></i> Quick Actions
+             Quick Actions
           </h2>
           <div className="quick-actions">
             <a href="/settings" className="action-card">

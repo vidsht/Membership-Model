@@ -1023,10 +1023,10 @@ const MerchantManagementEnhanced = () => {
                               <span>Verified Business</span>
                             </div>
                           )}
-                          {business.membershipLevel && (
+                          {business.membershipType && (
                             <div className="detail-item">
                               <i className="fas fa-crown"></i>
-                              <span>{business.membershipLevel} Member</span>
+                              <span>{business.membershipType} Member</span>
                             </div>
                           )}
                           {business.ownerName && (

@@ -142,7 +142,7 @@ const UserForm = () => {
       }
       if (err.response?.status === 404) {
         showNotification('User not found', 'error');
-        navigate('/admin/users');
+        navigate('/admin');
         return;
       }
       showNotification('Failed to load user data', 'error');
@@ -243,7 +243,7 @@ const UserForm = () => {
           );
         }
         
-        navigate('/admin/users');
+        navigate('/admin');
       } else {
         throw new Error(response.data.message || `Failed to ${isEditMode ? 'update' : 'create'} user`);
       }
@@ -282,7 +282,7 @@ const UserForm = () => {
         <div className="header-content">
           <div className="header-left">
             <button
-              onClick={() => navigate('/admin/users')}
+              onClick={() => navigate('/admin')}
               className="btn-back"
             >
               <i className="fas fa-arrow-left"></i>
@@ -508,7 +508,7 @@ const UserForm = () => {
           <div className="form-actions">
             <button
               type="button"
-              onClick={() => navigate('/admin/users')}
+              onClick={() => navigate('/admin')}
               className="btn btn-secondary"
               disabled={loading}
             >

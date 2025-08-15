@@ -49,6 +49,11 @@ const Deals = () => {
   const [loading, setLoading] = useState(true);
   const [redeemStatus, setRedeemStatus] = useState({});
 
+  // Redemption confirmation modal state
+  const [showRedemptionModal, setShowRedemptionModal] = useState(false);
+  const [selectedDeal, setSelectedDeal] = useState(null);
+  const [isRedeeming, setIsRedeeming] = useState(false);
+
   useEffect(() => {
     fetchDeals();
     fetchPlans();
@@ -128,9 +133,34 @@ const Deals = () => {
       setRedeemStatus({ ...redeemStatus, [dealId]: 'This deal is not available for your membership plan.' });
       return;
     }
+    
+    // Find the deal and show confirmation modal
+    const deal = filteredDeals.find(d => d.id === dealId);
+    if (deal) {
+      setSelectedDeal(deal);
+      setShowRedemptionModal(true);
+    }
+  };
+
+  const confirmRedemption = async () => {
+    if (!selectedDeal) return;
+    
+    setIsRedeeming(true);
     try {
-      await redeemDeal(dealId);
-      setRedeemStatus({ ...redeemStatus, [dealId]: 'Redeemed!' });
+      const response = await redeemDeal(selectedDeal.id);
+      
+      // Handle the new pending approval flow
+      if (response.data?.isPending || response.data?.requiresApproval) {
+        setRedeemStatus({ 
+          ...redeemStatus, 
+          [selectedDeal.id]: '🎉 Request submitted! Merchant will review and contact you.' 
+        });
+      } else {
+        setRedeemStatus({ ...redeemStatus, [selectedDeal.id]: 'Redeemed!' });
+      }
+      
+      setShowRedemptionModal(false);
+      setSelectedDeal(null);
     } catch (error) {
       console.error('Redemption error:', error);
       let errorMessage = 'Failed to redeem. Try again.';
@@ -142,23 +172,29 @@ const Deals = () => {
         if (data.suggestedPlan) {
           const plan = data.suggestedPlan;
           if (plan.price && plan.currency) {
-            errorMessage = `Upgrade to ${plan.name} plan (${plan.currency} ${plan.price}) to redeem this deal!`;
+            errorMessage = `🔒 ${data.message || `Upgrade to ${plan.name} plan (${plan.currency} ${plan.price}) to redeem this deal!`}`;
           } else {
-            errorMessage = `Upgrade to ${plan.name} plan to redeem this deal!`;
+            errorMessage = `🔒 ${data.message || `Upgrade to ${plan.name} plan to redeem this deal!`}`;
           }
         } else if (data.availablePlans && data.availablePlans.length > 0) {
           const planNames = data.availablePlans.slice(0, 2).map(p => p.name).join(' or ');
-          errorMessage = `Upgrade to ${planNames} to access this exclusive deal.`;
+          errorMessage = `🔒 Upgrade to ${planNames} to access this deal!`;
         } else {
-          errorMessage = data.message || 'This deal requires a higher membership plan. Please upgrade to continue.';
+          errorMessage = `🔒 ${data.message || 'Upgrade your plan to access this deal!'}`;
         }
+      } else if (error.response?.data?.isPending) {
+        errorMessage = '⏳ You already have a pending request for this deal.';
       } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       } else if (error.response?.status === 400) {
         errorMessage = error.response.data.message || 'You have already redeemed this deal.';
       }
       
-      setRedeemStatus({ ...redeemStatus, [dealId]: errorMessage });
+      setRedeemStatus({ ...redeemStatus, [selectedDeal.id]: errorMessage });
+      setShowRedemptionModal(false);
+      setSelectedDeal(null);
+    } finally {
+      setIsRedeeming(false);
     }
   };
 
@@ -389,6 +425,93 @@ const Deals = () => {
               </div>
             </div>
           ))}
+        </div>
+      )}
+      
+      {/* Redemption Confirmation Modal */}
+      {showRedemptionModal && selectedDeal && (
+        <div className="modal-overlay">
+          <div className="modal-content redemption-modal">
+            <div className="modal-header">
+              <h3>
+                <i className="fas fa-hand-holding-heart"></i>
+                Confirm Deal Redemption
+              </h3>
+              <button 
+                className="close-btn" 
+                onClick={() => setShowRedemptionModal(false)}
+                disabled={isRedeeming}
+              >
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            
+            <div className="modal-body">
+              <div className="deal-summary">
+                <div className="deal-image">
+                  <i className="fas fa-percent"></i>
+                </div>
+                <div className="deal-details">
+                  <h4>{selectedDeal.title}</h4>
+                  <p className="deal-business">
+                    <i className="fas fa-store"></i>
+                    {selectedDeal.businessName}
+                  </p>
+                  <div className="deal-discount">
+                    <span className="discount-value">
+                      {selectedDeal.discount}% OFF
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="warning-notice">
+                <div className="warning-icon">
+                  <i className="fas fa-exclamation-triangle"></i>
+                </div>
+                <div className="warning-content">
+                  <h4>⚠️ Merchant Review Required</h4>
+                  <p>
+                    Your redemption request will be sent to <strong>{selectedDeal.businessName}</strong> for review. 
+                    The merchant will contact you using your phone number to verify and approve your request.
+                  </p>
+                  <ul>
+                    <li>✅ Request will be submitted immediately</li>
+                    <li>📞 Merchant will call you for verification</li>
+                    <li>⏱️ You'll be notified once approved</li>
+                    <li>🔄 You can redeem multiple times (after approval)</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            
+            <div className="modal-footer">
+              <button 
+                className="btn btn-secondary" 
+                onClick={() => setShowRedemptionModal(false)}
+                disabled={isRedeeming}
+              >
+                Cancel
+              </button>
+              <button 
+                className="btn btn-primary" 
+                onClick={confirmRedemption}
+                disabled={isRedeeming}
+              >
+                {isRedeeming ? (
+                  <>
+                    <i className="fas fa-spinner fa-spin"></i>
+                    Submitting Request...
+                  </>
+                ) : (
+                  <>
+                    <i className="fas fa-paper-plane"></i>
+                    Submit Redemption Request
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

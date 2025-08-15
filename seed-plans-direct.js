@@ -10,8 +10,6 @@ async function seedPlans() {
       database: process.env.DB_NAME
     });
 
-    console.log('Starting plan seeding...');
-
     // Delete existing plans
     await connection.execute('DELETE FROM plans');
     console.log('Cleared existing plans');
@@ -19,10 +17,11 @@ async function seedPlans() {
     // Insert merchant plans
     const merchantPlans = [
       {
-        key: 'merchant_basic',
-        name: 'Basic Merchant Plan',
+        key: 'basic',
+        name: 'Basic',
         description: 'Free basic plan for new merchants',
         price: 0,
+        currency: 'GHS',
         billingCycle: 'yearly',
         type: 'merchant',
         features: JSON.stringify(['Basic listing', 'Up to 5 deals per month', 'Basic support']),
@@ -31,10 +30,11 @@ async function seedPlans() {
         priority: 1
       },
       {
-        key: 'merchant_silver',
-        name: 'Silver Merchant Plan',
+        key: 'silver_business',
+        name: 'Silver',
         description: 'Enhanced features for growing businesses',
         price: 300,
+         currency: 'GHS',
         billingCycle: 'yearly',
         type: 'merchant',
         features: JSON.stringify(['Priority listing', 'Up to 15 deals per month', 'Enhanced analytics', 'Email support']),
@@ -43,10 +43,11 @@ async function seedPlans() {
         priority: 2
       },
       {
-        key: 'merchant_gold',
-        name: 'Gold Merchant Plan',
+        key: 'gold_business',
+        name: 'Gold',
         description: 'Premium features for established businesses',
         price: 500,
+        currency: 'GHS',
         billingCycle: 'yearly',
         type: 'merchant',
         features: JSON.stringify(['Featured listing', 'Up to 30 deals per month', 'Advanced analytics', 'Priority support', 'Custom branding']),
@@ -55,10 +56,11 @@ async function seedPlans() {
         priority: 3
       },
       {
-        key: 'merchant_platinum',
-        name: 'Platinum Merchant Plan',
+        key: 'platinum_business',
+        name: 'Platinum',
         description: 'Enterprise-level features for large businesses',
         price: 800,
+        currency: 'GHS',
         billingCycle: 'yearly',
         type: 'merchant',
         features: JSON.stringify(['Top placement', 'Up to 50 deals per month', 'Comprehensive analytics', 'Dedicated support', 'API access', 'White-label options']),
@@ -67,10 +69,11 @@ async function seedPlans() {
         priority: 4
       },
       {
-        key: 'merchant_platinum_plus',
-        name: 'Platinum Plus Merchant Plan',
+        key: 'platinum_plus_business',
+        name: 'Platinum Plus',
         description: 'Ultimate package for enterprise clients',
         price: 1000,
+        currency: 'GHS',
         billingCycle: 'yearly',
         type: 'merchant',
         features: JSON.stringify(['Premium placement', 'Unlimited deals', 'Full analytics suite', '24/7 dedicated support', 'Full API access', 'Complete customization', 'Marketing assistance']),
@@ -83,10 +86,11 @@ async function seedPlans() {
     // Insert user plans
     const userPlans = [
       {
-        key: 'user_silver',
-        name: 'Silver User Plan',
+        key: 'silver',
+        name: 'Silver',
         description: 'Entry-level premium access for users',
         price: 50,
+        currency: 'GHS',
         billingCycle: 'yearly',
         type: 'user',
         features: JSON.stringify(['Priority deal notifications', 'Up to 10 redemptions per month', 'Basic customer support']),
@@ -95,10 +99,11 @@ async function seedPlans() {
         priority: 1
       },
       {
-        key: 'user_gold',
-        name: 'Gold User Plan',
+        key: 'gold',
+        name: 'Gold',
         description: 'Enhanced experience for regular users',
         price: 100,
+        currency: 'GHS',
         billingCycle: 'yearly',
         type: 'user',
         features: JSON.stringify(['Early deal access', 'Up to 25 redemptions per month', 'Priority customer support', 'Exclusive deals']),
@@ -107,10 +112,11 @@ async function seedPlans() {
         priority: 2
       },
       {
-        key: 'user_platinum',
-        name: 'Platinum User Plan',
+        key: 'platinum',
+        name: 'Platinum',
         description: 'Premium experience for power users',
         price: 150,
+        currency: 'GHS',
         billingCycle: 'yearly',
         type: 'user',
         features: JSON.stringify(['VIP deal access', 'Unlimited redemptions', 'Dedicated support', 'Exclusive VIP deals', 'Special events access']),
@@ -135,10 +141,7 @@ async function seedPlans() {
         plan.maxRedemptions || null, plan.isActive, plan.priority
       ]);
       
-      console.log(`✅ Inserted plan: ${plan.name}`);
     }
-
-    console.log(`🎉 Successfully seeded ${allPlans.length} plans!`);
     connection.end();
   } catch (error) {
     console.error('❌ Error seeding plans:', error);

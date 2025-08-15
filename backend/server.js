@@ -111,7 +111,7 @@ app.get('/api/businesses', async (req, res) => {
     const businesses = await queryAsync(`
       SELECT b.businessId, b.businessName, b.businessDescription, b.businessCategory,
              b.businessAddress, b.businessPhone, b.businessEmail, b.website,
-             b.isVerified, b.membershipLevel, u.fullName as ownerName
+             b.isVerified, u.fullName as ownerName, u.membershipType as membershipLevel
       FROM businesses b
       LEFT JOIN users u ON b.userId = u.id
       WHERE (b.status = 'active' OR b.status = '') AND u.status = 'approved'

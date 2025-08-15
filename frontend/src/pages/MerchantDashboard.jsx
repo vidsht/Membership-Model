@@ -22,6 +22,11 @@ const MerchantDashboard = () => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   
+  // Redemption requests state
+  const [redemptionRequests, setRedemptionRequests] = useState([]);
+  const [showRedemptionRequests, setShowRedemptionRequests] = useState(false);
+  const [processingRequest, setProcessingRequest] = useState(null);
+  
   // Plan-based feature access
   const [featureAccess, setFeatureAccess] = useState({
     analytics: false,
@@ -50,8 +55,94 @@ const MerchantDashboard = () => {
     fetchNotifications();
   }, []);
 
-  // Determine feature access based on plan priority
-  const updateFeatureAccess = (planPriority = 0) => {
+  // Helper functions for plan level determination based on membershipType
+  const getUserPlanLevel = (membershipType) => {
+    switch (membershipType) {
+      case 'silver_merchant':
+      case 'silver_business':
+      case 'silver':
+        return 'premium';
+      case 'gold_merchant':
+      case 'gold_business':
+      case 'gold':
+      case 'platinum_merchant':
+      case 'platinum_business':
+      case 'platinum_plus':
+      case 'platinum_plus_business':
+        return 'featured';
+      default:
+        return 'basic';
+    }
+  };
+
+  const getPlanIcon = (membershipType) => {
+    switch (membershipType) {
+      case 'silver_merchant':
+      case 'silver_business':
+      case 'silver':
+        return 'fa-star-half-o';
+      case 'gold_merchant':
+      case 'gold_business':
+      case 'gold':
+      case 'platinum_merchant':
+      case 'platinum_business':
+      case 'platinum_plus':
+      case 'platinum_plus_business':
+        return 'fa-star';
+      default:
+        return 'fa-star-o';
+    }
+  };
+
+  const getPlanDisplayName = (membershipType) => {
+    switch (membershipType) {
+      case 'silver_merchant':
+      case 'silver_business':
+      case 'silver':
+        return 'Silver Business';
+      case 'gold_merchant':
+      case 'gold_business':
+      case 'gold':
+        return 'Gold Business';
+      case 'platinum_merchant':
+      case 'platinum_business':
+        return 'Platinum Business';
+      case 'platinum_plus':
+      case 'platinum_plus_business':
+        return 'Platinum Plus Business';
+      case 'basic':
+      default:
+        return 'Basic Business';
+    }
+  };
+
+  const getPlanDescription = (membershipType) => {
+    switch (membershipType) {
+      case 'silver_merchant':
+      case 'silver_business':
+      case 'silver':
+        return 'Standard business package with enhanced features';
+      case 'gold_merchant':
+      case 'gold_business':
+      case 'gold':
+        return 'Advanced business package with priority placement';
+      case 'platinum_merchant':
+      case 'platinum_business':
+        return 'Premium business package with full analytics';
+      case 'platinum_plus':
+      case 'platinum_plus_business':
+        return 'Ultimate business package with unlimited features';
+      default:
+        return 'Basic business listing with standard visibility';
+    }
+  };
+
+  const isBasicPlan = (membershipType) => {
+    return membershipType === 'basic' || !membershipType;
+  };
+
+  // Determine feature access based on user's membershipType from users table
+  const updateFeatureAccess = (membershipType = 'basic') => {
     let access = {
       analytics: false,
       advancedStats: false,
@@ -61,36 +152,74 @@ const MerchantDashboard = () => {
       featuredPlacement: false
     };
 
-    if (planPriority === 0) {
-      // Basic plan (priority 0)
-      access = {
-        analytics: false,
-        advancedStats: false,
-        businessDashboard: false,
-        dealPosting: 'none', // No deal posting
-        priorityListing: false,
-        featuredPlacement: false
-      };
-    } else if (planPriority >= 1 && planPriority <= 2) {
-      // Premium plans (priority 1-2)
-      access = {
-        analytics: true,
-        advancedStats: false,
-        businessDashboard: true,
-        dealPosting: 'limited', // Limited deal posting
-        priorityListing: true,
-        featuredPlacement: false
-      };
-    } else if (planPriority >= 3 && planPriority <= 4) {
-      // Featured plans (priority 3-4)
-      access = {
-        analytics: true,
-        advancedStats: true,
-        businessDashboard: true,
-        dealPosting: 'unlimited', // Maximum deal posting
-        priorityListing: true,
-        featuredPlacement: true
-      };
+    // Map membershipType to feature access levels
+    switch (membershipType) {
+      case 'basic':
+        // Basic plan - no premium features
+        access = {
+          analytics: false,
+          advancedStats: false,
+          businessDashboard: false,
+          dealPosting: 'none', // No deal posting
+          priorityListing: false,
+          featuredPlacement: false
+        };
+        break;
+        
+      case 'silver_merchant':
+      case 'silver_business':
+      case 'silver':
+        // Silver plans - limited features
+        access = {
+          analytics: true,
+          advancedStats: false,
+          businessDashboard: true,
+          dealPosting: 'limited', // Limited deal posting
+          priorityListing: true,
+          featuredPlacement: false
+        };
+        break;
+        
+      case 'gold_merchant':
+      case 'gold_business':
+      case 'gold':
+        // Gold plans - full features
+        access = {
+          analytics: true,
+          advancedStats: true,
+          businessDashboard: true,
+          dealPosting: 'unlimited', // Maximum deal posting
+          priorityListing: true,
+          featuredPlacement: true
+        };
+        break;
+        
+      case 'platinum_merchant':
+      case 'platinum_business':
+      case 'platinum_plus':
+      case 'platinum_plus_business':
+      case 'platinum':
+        // Platinum plans - premium features with highest limits
+        access = {
+          analytics: true,
+          advancedStats: true,
+          businessDashboard: true,
+          dealPosting: 'unlimited', // Maximum deal posting
+          priorityListing: true,
+          featuredPlacement: true
+        };
+        break;
+        
+      default:
+        // Default to basic if unknown membershipType
+        access = {
+          analytics: false,
+          advancedStats: false,
+          businessDashboard: false,
+          dealPosting: 'none',
+          priorityListing: false,
+          featuredPlacement: false
+        };
     }
 
     setFeatureAccess(access);
@@ -107,8 +236,12 @@ const MerchantDashboard = () => {
         setUserInfo(response.data.user || {});
         setRecentRedemptions(response.data.recentRedemptions || []);
         
-        // Update feature access based on plan priority
-        updateFeatureAccess(response.data.plan?.priority || 0);
+        // Fetch redemption requests
+        await fetchRedemptionRequests();
+        
+        // Update feature access based on user's membershipType from users table
+        const membershipType = response.data.user?.membershipType || response.data.plan?.key || 'basic';
+        updateFeatureAccess(membershipType);
         
         // Store businessId for use in deal creation
         if (response.data.business?.businessId) {
@@ -122,13 +255,13 @@ const MerchantDashboard = () => {
       if (error.response?.status === 403 && error.response?.data?.status === 'pending') {
         setUserInfo({ status: 'pending' });
         setBusinessInfo({ status: 'pending' });
-        setPlanInfo({ priority: 0 });
-        updateFeatureAccess(0);
+        setPlanInfo({ membershipType: 'basic' });
+        updateFeatureAccess('basic');
         return; // Don't set mock data for pending approval
       }
       
       // Set default basic plan for other errors
-      updateFeatureAccess(0);
+      updateFeatureAccess('basic');
     } finally {
       setLoading(false);
     }
@@ -185,6 +318,63 @@ const MerchantDashboard = () => {
       setUnreadCount(0);
     } catch (error) {
       console.error('Error marking all notifications as read:', error);
+    }
+  };
+
+  // Redemption request management functions
+  const fetchRedemptionRequests = async () => {
+    try {
+      const response = await axios.get('http://localhost:5001/api/merchant/redemption-requests', { 
+        withCredentials: true 
+      });
+      if (response.data.success) {
+        setRedemptionRequests(response.data.requests || []);
+      }
+    } catch (error) {
+      console.error('Error fetching redemption requests:', error);
+    }
+  };
+
+  const handleApproveRequest = async (requestId) => {
+    try {
+      setProcessingRequest(requestId);
+      const response = await axios.patch(
+        `http://localhost:5001/api/merchant/redemption-requests/${requestId}/approve`,
+        {},
+        { withCredentials: true }
+      );
+      
+      if (response.data.success) {
+        showNotification('Redemption request approved successfully!', 'success');
+        await fetchRedemptionRequests(); // Refresh the list
+        await fetchDashboardData(); // Refresh stats
+      }
+    } catch (error) {
+      console.error('Error approving request:', error);
+      showNotification('Error approving redemption request', 'error');
+    } finally {
+      setProcessingRequest(null);
+    }
+  };
+
+  const handleRejectRequest = async (requestId, reason = '') => {
+    try {
+      setProcessingRequest(requestId);
+      const response = await axios.patch(
+        `http://localhost:5001/api/merchant/redemption-requests/${requestId}/reject`,
+        { reason },
+        { withCredentials: true }
+      );
+      
+      if (response.data.success) {
+        showNotification('Redemption request rejected', 'success');
+        await fetchRedemptionRequests(); // Refresh the list
+      }
+    } catch (error) {
+      console.error('Error rejecting request:', error);
+      showNotification('Error rejecting redemption request', 'error');
+    } finally {
+      setProcessingRequest(null);
     }
   };
 
@@ -357,17 +547,17 @@ const MerchantDashboard = () => {
 
       {/* Plan Access Information - Only show if business is approved */}
       {(userInfo?.status === 'approved' || (!userInfo?.status && businessInfo?.status !== 'pending')) && (
-        <div className={`plan-access-banner ${planInfo.priority === 0 ? 'basic' : planInfo.priority <= 2 ? 'premium' : 'featured'}`}>
+        <div className={`plan-access-banner ${
+          getUserPlanLevel(userInfo?.membershipType)
+        }`}>
           <div className="plan-access-content">
             <div className="plan-info-left">
               <h3>
-                <i className={`fas ${planInfo.priority === 0 ? 'fa-star-o' : planInfo.priority <= 2 ? 'fa-star-half-o' : 'fa-star'}`}></i>
-                {planInfo.name || 'Basic Plan'} - {planInfo.priority === 0 ? 'Basic' : planInfo.priority <= 2 ? 'Premium' : 'Featured'} Access
+                <i className={`fas ${getPlanIcon(userInfo?.membershipType)}`}></i>
+                {getPlanDisplayName(userInfo?.membershipType)} Plan
               </h3>
               <p>
-                {planInfo.priority === 0 && 'Basic business listing with standard visibility'}
-                {planInfo.priority >= 1 && planInfo.priority <= 2 && 'Enhanced listing with analytics and priority placement'}
-                {planInfo.priority >= 3 && 'Featured placement with full analytics and unlimited deals'}
+                {getPlanDescription(userInfo?.membershipType)}
               </p>
               <div className="plan-details">
                 <span className="plan-price">
@@ -393,7 +583,7 @@ const MerchantDashboard = () => {
                   Featured {featureAccess.featuredPlacement ? '✓' : '✗'}
                 </span>
               </div>
-              {planInfo.priority === 0 && (
+              {isBasicPlan(userInfo?.membershipType) && (
                 <button className="btn btn-upgrade">
                   <i className="fas fa-arrow-up"></i> Upgrade Plan
                 </button>
@@ -595,7 +785,7 @@ const MerchantDashboard = () => {
             <div className="detail-row">
               <div className="detail-item">
                 <strong><i className="fas fa-users"></i> Membership Level:</strong>
-                <span>{businessInfo.membershipLevel || 'Not set'}</span>
+                <span>{getPlanDisplayName(userInfo?.membershipType) || 'Not set'}</span>
               </div>
               <div className="detail-item">
                 <strong><i className="fas fa-calendar-check"></i> Plan Expiry:</strong>
@@ -615,8 +805,8 @@ const MerchantDashboard = () => {
           </div>
           <div className="plan-details">
             <div className="plan-name">
-              <h3>{planInfo.name || businessInfo.currentPlan || 'Basic Plan'}</h3>
-              <span className="plan-key">{planInfo.key || businessInfo.currentPlan || 'basic_business'}</span>
+              <h3>{planInfo.name || getPlanDisplayName(userInfo.membershipType || planInfo.key || 'basic')}</h3>
+              <span className="plan-key">{planInfo.key || userInfo.membershipType || 'basic'}</span>
             </div>
             <div className="plan-limits">
               <div className="limit-item">
@@ -812,64 +1002,84 @@ const MerchantDashboard = () => {
             </div>
           ) : (
             <div className="deals-grid">
-              {deals.map(deal => (
-                <div key={deal.id} className="deal-card">
-                  <div className="deal-header">
-                    <h3>{deal.title}</h3>
-                    <span className={`status-badge ${deal.status}`}>
-                      {deal.status}
-                    </span>
-                  </div>
-                  <p className="deal-description">{deal.description}</p>
-                  
-                  {/* Show rejection reason if deal is rejected */}
-                  {deal.status === 'rejected' && deal.rejection_reason && (
-                    <div className="rejection-reason">
-                      <div className="rejection-reason-header">
-                        <i className="fas fa-exclamation-triangle"></i>
-                        <strong>Rejection Reason:</strong>
+              {deals.map(deal => {
+                const isExpired = new Date(deal.validUntil) < new Date();
+                const displayStatus = isExpired ? 'Expired' : deal.status;
+                
+                return (
+                  <div key={deal.id} className={`deal-card ${isExpired ? 'expired-deal' : ''}`}>
+                    <div className="deal-header">
+                      <h3>{deal.title}</h3>
+                      <span className={`status-badge ${isExpired ? 'expired' : deal.status}`}>
+                        {displayStatus}
+                      </span>
+                    </div>
+                    <p className="deal-description">{deal.description}</p>
+                    
+                    {/* Show rejection reason if deal is rejected */}
+                    {deal.status === 'rejected' && deal.rejection_reason && (
+                      <div className="rejection-reason">
+                        <div className="rejection-reason-header">
+                          <i className="fas fa-exclamation-triangle"></i>
+                          <strong>Rejection Reason:</strong>
+                        </div>
+                        <p className="rejection-reason-text">{deal.rejection_reason}</p>
                       </div>
-                      <p className="rejection-reason-text">{deal.rejection_reason}</p>
+                    )}
+                    
+                    {/* Access Level Display */}
+                    {deal.accessLevel && (
+                      <div className="deal-access-level">
+                        <i className="fas fa-users"></i>
+                        <span>Access: {
+                          deal.accessLevel === 'basic' ? 'Community (Basic)' :
+                          deal.accessLevel === 'intermediate' ? 'Silver (Intermediate)' :
+                          deal.accessLevel === 'full' ? 'Gold (Full)' :
+                          deal.accessLevel === 'all' ? 'All Members' :
+                          deal.accessLevel
+                        }</span>
+                      </div>
+                    )}
+                    
+                    <div className="deal-meta">
+                      <div className="deal-discount">
+                        <strong>{deal.discount} OFF</strong>
+                      </div>
+                      <div className={`deal-expiry ${isExpired ? 'expired-date' : ''}`}>
+                        {isExpired ? 'Expired: ' : 'Expires: '}
+                        {new Date(deal.validUntil).toLocaleDateString()}
+                      </div>
                     </div>
-                  )}
-                  
-                  <div className="deal-meta">
-                    <div className="deal-discount">
-                      <strong>{deal.discount} OFF</strong>
+                    <div className="deal-stats">
+                      <div className="stat-item">
+                        <i className="fas fa-eye"></i>
+                        <span>{deal.views} views</span>
+                      </div>
+                      <div className="stat-item">
+                        <i className="fas fa-shopping-cart"></i>
+                        <span>{deal.redemptions} used</span>
+                      </div>
                     </div>
-                    <div className="deal-expiry">
-                      Expires: {new Date(deal.validUntil).toLocaleDateString()}
+                    <div className="deal-actions">
+                      <button 
+                        className="btn btn-sm btn-secondary" 
+                        onClick={() => handleEditDeal(deal)}
+                        disabled={!['pending_approval', 'rejected'].includes(deal.status)}
+                        title={['pending_approval', 'rejected'].includes(deal.status) ? 'Edit deal' : 'Can only edit pending or rejected deals'}
+                      >
+                        <i className="fas fa-edit"></i> Edit
+                      </button>
+                      <button 
+                        className="btn btn-sm btn-danger" 
+                        onClick={() => handleDeleteDeal(deal.id, deal.title)}
+                        title="Delete deal"
+                      >
+                        <i className="fas fa-trash"></i> Delete
+                      </button>
                     </div>
                   </div>
-                  <div className="deal-stats">
-                    <div className="stat-item">
-                      <i className="fas fa-eye"></i>
-                      <span>{deal.views} views</span>
-                    </div>
-                    <div className="stat-item">
-                      <i className="fas fa-shopping-cart"></i>
-                      <span>{deal.redemptions} used</span>
-                    </div>
-                  </div>
-                  <div className="deal-actions">
-                    <button 
-                      className="btn btn-sm btn-secondary" 
-                      onClick={() => handleEditDeal(deal)}
-                      disabled={!['pending_approval', 'rejected'].includes(deal.status)}
-                      title={['pending_approval', 'rejected'].includes(deal.status) ? 'Edit deal' : 'Can only edit pending or rejected deals'}
-                    >
-                      <i className="fas fa-edit"></i> Edit
-                    </button>
-                    <button 
-                      className="btn btn-sm btn-danger" 
-                      onClick={() => handleDeleteDeal(deal.id, deal.title)}
-                      title="Delete deal"
-                    >
-                      <i className="fas fa-trash"></i> Delete
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -902,6 +1112,98 @@ const MerchantDashboard = () => {
               </button>
             </div>
           </div>
+        </div>
+      )}
+      
+      {/* Redemption Requests Section - Show for plans that can post deals */}
+      {featureAccess.dealPosting !== 'none' && (
+        <div className="redemption-requests-section">
+          <div className="section-header">
+            <h2>
+              <i className="fas fa-hand-holding"></i> Redemption Requests
+              {redemptionRequests.length > 0 && (
+                <span className="request-count">{redemptionRequests.length}</span>
+              )}
+            </h2>
+            <button 
+              className="btn btn-outline btn-sm" 
+              onClick={() => setShowRedemptionRequests(!showRedemptionRequests)}
+            >
+              <i className={`fas ${showRedemptionRequests ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+              {showRedemptionRequests ? 'Hide' : 'Show'} Requests
+            </button>
+          </div>
+          
+          {showRedemptionRequests && (
+            <div className="requests-container">
+              {redemptionRequests.length === 0 ? (
+                <div className="no-requests">
+                  <div className="empty-state">
+                    <i className="fas fa-inbox"></i>
+                    <h3>No pending requests</h3>
+                    <p>When customers request to redeem your deals, they'll appear here for your approval.</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="requests-list">
+                  {redemptionRequests.map((request) => (
+                    <div key={request.id} className="request-card">
+                      <div className="request-header">
+                        <div className="deal-info">
+                          <h4>{request.dealTitle}</h4>
+                          <span className="discount-badge">
+                            {request.discount}{request.discountType === 'percentage' ? '%' : request.discountType} OFF
+                          </span>
+                        </div>
+                        <div className="request-time">
+                          <i className="fas fa-clock"></i>
+                          {new Date(request.redeemed_at).toLocaleDateString()} at {new Date(request.redeemed_at).toLocaleTimeString()}
+                        </div>
+                      </div>
+                      
+                      <div className="customer-info">
+                        <div className="customer-details">
+                          <div className="customer-name">
+                            <i className="fas fa-user"></i>
+                            <strong>{request.userName || 'Customer'}</strong>
+                          </div>
+                          <div className="customer-contact">
+                            <i className="fas fa-phone"></i>
+                            <span>{request.phone || 'Phone not available'}</span>
+                          </div>
+                          {request.membershipNumber && (
+                            <div className="membership-number">
+                              <i className="fas fa-id-card"></i>
+                              <span>Member #{request.membershipNumber}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="request-actions">
+                        <button 
+                          className="btn btn-success btn-sm"
+                          onClick={() => handleApproveRequest(request.id)}
+                          disabled={processingRequest === request.id}
+                        >
+                          <i className="fas fa-check"></i>
+                          {processingRequest === request.id ? 'Approving...' : 'Approve'}
+                        </button>
+                        <button 
+                          className="btn btn-danger btn-sm"
+                          onClick={() => handleRejectRequest(request.id)}
+                          disabled={processingRequest === request.id}
+                        >
+                          <i className="fas fa-times"></i>
+                          {processingRequest === request.id ? 'Rejecting...' : 'Reject'}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
       

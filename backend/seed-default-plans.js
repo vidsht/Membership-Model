@@ -1,6 +1,10 @@
 const mysql = require('mysql2');
 
-// Database configuration
+// Database conf    type: 'merchant',
+    maxDealsPerM    dealPriority: 2,
+    features: [h: 5,
+    dealPriority: 2,
+    features: [tion
 const dbConfig = {
   host: 'auth-db1388.hstgr.io',
   user: 'u214148440_SachinHursale',
@@ -20,7 +24,6 @@ const merchantPlans = [
     type: 'merchant',
     maxDealsPerMonth: 0, // No deals allowed
     dealPriority: 1,
-    membershipLevel: 'basic',
     features: [
       'Basic Business Listing',
       'Up to 2 Images',
@@ -54,7 +57,6 @@ const merchantPlans = [
     type: 'merchant',
     maxDealsPerMonth: 1,
     dealPriority: 2,
-    membershipLevel: 'premium',
     features: [
       'Standard Business Listing',
       'Up to 5 Images',
@@ -89,7 +91,6 @@ const merchantPlans = [
     type: 'merchant',
     maxDealsPerMonth: 2,
     dealPriority: 3,
-    membershipLevel: 'premium',
     features: [
       'Featured Business Listing',
       'Up to 8 Images',
@@ -124,7 +125,6 @@ const merchantPlans = [
     type: 'merchant',
     maxDealsPerMonth: 3,
     dealPriority: 4,
-    membershipLevel: 'featured',
     features: [
       'Featured Business Listing',
       'Up to 10+ Gallery Images',
@@ -159,7 +159,6 @@ const merchantPlans = [
     type: 'merchant',
     maxDealsPerMonth: 4,
     dealPriority: 5,
-    membershipLevel: 'featured',
     features: [
       'Featured Business Listing',
       'Up to 15+ Gallery Images',
@@ -312,8 +311,7 @@ connection.connect(async (err) => {
           plan.features.join(','),
           JSON.stringify({
             features: plan.features,
-            originalPrice: plan.originalPrice,
-            membershipLevel: plan.membershipLevel
+            originalPrice: plan.originalPrice
           }),
           plan.isDefault,
           plan.sortOrder,
