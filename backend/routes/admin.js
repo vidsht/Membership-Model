@@ -2105,13 +2105,14 @@ router.post('/deals', auth, admin, [
       INSERT INTO deals (
         title, description, businessId, discount, discountType, originalPrice, 
         discountedPrice, category, validFrom, validUntil, requiredPlanPriority,
-        termsConditions, couponCode, status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        minPlanPriority, termsConditions, couponCode, status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     const params = [
       title, description, businessId, discount, discountType, originalPrice,
       discountedPrice, category, validFrom, validUntil, requiredPlanPriority,
+      requiredPlanPriority, // Set minPlanPriority to same value for consistency
       termsConditions, couponCode, status
     ];
 
@@ -2200,7 +2201,7 @@ router.put('/deals/:id', auth, admin, [
       UPDATE deals SET 
         title = ?, description = ?, businessId = ?, discount = ?, discountType = ?, 
         originalPrice = ?, discountedPrice = ?, category = ?, validFrom = ?, 
-        validUntil = ?, requiredPlanPriority = ?, termsConditions = ?, 
+        validUntil = ?, requiredPlanPriority = ?, minPlanPriority = ?, termsConditions = ?, 
         couponCode = ?, status = ?
       WHERE id = ?
     `;
@@ -2208,6 +2209,7 @@ router.put('/deals/:id', auth, admin, [
     const params = [
       title, description, businessId, discount, discountType, originalPrice,
       discountedPrice, category, validFrom, validUntil, requiredPlanPriority,
+      requiredPlanPriority, // Set minPlanPriority to same value for consistency
       termsConditions, couponCode, status, dealId
     ];
 
@@ -3328,6 +3330,8 @@ router.patch('/deals/:id/approve', auth, admin, async (req, res) => {
     // Prepare update query - include accessLevel and/or minPlanPriority if provided
     let updateQuery = 'UPDATE deals SET status = "active", updated_at = NOW()';
     let updateParams = [];
+    let finalAccessLevel = null;
+    let finalMinPlanPriority = null;
     
     // If minPlanPriority is provided, use it (priority-based access)
     if (minPlanPriority !== undefined && minPlanPriority !== null) {
@@ -3335,32 +3339,70 @@ router.patch('/deals/:id/approve', auth, admin, async (req, res) => {
       if (!isNaN(priority) && priority >= 0) {
         updateQuery += ', minPlanPriority = ?, requiredPlanPriority = ?';
         updateParams.push(priority, priority);
+        finalMinPlanPriority = priority;
         
-        // Convert priority to accessLevel for backward compatibility
-        let convertedAccessLevel;
-        if (priority === 1) {
-          convertedAccessLevel = 'all'; // Platinum Plus - highest priority, access for all
-        } else if (priority === 2) {
-          convertedAccessLevel = 'full'; // Platinum - full access
-        } else if (priority === 3) {
-          convertedAccessLevel = 'intermediate'; // Gold/Silver - intermediate access
-        } else {
-          convertedAccessLevel = 'basic'; // Community/Basic - basic access
+        // Convert priority to accessLevel dynamically using database plans
+        try {
+          const plansQuery = 'SELECT * FROM plans WHERE type = "user" AND isActive = 1 ORDER BY priority';
+          const plansResult = await queryAsync(plansQuery);
+          
+          if (plansResult.length > 0) {
+            // Find the plan that matches this priority
+            const matchingPlan = plansResult.find(plan => plan.priority === priority);
+            
+            if (matchingPlan) {
+              // Use dynamic access level based on plan name/key
+              if (matchingPlan.key === 'platinum' || matchingPlan.name.toLowerCase().includes('platinum')) {
+                finalAccessLevel = 'all'; // Highest tier can access all
+              } else if (matchingPlan.key === 'gold' || matchingPlan.name.toLowerCase().includes('gold')) {
+                finalAccessLevel = 'premium';
+              } else if (matchingPlan.key === 'silver' || matchingPlan.name.toLowerCase().includes('silver')) {
+                finalAccessLevel = 'intermediate';
+              } else {
+                finalAccessLevel = 'basic';
+              }
+            } else {
+              // Fallback: use position in priority order for dynamic assignment
+              const sortedPlans = plansResult.sort((a, b) => b.priority - a.priority);
+              const planIndex = sortedPlans.findIndex(plan => plan.priority <= priority);
+              
+              if (planIndex === 0) finalAccessLevel = 'all'; // Highest priority
+              else if (planIndex === 1) finalAccessLevel = 'premium';
+              else if (planIndex === 2) finalAccessLevel = 'intermediate';
+              else finalAccessLevel = 'basic';
+            }
+          } else {
+            // Fallback to basic if no plans found
+            finalAccessLevel = 'basic';
+          }
+        } catch (planError) {
+          console.warn('Could not load plans for dynamic access level conversion:', planError);
+          // Fallback to static conversion if dynamic fails
+          if (priority >= 3) finalAccessLevel = 'all';
+          else if (priority === 2) finalAccessLevel = 'premium';
+          else if (priority === 1) finalAccessLevel = 'intermediate';
+          else finalAccessLevel = 'basic';
         }
         
         updateQuery += ', accessLevel = ?';
-        updateParams.push(convertedAccessLevel);
+        updateParams.push(finalAccessLevel);
       }
     }
     
     // Legacy accessLevel support (kept for backward compatibility)
-    if (accessLevel && ['basic', 'premium', 'vip', 'all'].includes(accessLevel)) {
-      updateQuery += ', accessLevel = ?';
-      updateParams.push(accessLevel);
+    if (accessLevel && ['basic', 'intermediate', 'premium', 'all'].includes(accessLevel)) {
+      if (!finalAccessLevel) { // Only use if not already set by minPlanPriority
+        updateQuery += ', accessLevel = ?';
+        updateParams.push(accessLevel);
+        finalAccessLevel = accessLevel;
+      }
     }
     
     updateQuery += ' WHERE id = ? AND status = "pending_approval"';
     updateParams.push(dealId);
+
+    console.log('Executing deal approval query:', updateQuery);
+    console.log('With parameters:', updateParams);
 
     const result = await queryAsync(updateQuery, updateParams);
 
@@ -3368,18 +3410,25 @@ router.patch('/deals/:id/approve', auth, admin, async (req, res) => {
       return res.status(404).json({ success: false, message: 'Pending deal not found' });
     }
 
+    // Verify the update by fetching the updated deal
+    const verifyQuery = 'SELECT id, status, accessLevel, minPlanPriority FROM deals WHERE id = ?';
+    const verifyResult = await queryAsync(verifyQuery, [dealId]);
+    
+    console.log('Updated deal verification:', verifyResult[0]);
+
     let approvalMessage = 'Deal approved successfully';
-    if (minPlanPriority !== undefined && minPlanPriority !== null) {
-      approvalMessage += ` with minimum plan priority ${minPlanPriority}`;
-    } else if (accessLevel) {
-      approvalMessage += ` with access level set to ${accessLevel}`;
+    if (finalMinPlanPriority !== null) {
+      approvalMessage += ` with minimum plan priority ${finalMinPlanPriority}`;
+    } else if (finalAccessLevel) {
+      approvalMessage += ` with access level set to ${finalAccessLevel}`;
     }
 
     res.json({ 
       success: true, 
       message: approvalMessage,
-      accessLevel,
-      minPlanPriority
+      accessLevel: finalAccessLevel,
+      minPlanPriority: finalMinPlanPriority,
+      updatedDeal: verifyResult[0]
     });
   } catch (err) {
     console.error('Error approving deal:', err);

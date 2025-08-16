@@ -203,7 +203,7 @@ const DealList = ({ onTabChange }) => {
         .sort((a, b) => a.priority - b.priority) // Sort by priority (lower = higher tier)
         .map(plan => `
           <option value="${plan.priority}" ${currentMinPriority === plan.priority ? 'selected' : ''}>
-            ${plan.name} (Priority ${plan.priority}) - ${plan.name} and higher priority plans can access
+            ${plan.name} (Priority ${plan.priority}) - Only ${plan.name} and higher priority plans can access
           </option>
         `).join('');
 
@@ -228,7 +228,7 @@ const DealList = ({ onTabChange }) => {
               </select>
               <small style="color: #666; margin-top: 5px; display: block;">
                 Users with the selected plan or higher priority plans will be able to access this deal.
-                Lower priority numbers = higher tier plans.
+                Higher priority numbers = higher tier plans (Platinum=3, Gold=2, Silver=1).
               </small>
             </div>
           </div>

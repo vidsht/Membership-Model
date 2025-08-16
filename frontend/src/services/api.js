@@ -247,7 +247,51 @@ export const merchantApi = {
     const endpoint = dealId ? `/merchant/analytics/deals/${dealId}` : '/merchant/analytics/deals';
     const response = await api.get(endpoint);
     return response.data;
+  },
+
+  // Get merchant notifications
+  getNotifications: async () => {
+    const response = await api.get('/merchant/notifications');
+    return response.data;
+  },
+
+  // Mark notification as read
+  markNotificationAsRead: async (notificationId) => {
+    const response = await api.patch(`/merchant/notifications/${notificationId}/read`);
+    return response.data;
+  },
+
+  // Mark all notifications as read
+  markAllNotificationsAsRead: async () => {
+    const response = await api.patch('/merchant/notifications/read-all');
+    return response.data;
+  },
+
+  // Get redemption requests
+  getRedemptionRequests: async () => {
+    const response = await api.get('/merchant/redemption-requests');
+    return response.data;
+  },
+
+  // Approve redemption request
+  approveRedemptionRequest: async (requestId) => {
+    const response = await api.patch(`/merchant/redemption-requests/${requestId}/approve`);
+    return response.data;
+  },
+
+  // Reject redemption request
+  rejectRedemptionRequest: async (requestId, reason) => {
+    const response = await api.patch(`/merchant/redemption-requests/${requestId}/reject`, { reason });
+    return response.data;
   }
 };
+
+// Export individual merchant helper wrappers for named imports used across the app
+export const getNotifications = async () => merchantApi.getNotifications();
+export const markNotificationAsRead = async (notificationId) => merchantApi.markNotificationAsRead(notificationId);
+export const markAllNotificationsAsRead = async () => merchantApi.markAllNotificationsAsRead();
+export const getRedemptionRequests = async () => merchantApi.getRedemptionRequests();
+export const approveRedemptionRequest = async (requestId) => merchantApi.approveRedemptionRequest(requestId);
+export const rejectRedemptionRequest = async (requestId, reason) => merchantApi.rejectRedemptionRequest(requestId, reason);
 
 export default api;

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
-import { merchantApi } from '../services/api';
+import { merchantApi, getNotifications, markNotificationAsRead, markAllNotificationsAsRead, getRedemptionRequests, approveRedemptionRequest, rejectRedemptionRequest, getAllPlans } from '../services/api';
 import MerchantDealForm from '../components/MerchantDealForm';
 import axios from 'axios';
 import '../styles/MerchantDashboard.css';
@@ -11,6 +11,7 @@ const MerchantDashboard = () => {
   const { showNotification } = useNotification();
   
   const [deals, setDeals] = useState([]);
+  const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showDealForm, setShowDealForm] = useState(false);
   const [showBusinessForm, setShowBusinessForm] = useState(false);
@@ -26,6 +27,9 @@ const MerchantDashboard = () => {
   const [redemptionRequests, setRedemptionRequests] = useState([]);
   const [showRedemptionRequests, setShowRedemptionRequests] = useState(false);
   const [processingRequest, setProcessingRequest] = useState(null);
+  const [showRejectionModal, setShowRejectionModal] = useState(false);
+  const [rejectionRequestId, setRejectionRequestId] = useState(null);
+  const [rejectionReason, setRejectionReason] = useState('');
   
   // Plan-based feature access
   const [featureAccess, setFeatureAccess] = useState({
@@ -53,7 +57,36 @@ const MerchantDashboard = () => {
   useEffect(() => {
     fetchDashboardData();
     fetchNotifications();
+    fetchPlans();
   }, []);
+
+  // Fetch user plans for access level display
+  const fetchPlans = async () => {
+    try {
+      const plansResponse = await getAllPlans('user', true);
+      setPlans(Array.isArray(plansResponse) ? plansResponse : plansResponse.plans || []);
+    } catch (error) {
+      console.error('Error fetching plans:', error);
+      setPlans([]);
+    }
+  };
+
+  // Helper function to get plan name by priority
+  const getPlanNameByPriority = (priority) => {
+    if (!priority && priority !== 0) return 'All Members';
+    
+    const plan = plans.find(p => p.priority === priority);
+    if (plan) {
+      return `${plan.name} (${plan.key})`;
+    }
+    
+    // Fallback for unknown priorities
+    if (priority === 1) return 'Silver';
+    if (priority === 2) return 'Gold';  
+    if (priority === 3) return 'Platinum';
+    
+    return `Priority ${priority}`;
+  };
 
   // Helper functions for plan level determination based on membershipType
   const getUserPlanLevel = (membershipType) => {
@@ -286,9 +319,9 @@ const MerchantDashboard = () => {
 
   const fetchNotifications = async () => {
     try {
-      const response = await axios.get('http://localhost:5001/api/merchant/notifications', { withCredentials: true });
-      setNotifications(response.data.notifications || []);
-      setUnreadCount(response.data.notifications?.filter(n => !n.read).length || 0);
+      const response = await getNotifications();
+      setNotifications(response.notifications || []);
+      setUnreadCount(response.notifications?.filter(n => !n.read).length || 0);
     } catch (error) {
       console.error('Error fetching notifications:', error);
       // Don't log as error if it's just missing notifications endpoint or pending approval
@@ -299,9 +332,9 @@ const MerchantDashboard = () => {
     }
   };
 
-  const markNotificationAsRead = async (notificationId) => {
+  const markNotificationAsReadHandler = async (notificationId) => {
     try {
-      await axios.put(`http://localhost:5001/api/merchant/notifications/${notificationId}/read`, {}, { withCredentials: true });
+      await markNotificationAsRead(notificationId);
       setNotifications(prev => 
         prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
       );
@@ -311,9 +344,9 @@ const MerchantDashboard = () => {
     }
   };
 
-  const markAllNotificationsAsRead = async () => {
+  const markAllNotificationsAsReadHandler = async () => {
     try {
-      await axios.put('http://localhost:5001/api/merchant/notifications/read-all', {}, { withCredentials: true });
+      await markAllNotificationsAsRead();
       setNotifications(prev => prev.map(n => ({ ...n, read: true })));
       setUnreadCount(0);
     } catch (error) {
@@ -324,27 +357,24 @@ const MerchantDashboard = () => {
   // Redemption request management functions
   const fetchRedemptionRequests = async () => {
     try {
-      const response = await axios.get('http://localhost:5001/api/merchant/redemption-requests', { 
-        withCredentials: true 
-      });
-      if (response.data.success) {
-        setRedemptionRequests(response.data.requests || []);
+      const response = await getRedemptionRequests();
+      if (response.success) {
+        setRedemptionRequests(response.requests || []);
       }
     } catch (error) {
       console.error('Error fetching redemption requests:', error);
+      if (error.response?.status === 404 || error.response?.status === 403) {
+        setRedemptionRequests([]);
+      }
     }
   };
 
   const handleApproveRequest = async (requestId) => {
     try {
       setProcessingRequest(requestId);
-      const response = await axios.patch(
-        `http://localhost:5001/api/merchant/redemption-requests/${requestId}/approve`,
-        {},
-        { withCredentials: true }
-      );
+      const response = await approveRedemptionRequest(requestId);
       
-      if (response.data.success) {
+      if (response.success) {
         showNotification('Redemption request approved successfully!', 'success');
         await fetchRedemptionRequests(); // Refresh the list
         await fetchDashboardData(); // Refresh stats
@@ -358,23 +388,38 @@ const MerchantDashboard = () => {
   };
 
   const handleRejectRequest = async (requestId, reason = '') => {
+    if (!reason) {
+      // Show rejection modal to get reason
+      setRejectionRequestId(requestId);
+      setRejectionReason('');
+      setShowRejectionModal(true);
+      return;
+    }
+
     try {
       setProcessingRequest(requestId);
-      const response = await axios.patch(
-        `http://localhost:5001/api/merchant/redemption-requests/${requestId}/reject`,
-        { reason },
-        { withCredentials: true }
-      );
+      const response = await rejectRedemptionRequest(requestId, reason);
       
-      if (response.data.success) {
+      if (response.success) {
         showNotification('Redemption request rejected', 'success');
         await fetchRedemptionRequests(); // Refresh the list
+        setShowRejectionModal(false);
+        setRejectionRequestId(null);
+        setRejectionReason('');
       }
     } catch (error) {
       console.error('Error rejecting request:', error);
       showNotification('Error rejecting redemption request', 'error');
     } finally {
       setProcessingRequest(null);
+    }
+  };
+
+  const confirmRejection = () => {
+    if (rejectionReason.trim()) {
+      handleRejectRequest(rejectionRequestId, rejectionReason.trim());
+    } else {
+      showNotification('Please provide a reason for rejection', 'error');
     }
   };
 
@@ -387,6 +432,25 @@ const MerchantDashboard = () => {
 
   // Deal management functions
   const [editingDeal, setEditingDeal] = useState(null);
+  const [showDealAnalytics, setShowDealAnalytics] = useState(false);
+  const [dealAnalyticsData, setDealAnalyticsData] = useState(null);
+  const [loadingDealAnalytics, setLoadingDealAnalytics] = useState(false);
+
+  const handleViewAnalytics = async (deal) => {
+    setShowDealAnalytics(true);
+    setLoadingDealAnalytics(true);
+    setDealAnalyticsData(null);
+    
+    try {
+      const response = await merchantApi.getAnalytics(deal.id);
+      setDealAnalyticsData(response);
+    } catch (error) {
+      console.error('Error fetching analytics:', error);
+      showNotification('Failed to load analytics', 'error');
+    } finally {
+      setLoadingDealAnalytics(false);
+    }
+  };
 
   const handleEditDeal = (deal) => {
     // Check if deal can be edited
@@ -505,7 +569,7 @@ const MerchantDashboard = () => {
               {unreadCount > 0 && <span className="notification-badge">{unreadCount}</span>}
             </h2>
             {unreadCount > 0 && (
-              <button className="btn btn-outline btn-sm" onClick={markAllNotificationsAsRead}>
+              <button className="btn btn-outline btn-sm" onClick={markAllNotificationsAsReadHandler}>
                 <i className="fas fa-check-double"></i> Mark All Read
               </button>
             )}
@@ -515,7 +579,7 @@ const MerchantDashboard = () => {
               <div 
                 key={notification.id} 
                 className={`notification-item ${!notification.read ? 'unread' : ''}`}
-                onClick={() => !notification.read && markNotificationAsRead(notification.id)}
+                onClick={() => !notification.read && markNotificationAsReadHandler(notification.id)}
               >
                 <div className="notification-icon">
                   <i className={`fas ${
@@ -1027,19 +1091,21 @@ const MerchantDashboard = () => {
                       </div>
                     )}
                     
-                    {/* Access Level Display */}
-                    {deal.accessLevel && (
+                    {/* Access Level Display - Using requiredPlanPriority */}
+                    {(deal.requiredPlanPriority !== null && deal.requiredPlanPriority !== undefined) || deal.accessLevel ? (
                       <div className="deal-access-level">
                         <i className="fas fa-users"></i>
                         <span>Access: {
-                          deal.accessLevel === 'basic' ? 'Community (Basic)' :
-                          deal.accessLevel === 'intermediate' ? 'Silver (Intermediate)' :
-                          deal.accessLevel === 'full' ? 'Gold (Full)' :
-                          deal.accessLevel === 'all' ? 'All Members' :
-                          deal.accessLevel
+                          (deal.requiredPlanPriority !== null && deal.requiredPlanPriority !== undefined) 
+                            ? getPlanNameByPriority(deal.requiredPlanPriority)
+                            : (deal.accessLevel === 'basic' ? 'Community (Basic)' :
+                              deal.accessLevel === 'intermediate' ? 'Silver (Intermediate)' :
+                              deal.accessLevel === 'full' ? 'Gold (Full)' :
+                              deal.accessLevel === 'all' ? 'All Members' :
+                              deal.accessLevel)
                         }</span>
                       </div>
-                    )}
+                    ) : null}
                     
                     <div className="deal-meta">
                       <div className="deal-discount">
@@ -1059,8 +1125,21 @@ const MerchantDashboard = () => {
                         <i className="fas fa-shopping-cart"></i>
                         <span>{deal.redemptions} used</span>
                       </div>
+                      {deal.status === 'active' && (
+                        <div className="stat-item">
+                          <i className="fas fa-chart-line"></i>
+                          <span>{deal.views > 0 ? ((deal.redemptions / deal.views) * 100).toFixed(1) : 0}% conversion</span>
+                        </div>
+                      )}
                     </div>
                     <div className="deal-actions">
+                      <button 
+                        className="btn btn-sm btn-accent" 
+                        onClick={() => handleViewAnalytics(deal)}
+                        title="View Analytics"
+                      >
+                        <i className="fas fa-chart-bar"></i> Analytics
+                      </button>
                       <button 
                         className="btn btn-sm btn-secondary" 
                         onClick={() => handleEditDeal(deal)}
@@ -1491,6 +1570,248 @@ const MerchantDashboard = () => {
             <div className="modal-footer">
               <button className="btn btn-secondary" onClick={() => setShowAnalytics(false)}>
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Deal Analytics Modal */}
+      {showDealAnalytics && (
+        <div className="modal-overlay">
+          <div className="modal-content deal-analytics-modal">
+            <div className="modal-header">
+              <h2>
+                <i className="fas fa-chart-line"></i> 
+                Deal Analytics
+                {dealAnalyticsData?.deal && ` - ${dealAnalyticsData.deal.title}`}
+              </h2>
+              <button className="modal-close" onClick={() => setShowDealAnalytics(false)}>
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            
+            <div className="analytics-content">
+              {loadingDealAnalytics ? (
+                <div className="loading-container">
+                  <div className="loading-spinner"></div>
+                  <p>Loading analytics...</p>
+                </div>
+              ) : dealAnalyticsData ? (
+                <>
+                  {/* Key Metrics */}
+                  <div className="analytics-section">
+                    <h3>Key Metrics</h3>
+                    <div className="analytics-grid">
+                      <div className="analytics-card">
+                        <div className="analytics-icon">
+                          <i className="fas fa-eye"></i>
+                        </div>
+                        <div className="analytics-info">
+                          <div className="analytics-number">{dealAnalyticsData.stats.totalViews}</div>
+                          <div className="analytics-label">Total Views</div>
+                        </div>
+                      </div>
+                      
+                      <div className="analytics-card">
+                        <div className="analytics-icon">
+                          <i className="fas fa-shopping-cart"></i>
+                        </div>
+                        <div className="analytics-info">
+                          <div className="analytics-number">{dealAnalyticsData.stats.approvedRedemptions}</div>
+                          <div className="analytics-label">Approved Redemptions</div>
+                        </div>
+                      </div>
+                      
+                      <div className="analytics-card">
+                        <div className="analytics-icon">
+                          <i className="fas fa-clock"></i>
+                        </div>
+                        <div className="analytics-info">
+                          <div className="analytics-number">{dealAnalyticsData.stats.pendingRedemptions}</div>
+                          <div className="analytics-label">Pending Redemptions</div>
+                        </div>
+                      </div>
+                      
+                      <div className="analytics-card">
+                        <div className="analytics-icon">
+                          <i className="fas fa-percentage"></i>
+                        </div>
+                        <div className="analytics-info">
+                          <div className="analytics-number">{dealAnalyticsData.stats.conversionRate}%</div>
+                          <div className="analytics-label">Conversion Rate</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Time-based Analytics */}
+                  <div className="analytics-section">
+                    <h3>Recent Activity</h3>
+                    <div className="analytics-grid">
+                      <div className="analytics-card">
+                        <div className="analytics-icon">
+                          <i className="fas fa-calendar-day"></i>
+                        </div>
+                        <div className="analytics-info">
+                          <div className="analytics-number">{dealAnalyticsData.stats.todayRedemptions}</div>
+                          <div className="analytics-label">Today's Redemptions</div>
+                        </div>
+                      </div>
+                      
+                      <div className="analytics-card">
+                        <div className="analytics-icon">
+                          <i className="fas fa-calendar-week"></i>
+                        </div>
+                        <div className="analytics-info">
+                          <div className="analytics-number">{dealAnalyticsData.stats.weeklyRedemptions}</div>
+                          <div className="analytics-label">This Week</div>
+                        </div>
+                      </div>
+                      
+                      <div className="analytics-card">
+                        <div className="analytics-icon">
+                          <i className="fas fa-calendar-alt"></i>
+                        </div>
+                        <div className="analytics-info">
+                          <div className="analytics-number">{dealAnalyticsData.stats.monthlyRedemptions}</div>
+                          <div className="analytics-label">This Month</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Redemption History */}
+                  {dealAnalyticsData.redemptions && dealAnalyticsData.redemptions.length > 0 && (
+                    <div className="analytics-section">
+                      <h3>Redemption History</h3>
+                      <div className="redemptions-table">
+                        <table>
+                          <thead>
+                            <tr>
+                              <th>Date</th>
+                              <th>Customer</th>
+                              <th>Plan</th>
+                              <th>Status</th>
+                              <th>Contact</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {dealAnalyticsData.redemptions.slice(0, 20).map(redemption => (
+                              <tr key={redemption.id}>
+                                <td>{new Date(redemption.redemption_date).toLocaleDateString()}</td>
+                                <td>{redemption.user_name}</td>
+                                <td>
+                                  <span className={`plan-badge ${redemption.user_plan?.toLowerCase()}`}>
+                                    {redemption.user_plan || 'N/A'}
+                                  </span>
+                                </td>
+                                <td>
+                                  <span className={`status-badge ${redemption.status}`}>
+                                    {redemption.status}
+                                  </span>
+                                </td>
+                                <td>
+                                  {redemption.user_phone && (
+                                    <a href={`tel:${redemption.user_phone}`} className="contact-link">
+                                      <i className="fas fa-phone"></i> {redemption.user_phone}
+                                    </a>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="empty-state">
+                  <i className="fas fa-chart-line"></i>
+                  <h3>No analytics data available</h3>
+                  <p>Analytics data could not be loaded.</p>
+                </div>
+              )}
+            </div>
+            
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={() => setShowDealAnalytics(false)}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Rejection Reason Modal */}
+      {showRejectionModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h3>
+                <i className="fas fa-exclamation-triangle text-warning"></i>
+                Reject Redemption Request
+              </h3>
+              <button 
+                className="close-btn" 
+                onClick={() => {
+                  setShowRejectionModal(false);
+                  setRejectionRequestId(null);
+                  setRejectionReason('');
+                }}
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="warning-message">
+                <p><strong>⚠️ Please provide a reason for rejecting this redemption request.</strong></p>
+                <p>This will help the customer understand why their request was declined.</p>
+              </div>
+              <div className="form-group">
+                <label htmlFor="rejectionReason">Rejection Reason *</label>
+                <textarea
+                  id="rejectionReason"
+                  className="form-control"
+                  rows="4"
+                  placeholder="Please explain why this redemption request is being rejected..."
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  required
+                />
+                <small className="form-text text-muted">
+                  Common reasons: Customer didn't meet deal requirements, Deal no longer available, Unable to verify customer identity, etc.
+                </small>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button 
+                className="btn btn-secondary" 
+                onClick={() => {
+                  setShowRejectionModal(false);
+                  setRejectionRequestId(null);
+                  setRejectionReason('');
+                }}
+              >
+                Cancel
+              </button>
+              <button 
+                className="btn btn-danger" 
+                onClick={confirmRejection}
+                disabled={!rejectionReason.trim() || processingRequest === rejectionRequestId}
+              >
+                {processingRequest === rejectionRequestId ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-2"></span>
+                    Rejecting...
+                  </>
+                ) : (
+                  <>
+                    <i className="fas fa-times me-1"></i>
+                    Reject Request
+                  </>
+                )}
               </button>
             </div>
           </div>

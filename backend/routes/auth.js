@@ -455,7 +455,7 @@ router.get('/me', auth, (req, res) => {
   }
 
   // Fetch user and include business details for merchants
-  const userQuery = `SELECT id, fullName, email, phone, address, dob, community, country, state, city, profilePicture, preferences, membership, membershipNumber, socialMediaFollowed, userType, status, adminRole, permissions, created_at, lastLogin FROM users WHERE id = ?`;
+  const userQuery = `SELECT id, fullName, email, phone, address, dob, community, country, state, city, profilePicture, preferences, membership, membershipType, membershipNumber, socialMediaFollowed, userType, status, adminRole, permissions, created_at, lastLogin FROM users WHERE id = ?`;
 
   db.query(userQuery, [userId], (err, results) => {
     if (err) {

@@ -17,9 +17,35 @@ function canRedeem(user, dealRequiredPlanPriority, plans) {
   if (!user || !plans || plans.length === 0) return false;
   if (dealRequiredPlanPriority === null || dealRequiredPlanPriority === undefined) return true;
   
-  // Find the user's current plan
-  const userPlan = plans.find(plan => plan.key === user.membership || plan.name.toLowerCase() === user.membership?.toLowerCase());
-  if (!userPlan) return false;
+  // Find the user's current plan with fuzzy matching to handle cases like "platinum_plus" → "platinum"
+  const userPlan = plans.find(plan => {
+    // Use membershipType (dynamic plan) instead of membership (enum field)
+    const userMembershipType = user.membershipType || user.membership;
+    if (!userMembershipType) return false;
+    
+    // Exact key match
+    if (plan.key === userMembershipType) return true;
+    
+    // Exact name match (case insensitive)
+    if (plan.name.toLowerCase() === userMembershipType.toLowerCase()) return true;
+    
+    // Fuzzy matching: check if user membership contains plan key or vice versa
+    const userMembershipLower = userMembershipType.toLowerCase();
+    const planKeyLower = plan.key.toLowerCase();
+    const planNameLower = plan.name.toLowerCase();
+    
+    // Check if user membership starts with plan key (e.g., "platinum_plus" starts with "platinum")
+    if (userMembershipLower.startsWith(planKeyLower)) return true;
+    
+    // Check if user membership contains plan name
+    if (userMembershipLower.includes(planNameLower)) return true;
+    
+    return false;
+  });
+  
+  if (!userPlan) {
+    return false;
+  }
   
   // User can redeem if their plan priority is >= deal's required priority (higher number = higher tier)
   return userPlan.priority >= dealRequiredPlanPriority;
@@ -350,10 +376,10 @@ const Deals = () => {
                     )}
                   </div>
                   
-                  {(deal.requiredPlanPriority !== null && deal.requiredPlanPriority !== undefined) && (
-                    <div className={`deal-badge priority-${deal.requiredPlanPriority}`}>
+                  {((deal.minPlanPriority || deal.requiredPlanPriority) !== null && (deal.minPlanPriority || deal.requiredPlanPriority) !== undefined) && (
+                    <div className={`deal-badge priority-${deal.minPlanPriority || deal.requiredPlanPriority}`}>
                       <i className="fas fa-crown"></i>
-                      For {getPlanNameByPriority(deal.requiredPlanPriority, plans)} Members & Above
+                      For {getPlanNameByPriority(deal.minPlanPriority || deal.requiredPlanPriority, plans)} Members & Above
                     </div>
                   )}
                   
@@ -377,18 +403,18 @@ const Deals = () => {
               {/* Action Section */}
               <div className="deal-actions">
                 <button
-                  className={`btn-redeem ${!user || !canRedeem(user, deal.requiredPlanPriority, plans) ? 'disabled' : ''}`}
-                  disabled={!user || !canRedeem(user, deal.requiredPlanPriority, plans)}
-                  onClick={() => handleRedeem(deal.id, deal.requiredPlanPriority)}
+                  className={`btn-redeem ${!user || !canRedeem(user, deal.minPlanPriority, plans) ? 'disabled' : ''}`}
+                  disabled={!user || !canRedeem(user, deal.minPlanPriority, plans)}
+                  onClick={() => handleRedeem(deal.id, deal.minPlanPriority)}
                 >
                   <i className="fas fa-gift"></i>
                   Redeem Deal
                 </button>
                 
-                {user && !canRedeem(user, deal.requiredPlanPriority, plans) && (
+                {user && !canRedeem(user, deal.minPlanPriority, plans) && (
                   <div className="upgrade-prompt">
                     {(() => {
-                      const requiredPlan = plans.find(p => p.priority === deal.requiredPlanPriority);
+                      const requiredPlan = plans.find(p => p.priority === (deal.minPlanPriority || deal.requiredPlanPriority));
                       if (requiredPlan) {
                         return (
                           <button className="btn-upgrade">

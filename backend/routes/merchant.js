@@ -291,13 +291,13 @@ router.get('/dashboard', checkMerchantAccess, async (req, res) => {
       canPostDeals: merchant.canPostDeals,
       nextMonthReset: new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString().split('T')[0], // Next month's first day
       canPostDeals: merchant.canPostDeals
-    };    // Get recent redemptions with user details
+    };    // Get recent redemptions with user details - only show APPROVED redemptions
     const recentRedemptionsQuery = `
       SELECT dr.*, u.fullName, u.membershipNumber, d.title as dealTitle
       FROM deal_redemptions dr
       JOIN users u ON dr.user_id = u.id
       JOIN deals d ON dr.deal_id = d.id
-      WHERE d.businessId = ?
+      WHERE d.businessId = ? AND dr.status = 'approved'
       ORDER BY dr.redeemed_at DESC
       LIMIT 10
     `;
@@ -536,6 +536,158 @@ router.post('/deals', checkMerchantAccess, checkDealPostingLimit, [
   });
 });
 
+// Update deal (only for pending_approval or rejected deals)
+router.put('/deals/:dealId', checkMerchantAccess, [
+  body('title').notEmpty().withMessage('Title is required'),
+  body('description').notEmpty().withMessage('Description is required'),
+  body('category').notEmpty().withMessage('Category is required'),
+  body('discount').isNumeric().withMessage('Valid discount amount is required'),
+  body('originalPrice').optional().isNumeric().withMessage('Valid original price is required'),
+  body('discountedPrice').optional().isNumeric().withMessage('Valid discounted price is required')
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ message: 'Validation failed', errors: errors.array() });
+  }
+
+  try {
+    const merchant = req.merchant;
+    const dealId = parseInt(req.params.dealId);
+    const {
+      title,
+      description,
+      category,
+      discount,
+      discountType = 'percentage',
+      originalPrice,
+      discountedPrice,
+      termsConditions,
+      expiration_date,
+      couponCode,
+      requiredPlanPriority
+    } = req.body;
+
+    if (!dealId || isNaN(dealId)) {
+      return res.status(400).json({ success: false, message: 'Valid deal ID is required' });
+    }
+
+    // Check if deal exists and belongs to this merchant, and can be edited
+    const checkQuery = `
+      SELECT id, status FROM deals 
+      WHERE id = ? AND businessId = ? AND status IN ('pending_approval', 'rejected')
+    `;
+    
+    const existingDeal = await queryAsync(checkQuery, [dealId, merchant.businessId]);
+    
+    if (existingDeal.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Deal not found or cannot be edited. Only pending or rejected deals can be modified.' 
+      });
+    }
+
+    // Convert required plan priority to minPlanPriority
+    const minPlanPriority = requiredPlanPriority ? parseInt(requiredPlanPriority) : null;
+
+    // Update the deal
+    const updateQuery = `
+      UPDATE deals SET 
+        title = ?, 
+        description = ?, 
+        category = ?, 
+        discount = ?, 
+        discountType = ?,
+        originalPrice = ?, 
+        discountedPrice = ?, 
+        termsConditions = ?, 
+        expiration_date = ?, 
+        couponCode = ?,
+        minPlanPriority = ?,
+        status = 'pending_approval',
+        updated_at = NOW()
+      WHERE id = ? AND businessId = ?
+    `;
+
+    const values = [
+      title, 
+      description, 
+      category, 
+      discount, 
+      discountType,
+      originalPrice || null, 
+      discountedPrice || null, 
+      termsConditions || null, 
+      expiration_date || null, 
+      couponCode || null,
+      minPlanPriority,
+      dealId,
+      merchant.businessId
+    ];
+
+    const result = await queryAsync(updateQuery, values);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Deal not found or no changes made' });
+    }
+
+    res.json({ 
+      success: true,
+      message: 'Deal updated successfully and is pending admin approval again',
+      dealId: dealId
+    });
+  } catch (err) {
+    console.error('Update deal error:', err);
+    res.status(500).json({ success: false, message: 'Server error updating deal' });
+  }
+});
+
+// Delete deal (only for pending_approval or rejected deals)
+router.delete('/deals/:dealId', checkMerchantAccess, async (req, res) => {
+  try {
+    const merchant = req.merchant;
+    const dealId = parseInt(req.params.dealId);
+
+    if (!dealId || isNaN(dealId)) {
+      return res.status(400).json({ success: false, message: 'Valid deal ID is required' });
+    }
+
+    // Check if deal exists and belongs to this merchant, and can be deleted
+    const checkQuery = `
+      SELECT id, status, title FROM deals 
+      WHERE id = ? AND businessId = ? AND status IN ('pending_approval', 'rejected')
+    `;
+    
+    const existingDeal = await queryAsync(checkQuery, [dealId, merchant.businessId]);
+    
+    if (existingDeal.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Deal not found or cannot be deleted. Only pending or rejected deals can be removed.' 
+      });
+    }
+
+    // Delete related redemptions first (if any)
+    if (await tableExists('deal_redemptions')) {
+      await queryAsync('DELETE FROM deal_redemptions WHERE deal_id = ?', [dealId]);
+    }
+
+    // Delete the deal
+    const deleteResult = await queryAsync('DELETE FROM deals WHERE id = ? AND businessId = ?', [dealId, merchant.businessId]);
+
+    if (deleteResult.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Deal not found' });
+    }
+
+    res.json({ 
+      success: true,
+      message: `Deal "${existingDeal[0].title}" deleted successfully`
+    });
+  } catch (err) {
+    console.error('Delete deal error:', err);
+    res.status(500).json({ success: false, message: 'Server error deleting deal' });
+  }
+});
+
 // Update merchant business information
 router.put('/profile', checkMerchantAccess, [
   body('businessName').notEmpty().withMessage('Business name is required'),
@@ -690,69 +842,131 @@ router.get('/certificate', checkMerchantAccess, (req, res) => {
 });
 
 // Get deal analytics for merchant
-router.get('/analytics/deals/:dealId?', checkMerchantAccess, (req, res) => {
-  const merchant = req.merchant;
-  const dealId = req.params.dealId;
-
-  let query, params;
-
-  if (dealId) {
-    // Analytics for specific deal
-    query = `      SELECT d.*, 
-             (SELECT COUNT(*) FROM deal_redemptions dr WHERE dr.dealId = d.id) as totalRedemptions,
-             (SELECT COUNT(*) FROM deal_redemptions dr WHERE dr.dealId = d.id AND DATE(dr.redeemedAt) >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)) as monthlyRedemptions,
-             (SELECT COUNT(*) FROM deal_redemptions dr WHERE dr.dealId = d.id AND DATE(dr.redeemedAt) = CURDATE()) as todayRedemptions
-      FROM deals d
-      WHERE d.id = ? AND d.businessId = ?
-    `;
-    params = [dealId, merchant.businessId];
-  } else {
-    // Analytics for all deals
-    query = `      SELECT d.id, d.title, d.views, d.redemptions, d.status, d.created_at,
-             (SELECT COUNT(*) FROM deal_redemptions dr WHERE dr.dealId = d.id) as actualRedemptions
-      FROM deals d
-      WHERE d.businessId = ?
-      ORDER BY d.created_at DESC
-    `;
-    params = [merchant.businessId];
-  }
-
-  db.query(query, params, (err, results) => {
-    if (err) {
-      console.error('Analytics query error:', err);
-      return res.status(500).json({ message: 'Server error fetching analytics' });
-    }
+router.get('/analytics/deals/:dealId?', checkMerchantAccess, async (req, res) => {
+  try {
+    const merchant = req.merchant;
+    const dealId = req.params.dealId;
 
     if (dealId) {
-      if (!results.length) {
-        return res.status(404).json({ message: 'Deal not found' });
+      // Enhanced analytics for specific deal
+      const dealQuery = `
+        SELECT d.*, 
+               COALESCE(d.views, 0) as views,
+               COALESCE(d.redemptions, 0) as redemptions,
+               (SELECT COUNT(*) FROM deal_redemptions dr WHERE dr.deal_id = d.id) as actualRedemptions,
+               (SELECT COUNT(*) FROM deal_redemptions dr WHERE dr.deal_id = d.id AND dr.status = 'approved') as approvedRedemptions,
+               (SELECT COUNT(*) FROM deal_redemptions dr WHERE dr.deal_id = d.id AND dr.status = 'pending') as pendingRedemptions,
+               (SELECT COUNT(*) FROM deal_redemptions dr WHERE dr.deal_id = d.id AND dr.status = 'rejected') as rejectedRedemptions,
+               (SELECT COUNT(*) FROM deal_redemptions dr WHERE dr.deal_id = d.id AND DATE(dr.redeemed_at) >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)) as monthlyRedemptions,
+               (SELECT COUNT(*) FROM deal_redemptions dr WHERE dr.deal_id = d.id AND DATE(dr.redeemed_at) >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)) as weeklyRedemptions,
+               (SELECT COUNT(*) FROM deal_redemptions dr WHERE dr.deal_id = d.id AND DATE(dr.redeemed_at) = CURDATE()) as todayRedemptions
+        FROM deals d
+        WHERE d.id = ? AND d.businessId = ?
+      `;
+      
+      const dealResults = await queryAsync(dealQuery, [dealId, merchant.businessId]);
+      
+      if (!dealResults.length) {
+        return res.status(404).json({ 
+          success: false, 
+          message: 'Deal not found or not accessible' 
+        });
       }
 
-      // Get redemption details for specific deal
+      // Get detailed redemption list with user information
       const redemptionsQuery = `
-        SELECT dr.redeemedAt, u.fullName, u.membershipNumber
+        SELECT 
+          dr.id,
+          dr.redeemed_at as redemption_date,
+          dr.status,
+          dr.rejection_reason,
+          u.fullName as user_name,
+          u.membershipNumber,
+          u.phone as user_phone,
+          p.name as user_plan,
+          p.priority as user_priority
         FROM deal_redemptions dr
-        JOIN users u ON dr.userId = u.id
-        WHERE dr.dealId = ?
-        ORDER BY dr.redeemedAt DESC
+        JOIN users u ON dr.user_id = u.id
+        LEFT JOIN plans p ON u.membershipType = p.key AND p.type = 'user'
+        WHERE dr.deal_id = ?
+        ORDER BY dr.redeemed_at DESC
+        LIMIT 100
       `;
 
-      db.query(redemptionsQuery, [dealId], (err2, redemptions) => {
-        if (err2) {
-          console.error('Redemptions query error:', err2);
-          return res.status(500).json({ message: 'Server error fetching redemptions' });
-        }
+      const redemptions = await queryAsync(redemptionsQuery, [dealId]);
 
-        res.json({ 
-          success: true, 
-          deal: results[0], 
-          redemptions 
-        });
+      // Calculate conversion rate
+      const deal = dealResults[0];
+      const conversionRate = deal.views > 0 ? ((deal.actualRedemptions / deal.views) * 100).toFixed(2) : 0;
+
+      res.json({ 
+        success: true, 
+        deal: {
+          ...deal,
+          conversionRate: parseFloat(conversionRate)
+        },
+        redemptions,
+        stats: {
+          totalViews: deal.views,
+          totalRedemptions: deal.actualRedemptions,
+          approvedRedemptions: deal.approvedRedemptions,
+          pendingRedemptions: deal.pendingRedemptions,
+          rejectedRedemptions: deal.rejectedRedemptions,
+          monthlyRedemptions: deal.monthlyRedemptions,
+          weeklyRedemptions: deal.weeklyRedemptions,
+          todayRedemptions: deal.todayRedemptions,
+          conversionRate: parseFloat(conversionRate)
+        }
       });
     } else {
-      res.json({ success: true, deals: results });
+      // Enhanced analytics for all deals
+      const dealsQuery = `
+        SELECT 
+          d.id, 
+          d.title, 
+          d.status,
+          d.category,
+          d.created_at,
+          d.expiration_date,
+          COALESCE(d.views, 0) as views, 
+          COALESCE(d.redemptions, 0) as redemptions,
+          d.originalPrice,
+          d.discountedPrice,
+          (SELECT COUNT(*) FROM deal_redemptions dr WHERE dr.deal_id = d.id) as actualRedemptions,
+          (SELECT COUNT(*) FROM deal_redemptions dr WHERE dr.deal_id = d.id AND dr.status = 'approved') as approvedRedemptions,
+          (SELECT COUNT(*) FROM deal_redemptions dr WHERE dr.deal_id = d.id AND dr.status = 'pending') as pendingRedemptions
+        FROM deals d
+        WHERE d.businessId = ?
+        ORDER BY d.created_at DESC
+      `;
+      
+      const deals = await queryAsync(dealsQuery, [merchant.businessId]);
+
+      // Calculate summary statistics - only count approved redemptions
+      const totalViews = deals.reduce((sum, deal) => sum + deal.views, 0);
+      const totalRedemptions = deals.reduce((sum, deal) => sum + deal.approvedRedemptions, 0);
+
+      res.json({ 
+        success: true, 
+        deals: deals.map(deal => ({
+          ...deal,
+          conversionRate: deal.views > 0 ? ((deal.approvedRedemptions / deal.views) * 100).toFixed(2) : 0
+        })),
+        summary: {
+          totalDeals: deals.length,
+          totalViews,
+          totalRedemptions,
+          averageConversion: totalViews > 0 ? ((totalRedemptions / totalViews) * 100).toFixed(2) : 0
+        }
+      });
     }
-  });
+  } catch (err) {
+    console.error('Analytics query error:', err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error fetching analytics' 
+    });
+  }
 });
 
 // Get merchant notifications

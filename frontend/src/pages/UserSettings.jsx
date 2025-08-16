@@ -36,6 +36,8 @@ const UserSettings = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [activeTab, setActiveTab] = useState('profile');
+  const [redemptions, setRedemptions] = useState([]);
+  const [redemptionsLoading, setRedemptionsLoading] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -59,6 +61,28 @@ const UserSettings = () => {
       });
     }
   }, [user]);
+
+  // Fetch user redemptions when redemptions tab is active
+  const fetchRedemptions = async () => {
+    if (activeTab !== 'redemptions') return;
+    
+    setRedemptionsLoading(true);
+    try {
+      const response = await api.get('/deals/user/redeemed');
+      if (response.data.success) {
+        setRedemptions(response.data.redeemedDeals || []);
+      }
+    } catch (err) {
+      console.error('Error fetching redemptions:', err);
+      showNotification('Failed to load redemption history', 'error');
+    } finally {
+      setRedemptionsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchRedemptions();
+  }, [activeTab]);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -219,6 +243,12 @@ const UserSettings = () => {
                 onClick={() => setActiveTab('preferences')}
               >
                 <i className="fas fa-cog"></i> Preferences
+              </button>
+              <button 
+                className={`tab ${activeTab === 'redemptions' ? 'active' : ''}`}
+                onClick={() => setActiveTab('redemptions')}
+              >
+                <i className="fas fa-ticket-alt"></i> Redemptions
               </button>
             </div>
 
@@ -495,6 +525,96 @@ const UserSettings = () => {
                         </span>
                       </div>
                     </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Redemptions History Tab */}
+            {activeTab === 'redemptions' && (
+              <div className="settings-section">
+                <div className="card">
+                  <div className="card-header">
+                    <h4 className="mb-0">
+                      <i className="fas fa-ticket-alt me-2"></i>
+                      Redemption History
+                    </h4>
+                  </div>
+                  <div className="card-body">
+                    {redemptionsLoading ? (
+                      <div className="text-center py-4">
+                        <div className="spinner-border" role="status">
+                          <span className="visually-hidden">Loading...</span>
+                        </div>
+                        <p className="mt-2">Loading redemption history...</p>
+                      </div>
+                    ) : redemptions.length === 0 ? (
+                      <div className="text-center py-4">
+                        <i className="fas fa-ticket-alt fa-3x text-muted mb-3"></i>
+                        <h5 className="text-muted">No Redemptions Yet</h5>
+                        <p className="text-muted">You haven't redeemed any deals yet. Start exploring deals to see your redemption history here!</p>
+                      </div>
+                    ) : (
+                      <div className="redemptions-list">
+                        {redemptions.map((redemption) => (
+                          <div key={redemption.id} className="redemption-item card mb-3">
+                            <div className="card-body">
+                              <div className="row align-items-center">
+                                <div className="col-md-8">
+                                  <h5 className="deal-title mb-1">{redemption.title}</h5>
+                                  <p className="business-name text-muted mb-1">
+                                    <i className="fas fa-store me-1"></i>
+                                    {redemption.businessName}
+                                  </p>
+                                  {redemption.businessAddress && (
+                                    <p className="business-address text-muted mb-1">
+                                      <i className="fas fa-map-marker-alt me-1"></i>
+                                      {redemption.businessAddress}
+                                    </p>
+                                  )}
+                                  <p className="deal-discount mb-2">
+                                    <span className="badge bg-success">
+                                      {redemption.discountType === 'percentage' 
+                                        ? `${redemption.discount}% OFF` 
+                                        : `$${redemption.discount} OFF`
+                                      }
+                                    </span>
+                                  </p>
+                                </div>
+                                <div className="col-md-4 text-md-end">
+                                  <div className="redemption-status mb-2">
+                                    <span className={`badge ${
+                                      redemption.status === 'approved' ? 'bg-success' :
+                                      redemption.status === 'pending' ? 'bg-warning' :
+                                      redemption.status === 'rejected' ? 'bg-danger' : 'bg-secondary'
+                                    }`}>
+                                      <i className={`fas ${
+                                        redemption.status === 'approved' ? 'fa-check' :
+                                        redemption.status === 'pending' ? 'fa-clock' :
+                                        redemption.status === 'rejected' ? 'fa-times' : 'fa-question'
+                                      } me-1`}></i>
+                                      {redemption.status?.charAt(0).toUpperCase() + redemption.status?.slice(1) || 'Unknown'}
+                                    </span>
+                                  </div>
+                                  <small className="text-muted">
+                                    <i className="fas fa-calendar me-1"></i>
+                                    {new Date(redemption.redeemed_at).toLocaleDateString()}
+                                  </small>
+                                  {redemption.status === 'rejected' && redemption.rejection_reason && (
+                                    <div className="mt-2">
+                                      <small className="text-danger">
+                                        <i className="fas fa-exclamation-triangle me-1"></i>
+                                        Reason: {redemption.rejection_reason}
+                                      </small>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

@@ -495,10 +495,10 @@ router.post('/:id/redeem', checkDealAccess, (req, res) => {
         const expirationDate = deal.validUntil || deal.expiration_date;
         if (expirationDate && new Date(expirationDate) < new Date()) {
           return res.status(403).json({ message: 'This deal has expired' });
-        }        // Check plan access based on deal priority - enhanced dynamic plan lookup with better error messages
-        if (deal.minPlanPriority && deal.minPlanPriority < (user.priority || 999)) {
+        }        // Check plan access based on deal priority - FIXED: Higher priority users (higher numbers) can access lower priority deals
+        if (deal.minPlanPriority && (user.priority || 0) < deal.minPlanPriority) {
           // Get the required plan that can access this deal
-          db.query('SELECT name, `key`, price, currency, features FROM plans WHERE priority <= ? AND type = "user" AND isActive = 1 ORDER BY priority DESC, price DESC LIMIT 1', 
+          db.query('SELECT name, `key`, price, currency, features FROM plans WHERE priority >= ? AND type = "user" AND isActive = 1 ORDER BY priority ASC, price ASC LIMIT 1', 
             [deal.minPlanPriority], (planErr, planResults) => {
             
             let upgradeMessage = 'This deal requires a higher membership plan.';
@@ -516,7 +516,7 @@ router.post('/:id/redeem', checkDealAccess, (req, res) => {
               upgradeMessage = `🔒 Upgrade Required! This exclusive deal is available for ${requiredPlan.name} members and above. Upgrade now starting at ${requiredPlan.currency} ${requiredPlan.price} to unlock this offer!`;
             } else {
               // Fallback to get higher priority plans if specific lookup fails
-              db.query('SELECT name, `key`, price, currency FROM plans WHERE priority <= ? AND type = "user" AND isActive = 1 ORDER BY priority DESC LIMIT 3', 
+              db.query('SELECT name, `key`, price, currency FROM plans WHERE priority >= ? AND type = "user" AND isActive = 1 ORDER BY priority ASC LIMIT 3', 
                 [deal.minPlanPriority], (fallbackErr, fallbackResults) => {
                 
                 if (!fallbackErr && fallbackResults.length > 0) {
@@ -532,7 +532,7 @@ router.post('/:id/redeem', checkDealAccess, (req, res) => {
                   return res.status(403).json({ 
                   message: upgradeMessage,
                   upgradeRequired: true,
-                  currentPlanPriority: user.priority || 999,
+                  currentPlanPriority: user.priority || 0,
                   requiredPlanPriority: deal.minPlanPriority,
                   suggestedPlan: suggestedPlan,
                   availablePlans: fallbackResults || []
@@ -544,7 +544,7 @@ router.post('/:id/redeem', checkDealAccess, (req, res) => {
             return res.status(403).json({ 
               message: upgradeMessage,
               upgradeRequired: true,
-              currentPlanPriority: user.priority || 999,
+              currentPlanPriority: user.priority || 0,
               requiredPlanPriority: deal.minPlanPriority,
               suggestedPlan: suggestedPlan
             });
