@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useNotification } from '../../../contexts/NotificationContext';
+import { useDynamicFields } from '../../../hooks/useDynamicFields';
 import api from '../../../services/api';
 import './DealForm.css';
 
@@ -8,6 +9,7 @@ const DealForm = () => {
   const { dealId } = useParams();
   const navigate = useNavigate();
   const { showNotification } = useNotification();
+  const { getDealCategoryOptions } = useDynamicFields();
   const isEditMode = Boolean(dealId);
     const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -271,12 +273,6 @@ const DealForm = () => {
     }
   };
   
-  const dealCategories = [
-    'Restaurant', 'Retail', 'Electronics', 'Fashion', 
-    'Health & Wellness', 'Entertainment', 'Travel',
-    'Education', 'Home & Garden', 'Services', 'Other'
-  ];
-  
   if (isLoading) {
     return (
       <div className="loading-container">
@@ -347,9 +343,9 @@ const DealForm = () => {
                 onChange={handleChange}
                 className={formErrors.category ? 'error' : ''}              >
                 <option key="select-category" value="">Select Category</option>
-                {dealCategories.map(category => (
-                  <option key={category} value={category.toLowerCase()}>
-                    {category}
+                {getDealCategoryOptions().map(category => (
+                  <option key={category.value} value={category.value}>
+                    {category.label}
                   </option>
                 ))}
               </select>

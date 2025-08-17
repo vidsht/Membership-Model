@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Fields Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { border: 1px solid #ccc; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .loading { background-color: #fff3cd; border-color: #ffeaa7; }
+        select { width: 100%; padding: 8px; margin: 5px 0; }
+        .count { font-weight: bold; color: #007bff; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Dynamic Fields Test</h1>
+    <p>Testing if dynamic fields are being fetched from the backend API...</p>
+
+    <div id="communities-test" class="test-section loading">
+        <h3>📍 Communities</h3>
+        <p>Status: <span id="communities-status">Loading...</span></p>
+        <p>Count: <span id="communities-count" class="count">-</span></p>
+        <select id="communities-select">
+            <option>Loading...</option>
+        </select>
+    </div>
+
+    <div id="user-types-test" class="test-section loading">
+        <h3>👤 User Types</h3>
+        <p>Status: <span id="user-types-status">Loading...</span></p>
+        <p>Count: <span id="user-types-count" class="count">-</span></p>
+        <select id="user-types-select">
+            <option>Loading...</option>
+        </select>
+    </div>
+
+    <div id="business-categories-test" class="test-section loading">
+        <h3>🏢 Business Categories</h3>
+        <p>Status: <span id="business-categories-status">Loading...</span></p>
+        <p>Count: <span id="business-categories-count" class="count">-</span></p>
+        <select id="business-categories-select">
+            <option>Loading...</option>
+        </select>
+    </div>
+
+    <div id="deal-categories-test" class="test-section loading">
+        <h3>🛍️ Deal Categories</h3>
+        <p>Status: <span id="deal-categories-status">Loading...</span></p>
+        <p>Count: <span id="deal-categories-count" class="count">-</span></p>
+        <select id="deal-categories-select">
+            <option>Loading...</option>
+        </select>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:5001/api';
+
+        async function testDynamicFields() {
+            console.log('🧪 Starting dynamic fields test...');
+
+            // Test communities
+            try {
+                const communitiesResponse = await fetch(`${API_BASE_URL}/auth/communities`, {
+                    credentials: 'include'
+                });
+                const communitiesData = await communitiesResponse.json();
+                
+                if (communitiesData.success && communitiesData.communities) {
+                    updateTestSection('communities', 'success', 
+                        `✅ Loaded successfully`, 
+                        communitiesData.communities.length,
+                        communitiesData.communities.map(c => ({ value: c.name, label: c.name }))
+                    );
+                } else {
+                    updateTestSection('communities', 'error', '❌ Failed to load data', 0, []);
+                }
+            } catch (error) {
+                updateTestSection('communities', 'error', `❌ Error: ${error.message}`, 0, []);
+            }
+
+            // Test user types
+            try {
+                const userTypesResponse = await fetch(`${API_BASE_URL}/auth/user-types`, {
+                    credentials: 'include'
+                });
+                const userTypesData = await userTypesResponse.json();
+                
+                if (userTypesData.success && userTypesData.userTypes) {
+                    updateTestSection('user-types', 'success', 
+                        `✅ Loaded successfully`, 
+                        userTypesData.userTypes.length,
+                        userTypesData.userTypes.map(ut => ({ value: ut.name, label: ut.name }))
+                    );
+                } else {
+                    updateTestSection('user-types', 'error', '❌ Failed to load data', 0, []);
+                }
+            } catch (error) {
+                updateTestSection('user-types', 'error', `❌ Error: ${error.message}`, 0, []);
+            }
+
+            // Test business categories
+            try {
+                const businessCategoriesResponse = await fetch(`${API_BASE_URL}/auth/business-categories`, {
+                    credentials: 'include'
+                });
+                const businessCategoriesData = await businessCategoriesResponse.json();
+                
+                if (businessCategoriesData.success && businessCategoriesData.businessCategories) {
+                    updateTestSection('business-categories', 'success', 
+                        `✅ Loaded successfully`, 
+                        businessCategoriesData.businessCategories.length,
+                        businessCategoriesData.businessCategories.map(bc => ({ 
+                            value: bc.name, 
+                            label: bc.label || bc.name 
+                        }))
+                    );
+                } else {
+                    updateTestSection('business-categories', 'error', '❌ Failed to load data', 0, []);
+                }
+            } catch (error) {
+                updateTestSection('business-categories', 'error', `❌ Error: ${error.message}`, 0, []);
+            }
+
+            // Test deal categories
+            try {
+                const dealCategoriesResponse = await fetch(`${API_BASE_URL}/auth/deal-categories`, {
+                    credentials: 'include'
+                });
+                const dealCategoriesData = await dealCategoriesResponse.json();
+                
+                if (dealCategoriesData.success && dealCategoriesData.dealCategories) {
+                    updateTestSection('deal-categories', 'success', 
+                        `✅ Loaded successfully`, 
+                        dealCategoriesData.dealCategories.length,
+                        dealCategoriesData.dealCategories.map(dc => ({ 
+                            value: dc.name, 
+                            label: dc.label || dc.name 
+                        }))
+                    );
+                } else {
+                    updateTestSection('deal-categories', 'error', '❌ Failed to load data', 0, []);
+                }
+            } catch (error) {
+                updateTestSection('deal-categories', 'error', `❌ Error: ${error.message}`, 0, []);
+            }
+        }
+
+        function updateTestSection(field, status, message, count, options) {
+            const section = document.getElementById(`${field}-test`);
+            const statusEl = document.getElementById(`${field}-status`);
+            const countEl = document.getElementById(`${field}-count`);
+            const selectEl = document.getElementById(`${field}-select`);
+
+            // Update styles
+            section.className = `test-section ${status}`;
+            
+            // Update content
+            statusEl.textContent = message;
+            countEl.textContent = count;
+            
+            // Update select options
+            selectEl.innerHTML = '';
+            if (options.length > 0) {
+                options.forEach(option => {
+                    const optionEl = document.createElement('option');
+                    optionEl.value = option.value;
+                    optionEl.textContent = option.label;
+                    selectEl.appendChild(optionEl);
+                });
+            } else {
+                const optionEl = document.createElement('option');
+                optionEl.textContent = 'No options available';
+                selectEl.appendChild(optionEl);
+            }
+        }
+
+        // Start the test when page loads
+        window.addEventListener('load', testDynamicFields);
+    </script>
+</body>
+</html>

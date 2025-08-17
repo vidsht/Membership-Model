@@ -1,0 +1,300 @@
+.dynamic-fields-settings {
+  padding: 20px;
+}
+
+.settings-section-header {
+  margin-bottom: 30px;
+}
+
+.settings-section-header h3 {
+  color: #2c3e50;
+  margin-bottom: 8px;
+}
+
+.settings-section-header p {
+  color: #666;
+  margin-bottom: 0;
+}
+
+.dynamic-fields-container {
+  display: grid;
+  gap: 30px;
+}
+
+.dynamic-field-section {
+  background: white;
+  border: 1px solid #e0e6ed;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.field-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e0e6ed;
+}
+
+.field-header h4 {
+  margin: 0;
+  color: #2c3e50;
+  font-weight: 600;
+}
+
+.add-option-form {
+  padding: 20px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e0e6ed;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+  color: #555;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+.btn-primary {
+  background: #007bff;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #0056b3;
+}
+
+.btn-secondary {
+  background: #6c757d;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: #545b62;
+}
+
+.btn-success {
+  background: #28a745;
+  color: white;
+}
+
+.btn-success:hover {
+  background: #1e7e34;
+}
+
+.btn-warning {
+  background: #ffc107;
+  color: #212529;
+}
+
+.btn-warning:hover {
+  background: #e0a800;
+}
+
+.btn-danger {
+  background: #dc3545;
+  color: white;
+}
+
+.btn-danger:hover {
+  background: #c82333;
+}
+
+.options-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.option-item {
+  padding: 15px 20px;
+  border-bottom: 1px solid #e0e6ed;
+  transition: background-color 0.2s ease;
+}
+
+.option-item:hover {
+  background: #f8f9fa;
+}
+
+.option-item.inactive {
+  opacity: 0.6;
+  background: #f8f9fa;
+}
+
+.option-item:last-child {
+  border-bottom: none;
+}
+
+.option-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 15px;
+}
+
+.option-main {
+  flex: 1;
+}
+
+.option-main strong {
+  display: block;
+  color: #2c3e50;
+  margin-bottom: 4px;
+}
+
+.option-description {
+  margin: 0;
+  color: #666;
+  font-size: 14px;
+}
+
+.option-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.empty-state {
+  padding: 40px 20px;
+  text-align: center;
+  color: #666;
+}
+
+.empty-state p {
+  margin: 0;
+}
+
+.settings-info {
+  margin-top: 30px;
+}
+
+.info-box {
+  background: #e3f2fd;
+  border: 1px solid #bbdefb;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.info-box h4 {
+  color: #1976d2;
+  margin-bottom: 15px;
+}
+
+.info-box ul {
+  margin-bottom: 15px;
+  padding-left: 20px;
+}
+
+.info-box li {
+  margin-bottom: 8px;
+  color: #333;
+}
+
+.info-box li strong {
+  color: #1976d2;
+}
+
+.note {
+  margin: 0;
+  padding: 15px;
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 4px;
+  color: #856404;
+  font-size: 14px;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #007bff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 15px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .option-content {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .option-actions {
+    justify-content: flex-start;
+    margin-top: 10px;
+  }
+  
+  .field-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 15px;
+  }
+}

@@ -2651,6 +2651,169 @@ router.put('/settings', auth, admin, async (req, res) => {
   }
 });
 
+// ===== DYNAMIC FIELDS MANAGEMENT =====
+// Get dynamic field options
+router.get('/dynamic-fields/:fieldType', auth, admin, async (req, res) => {
+  try {
+    const { fieldType } = req.params;
+    const validFieldTypes = ['communities', 'userTypes', 'businessCategories', 'dealCategories'];
+    
+    if (!validFieldTypes.includes(fieldType)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid field type. Must be one of: ' + validFieldTypes.join(', ')
+      });
+    }
+
+    const settingKey = `dynamicFields.${fieldType}`;
+    
+    if (await tableExists('settings')) {
+      const result = await queryAsync('SELECT value FROM settings WHERE `key` = ?', [settingKey]);
+      
+      if (result.length > 0) {
+        try {
+          const fieldOptions = JSON.parse(result[0].value);
+          return res.json({ 
+            success: true, 
+            [fieldType]: fieldOptions 
+          });
+        } catch (parseError) {
+          console.error('Error parsing dynamic field options:', parseError);
+        }
+      }
+    }
+
+    // Return default values if no settings found
+    const defaultOptions = getDefaultFieldOptions(fieldType);
+    res.json({ 
+      success: true, 
+      [fieldType]: defaultOptions 
+    });
+  } catch (err) {
+    console.error('Error fetching dynamic field options:', err);
+    res.status(500).json({ success: false, message: 'Server error fetching field options' });
+  }
+});
+
+// Update dynamic field options
+router.put('/dynamic-fields/:fieldType', auth, admin, async (req, res) => {
+  try {
+    const { fieldType } = req.params;
+    const { options } = req.body;
+    const validFieldTypes = ['communities', 'userTypes', 'businessCategories', 'dealCategories'];
+    
+    if (!validFieldTypes.includes(fieldType)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid field type'
+      });
+    }
+
+    if (!Array.isArray(options)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Options must be an array'
+      });
+    }
+
+    const settingKey = `dynamicFields.${fieldType}`;
+    const optionsJson = JSON.stringify(options);
+
+    if (await tableExists('settings')) {
+      await queryAsync(
+        'INSERT INTO settings (`key`, value, section, updated_at) VALUES (?, ?, ?, NOW()) ON DUPLICATE KEY UPDATE value = ?, updated_at = NOW()',
+        [settingKey, optionsJson, 'dynamicFields', optionsJson]
+      );
+    }
+
+    res.json({ 
+      success: true, 
+      message: `${fieldType} options updated successfully`,
+      [fieldType]: options
+    });
+  } catch (err) {
+    console.error('Error updating dynamic field options:', err);
+    res.status(500).json({ success: false, message: 'Server error updating field options' });
+  }
+});
+
+// Get all dynamic fields for frontend
+router.get('/dynamic-fields', async (req, res) => {
+  try {
+    const fieldTypes = ['communities', 'userTypes', 'businessCategories', 'dealCategories'];
+    const dynamicFields = {};
+
+    if (await tableExists('settings')) {
+      for (const fieldType of fieldTypes) {
+        const settingKey = `dynamicFields.${fieldType}`;
+        const result = await queryAsync('SELECT value FROM settings WHERE `key` = ?', [settingKey]);
+        
+        if (result.length > 0) {
+          try {
+            dynamicFields[fieldType] = JSON.parse(result[0].value);
+          } catch (parseError) {
+            console.error(`Error parsing ${fieldType} options:`, parseError);
+            dynamicFields[fieldType] = getDefaultFieldOptions(fieldType);
+          }
+        } else {
+          dynamicFields[fieldType] = getDefaultFieldOptions(fieldType);
+        }
+      }
+    } else {
+      // Return default values if settings table doesn't exist
+      fieldTypes.forEach(fieldType => {
+        dynamicFields[fieldType] = getDefaultFieldOptions(fieldType);
+      });
+    }
+
+    res.json({ 
+      success: true, 
+      dynamicFields
+    });
+  } catch (err) {
+    console.error('Error fetching all dynamic fields:', err);
+    res.status(500).json({ success: false, message: 'Server error fetching dynamic fields' });
+  }
+});
+
+// Helper function to get default field options
+const getDefaultFieldOptions = (fieldType) => {
+  switch (fieldType) {
+    case 'communities':
+      return [
+        { name: 'Gujarati', description: 'Gujarati community', isActive: true },
+        { name: 'Punjabi', description: 'Punjabi community', isActive: true },
+        { name: 'Tamil', description: 'Tamil community', isActive: true },
+        { name: 'Bengali', description: 'Bengali community', isActive: true },
+        { name: 'Hindi', description: 'Hindi speaking community', isActive: true },
+        { name: 'Other Indian', description: 'Other Indian communities', isActive: true }
+      ];
+    case 'userTypes':
+      return [
+        { name: 'Professional', description: 'Working professional', isActive: true },
+        { name: 'Business Owner', description: 'Business owner or entrepreneur', isActive: true },
+        { name: 'Student', description: 'Student', isActive: true },
+        { name: 'Other', description: 'Other profession', isActive: true }
+      ];
+    case 'businessCategories':
+      return [
+        { name: 'restaurant', label: 'Restaurant & Food', description: 'Restaurants, food services', isActive: true },
+        { name: 'retail', label: 'Retail & Shopping', description: 'Retail stores, shopping', isActive: true },
+        { name: 'services', label: 'Professional Services', description: 'Consulting, legal, accounting', isActive: true },
+        { name: 'other', label: 'Other', description: 'Other business types', isActive: true }
+      ];
+    case 'dealCategories':
+      return [
+        { name: 'restaurant', label: 'Restaurant', description: 'Food and dining deals', isActive: true },
+        { name: 'retail', label: 'Retail', description: 'Shopping and retail deals', isActive: true },
+        { name: 'services', label: 'Services', description: 'Professional and personal services', isActive: true },
+        { name: 'other', label: 'Other', description: 'Other categories', isActive: true }
+      ];
+    default:
+      return [];
+  }
+};
+
 // ===== ANALYTICS ENDPOINTS =====
 router.get('/analytics', auth, admin, async (req, res) => {
   try {

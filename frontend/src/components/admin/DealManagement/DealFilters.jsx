@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useDynamicFields } from '../../../hooks/useDynamicFields';
 import './DealFilters.css';
 
 /**
@@ -10,6 +11,7 @@ import './DealFilters.css';
  * @param {Array} props.businesses - List of businesses for business filter
  */
 const DealFilters = ({ filters, onFilterChange, onSearch, businesses = [] }) => {
+  const { getDealCategoryOptions } = useDynamicFields();
   const [showFilters, setShowFilters] = useState(true);
 
   /**
@@ -122,16 +124,9 @@ const DealFilters = ({ filters, onFilterChange, onSearch, businesses = [] }) => 
                 className="filter-select"
               >
                 <option value="all">All Categories</option>
-                <option value="food">Food & Dining</option>
-                <option value="retail">Retail & Shopping</option>
-                <option value="services">Services</option>
-                <option value="entertainment">Entertainment</option>
-                <option value="health">Health & Wellness</option>
-                <option value="travel">Travel</option>
-                <option value="education">Education</option>
-                <option value="automotive">Automotive</option>
-                <option value="technology">Technology</option>
-                <option value="general">General</option>
+                {getDealCategoryOptions && getDealCategoryOptions().map(option => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
               </select>
             </div>
 

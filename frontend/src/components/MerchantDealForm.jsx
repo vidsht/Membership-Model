@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { useNotification } from '../contexts/NotificationContext';
+import { useDynamicFields } from '../hooks/useDynamicFields';
 import { merchantApi } from '../services/api';
 import api from '../services/api';
 import './MerchantDealForm.css';
 
 const MerchantDealForm = ({ deal, onDealCreated, onClose, isEditing = false }) => {
   const { showNotification } = useNotification();
+  const { getDealCategoryOptions } = useDynamicFields();
   const [isSaving, setIsSaving] = useState(false);
   const [userPlans, setUserPlans] = useState([]);
   const [formData, setFormData] = useState({
@@ -265,12 +267,6 @@ const MerchantDealForm = ({ deal, onDealCreated, onClose, isEditing = false }) =
     }
   };
   
-  const dealCategories = [
-    'Restaurant', 'Retail', 'Electronics', 'Fashion', 
-    'Health & Wellness', 'Entertainment', 'Travel',
-    'Education', 'Home & Garden', 'Services', 'Other'
-  ];
-  
   return (
     <div className="merchant-deal-form-container">
       <div className="form-header">
@@ -388,8 +384,8 @@ const MerchantDealForm = ({ deal, onDealCreated, onClose, isEditing = false }) =
               className={formErrors.category ? 'error' : ''}
             >
               <option value="">Select a category</option>
-              {dealCategories.map(category => (
-                <option key={category} value={category}>{category}</option>
+              {getDealCategoryOptions().map(option => (
+                <option key={option.value} value={option.value}>{option.label}</option>
               ))}
             </select>
             {formErrors.category && <span className="error-message">{formErrors.category}</span>}          </div>

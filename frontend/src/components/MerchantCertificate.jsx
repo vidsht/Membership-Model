@@ -305,6 +305,19 @@ const MerchantCertificate = () => {
     );
   }
 
+  // Hide certificate for pending merchants
+  if (user.status === 'pending' || businessInfo.status === 'pending') {
+    return (
+      <div className="certificate-container">
+        <div className="status-message">
+          <i className="fas fa-clock"></i>
+          <h3>Business Certificate Not Available</h3>
+          <p>Your business certificate will be available once your business is approved by an administrator.</p>
+        </div>
+      </div>
+    );
+  }
+
   // Helper function to format date
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';

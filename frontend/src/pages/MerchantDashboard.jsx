@@ -37,6 +37,12 @@ const MerchantDashboard = () => {
   const [memberVerificationResult, setMemberVerificationResult] = useState(null);
   const [verificationLoading, setVerificationLoading] = useState(false);
   
+  // Pagination state
+  const [redemptionRequestsPage, setRedemptionRequestsPage] = useState(1);
+  const [recentRedemptionsPage, setRecentRedemptionsPage] = useState(1);
+  const [dealsPage, setDealsPage] = useState(1);
+  const itemsPerPage = 5;
+  
   // Plan-based feature access
   const [featureAccess, setFeatureAccess] = useState({
     analytics: false,
@@ -44,7 +50,10 @@ const MerchantDashboard = () => {
     businessDashboard: false,
     dealPosting: 'none', // 'none', 'limited', 'enhanced', 'unlimited'
     priorityListing: false,
-    featuredPlacement: false
+    featuredPlacement: false,
+    statisticsPanel: false,
+    viewAnalyticsButton: false,
+    dealAnalyticsButton: false
   });
   const [stats, setStats] = useState({
     totalDeals: 0,
@@ -180,6 +189,40 @@ const MerchantDashboard = () => {
     return membershipType === 'basic' || !membershipType;
   };
 
+  // Pagination helper component
+  const PaginationComponent = ({ currentPage, totalItems, itemsPerPage, onPageChange, sectionName }) => {
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    
+    if (totalPages <= 1) return null;
+    
+    return (
+      <div className="pagination-wrapper">
+        <div className="pagination-info">
+          Showing {Math.min((currentPage - 1) * itemsPerPage + 1, totalItems)} to {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} items
+        </div>
+        <div className="pagination-controls">
+          <button 
+            className="btn btn-sm btn-outline"
+            onClick={() => onPageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+          >
+            <i className="fas fa-chevron-left"></i> Previous
+          </button>
+          <span className="page-indicator">
+            Page {currentPage} of {totalPages}
+          </span>
+          <button 
+            className="btn btn-sm btn-outline"
+            onClick={() => onPageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+          >
+            Next <i className="fas fa-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   // Determine feature access based on user's membershipType from users table
   const updateFeatureAccess = (membershipType = 'basic') => {
     let access = {
@@ -188,7 +231,10 @@ const MerchantDashboard = () => {
       businessDashboard: false,
       dealPosting: 'none',
       priorityListing: false,
-      featuredPlacement: false
+      featuredPlacement: false,
+      statisticsPanel: false,
+      viewAnalyticsButton: false,
+      dealAnalyticsButton: false
     };
 
     // Map membershipType to feature access levels
@@ -201,51 +247,77 @@ const MerchantDashboard = () => {
           businessDashboard: false,
           dealPosting: 'none', // No deal posting
           priorityListing: false,
-          featuredPlacement: false
+          featuredPlacement: false,
+          statisticsPanel: false,
+          viewAnalyticsButton: false,
+          dealAnalyticsButton: false
         };
         break;
         
       case 'silver_merchant':
       case 'silver_business':
       case 'silver':
-        // Silver plans - limited features
+        // Silver plans - limited features (DISABLE statistics, view analytics, deal analytics)
         access = {
           analytics: true,
           advancedStats: false,
           businessDashboard: true,
           dealPosting: 'limited', // Limited deal posting
           priorityListing: true,
-          featuredPlacement: false
+          featuredPlacement: false,
+          statisticsPanel: false, // DISABLED for silver
+          viewAnalyticsButton: false, // DISABLED for silver
+          dealAnalyticsButton: false // DISABLED for silver
         };
         break;
         
       case 'gold_merchant':
       case 'gold_business':
       case 'gold':
-        // Gold plans - full features
+        // Gold plans - full features (DISABLE view analytics and deal analytics)
         access = {
           analytics: true,
           advancedStats: true,
           businessDashboard: true,
           dealPosting: 'unlimited', // Maximum deal posting
           priorityListing: true,
-          featuredPlacement: true
+          featuredPlacement: true,
+          statisticsPanel: true, // ENABLED for gold
+          viewAnalyticsButton: false, // DISABLED for gold
+          dealAnalyticsButton: false // DISABLED for gold
         };
         break;
         
       case 'platinum_merchant':
       case 'platinum_business':
-      case 'platinum_plus':
-      case 'platinum_plus_business':
       case 'platinum':
-        // Platinum plans - premium features with highest limits
+        // Platinum plans - premium features (DISABLE only view analytics button)
         access = {
           analytics: true,
           advancedStats: true,
           businessDashboard: true,
           dealPosting: 'unlimited', // Maximum deal posting
           priorityListing: true,
-          featuredPlacement: true
+          featuredPlacement: true,
+          statisticsPanel: true, // ENABLED for platinum
+          viewAnalyticsButton: false, // DISABLED for platinum
+          dealAnalyticsButton: true // ENABLED for platinum
+        };
+        break;
+        
+      case 'platinum_plus':
+      case 'platinum_plus_business':
+        // Platinum Plus plans - all features enabled
+        access = {
+          analytics: true,
+          advancedStats: true,
+          businessDashboard: true,
+          dealPosting: 'unlimited', // Maximum deal posting
+          priorityListing: true,
+          featuredPlacement: true,
+          statisticsPanel: true, // ENABLED for platinum plus
+          viewAnalyticsButton: true, // ENABLED for platinum plus
+          dealAnalyticsButton: true // ENABLED for platinum plus
         };
         break;
         
@@ -257,7 +329,10 @@ const MerchantDashboard = () => {
           businessDashboard: false,
           dealPosting: 'none',
           priorityListing: false,
-          featuredPlacement: false
+          featuredPlacement: false,
+          statisticsPanel: false,
+          viewAnalyticsButton: false,
+          dealAnalyticsButton: false
         };
     }
 
@@ -706,7 +781,7 @@ const MerchantDashboard = () => {
 
       {/* Enhanced Stats Cards - Conditional based on plan and approval status */}
       {(userInfo?.status === 'approved' || (!userInfo?.status && businessInfo?.status !== 'pending')) ? (
-        featureAccess.analytics ? (
+        featureAccess.statisticsPanel ? (
           <div className="stats-grid">
             <div className="stat-card primary">
               <div className="stat-icon">
@@ -777,8 +852,8 @@ const MerchantDashboard = () => {
         ) : (
           <div className="basic-stats-message">
             <div className="upgrade-prompt">
-              <h3><i className="fas fa-star"></i> Upgrade to Access Analytics</h3>
-              <p>Get detailed insights about your business performance with our Premium or Featured plans.</p>
+              <h3><i className="fas fa-star"></i> Upgrade to Access Statistics</h3>
+              <p>Get detailed statistics about your business performance with our Gold or Platinum plans.</p>
               <div className="basic-features">
                 <div className="basic-feature">
                   <i className="fas fa-check"></i> Business listing included
@@ -903,6 +978,14 @@ const MerchantDashboard = () => {
                 <span>{businessInfo.planExpiryDate ? new Date(businessInfo.planExpiryDate).toLocaleDateString() : 'Not set'}</span>
               </div>
             </div>
+            {businessInfo.businessDescription && (
+              <div className="detail-row">
+                <div className="detail-item full-width">
+                  <strong><i className="fas fa-align-left"></i> Description:</strong>
+                  <span>{businessInfo.businessDescription}</span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -998,9 +1081,11 @@ const MerchantDashboard = () => {
           <button className="btn btn-secondary" onClick={() => setShowBusinessForm(true)}>
             <i className="fas fa-edit"></i> Edit Business Info
           </button>
-          <button className="btn btn-accent" onClick={() => setShowAnalytics(true)}>
-            <i className="fas fa-chart-bar"></i> View Analytics
-          </button>
+          {featureAccess.viewAnalyticsButton && (
+            <button className="btn btn-accent" onClick={() => setShowAnalytics(true)}>
+              <i className="fas fa-chart-bar"></i> View Analytics
+            </button>
+          )}
           <button className="btn btn-info" onClick={() => setShowMemberVerification(true)}>
             <i className="fas fa-user-check"></i> Verify Member
           </button>
@@ -1017,7 +1102,7 @@ const MerchantDashboard = () => {
             </button>
           </div>
           <div className="redemptions-list">
-            {recentRedemptions.slice(0, 5).map((redemption, index) => (
+            {recentRedemptions.slice((recentRedemptionsPage - 1) * itemsPerPage, recentRedemptionsPage * itemsPerPage).map((redemption, index) => (
               <div key={index} className="redemption-item">
                 <div className="redemption-info">
                   <div className="user-info">
@@ -1038,6 +1123,13 @@ const MerchantDashboard = () => {
               </div>
             ))}
           </div>
+          <PaginationComponent 
+            currentPage={recentRedemptionsPage}
+            totalItems={recentRedemptions.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setRecentRedemptionsPage}
+            sectionName="Recent Redemptions"
+          />
         </div>
       )}
 
@@ -1115,8 +1207,9 @@ const MerchantDashboard = () => {
               </button>
             </div>
           ) : (
+            <>
             <div className="deals-grid">
-              {deals.map(deal => {
+              {deals.slice((dealsPage - 1) * itemsPerPage, dealsPage * itemsPerPage).map(deal => {
                 const isExpired = new Date(deal.validUntil) < new Date();
                 const displayStatus = isExpired ? 'Expired' : deal.status;
                 
@@ -1183,13 +1276,15 @@ const MerchantDashboard = () => {
                       )}
                     </div>
                     <div className="deal-actions">
-                      <button 
-                        className="btn btn-sm btn-accent" 
-                        onClick={() => handleViewAnalytics(deal)}
-                        title="View Analytics"
-                      >
-                        <i className="fas fa-chart-bar"></i> Analytics
-                      </button>
+                      {featureAccess.dealAnalyticsButton && (
+                        <button 
+                          className="btn btn-sm btn-accent" 
+                          onClick={() => handleViewAnalytics(deal)}
+                          title="View Analytics"
+                        >
+                          <i className="fas fa-chart-bar"></i> Analytics
+                        </button>
+                      )}
                       <button 
                         className="btn btn-sm btn-secondary" 
                         onClick={() => handleEditDeal(deal)}
@@ -1210,6 +1305,14 @@ const MerchantDashboard = () => {
                 );
               })}
             </div>
+            <PaginationComponent 
+              currentPage={dealsPage}
+              totalItems={deals.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setDealsPage}
+              sectionName="Your Deals"
+            />
+            </>
           )}
         </div>
       ) : (
@@ -1277,7 +1380,7 @@ const MerchantDashboard = () => {
                   </div>
                 ) : (
                   <div className="requests-list">
-                    {redemptionRequests.map((request) => {
+                    {redemptionRequests.slice((redemptionRequestsPage - 1) * itemsPerPage, redemptionRequestsPage * itemsPerPage).map((request) => {
                       console.log('[DEBUG] Rendering request:', request);
                       return (
                         <div key={request.id} className="request-card">
@@ -1335,6 +1438,15 @@ const MerchantDashboard = () => {
                   </div>
                 );
               })()}
+              {redemptionRequests.length > 0 && (
+                <PaginationComponent 
+                  currentPage={redemptionRequestsPage}
+                  totalItems={redemptionRequests.length}
+                  itemsPerPage={itemsPerPage}
+                  onPageChange={setRedemptionRequestsPage}
+                  sectionName="Redemption Requests"
+                />
+              )}
             </div>
           )}
         </div>
@@ -1377,7 +1489,10 @@ const MerchantDashboard = () => {
                 businessAddress: formData.get('businessAddress'),
                 businessPhone: formData.get('businessPhone'),
                 businessEmail: formData.get('businessEmail'),
-                website: formData.get('website')
+                website: formData.get('website'),
+                businessLicense: formData.get('businessLicense'),
+                taxId: formData.get('taxId'),
+                businessDescription: formData.get('businessDescription')
               };
               
               try {
@@ -1450,6 +1565,39 @@ const MerchantDashboard = () => {
                     name="website"
                     defaultValue={businessInfo.website || ''}
                     placeholder="https://"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="businessLicense">Business License</label>
+                  <input
+                    type="text"
+                    id="businessLicense"
+                    name="businessLicense"
+                    defaultValue={businessInfo.businessLicense || ''}
+                    placeholder="License number or registration ID"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="taxId">Tax ID</label>
+                  <input
+                    type="text"
+                    id="taxId"
+                    name="taxId"
+                    defaultValue={businessInfo.taxId || ''}
+                    placeholder="Tax identification number"
+                  />
+                </div>
+
+                <div className="form-group full-width">
+                  <label htmlFor="businessDescription">Business Description</label>
+                  <textarea
+                    id="businessDescription"
+                    name="businessDescription"
+                    defaultValue={businessInfo.businessDescription || ''}
+                    rows="3"
+                    placeholder="Describe your business and services"
                   />
                 </div>
               </div>

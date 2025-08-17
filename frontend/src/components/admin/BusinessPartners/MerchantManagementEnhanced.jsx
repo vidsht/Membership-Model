@@ -2,11 +2,13 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../../services/api';
 import { useNotification } from '../../../contexts/NotificationContext';
+import { useDynamicFields } from '../../../hooks/useDynamicFields';
 import './MerchantManagementEnhanced.css';
 
 const MerchantManagementEnhanced = () => {
   const { showNotification } = useNotification();
   const navigate = useNavigate();
+  const { getCommunityOptions, getBusinessCategoryOptions } = useDynamicFields();
   const [merchants, setMerchants] = useState([]);
   const [businesses, setBusinesses] = useState([]);
   const [viewMode, setViewMode] = useState('cards'); // 'table' or 'cards'
@@ -479,7 +481,6 @@ const MerchantManagementEnhanced = () => {
     return (
       <div className="merchant-management-loading">
         <div className="loading-spinner"></div>
-        <p>Loading merchants...</p>
       </div>
     );  
   }
@@ -583,7 +584,12 @@ const MerchantManagementEnhanced = () => {
               </div>
               <div className="form-group">
                 <label>Business Category</label>
-                <input type="text" value={formData.businessInfo.businessCategory} onChange={e => setFormData(f => ({ ...f, businessInfo: { ...f.businessInfo, businessCategory: e.target.value } }))} />
+                <select value={formData.businessInfo.businessCategory} onChange={e => setFormData(f => ({ ...f, businessInfo: { ...f.businessInfo, businessCategory: e.target.value } }))}>
+                  <option value="">Select Category</option>
+                  {getBusinessCategoryOptions().map(option => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
               </div>
               <div className="form-group">
                 <label>Business Address</label>
@@ -659,11 +665,11 @@ const MerchantManagementEnhanced = () => {
                   className="filter-select"
                 >
                   <option value="">All Categories</option>
-                  <option value="restaurant">Restaurant</option>
-                  <option value="retail">Retail</option>
-                  <option value="services">Services</option>
-                  <option value="entertainment">Entertainment</option>
-                  <option value="healthcare">Healthcare</option>
+                  {getBusinessCategoryOptions().map(category => (
+                    <option key={category.value} value={category.value}>
+                      {category.label}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div className="filter-group">

@@ -310,6 +310,19 @@ const MembershipCard = () => {
     );
   }
 
+  // Hide membership card for pending users
+  if (user.status === 'pending') {
+    return (
+      <div className="membership-card-container">
+        <div className="status-message">
+          <i className="fas fa-clock"></i>
+          <h3>Membership Card Not Available</h3>
+          <p>Your membership card will be available once your account is approved by an administrator.</p>
+        </div>
+      </div>
+    );
+  }
+
   // Debug log to see user data
   console.log('User data for membership card:', user);
 

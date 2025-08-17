@@ -560,39 +560,82 @@ router.post('/reset-password', async (req, res) => {
 });
 
 // Get communities for dropdown
-router.get('/communities', (req, res) => {
+router.get('/communities', async (req, res) => {
   try {
-    // Simple query that works with basic table structure
-  const query = 'SELECT name, description FROM communities WHERE isActive = TRUE ORDER BY name';
-    
-    db.query(query, (err, results) => {
-      if (err) {
-        console.error('Communities query error:', err);
-        // If communities table doesn't exist or has issues, return default communities
-        const defaultCommunities = [
-          { name: 'Gujarati', description: 'Gujarati community' },
-          { name: 'Punjabi', description: 'Punjabi community' },
-          { name: 'Tamil', description: 'Tamil community' },
-          { name: 'Bengali', description: 'Bengali community' },
-          { name: 'Hindi', description: 'Hindi speaking community' },
-          { name: 'Marathi', description: 'Marathi community' },
-          { name: 'Telugu', description: 'Telugu community' },
-          { name: 'Kannada', description: 'Kannada community' },
-          { name: 'Malayalam', description: 'Malayalam community' },
-          { name: 'Sindhi', description: 'Sindhi community' },
-          { name: 'Other Indian', description: 'Other Indian communities' }
-        ];
-        
-        return res.json({ 
-          success: true, 
-          communities: defaultCommunities 
+    // First try to get from dynamic settings
+    const checkSettingsTable = () => {
+      return new Promise((resolve) => {
+        db.query('SHOW TABLES LIKE "settings"', (err, results) => {
+          resolve(results && results.length > 0);
         });
-      }
-      
-      res.json({ 
-        success: true, 
-        communities: results || []
       });
+    };
+
+    const getFromSettings = () => {
+      return new Promise((resolve) => {
+        const settingsQuery = 'SELECT value FROM settings WHERE `key` = "dynamicFields.communities"';
+        db.query(settingsQuery, (err, settingsResults) => {
+          if (!err && settingsResults.length > 0) {
+            try {
+              const communities = JSON.parse(settingsResults[0].value);
+              const activeCommunities = communities.filter(c => c.isActive !== false);
+              resolve(activeCommunities);
+            } catch (parseError) {
+              console.warn('Error parsing communities from settings:', parseError);
+              resolve(null);
+            }
+          } else {
+            resolve(null);
+          }
+        });
+      });
+    };
+
+    const getFromTable = () => {
+      return new Promise((resolve) => {
+        const query = 'SELECT name, description FROM communities WHERE isActive = TRUE ORDER BY name';
+        db.query(query, (err, results) => {
+          if (err) {
+            console.error('Communities query error:', err);
+            resolve(null);
+          } else {
+            resolve(results || []);
+          }
+        });
+      });
+    };
+
+    const hasSettingsTable = await checkSettingsTable();
+    let communities = null;
+
+    if (hasSettingsTable) {
+      communities = await getFromSettings();
+    }
+
+    if (!communities) {
+      communities = await getFromTable();
+    }
+
+    if (!communities) {
+      // Fallback to default communities
+      communities = [
+        { name: 'Gujarati', description: 'Gujarati community' },
+        { name: 'Punjabi', description: 'Punjabi community' },
+        { name: 'Tamil', description: 'Tamil community' },
+        { name: 'Bengali', description: 'Bengali community' },
+        { name: 'Hindi', description: 'Hindi speaking community' },
+        { name: 'Marathi', description: 'Marathi community' },
+        { name: 'Telugu', description: 'Telugu community' },
+        { name: 'Kannada', description: 'Kannada community' },
+        { name: 'Malayalam', description: 'Malayalam community' },
+        { name: 'Sindhi', description: 'Sindhi community' },
+        { name: 'Other Indian', description: 'Other Indian communities' }
+      ];
+    }
+
+    res.json({ 
+      success: true, 
+      communities: communities 
     });
   } catch (error) {
     console.error('Get communities error:', error);
@@ -605,7 +648,7 @@ router.get('/communities', (req, res) => {
       { name: 'Hindi', description: 'Hindi speaking community' },
       { name: 'Other Indian', description: 'Other Indian communities' }
     ];
-      res.json({ 
+    res.json({ 
       success: true, 
       communities: defaultCommunities 
     });
@@ -613,24 +656,227 @@ router.get('/communities', (req, res) => {
 });
 
 // Get user types for dropdown  
-router.get('/user-types', (req, res) => {
+router.get('/user-types', async (req, res) => {
   try {
-  const query = 'SELECT name, description FROM user_types WHERE isActive = TRUE ORDER BY name';
+    // First try to get from dynamic settings
+    const settingsQuery = 'SELECT value FROM settings WHERE `key` = "dynamicFields.userTypes"';
     
-    db.query(query, (err, results) => {
-      if (err) {
-        console.error('User types query error:', err);
-        return res.status(500).json({ success: false, message: 'Server error' });
-      }
+    const checkSettingsTable = () => {
+      return new Promise((resolve) => {
+        db.query('SHOW TABLES LIKE "settings"', (err, results) => {
+          resolve(results && results.length > 0);
+        });
+      });
+    };
+
+    const hasSettingsTable = await checkSettingsTable();
+    
+    if (hasSettingsTable) {
+      db.query(settingsQuery, (err, settingsResults) => {
+        if (!err && settingsResults.length > 0) {
+          try {
+            const userTypes = JSON.parse(settingsResults[0].value);
+            const activeUserTypes = userTypes.filter(ut => ut.isActive !== false);
+            return res.json({ 
+              success: true, 
+              userTypes: activeUserTypes 
+            });
+          } catch (parseError) {
+            console.warn('Error parsing user types from settings:', parseError);
+          }
+        }
+        
+        // Fallback to database table or defaults
+        fallbackToUserTypesTable();
+      });
+    } else {
+      fallbackToUserTypesTable();
+    }
+
+    function fallbackToUserTypesTable() {
+      // Try the old user_types table approach
+      const query = 'SELECT name, description FROM user_types WHERE isActive = TRUE ORDER BY name';
+      
+      db.query(query, (err, results) => {
+        if (err) {
+          console.error('User types query error:', err);
+          // Return default user types
+          const defaultUserTypes = [
+            { name: 'Professional', description: 'Working professional' },
+            { name: 'Business Owner', description: 'Business owner or entrepreneur' },
+            { name: 'Student', description: 'Student' },
+            { name: 'Homemaker', description: 'Homemaker' },
+            { name: 'Retired', description: 'Retired person' },
+            { name: 'Other', description: 'Other profession' }
+          ];
+          
+          return res.json({ 
+            success: true, 
+            userTypes: defaultUserTypes 
+          });
+        }
+        
+        res.json({ 
+          success: true, 
+          userTypes: results || []
+        });
+      });
+    }
+  } catch (error) {
+    console.error('Get user types error:', error);
+    // Fallback to default user types on any error
+    const defaultUserTypes = [
+      { name: 'Professional', description: 'Working professional' },
+      { name: 'Business Owner', description: 'Business owner or entrepreneur' },
+      { name: 'Student', description: 'Student' },
+      { name: 'Other', description: 'Other profession' }
+    ];
+    res.json({ 
+      success: true, 
+      userTypes: defaultUserTypes 
+    });
+  }
+});
+
+// Get business categories for dropdown
+router.get('/business-categories', async (req, res) => {
+  try {
+    // First try to get from dynamic settings
+    const settingsQuery = 'SELECT value FROM settings WHERE `key` = "dynamicFields.businessCategories"';
+    
+    const checkSettingsTable = () => {
+      return new Promise((resolve) => {
+        db.query('SHOW TABLES LIKE "settings"', (err, results) => {
+          resolve(results && results.length > 0);
+        });
+      });
+    };
+
+    const hasSettingsTable = await checkSettingsTable();
+    
+    if (hasSettingsTable) {
+      db.query(settingsQuery, (err, settingsResults) => {
+        if (!err && settingsResults.length > 0) {
+          try {
+            const businessCategories = JSON.parse(settingsResults[0].value);
+            const activeCategories = businessCategories.filter(bc => bc.isActive !== false);
+            return res.json({ 
+              success: true, 
+              businessCategories: activeCategories 
+            });
+          } catch (parseError) {
+            console.warn('Error parsing business categories from settings:', parseError);
+          }
+        }
+        
+        // Fallback to defaults
+        returnDefaultBusinessCategories();
+      });
+    } else {
+      returnDefaultBusinessCategories();
+    }
+
+    function returnDefaultBusinessCategories() {
+      const defaultCategories = [
+        { name: 'restaurant', label: 'Restaurant & Food', description: 'Restaurants, food services, catering' },
+        { name: 'retail', label: 'Retail & Shopping', description: 'Retail stores, shopping centers' },
+        { name: 'services', label: 'Professional Services', description: 'Consulting, legal, accounting, etc.' },
+        { name: 'healthcare', label: 'Healthcare', description: 'Medical, dental, wellness services' },
+        { name: 'technology', label: 'Technology', description: 'IT services, software, tech products' },
+        { name: 'other', label: 'Other', description: 'Other business types' }
+      ];
       
       res.json({ 
         success: true, 
-        userTypes: results 
+        businessCategories: defaultCategories 
       });
-    });
+    }
   } catch (error) {
-    console.error('Get user types error:', error);  
-    res.status(500).json({ success: false, message: 'Server error' });  }
+    console.error('Get business categories error:', error);
+    // Fallback to default categories on any error
+    const defaultCategories = [
+      { name: 'restaurant', label: 'Restaurant & Food', description: 'Restaurants, food services' },
+      { name: 'retail', label: 'Retail & Shopping', description: 'Retail stores, shopping' },
+      { name: 'services', label: 'Professional Services', description: 'Consulting, legal, accounting' },
+      { name: 'other', label: 'Other', description: 'Other business types' }
+    ];
+    res.json({ 
+      success: true, 
+      businessCategories: defaultCategories 
+    });
+  }
+});
+
+// Get deal categories for dropdown
+router.get('/deal-categories', async (req, res) => {
+  try {
+    // First try to get from dynamic settings
+    const settingsQuery = 'SELECT value FROM settings WHERE `key` = "dynamicFields.dealCategories"';
+    
+    const checkSettingsTable = () => {
+      return new Promise((resolve) => {
+        db.query('SHOW TABLES LIKE "settings"', (err, results) => {
+          resolve(results && results.length > 0);
+        });
+      });
+    };
+
+    const hasSettingsTable = await checkSettingsTable();
+    
+    if (hasSettingsTable) {
+      db.query(settingsQuery, (err, settingsResults) => {
+        if (!err && settingsResults.length > 0) {
+          try {
+            const dealCategories = JSON.parse(settingsResults[0].value);
+            const activeCategories = dealCategories.filter(dc => dc.isActive !== false);
+            return res.json({ 
+              success: true, 
+              dealCategories: activeCategories 
+            });
+          } catch (parseError) {
+            console.warn('Error parsing deal categories from settings:', parseError);
+          }
+        }
+        
+        // Fallback to defaults
+        returnDefaultDealCategories();
+      });
+    } else {
+      returnDefaultDealCategories();
+    }
+
+    function returnDefaultDealCategories() {
+      const defaultCategories = [
+        { name: 'restaurant', label: 'Restaurant', description: 'Food and dining deals' },
+        { name: 'retail', label: 'Retail', description: 'Shopping and retail deals' },
+        { name: 'electronics', label: 'Electronics', description: 'Electronic devices and gadgets' },
+        { name: 'fashion', label: 'Fashion', description: 'Clothing, accessories, fashion items' },
+        { name: 'health', label: 'Health & Wellness', description: 'Health, fitness, wellness services' },
+        { name: 'entertainment', label: 'Entertainment', description: 'Movies, events, entertainment' },
+        { name: 'travel', label: 'Travel', description: 'Travel packages, hotels, transportation' },
+        { name: 'services', label: 'Services', description: 'Professional and personal services' },
+        { name: 'other', label: 'Other', description: 'Other categories' }
+      ];
+      
+      res.json({ 
+        success: true, 
+        dealCategories: defaultCategories 
+      });
+    }
+  } catch (error) {
+    console.error('Get deal categories error:', error);
+    // Fallback to default categories on any error
+    const defaultCategories = [
+      { name: 'restaurant', label: 'Restaurant', description: 'Food and dining deals' },
+      { name: 'retail', label: 'Retail', description: 'Shopping and retail deals' },
+      { name: 'services', label: 'Services', description: 'Professional and personal services' },
+      { name: 'other', label: 'Other', description: 'Other categories' }
+    ];
+    res.json({ 
+      success: true, 
+      dealCategories: defaultCategories 
+    });
+  }
 });
 
 // @route   POST /api/auth/refresh

@@ -1,5 +1,6 @@
 // UserFilters.jsx - COMPLETE FIXED Component
 import React, { useState } from 'react';
+import { useDynamicFields } from '../../../../hooks/useDynamicFields';
 
 const UserFilters = ({ 
   filters, 
@@ -9,6 +10,7 @@ const UserFilters = ({
   referenceData, 
   loading 
 }) => {
+  const { getCommunityOptions, isLoading: fieldsLoading } = useDynamicFields();
   const [isExpanded, setIsExpanded] = useState(true);
 
   const handleFilterChange = (field, value) => {
@@ -92,11 +94,15 @@ const UserFilters = ({
                 onChange={(e) => handleFilterChange('community', e.target.value)}
               >
                 <option value="all">All Communities</option>
-                {referenceData?.communities?.map((community, index) => (
-                  <option key={index} value={community.name || community}>
-                    {community.name || community}
-                  </option>
-                ))}
+                {fieldsLoading ? (
+                  <option disabled>Loading communities...</option>
+                ) : (
+                  getCommunityOptions().map(option => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))
+                )}
               </select>
             </div>
 

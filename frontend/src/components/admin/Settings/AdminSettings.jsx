@@ -6,6 +6,7 @@ import api from '../../../services/api';
 import SystemSettings from './SystemSettings';
 import FeatureToggles from './FeatureToggles';
 import SocialMediaSettings from './SocialMediaSettings';
+import DynamicFieldsSettings from './DynamicFieldsSettings';
 import Modal from '../../shared/Modal';
 import { useModal } from '../../../hooks/useModal';
 import './AdminSettings.css';
@@ -158,6 +159,13 @@ const AdminSettings = () => {
             onSettingChange={handleSettingChange} 
           />
         );
+      case 'fields':
+        return (
+          <DynamicFieldsSettings 
+            settings={settings}
+            onSettingChange={handleSettingChange} 
+          />
+        );
       case 'terms':
         return (
           <div className="settings-section">
@@ -247,6 +255,13 @@ const AdminSettings = () => {
             >
               <i className="fas fa-share-alt"></i>
               <span>Social Media</span>
+            </li>
+            <li 
+              className={activeTab === 'fields' ? 'active' : ''}
+              onClick={() => setActiveTab('fields')}
+            >
+              <i className="fas fa-list"></i>
+              <span>Dynamic Fields</span>
             </li>
             <li 
               className={activeTab === 'terms' ? 'active' : ''}

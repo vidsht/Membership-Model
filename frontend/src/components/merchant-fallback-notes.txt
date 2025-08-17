@@ -1,7 +1,0 @@
-Fallback logic added to MerchantCertificate.jsx:
-- If /merchant/business-info returns 404, call public /businesses and try to match by user.email, user.fullName or user.businessId.
-- Map public business fields to businessInfo shape used by certificate component.
-- This mirrors membership card behavior which uses AuthContext user without session-dependent API.
-
-Note: Public /businesses only returns approved businesses; pending merchants may still not be found.
-If merchant is pending, they should complete profile or wait for approval.

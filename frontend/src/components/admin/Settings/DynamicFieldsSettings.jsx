@@ -1,0 +1,249 @@
+import React, { useState, useEffect } from 'react';
+import { useNotification } from '../../../contexts/NotificationContext';
+import api from '../../../services/api';
+import './DynamicFieldsSettings.css';
+
+const DynamicFieldsSettings = ({ settings, onSettingChange }) => {
+  const { showNotification } = useNotification();
+  const [dynamicFields, setDynamicFields] = useState({
+    communities: [],
+    userTypes: [],
+    businessCategories: [],
+    dealCategories: []
+  });
+  const [editingField, setEditingField] = useState(null);
+  const [newOption, setNewOption] = useState({ name: '', label: '', description: '', isActive: true });
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetchDynamicFields();
+  }, []);
+
+  const fetchDynamicFields = async () => {
+    try {
+      setIsLoading(true);
+      const response = await api.get('/admin/dynamic-fields');
+      if (response.data.success) {
+        setDynamicFields(response.data.dynamicFields);
+      }
+    } catch (error) {
+      console.error('Error fetching dynamic fields:', error);
+      showNotification('Error loading dynamic fields', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAddOption = (fieldType) => {
+    const currentOptions = dynamicFields[fieldType] || [];
+    
+    if (!newOption.name.trim()) {
+      showNotification('Option name is required', 'error');
+      return;
+    }
+    
+    // Check for duplicates
+    const exists = currentOptions.some(option => 
+      option.name.toLowerCase() === newOption.name.toLowerCase()
+    );
+    
+    if (exists) {
+      showNotification('An option with this name already exists', 'error');
+      return;
+    }
+
+    const updatedOptions = [
+      ...currentOptions,
+      {
+        ...newOption,
+        name: newOption.name.trim(),
+        label: newOption.label || newOption.name,
+        description: newOption.description || '',
+        isActive: true
+      }
+    ];
+
+    updateFieldOptions(fieldType, updatedOptions);
+    setNewOption({ name: '', label: '', description: '', isActive: true });
+  };
+
+  const handleUpdateOption = (fieldType, index, updatedOption) => {
+    const currentOptions = [...(dynamicFields[fieldType] || [])];
+    currentOptions[index] = updatedOption;
+    updateFieldOptions(fieldType, currentOptions);
+  };
+
+  const handleDeleteOption = (fieldType, index) => {
+    const currentOptions = [...(dynamicFields[fieldType] || [])];
+    currentOptions.splice(index, 1);
+    updateFieldOptions(fieldType, currentOptions);
+  };
+
+  const updateFieldOptions = async (fieldType, options) => {
+    try {
+      const response = await api.put(`/admin/dynamic-fields/${fieldType}`, { options });
+      if (response.data.success) {
+        setDynamicFields(prev => ({
+          ...prev,
+          [fieldType]: options
+        }));
+        showNotification(`${getFieldDisplayName(fieldType)} updated successfully`, 'success');
+      }
+    } catch (error) {
+      console.error('Error updating dynamic field:', error);
+      showNotification('Error updating field options', 'error');
+    }
+  };
+
+  const getFieldDisplayName = (fieldType) => {
+    const names = {
+      communities: 'Communities',
+      userTypes: 'User Types',
+      businessCategories: 'Business Categories',
+      dealCategories: 'Deal Categories'
+    };
+    return names[fieldType] || fieldType;
+  };
+
+  const renderFieldEditor = (fieldType, options) => {
+    return (
+      <div className="dynamic-field-section">
+        <div className="field-header">
+          <h4>{getFieldDisplayName(fieldType)}</h4>
+          <button 
+            className="btn btn-primary btn-sm"
+            onClick={() => setEditingField(editingField === fieldType ? null : fieldType)}
+          >
+            {editingField === fieldType ? 'Cancel' : 'Add New'}
+          </button>
+        </div>
+
+        {editingField === fieldType && (
+          <div className="add-option-form">
+            <div className="form-row">
+              <div className="form-group">
+                <label>Name *</label>
+                <input
+                  type="text"
+                  value={newOption.name}
+                  onChange={(e) => setNewOption({ ...newOption, name: e.target.value })}
+                  placeholder="Option name"
+                />
+              </div>
+              {(fieldType === 'businessCategories' || fieldType === 'dealCategories') && (
+                <div className="form-group">
+                  <label>Display Label</label>
+                  <input
+                    type="text"
+                    value={newOption.label}
+                    onChange={(e) => setNewOption({ ...newOption, label: e.target.value })}
+                    placeholder="Display label (optional)"
+                  />
+                </div>
+              )}
+            </div>
+            <div className="form-group">
+              <label>Description</label>
+              <input
+                type="text"
+                value={newOption.description}
+                onChange={(e) => setNewOption({ ...newOption, description: e.target.value })}
+                placeholder="Option description (optional)"
+              />
+            </div>
+            <div className="form-actions">
+              <button 
+                className="btn btn-primary btn-sm"
+                onClick={() => handleAddOption(fieldType)}
+              >
+                Add Option
+              </button>
+              <button 
+                className="btn btn-secondary btn-sm"
+                onClick={() => setEditingField(null)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="options-list">
+          {options.map((option, index) => (
+            <div key={index} className={`option-item ${!option.isActive ? 'inactive' : ''}`}>
+              <div className="option-content">
+                <div className="option-main">
+                  <strong>{option.label || option.name}</strong>
+                  {option.description && <p className="option-description">{option.description}</p>}
+                </div>
+                <div className="option-actions">
+                  <button
+                    className={`btn btn-sm ${option.isActive ? 'btn-warning' : 'btn-success'}`}
+                    onClick={() => handleUpdateOption(fieldType, index, { ...option, isActive: !option.isActive })}
+                  >
+                    {option.isActive ? 'Deactivate' : 'Activate'}
+                  </button>
+                  <button
+                    className="btn btn-danger btn-sm"
+                    onClick={() => handleDeleteOption(fieldType, index)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+          {options.length === 0 && (
+            <div className="empty-state">
+              <p>No options available. Add some options to get started.</p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  if (isLoading) {
+    return (
+      <div className="loading-container">
+        <div className="loading-spinner"></div>
+        <p>Loading dynamic fields...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="dynamic-fields-settings">
+      <div className="settings-section-header">
+        <h3>Dynamic Fields Management</h3>
+        <p>Manage dropdown options for forms throughout the application</p>
+      </div>
+
+      <div className="dynamic-fields-container">
+        {Object.entries(dynamicFields).map(([fieldType, options]) => (
+          <div key={fieldType}>
+            {renderFieldEditor(fieldType, options)}
+          </div>
+        ))}
+      </div>
+
+      <div className="settings-info">
+        <div className="info-box">
+          <h4>How Dynamic Fields Work</h4>
+          <ul>
+            <li><strong>Communities:</strong> Used in user registration and profile forms</li>
+            <li><strong>User Types:</strong> Used in user registration to categorize users</li>
+            <li><strong>Business Categories:</strong> Used when merchants register their businesses</li>
+            <li><strong>Deal Categories:</strong> Used when creating deals and offers</li>
+          </ul>
+          <p className="note">
+            <strong>Note:</strong> Changes to these fields will be reflected immediately across all forms in the application.
+            Deactivated options will not appear in dropdowns but existing data will be preserved.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default DynamicFieldsSettings;

@@ -113,11 +113,9 @@ const DealFilters = ({ filters, plans = [], onFilterChange, onSearch }) => {
                   aria-label="Deal category"
                 >
                   <option value="all">All Categories</option>
-                  <option value="food">Food</option>
-                  <option value="shopping">Shopping</option>
-                  <option value="services">Services</option>
-                  <option value="travel">Travel</option>
-                  <option value="other">Other</option>
+                  {getDealCategoryOptions && getDealCategoryOptions().map(option => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
                 </select>
               </div>
               <div className="user-filters__filters-actions">

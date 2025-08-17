@@ -1,5 +1,6 @@
 // UserForm.jsx - Route-based Create/Edit User Form
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useDynamicFields } from '../../../hooks/useDynamicFields';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useNotification } from '../../../contexts/NotificationContext';
@@ -7,6 +8,7 @@ import api from '../../../services/api';
 import './UserForm.css';
 
 const UserForm = () => {
+  const { getCommunityOptions, isLoading: fieldsLoading } = useDynamicFields();
   const { userId } = useParams();
   const navigate = useNavigate();
   const isEditMode = Boolean(userId);
@@ -363,11 +365,15 @@ const UserForm = () => {
                     onChange={(e) => handleInputChange('community', e.target.value)}
                   >
                     <option value="">Select community</option>
-                    {referenceData.communities.map((community, index) => (
-                      <option key={index} value={community.name}>
-                        {community.name}
-                      </option>
-                    ))}
+                    {fieldsLoading ? (
+                      <option disabled>Loading communities...</option>
+                    ) : (
+                      getCommunityOptions().map(option => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))
+                    )}
                   </select>
                 </div>
               </div>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNotification } from '../contexts/NotificationContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useDynamicFields } from '../hooks/useDynamicFields';
 import '../styles/registration.css';
 
 
@@ -9,6 +10,18 @@ import '../styles/registration.css';
 const UnifiedRegistration = () => {
   // Tab state
   const [activeTab, setActiveTab] = useState('member');
+
+  // Initialize hooks
+  const { showNotification } = useNotification();
+  const navigate = useNavigate();
+  const { login } = useAuth();
+  const { 
+    dynamicFields, 
+    isLoading: fieldsLoading, 
+    getCommunityOptions, 
+    getUserTypeOptions, 
+    getBusinessCategoryOptions 
+  } = useDynamicFields();
 
   // User Registration State
   const [userForm, setUserForm] = useState({
@@ -38,7 +51,6 @@ const UnifiedRegistration = () => {
   });
   const [userLoading, setUserLoading] = useState(false);
   const [userNotification, setUserNotification] = useState({ message: '', type: '' }); // legacy, remove after migration
-  const { showNotification } = useNotification();
   const [userTermsAccepted, setUserTermsAccepted] = useState(false);
   
   // Dynamic dropdown options and settings
@@ -138,23 +150,20 @@ const UnifiedRegistration = () => {
     const fetchOptions = async () => {
       try {
         setLoadingOptions(true);
-        const [communitiesResponse, userTypesResponse, userPlansResponse, merchantPlansResponse, publicSettingsResponse] = await Promise.all([
-          fetch('/api/auth/communities', { credentials: 'include' }),
-          fetch('/api/auth/user-types', { credentials: 'include' }),
+        
+        // The dynamic fields hook already loads communities, userTypes, businessCategories
+        // We just need to sync them to our local state for backward compatibility
+        if (!fieldsLoading && dynamicFields) {
+          setCommunities(dynamicFields.communities || []);
+          setUserTypes(dynamicFields.userTypes || []);
+        }
+
+        // Load other data that isn't dynamic yet
+        const [userPlansResponse, merchantPlansResponse, publicSettingsResponse] = await Promise.all([
           fetch('/api/plans?type=user&isActive=true', { credentials: 'include' }),
           fetch('/api/plans?type=merchant&isActive=true', { credentials: 'include' }),
           fetch('/api/admin/settings/public', { credentials: 'include' })
         ]);
-        
-        if (communitiesResponse.ok) {
-          const communitiesData = await communitiesResponse.json();
-          setCommunities(communitiesData.communities || []);
-        }
-        
-        if (userTypesResponse.ok) {
-          const userTypesData = await userTypesResponse.json();
-          setUserTypes(userTypesData.userTypes || []);
-        }
           if (userPlansResponse.ok) {
           const userPlansData = await userPlansResponse.json();
           setUserPlans(userPlansData.plans || []);
@@ -187,7 +196,7 @@ const UnifiedRegistration = () => {
     };
     
     fetchOptions();
-  }, [showNotification]);
+  }, [showNotification, fieldsLoading, dynamicFields]); // Re-run when dynamic fields finish loading
 
   const handleMerchantSocialChange = (platform) => {
     setMerchantForm(prev => ({
@@ -203,7 +212,7 @@ const UnifiedRegistration = () => {
   const [merchantTermsAccepted, setMerchantTermsAccepted] = useState(false);
 
   const { register, merchantRegister } = useAuth();
-  const navigate = useNavigate();
+  
   // User Registration Handlers
   const handleUserInputChange = (e) => {
     const { name, value, id } = e.target;
@@ -544,12 +553,12 @@ const UnifiedRegistration = () => {
                     required
                   >
                     <option value="">Select your community</option>
-                    {loadingOptions ? (
+                    {fieldsLoading ? (
                       <option disabled>Loading communities...</option>
                     ) : (
-                      communities.map((community) => (
-                        <option key={community.name} value={community.name}>
-                          {community.name}
+                      getCommunityOptions().map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
                         </option>
                       ))
                     )}
@@ -999,12 +1008,11 @@ const UnifiedRegistration = () => {
                       required
                     >
                       <option value="">Select Category</option>
-                      <option value="restaurant">Restaurant & Food</option>
-                      <option value="retail">Retail & Shopping</option>
-                      <option value="services">Professional Services</option>
-                      <option value="healthcare">Healthcare</option>
-                      <option value="technology">Technology</option>
-                      <option value="other">Other</option>
+                      {getBusinessCategoryOptions().map((category) => (
+                        <option key={category.value} value={category.value}>
+                          {category.label}
+                        </option>
+                      ))}
                     </select>
                   </div>
                   <div className="form-group">
