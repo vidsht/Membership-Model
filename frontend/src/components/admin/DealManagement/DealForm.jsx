@@ -281,7 +281,6 @@ const DealForm = () => {
     return (
       <div className="loading-container">
         <div className="loading-spinner"></div>
-        <p>Loading deal data...</p>
       </div>
     );
   }

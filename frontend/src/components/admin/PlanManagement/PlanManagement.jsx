@@ -669,7 +669,6 @@ const PlanManagement = () => {
     return (
       <div className="loading-container">
         <div className="loading-spinner"></div>
-        <p>Loading plan data...</p>
       </div>
     );
   }

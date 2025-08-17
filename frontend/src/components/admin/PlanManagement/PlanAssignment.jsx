@@ -143,8 +143,6 @@ const PlanAssignment = (props) => {
     return (
       <div className="loading-container">
         <div className="loading-spinner">
-          <i className="fas fa-spinner fa-spin"></i>
-          <p>Loading user and plan data...</p>
         </div>
       </div>
     );

@@ -193,6 +193,11 @@ export const getAllBusinesses = async () => {
 
 // Merchant API functions
 export const merchantApi = {
+  // Verify member by membership number
+  verifyMember: async (membershipNumber) => {
+    const response = await api.get(`/merchant/verify-member/${encodeURIComponent(membershipNumber)}`);
+    return response.data;
+  },
   // Get merchant dashboard data
   getDashboard: async () => {
     const response = await api.get('/merchant/dashboard');
@@ -269,8 +274,16 @@ export const merchantApi = {
 
   // Get redemption requests
   getRedemptionRequests: async () => {
-    const response = await api.get('/merchant/redemption-requests');
-    return response.data;
+    console.log('[DEBUG FRONTEND] Calling redemption requests API...');
+    console.log('[DEBUG FRONTEND] Full API URL:', `${API_BASE_URL}/merchant/redemption-requests`);
+    try {
+      const response = await api.get('/merchant/redemption-requests');
+      console.log('[DEBUG FRONTEND] Redemption requests API response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('[DEBUG FRONTEND] API call failed:', error);
+      throw error;
+    }
   },
 
   // Approve redemption request

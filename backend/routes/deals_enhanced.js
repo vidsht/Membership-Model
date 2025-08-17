@@ -196,15 +196,18 @@ router.post('/:id/redeem', checkDealAccess, (req, res) => {
   const dealId = req.params.id;
   const userId = user.id;
 
-  // First check if user has already redeemed this deal
-  db.query('SELECT * FROM deal_redemptions WHERE dealId = ? AND userId = ?', [dealId, userId], (err, existingRedemptions) => {
+  // First check if user already has a pending redemption for this deal
+  db.query('SELECT * FROM deal_redemptions WHERE deal_id = ? AND user_id = ? AND status = "pending"', [dealId, userId], (err, pendingRedemptions) => {
     if (err) {
       console.error('Check redemption error:', err);
       return res.status(500).json({ message: 'Server error' });
     }
 
-    if (existingRedemptions.length > 0) {
-      return res.status(400).json({ message: 'You have already redeemed this deal' });
+    if (pendingRedemptions.length > 0) {
+      return res.status(400).json({ 
+        message: 'You already have a pending redemption request for this deal. Please wait for merchant approval.',
+        isPending: true
+      });
     }
 
     // Check monthly redemption limit
@@ -270,24 +273,22 @@ router.post('/:id/redeem', checkDealAccess, (req, res) => {
           // Generate redemption code
           const redemptionCode = `RDM${Date.now()}${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
 
-          // Insert redemption record
-          const insertQuery = 'INSERT INTO deal_redemptions (dealId, userId, redeemedAt, redemptionCode, status) VALUES (?, ?, NOW(), ?, "redeemed")';
+          // Insert redemption request with PENDING status - merchant approval required
+          const insertQuery = 'INSERT INTO deal_redemptions (deal_id, user_id, redeemed_at, redemptionCode, status) VALUES (?, ?, NOW(), ?, "pending")';
           
           db.query(insertQuery, [dealId, userId, redemptionCode], (err5) => {
             if (err5) {
-              console.error('Redemption insert error:', err5);
-              return res.status(500).json({ message: 'Server error processing redemption' });
+              console.error('Redemption request insert error:', err5);
+              return res.status(500).json({ message: 'Server error processing redemption request' });
             }
 
-            // Update deal redemption count
-            db.query('UPDATE deals SET redemptions = redemptions + 1 WHERE id = ?', [dealId], (updateErr) => {
-              if (updateErr) console.error('Failed to update redemption count:', updateErr);
-            });
+            // Don't update deal redemption count yet - wait for merchant approval
 
             res.json({ 
               success: true, 
-              message: 'Deal redeemed successfully!',
-              redemptionCode,
+              message: '\ud83c\udf89 Redemption request submitted! The merchant will review your request and contact you for verification. You will be notified once approved.',
+              isPending: true,
+              requiresApproval: true,
               deal: {
                 id: deal.id,
                 title: deal.title,

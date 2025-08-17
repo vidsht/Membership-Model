@@ -31,6 +31,12 @@ const MerchantDashboard = () => {
   const [rejectionRequestId, setRejectionRequestId] = useState(null);
   const [rejectionReason, setRejectionReason] = useState('');
   
+  // Member verification state
+  const [showMemberVerification, setShowMemberVerification] = useState(false);
+  const [membershipSearch, setMembershipSearch] = useState('');
+  const [memberVerificationResult, setMemberVerificationResult] = useState(null);
+  const [verificationLoading, setVerificationLoading] = useState(false);
+  
   // Plan-based feature access
   const [featureAccess, setFeatureAccess] = useState({
     analytics: false,
@@ -256,7 +262,44 @@ const MerchantDashboard = () => {
     }
 
     setFeatureAccess(access);
-  };  const fetchDashboardData = async () => {
+  };
+
+  // Member verification function
+  const verifyMembershipNumber = async (membershipNumber) => {
+    if (!membershipNumber.trim()) {
+      setMemberVerificationResult(null);
+      return;
+    }
+
+    setVerificationLoading(true);
+    try {
+      // Use merchantApi abstraction for correct path
+      const response = await merchantApi.verifyMember(membershipNumber);
+      if (response.success) {
+        setMemberVerificationResult(response.member);
+      } else {
+        setMemberVerificationResult({ error: response.message || 'Member not found' });
+      }
+    } catch (error) {
+      console.error('Error verifying membership:', error);
+      setMemberVerificationResult({ 
+        error: error.response?.data?.message || 'Error verifying membership number' 
+      });
+    } finally {
+      setVerificationLoading(false);
+    }
+  };
+
+  // Handle membership search with debouncing
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      verifyMembershipNumber(membershipSearch);
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [membershipSearch]);
+
+  const fetchDashboardData = async () => {
     try {
       setLoading(true);
       const response = await merchantApi.getDashboard();
@@ -357,12 +400,17 @@ const MerchantDashboard = () => {
   // Redemption request management functions
   const fetchRedemptionRequests = async () => {
     try {
+      console.log('[DEBUG] Fetching redemption requests...');
       const response = await getRedemptionRequests();
+      console.log('[DEBUG] Redemption requests response:', response);
       if (response.success) {
+        console.log('[DEBUG] Redemption requests (pending):', response.requests);
         setRedemptionRequests(response.requests || []);
+      } else {
+        console.warn('[DEBUG] Redemption requests fetch not successful:', response);
       }
     } catch (error) {
-      console.error('Error fetching redemption requests:', error);
+      console.error('[DEBUG] Error fetching redemption requests:', error);
       if (error.response?.status === 404 || error.response?.status === 403) {
         setRedemptionRequests([]);
       }
@@ -508,7 +556,6 @@ const MerchantDashboard = () => {
     return (
       <div className="loading-container">
         <div className="loading-spinner"></div>
-        <p>Loading your merchant dashboard...</p>
       </div>
     );
   }
@@ -954,6 +1001,9 @@ const MerchantDashboard = () => {
           <button className="btn btn-accent" onClick={() => setShowAnalytics(true)}>
             <i className="fas fa-chart-bar"></i> View Analytics
           </button>
+          <button className="btn btn-info" onClick={() => setShowMemberVerification(true)}>
+            <i className="fas fa-user-check"></i> Verify Member
+          </button>
         </div>
       </div>
 
@@ -1215,72 +1265,76 @@ const MerchantDashboard = () => {
           
           {showRedemptionRequests && (
             <div className="requests-container">
-              {redemptionRequests.length === 0 ? (
-                <div className="no-requests">
-                  <div className="empty-state">
-                    <i className="fas fa-inbox"></i>
-                    <h3>No pending requests</h3>
-                    <p>When customers request to redeem your deals, they'll appear here for your approval.</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="requests-list">
-                  {redemptionRequests.map((request) => (
-                    <div key={request.id} className="request-card">
-                      <div className="request-header">
-                        <div className="deal-info">
-                          <h4>{request.dealTitle}</h4>
-                          <span className="discount-badge">
-                            {request.discount}{request.discountType === 'percentage' ? '%' : request.discountType} OFF
-                          </span>
-                        </div>
-                        <div className="request-time">
-                          <i className="fas fa-clock"></i>
-                          {new Date(request.redeemed_at).toLocaleDateString()} at {new Date(request.redeemed_at).toLocaleTimeString()}
-                        </div>
-                      </div>
-                      
-                      <div className="customer-info">
-                        <div className="customer-details">
-                          <div className="customer-name">
-                            <i className="fas fa-user"></i>
-                            <strong>{request.userName || 'Customer'}</strong>
-                          </div>
-                          <div className="customer-contact">
-                            <i className="fas fa-phone"></i>
-                            <span>{request.phone || 'Phone not available'}</span>
-                          </div>
-                          {request.membershipNumber && (
-                            <div className="membership-number">
-                              <i className="fas fa-id-card"></i>
-                              <span>Member #{request.membershipNumber}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      
-                      <div className="request-actions">
-                        <button 
-                          className="btn btn-success btn-sm"
-                          onClick={() => handleApproveRequest(request.id)}
-                          disabled={processingRequest === request.id}
-                        >
-                          <i className="fas fa-check"></i>
-                          {processingRequest === request.id ? 'Approving...' : 'Approve'}
-                        </button>
-                        <button 
-                          className="btn btn-danger btn-sm"
-                          onClick={() => handleRejectRequest(request.id)}
-                          disabled={processingRequest === request.id}
-                        >
-                          <i className="fas fa-times"></i>
-                          {processingRequest === request.id ? 'Rejecting...' : 'Reject'}
-                        </button>
-                      </div>
+              {(() => {
+                console.log('[DEBUG] Rendering redemptionRequests:', redemptionRequests);
+                return redemptionRequests.length === 0 ? (
+                  <div className="no-requests">
+                    <div className="empty-state">
+                      <i className="fas fa-inbox"></i>
+                      <h3>No pending requests</h3>
+                      <p>When customers request to redeem your deals, they'll appear here for your approval.</p>
                     </div>
-                  ))}
-                </div>
-              )}
+                  </div>
+                ) : (
+                  <div className="requests-list">
+                    {redemptionRequests.map((request) => {
+                      console.log('[DEBUG] Rendering request:', request);
+                      return (
+                        <div key={request.id} className="request-card">
+                          <div className="request-header">
+                            <div className="deal-info">
+                              <h4>{request.dealTitle}</h4>
+                              <span className="discount-badge">
+                                {request.discount}{request.discountType === 'percentage' ? '%' : request.discountType} OFF
+                              </span>
+                            </div>
+                            <div className="request-time">
+                              <i className="fas fa-clock"></i>
+                              {new Date(request.redeemed_at).toLocaleDateString()} at {new Date(request.redeemed_at).toLocaleTimeString()}
+                            </div>
+                          </div>
+                          <div className="customer-info">
+                            <div className="customer-details">
+                              <div className="customer-name">
+                                <i className="fas fa-user"></i>
+                                <strong>{request.userName || 'Customer'}</strong>
+                              </div>
+                              <div className="customer-contact">
+                                <i className="fas fa-phone"></i>
+                                <span>{request.phone || 'Phone not available'}</span>
+                              </div>
+                              {request.membershipNumber && (
+                                <div className="membership-number">
+                                  <i className="fas fa-id-card"></i>
+                                  <span>Member #{request.membershipNumber}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <div className="request-actions">
+                            <button 
+                              className="btn btn-success btn-sm"
+                              onClick={() => handleApproveRequest(request.id)}
+                              disabled={processingRequest === request.id}
+                            >
+                              <i className="fas fa-check"></i>
+                              {processingRequest === request.id ? 'Approving...' : 'Approve'}
+                            </button>
+                            <button 
+                              className="btn btn-danger btn-sm"
+                              onClick={() => handleRejectRequest(request.id)}
+                              disabled={processingRequest === request.id}
+                            >
+                              <i className="fas fa-times"></i>
+                              {processingRequest === request.id ? 'Rejecting...' : 'Reject'}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
             </div>
           )}
         </div>
@@ -1739,6 +1793,168 @@ const MerchantDashboard = () => {
               <button className="btn btn-secondary" onClick={() => setShowDealAnalytics(false)}>
                 Close
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Member Verification Modal */}
+      {showMemberVerification && (
+        <div className="modal-overlay">
+          <div className="modal-content member-verification-modal">
+            <div className="modal-header">
+              <h3>
+                <i className="fas fa-user-check text-info"></i>
+                Member Verification
+              </h3>
+              <button 
+                className="close-btn" 
+                onClick={() => {
+                  setShowMemberVerification(false);
+                  setMembershipSearch('');
+                  setMemberVerificationResult(null);
+                }}
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="info-message">
+                <p><strong>🔍 Verify Member Authentication</strong></p>
+                <p>Enter a membership number to verify the member's details and status in real-time.</p>
+              </div>
+              
+              <div className="form-group">
+                <label htmlFor="membershipSearch">Membership Number</label>
+                <div className="search-input-container">
+                  <input
+                    id="membershipSearch"
+                    type="text"
+                    className="form-control"
+                    placeholder="Enter membership number (e.g., USR-000123)"
+                    value={membershipSearch}
+                    onChange={(e) => setMembershipSearch(e.target.value)}
+                    autoComplete="off"
+                  />
+                  {verificationLoading && (
+                    <div className="search-loading">
+                      <i className="fas fa-spinner fa-spin"></i>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Verification Result */}
+              {memberVerificationResult && (
+                <div className="verification-result">
+                  {memberVerificationResult.error ? (
+                    <div className="verification-error">
+                      <i className="fas fa-exclamation-circle"></i>
+                      <h4>Member Not Found</h4>
+                      <p>{memberVerificationResult.error}</p>
+                    </div>
+                  ) : (
+                    <div className="verification-success">
+                      <div className="member-details">
+                        <div className="member-header">
+                          <i className="fas fa-user-circle"></i>
+                          <h4>Member Found</h4>
+                          <span className={`status-badge ${memberVerificationResult.status}`}>
+                            {memberVerificationResult.status}
+                          </span>
+                        </div>
+                        
+                        <div className="member-info-grid">
+                          <div className="info-item">
+                            <strong><i className="fas fa-user"></i> Full Name:</strong>
+                            <span>{memberVerificationResult.fullName}</span>
+                          </div>
+                          
+                          <div className="info-item">
+                            <strong><i className="fas fa-id-card"></i> Membership Number:</strong>
+                            <span>{memberVerificationResult.membershipNumber}</span>
+                          </div>
+                          
+                          <div className="info-item">
+                            <strong><i className="fas fa-crown"></i> Membership Type:</strong>
+                            <span className="membership-type">
+                              {memberVerificationResult.membershipType || 'Basic'}
+                            </span>
+                          </div>
+                          
+                          <div className="info-item">
+                            <strong><i className="fas fa-calendar-alt"></i> Plan Expiry:</strong>
+                            <span className={memberVerificationResult.planExpiryDate ? 'expiry-date' : 'no-expiry'}>
+                              {/* Plan expiry removed as per backend change */}
+                            </span>
+                          </div>
+                          
+                          <div className="info-item">
+                            <strong><i className="fas fa-phone"></i> Contact:</strong>
+                            <span>{memberVerificationResult.phone || 'Not provided'}</span>
+                          </div>
+                          
+                          <div className="info-item">
+                            <strong><i className="fas fa-envelope"></i> Email:</strong>
+                            <span>{memberVerificationResult.email || 'Not provided'}</span>
+                          </div>
+                        </div>
+
+                        {/* Plan Details if available */}
+                        {memberVerificationResult.planName && (
+                          <div className="plan-details">
+                            <h5><i className="fas fa-star"></i> Plan Details</h5>
+                            <div className="plan-info">
+                              <span className="plan-name">{memberVerificationResult.planName}</span>
+                              <span className="plan-priority">Priority: {memberVerificationResult.planPriority || 'N/A'}</span>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Verification timestamp */}
+                        <div className="verification-timestamp">
+                          <small>
+                            <i className="fas fa-clock"></i>
+                            Verified at: {new Date().toLocaleString()}
+                          </small>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {!membershipSearch && !memberVerificationResult && (
+                <div className="verification-placeholder">
+                  <i className="fas fa-search"></i>
+                  <p>Enter a membership number above to verify member details</p>
+                </div>
+              )}
+            </div>
+            
+            <div className="modal-footer">
+              <button 
+                className="btn btn-secondary" 
+                onClick={() => {
+                  setShowMemberVerification(false);
+                  setMembershipSearch('');
+                  setMemberVerificationResult(null);
+                }}
+              >
+                Close
+              </button>
+              {memberVerificationResult && !memberVerificationResult.error && (
+                <button 
+                  className="btn btn-primary" 
+                  onClick={() => {
+                    setMembershipSearch('');
+                    setMemberVerificationResult(null);
+                  }}
+                >
+                  <i className="fas fa-search"></i>
+                  Verify Another
+                </button>
+              )}
             </div>
           </div>
         </div>

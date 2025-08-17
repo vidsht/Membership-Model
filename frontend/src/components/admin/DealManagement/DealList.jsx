@@ -456,7 +456,6 @@ const DealList = ({ onTabChange }) => {
       {isLoading ? (
         <div className="loading-container">
           <div className="loading-spinner"></div>
-          <p>Loading deals...</p>
         </div>
       ) : deals.length > 0 ? (
         <div className="deals-table-container">

@@ -107,7 +107,6 @@ const DealDetail = () => {
       {loading && (
         <div className="loading-container">
           <div className="loading-spinner"></div>
-          <p>Loading deal details...</p>
         </div>
       )}
 

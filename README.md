@@ -499,14 +499,6 @@ The application uses MongoDB with the following collections:
 - [ ] Real-time notifications
 - [ ] File upload for profile pictures and business images
 
-### Technical Improvements
-- [ ] Progressive Web App (PWA) capabilities
-- [ ] Offline functionality with service workers
-- [ ] API rate limiting and security enhancements
-- [ ] Unit and integration testing
-- [ ] Docker containerization
-- [ ] CI/CD pipeline setup
-
 ## Contributing
 
 1. Fork the repository

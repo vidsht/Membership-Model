@@ -6,7 +6,24 @@ const fs = require('fs');
 const { auth, merchant } = require('../middleware/auth');
 const db = require('../db');
 
+
 const router = express.Router();
+
+// Check if table exists helper function
+const tableExists = async (tableName) => {
+  try {
+    await queryAsync(`SELECT 1 FROM ${tableName} LIMIT 1`);
+    return true;
+  } catch (error) {
+    return false;
+  }
+};
+
+// Add debugging middleware to log all requests to merchant routes
+router.use((req, res, next) => {
+  console.log(`[MERCHANT ROUTE DEBUG] ${req.method} ${req.path} - ${new Date().toISOString()}`);
+  next();
+});
 
 // Required DB columns and tables used by merchant feature-access logic:
 // - users (u):
@@ -99,8 +116,13 @@ const updateExpiredDeals = async () => {
 
 // Middleware to check merchant status and access
 const checkMerchantAccess = async (req, res, next) => {
+  console.log('[DEBUG MIDDLEWARE] checkMerchantAccess called');
+  console.log('[DEBUG MIDDLEWARE] Session:', req.session);
+  console.log('[DEBUG MIDDLEWARE] Session userId:', req.session?.userId);
+  
   const userId = req.session.userId;
   if (!userId) {
+    console.log('[DEBUG MIDDLEWARE] No userId in session - returning 401');
     return res.status(401).json({ message: 'Not authenticated' });
   }
 
@@ -391,6 +413,72 @@ router.get('/dashboard', checkMerchantAccess, async (req, res) => {
   } catch (error) {
     console.error('Dashboard error:', error);
     res.status(500).json({ message: 'Server error fetching dashboard data' });
+  }
+});
+
+// Get pending redemption requests for merchant - MOVED UP for priority
+router.get('/redemption-requests', checkMerchantAccess, async (req, res) => {
+  try {
+    const merchant = req.merchant;
+    
+    console.log('[DEBUG BACKEND] Fetching redemption requests for merchant:', merchant.businessId);
+    console.log('[DEBUG BACKEND] Merchant object:', { 
+      id: merchant.id, 
+      businessId: merchant.businessId, 
+      fullName: merchant.fullName 
+    });
+    
+    if (!(await tableExists('deal_redemptions'))) {
+      console.log('[DEBUG BACKEND] Redemptions table not found');
+      return res.json({
+        success: true,
+        requests: [],
+        message: 'Redemptions table not found'
+      });
+    }
+
+    // Use the same pattern as analytics but filter for pending status
+    // This mirrors the successful analytics approach
+    const query = `
+      SELECT 
+        dr.id,
+        dr.deal_id,
+        dr.user_id,
+        dr.redeemed_at,
+        dr.status,
+        dr.rejection_reason,
+        d.title as dealTitle,
+        d.discount,
+        d.discountType,
+        u.fullName as userName,
+        u.phone,
+        u.membershipNumber
+      FROM deal_redemptions dr
+      JOIN deals d ON dr.deal_id = d.id
+      JOIN users u ON dr.user_id = u.id
+      WHERE d.businessId = ? AND dr.status = 'pending'
+      ORDER BY dr.redeemed_at DESC
+    `;
+    
+    console.log('[DEBUG BACKEND] Executing query with businessId:', merchant.businessId);
+    
+    const results = await queryAsync(query, [merchant.businessId]);
+    
+    console.log('[DEBUG BACKEND] Pending redemptions found:', results.length);
+    console.log('[DEBUG BACKEND] Redemption details:', results);
+    
+    res.json({
+      success: true,
+      requests: results,
+      count: results.length
+    });
+  } catch (err) {
+    console.error('[DEBUG BACKEND] Error fetching redemption requests:', err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error fetching redemption requests',
+      error: err.message
+    });
   }
 });
 
@@ -1045,81 +1133,62 @@ router.patch('/notifications/:id/read', checkMerchantAccess, async (req, res) =>
   }
 });
 
-// Get pending redemption requests for merchant
-router.get('/redemption-requests', checkMerchantAccess, async (req, res) => {
-  try {
-    const merchant = req.merchant;
-    
-    if (!(await tableExists('deal_redemptions'))) {
-      return res.json({
-        success: true,
-        requests: [],
-        message: 'Redemptions table not found'
-      });
-    }
-
-    // Get pending redemption requests for this merchant's deals
-    const query = `
-      SELECT dr.*, u.phone, u.membershipNumber, d.title as dealTitle, d.discount, d.discountType,
-             u.fullName as userName
-      FROM deal_redemptions dr
-      JOIN deals d ON dr.deal_id = d.id
-      JOIN users u ON dr.user_id = u.id
-      WHERE d.businessId = ? AND dr.status = 'pending'
-      ORDER BY dr.redeemed_at DESC
-    `;
-    
-    const results = await queryAsync(query, [merchant.businessId]);
-    
-    res.json({
-      success: true,
-      requests: results,
-      count: results.length
-    });
-  } catch (err) {
-    console.error('Error fetching redemption requests:', err);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Server error fetching redemption requests'
-    });
-  }
-});
-
 // Approve redemption request
 router.patch('/redemption-requests/:requestId/approve', checkMerchantAccess, async (req, res) => {
   try {
     const merchant = req.merchant;
     const requestId = parseInt(req.params.requestId);
-    
+
     if (!requestId || isNaN(requestId)) {
       return res.status(400).json({ success: false, message: 'Valid request ID is required' });
     }
 
+    // Defensive: Check if deal_redemptions table exists
+    if (!(await tableExists('deal_redemptions'))) {
+      return res.status(500).json({ success: false, message: 'deal_redemptions table missing' });
+    }
+    // Defensive: Check if deals table exists
+    if (!(await tableExists('deals'))) {
+      return res.status(500).json({ success: false, message: 'deals table missing' });
+    }
+
     // Verify request belongs to merchant's deals and is pending
     const checkQuery = `
-      SELECT dr.*, d.title, d.businessId
+      SELECT dr.*, d.title, d.businessId, d.id as deal_id
       FROM deal_redemptions dr
       JOIN deals d ON dr.deal_id = d.id
       WHERE dr.id = ? AND d.businessId = ? AND dr.status = 'pending'
     `;
-    
+
     const checkResults = await queryAsync(checkQuery, [requestId, merchant.businessId]);
-    
+
     if (checkResults.length === 0) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Redemption request not found or already processed' 
+      return res.status(404).json({
+        success: false,
+        message: 'Redemption request not found or already processed'
       });
     }
 
+    const dealId = checkResults[0].deal_id;
+    if (!dealId) {
+      return res.status(500).json({ success: false, message: 'Deal ID missing for redemption request' });
+    }
+
     // Update request status to approved
-    await queryAsync(
-      'UPDATE deal_redemptions SET status = "approved", updated_at = NOW() WHERE id = ?',
+    // Use approved_at to track approval timestamp (change from updated_at)
+    const updateRes = await queryAsync(
+      'UPDATE deal_redemptions SET status = "approved", approved_at = NOW() WHERE id = ?',
       [requestId]
     );
+    if (updateRes.affectedRows === 0) {
+      return res.status(500).json({ success: false, message: 'Failed to update redemption request status' });
+    }
 
     // Update deal redemption count
-    await queryAsync('UPDATE deals SET redemptions = redemptions + 1 WHERE id = ?', [checkResults[0].deal_id]);
+    const dealUpdateRes = await queryAsync('UPDATE deals SET redemptions = redemptions + 1 WHERE id = ?', [dealId]);
+    if (dealUpdateRes.affectedRows === 0) {
+      return res.status(500).json({ success: false, message: 'Failed to update deal redemption count' });
+    }
 
     res.json({
       success: true,
@@ -1127,9 +1196,10 @@ router.patch('/redemption-requests/:requestId/approve', checkMerchantAccess, asy
     });
   } catch (err) {
     console.error('Error approving redemption request:', err);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Server error approving redemption request'
+    res.status(500).json({
+      success: false,
+      message: 'Server error approving redemption request',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
     });
   }
 });
@@ -1162,17 +1232,17 @@ router.patch('/redemption-requests/:requestId/reject', checkMerchantAccess, asyn
       });
     }
 
-    // Update request status to rejected
-    let updateQuery = 'UPDATE deal_redemptions SET status = "rejected", updated_at = NOW()';
+    // Use rejected_at to track rejection timestamp (change from updated_at)
+    let updateQuery = 'UPDATE deal_redemptions SET status = "rejected", rejected_at = NOW()';
     let params = [requestId];
-    
+
     if (reason && reason.trim()) {
       updateQuery += ', rejection_reason = ? WHERE id = ?';
       params = [reason.trim(), requestId];
     } else {
       updateQuery += ' WHERE id = ?';
     }
-    
+
     await queryAsync(updateQuery, params);
 
     res.json({
@@ -1184,6 +1254,102 @@ router.patch('/redemption-requests/:requestId/reject', checkMerchantAccess, asyn
     res.status(500).json({ 
       success: false, 
       message: 'Server error rejecting redemption request'
+    });
+  }
+});
+
+// Verify member by membership number
+router.get('/verify-member/:membershipNumber', checkMerchantAccess, async (req, res) => {
+  try {
+    const membershipNumber = req.params.membershipNumber;
+    
+    if (!membershipNumber || !membershipNumber.trim()) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Membership number is required' 
+      });
+    }
+
+    // Check if users and plans tables exist
+    if (!(await tableExists('users'))) {
+      return res.status(500).json({ 
+        success: false, 
+        message: 'Users table not found' 
+      });
+    }
+    if (!(await tableExists('plans'))) {
+      return res.status(500).json({ 
+        success: false, 
+        message: 'Plans table not found' 
+      });
+    }
+
+    // Query to find member by membership number
+    const memberQuery = `
+      SELECT 
+        u.id,
+        u.fullName,
+        u.email,
+        u.phone,
+        u.membershipNumber,
+        u.membershipType,
+        u.status,
+        u.created_at,
+        p.name as planName,
+        p.priority as planPriority
+      FROM users u
+      LEFT JOIN plans p ON u.membershipType = p.key AND p.type = 'user'
+      WHERE u.membershipNumber = ?
+      LIMIT 1
+    `;
+
+    let memberResults;
+    try {
+      memberResults = await queryAsync(memberQuery, [membershipNumber]);
+    } catch (sqlError) {
+      console.error('SQL error verifying member:', sqlError);
+      return res.status(500).json({
+        success: false,
+        message: 'Database error verifying member',
+        error: process.env.NODE_ENV === 'development' ? sqlError.message : undefined
+      });
+    }
+
+    if (memberResults.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'No member found with this membership number'
+      });
+    }
+
+    const member = memberResults[0];
+
+    // Format the response
+    const memberInfo = {
+      id: member.id,
+      fullName: member.fullName,
+      email: member.email,
+      phone: member.phone,
+      membershipNumber: member.membershipNumber,
+      membershipType: member.membershipType,
+      status: member.status,
+      registrationDate: member.created_at,
+      planName: member.planName,
+      planPriority: member.planPriority
+    };
+
+    res.json({
+      success: true,
+      member: memberInfo,
+      message: 'Member found successfully'
+    });
+
+  } catch (err) {
+    console.error('Error verifying member:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Server error verifying member',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
     });
   }
 });

@@ -86,14 +86,16 @@ const queryAsync = promisify(db.query).bind(db);
 // Basic routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/users', require('./routes/users'));
+
+// Mount merchant routes
 app.use('/api/merchant', require('./routes/merchant'));
-app.use('/api/merchant/deals', require('./routes/deals'));
+
 // Public deals route for users
 app.use('/api/deals', require('./routes/deals'));
 app.use('/api/plans', require('./routes/plans'));
 
+// Admin routes
 app.use('/api/admin', require('./routes/admin'));
-app.use('/api/admin', require('./routes/deals'));
 app.use('/api/admin', require('./routes/roles'));
 
 // Serve uploaded files
