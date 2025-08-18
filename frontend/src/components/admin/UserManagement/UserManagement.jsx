@@ -501,51 +501,29 @@ const UserManagement = () => {
 
   return (
     <div className="user-management-container">
+      {/* User Statistics Bar - Matching Deal Management Style */}
+      <div className="user-stats-bar">
+        <div className="user-stat">
+          <div className="stat-label">Total Users</div>
+          <div className="stat-value">{stats.totalUsers}</div>
+        </div>
+        <div className="user-stat">
+          <div className="stat-label">Pending Approvals</div>
+          <div className="stat-value">{stats.pendingApprovals}</div>
+        </div>
+        <div className="user-stat">
+          <div className="stat-label">Active Users</div>
+          <div className="stat-value">{stats.activeUsers}</div>
+        </div>
+        <div className="user-stat">
+          <div className="stat-label">Suspended Users</div>
+          <div className="stat-value">{stats.suspendedUsers}</div>
+        </div>
+      </div>
+
       {/* Page Header */}
       <div className="pages-header">
         <div className="headers-content">
-          <div className="headers-left">
-            {/* Stats Cards */}
-        <div className="stats-grids">
-          <div className="stat-card">
-            <div className="stat-icon">
-              <i className="fas fa-users"></i>
-            </div>
-            <div className="stat-content">
-              <h3>{stats.totalUsers}</h3>
-              <p>Total Users</p>
-            </div>
-          </div>
-          <div className="stat-card pending">
-            <div className="stat-icon">
-              <i className="fas fa-clock"></i>
-            </div>
-            <div className="stat-content">
-              <h3>{stats.pendingApprovals}</h3>
-              <p>Pending Approvals</p>
-            </div>
-          </div>
-          <div className="stat-card active">
-            <div className="stat-icon">
-              <i className="fas fa-check-circle"></i>
-            </div>
-            <div className="stat-content">
-              <h3>{stats.activeUsers}</h3>
-              <p>Active Users</p>
-            </div>
-          </div>
-          <div className="stat-card suspended">
-            <div className="stat-icon">
-              <i className="fas fa-ban"></i>
-            </div>
-            <div className="stat-content">
-              <h3>{stats.suspendedUsers}</h3>
-              <p>Suspended Users</p>
-            </div>
-          </div>
-        </div>
-          </div>
-
           <div className="header-actions">
             <button
               onClick={() => navigate('/admin/users/create')}

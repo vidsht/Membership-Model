@@ -38,6 +38,15 @@
   z-index: 2;
 }
 
+/* Field description styles */
+.field-description {
+  font-size: 14px;
+  color: #6c757d;
+  margin: 4px 0 8px 0;
+  font-style: italic;
+  line-height: 1.4;
+}
+
 .tab-btn {
   flex: 1;
   padding: 18px 25px;

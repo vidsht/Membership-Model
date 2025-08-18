@@ -287,8 +287,14 @@ const UnifiedRegistration = () => {
     }
     setUserLoading(true);
     try {
+      // Set default plan if membership plans are disabled
+      const finalUserForm = { ...userForm };
+      if (adminSettings.features?.showMembershipPlans !== true) {
+        finalUserForm.plan = 'silver'; // Default to silver plan for users
+      }
+      
       const result = await register({
-        ...userForm,
+        ...finalUserForm,
         termsAccepted: userTermsAccepted
       });
       if (result.success) {
@@ -370,12 +376,17 @@ const UnifiedRegistration = () => {
         .filter(([_, followed]) => followed)
         .map(([platform]) => platform);
 
+      // Set default plan if membership plans are disabled
+      const finalPlan = adminSettings.features?.showMembershipPlans !== true 
+        ? 'basic_business' // Default to basic business plan for merchants
+        : merchantForm.plan;
+
       const merchantData = {
         fullName: merchantForm.fullName,
         email: merchantForm.email,
         password: merchantForm.password,
         phone: merchantForm.phone,
-        plan: merchantForm.plan, // Include selected plan
+        plan: finalPlan, // Include selected or default plan
         bloodGroup: merchantForm.bloodGroup, // Include blood group
         // Send as array for backend compatibility
         socialMediaFollowed: followedPlatforms,
@@ -717,23 +728,37 @@ const UnifiedRegistration = () => {
                     required
                   />
                 </div>
+
+                {/* Membership Plan Section - Conditional Display */}
+                {adminSettings.features?.showMembershipPlans === true && (
                   <div className="form-group">
-                  <label htmlFor="plan">Membership Plan</label>
-                  <select
-                    id="plan"
-                    name="plan"
-                    value={userForm.plan}
-                    onChange={handleUserInputChange}
-                  >
-                    <option value="">Select a Plan</option>
-                    {userPlans.map(plan => (
-                      <option key={plan.id} value={plan.key}>
-                        {plan.name} ({plan.price === 0 ? 'Free' : `${plan.currency} ${plan.price}`})
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                    <label htmlFor="plan">
+                      {adminSettings.membershipPlanRequirements?.section_title || 'Membership Plan'}
+                    </label>
+                    {adminSettings.membershipPlanRequirements?.section_subtitle && (
+                      <p className="field-description">{adminSettings.membershipPlanRequirements.section_subtitle}</p>
+                    )}
+                    <select
+                      id="plan"
+                      name="plan"
+                      value={userForm.plan}
+                      onChange={handleUserInputChange}
+                    >
+                      <option value="">Select a Plan</option>
+                      {userPlans.map(plan => (
+                        <option key={plan.id} value={plan.key}>
+                          {plan.name} ({plan.price === 0 ? 'Free' : `${plan.currency} ${plan.price}`})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </div>              {/* Social Media Section */}
+              {(() => {
+                const showSocialRegistration = adminSettings.features?.show_social_media_home === true;
+                const hasSocialPlatforms = Object.keys(adminSettings.socialMediaRequirements || {}).length > 0;
+                return showSocialRegistration && hasSocialPlatforms;
+              })() && (
               <div className="form-section">
                 <h3><i className="fas fa-share-alt"></i> Community Connection {Object.values(getSocialMediaLinks()).some(link => link.required) && '(Required)'}</h3>
                 <p style={{ marginBottom: '15px', color: '#666', fontSize: '0.9em' }}>
@@ -784,6 +809,7 @@ const UnifiedRegistration = () => {
                   * You must follow at least one social media channel to join our community
                 </small>
               </div>
+              )}
               <div className="form-section">
                 <div className="form-group">
                   <div className="terms-checkbox">
@@ -907,23 +933,36 @@ const UnifiedRegistration = () => {
                   </div>
                 </div>
                 
-                <div className="form-group">
-                  <label htmlFor="plan">Business Plan</label>
-                  <select
-                    id="plan"
-                    name="plan"
-                    value={merchantForm.plan}
-                    onChange={handleMerchantInputChange}
-                  >
-                    <option value="">Select a Plan</option>
-                    {merchantPlans.map(plan => (
-                      <option key={plan.id} value={plan.key}>
-                        {plan.name} ({plan.price === 0 ? 'Free' : `${plan.currency} ${plan.price}`})
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                {/* Business Plan Section - Conditional Display */}
+                {adminSettings.features?.showMembershipPlans === true && (
+                  <div className="form-group">
+                    <label htmlFor="plan">
+                      {adminSettings.membershipPlanRequirements?.section_title || 'Business Plan'}
+                    </label>
+                    {adminSettings.membershipPlanRequirements?.section_subtitle && (
+                      <p className="field-description">{adminSettings.membershipPlanRequirements.section_subtitle}</p>
+                    )}
+                    <select
+                      id="plan"
+                      name="plan"
+                      value={merchantForm.plan}
+                      onChange={handleMerchantInputChange}
+                    >
+                      <option value="">Select a Plan</option>
+                      {merchantPlans.map(plan => (
+                        <option key={plan.id} value={plan.key}>
+                          {plan.name} ({plan.price === 0 ? 'Free' : `${plan.currency} ${plan.price}`})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </div>              {/* Social Media Section */}
+              {(() => {
+                const showSocialRegistration = adminSettings.features?.show_social_media_home === true;
+                const hasSocialPlatforms = Object.keys(adminSettings.socialMediaRequirements || {}).length > 0;
+                return showSocialRegistration && hasSocialPlatforms;
+              })() && (
               <div className="form-section">
                 <h3><i className="fas fa-share-alt"></i> Community Connection {Object.values(getSocialMediaLinks()).some(link => link.required) && '(Required)'}</h3>
                 <p style={{ marginBottom: '15px', color: '#666', fontSize: '0.9em' }}>
@@ -974,6 +1013,7 @@ const UnifiedRegistration = () => {
                   * You must follow at least one social media channel to register as a merchant
                 </small>
               </div>
+              )}
               {/* Business Information */}
               <div className="form-section">
                 <h3><i className="fas fa-building"></i> Business Information</h3>

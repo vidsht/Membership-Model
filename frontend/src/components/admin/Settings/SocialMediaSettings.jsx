@@ -60,12 +60,15 @@ const SocialMediaSettings = ({ settings, onSettingChange }) => {
 
   const handleToggleFeature = (enabled) => {
     onSettingChange('featureToggles', 'showSocialMediaHome', enabled);
-    if (enabled) {
-      showNotification('Social media section enabled on home page', 'success');
+    if (!enabled) {
+      // Clear socialMediaRequirements when disabling
+      onSettingChange('socialMediaRequirements', '', {});
+      showNotification('Social media section disabled and requirements cleared.', 'info');
     } else {
-      showNotification('Social media section disabled on home page', 'info');
+      showNotification('Social media section enabled on home page', 'success');
     }
-  };  return (
+  };
+  return (
     <div className="social-media-settings">
       {/* Feature Toggle */}
       <div className="setting-group">

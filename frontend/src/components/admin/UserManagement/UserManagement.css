@@ -42,13 +42,112 @@
     min-width: 800px;
   }
 }
-/* UserManagement.css - COMPLETE with All Z-Index and Dropdown Fixes */
 
+/* UserManagement.css - COMPLETE with All Z-Index and Dropdown Fixes */
+s
 /* User Management Container */
-.user-management {
+.user-management,
+.user-management-container {
   padding: 2rem;
   background: #f8f9fa;
   min-height: 100vh;
+}
+
+/* User Statistics Bar - Matching Deal Management Style */
+.user-stats-bar {
+  display: flex;
+  gap: 16px;
+  background: #f9fafc;
+  padding: 16px 24px;
+  border-radius: 1.5rem;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  align-items: center;
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 1;
+}
+
+.user-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 120px;
+  padding: 0.5rem 1.25rem;
+  border-radius: 1.25rem;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+  font-size: 0.95rem;
+  font-weight: 500;
+  margin-right: 4px;
+  border: 1px solid #e9ecef;
+  transition: all 0.3s ease;
+}
+
+.user-stat:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.user-stat .stat-label {
+  color: #6c757d;
+  font-size: 0.85rem;
+  margin-bottom: 2px;
+  text-align: center;
+}
+
+.user-stat .stat-value {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #0c905d;
+}
+
+/* Accent colors for each stat */
+.user-stat:nth-child(1) .stat-value {
+  color: #0c905d;
+}
+.user-stat:nth-child(2) .stat-value {
+  color: #007bff;
+}
+.user-stat:nth-child(3) .stat-value {
+  color: #28a745;
+}
+.user-stat:nth-child(4) .stat-value {
+  color: #dc3545;
+}
+
+/* Page Header Styles */
+.pages-header {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem 2rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.headers-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.header-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+.user-stat:nth-child(3) .stat-value {
+  color: #dc3545;
+}
+.user-stat:nth-child(4) .stat-value {
+  color: #fd7e14;
 }
 
 /* Header */
@@ -73,7 +172,7 @@
   gap: 1rem;
 }
 
-/* Stats Container */
+/* Stats Container - Legacy Support */
 .stats-grids {
   display: flex;
   flex-direction: row;

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
+import { useDynamicFields } from '../../hooks/useDynamicFields';
 import './dealfilter.css';
+
 
 /**
  * DealFilters component for advanced deal filtering.
@@ -11,6 +13,7 @@ import './dealfilter.css';
  */
 const DealFilters = ({ filters, plans = [], onFilterChange, onSearch }) => {
   const [showFilters, setShowFilters] = useState(true);
+  const { getBusinessCategoryOptions } = useDynamicFields();
 
   /**
    * Handles input changes for all filter fields.
@@ -104,16 +107,16 @@ const DealFilters = ({ filters, plans = [], onFilterChange, onSearch }) => {
                 </select>
               </div>
               <div className="user-filters__filter-group">
-                <label htmlFor="category">Category</label>
+                <label htmlFor="category">Business Category</label>
                 <select 
                   id="category" 
                   name="category" 
                   value={filters.category || 'all'} 
                   onChange={handleInputChange}
-                  aria-label="Deal category"
+                  aria-label="Business category"
                 >
                   <option value="all">All Categories</option>
-                  {getDealCategoryOptions && getDealCategoryOptions().map(option => (
+                  {getBusinessCategoryOptions().map(option => (
                     <option key={option.value} value={option.value}>{option.label}</option>
                   ))}
                 </select>

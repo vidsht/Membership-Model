@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useDynamicFields } from '../../../hooks/useDynamicFields';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useNotification } from '../../../contexts/NotificationContext';
 import adminApi from '../../../services/adminApi';
@@ -9,6 +10,7 @@ import './PartnerRegistration.css';
  * @returns {React.ReactElement} The partner registration component
  */
 const PartnerRegistration = () => {
+  const { getBusinessCategoryOptions } = useDynamicFields();
   const { showNotification } = useNotification();
   const navigate = useNavigate();
   const { id: partnerId } = useParams();
@@ -339,12 +341,10 @@ const PartnerRegistration = () => {
                   className={formErrors.category ? 'error' : ''}
                 >
                   <option value="">Select a category</option>
-                  <option value="restaurant">Restaurant</option>
-                  <option value="retail">Retail</option>
-                  <option value="service">Service</option>
-                  <option value="professional">Professional</option>
-                  <option value="entertainment">Entertainment</option>
-                  <option value="other">Other</option>                </select>
+                  {getBusinessCategoryOptions().map(category => (
+                    <option key={category.value} value={category.value}>{category.label}</option>
+                  ))}
+                </select>
                 {formErrors.category && <div className="error-message">{formErrors.category}</div>}
               </div>
               

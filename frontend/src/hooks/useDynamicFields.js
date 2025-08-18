@@ -20,7 +20,23 @@ export const useDynamicFields = () => {
       setIsLoading(true);
       setError(null);
 
-      // Fetch from multiple endpoints for backward compatibility
+      // Try to fetch from admin endpoint first (where admin panel saves data)
+      try {
+        const adminResponse = await api.get('/admin/dynamic-fields');
+        if (adminResponse.data.success) {
+          // Filter active options for each field type
+          const newDynamicFields = {};
+          Object.keys(adminResponse.data.dynamicFields).forEach(fieldType => {
+            newDynamicFields[fieldType] = adminResponse.data.dynamicFields[fieldType].filter(item => item.isActive !== false);
+          });
+          setDynamicFields(newDynamicFields);
+          return; // Successfully loaded from admin endpoint
+        }
+      } catch (adminError) {
+        console.warn('Admin endpoint not available, falling back to auth endpoints:', adminError.message);
+      }
+
+      // Fallback to individual auth endpoints for backward compatibility
       const [
         communitiesResponse,
         userTypesResponse,
@@ -66,6 +82,21 @@ export const useDynamicFields = () => {
 
   const refreshField = async (fieldType) => {
     try {
+      // Try admin endpoint first (where admin panel saves data)
+      try {
+        const adminResponse = await api.get(`/admin/dynamic-fields/${fieldType}`);
+        if (adminResponse.data.success && adminResponse.data[fieldType]) {
+          setDynamicFields(prev => ({
+            ...prev,
+            [fieldType]: adminResponse.data[fieldType].filter(item => item.isActive !== false)
+          }));
+          return; // Successfully refreshed from admin endpoint
+        }
+      } catch (adminError) {
+        console.warn(`Admin endpoint not available for ${fieldType}, falling back to auth endpoint:`, adminError.message);
+      }
+
+      // Fallback to auth endpoints
       let response;
       switch (fieldType) {
         case 'communities':

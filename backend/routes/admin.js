@@ -2470,10 +2470,12 @@ router.get('/settings/public', async (req, res) => {
   try {
     let settings = {
       socialMediaRequirements: {},
+      membershipPlanRequirements: {},
       features: {
         show_social_media_home: false,
         show_statistics: true,
-        business_directory: true
+        business_directory: true,
+        showMembershipPlans: true
       },
       content: {
         terms_conditions: 'By using this service, you agree to abide by all rules and regulations set forth by the Indians in Ghana community. Membership benefits are subject to change without prior notice.'
@@ -2504,18 +2506,48 @@ router.get('/settings/public', async (req, res) => {
             console.log('✅ Social media settings loaded:', Object.keys(settings.socialMediaRequirements));
           }
 
-          // Parse features
-          const featureRows = dbSettings.filter(s => s.section === 'featureToggles');
-          featureRows.forEach(row => {
-            const key = row.key.replace('featureToggles.', '');
-            if (key === 'show_social_media_home') {
-              settings.features.show_social_media_home = row.value === 'true';
-            } else if (key === 'show_statistics') {
-              settings.features.show_statistics = row.value === 'true';
-            } else if (key === 'business_directory') {
-              settings.features.business_directory = row.value === 'true';
-            }
-          });
+          // Parse membership plan requirements
+          const membershipPlanRows = dbSettings.filter(s => s.section === 'membershipPlanRequirements');
+          if (membershipPlanRows.length > 0) {
+            settings.membershipPlanRequirements = {};
+            membershipPlanRows.forEach(row => {
+              const key = row.key.replace('membershipPlanRequirements.', '');
+              try {
+                settings.membershipPlanRequirements[key] = JSON.parse(row.value);
+              } catch (e) {
+                settings.membershipPlanRequirements[key] = row.value;
+              }
+            });
+            console.log('✅ Membership plan settings loaded:', Object.keys(settings.membershipPlanRequirements));
+          }
+
+                // Parse feature toggles (support both camelCase and snake_case keys)
+                const featureRows = dbSettings.filter(s => s.section === 'featureToggles');
+                featureRows.forEach(row => {
+                  const key = row.key.replace('featureToggles.', '');
+                  const isOn = row.value === 'true';
+                  // Map keys to public features object
+                  switch (key) {
+                    case 'showSocialMediaHome':
+                    case 'show_social_media_home':
+                      settings.features.show_social_media_home = isOn;
+                      break;
+                    case 'showStatistics':
+                    case 'show_statistics':
+                      settings.features.show_statistics = isOn;
+                      break;
+                    case 'businessDirectory':
+                    case 'business_directory':
+                      settings.features.business_directory = isOn;
+                      break;
+                    case 'showMembershipPlans':
+                    case 'show_membership_plans':
+                      settings.features.showMembershipPlans = isOn;
+                      break;
+                    default:
+                      break;
+                  }
+                });
 
           // Parse content
           const contentRows = dbSettings.filter(s => s.section === 'content');
@@ -2532,7 +2564,10 @@ router.get('/settings/public', async (req, res) => {
     console.log('📤 Sending public settings:', {
       hasSocialMedia: Object.keys(settings.socialMediaRequirements).length > 0,
       showSocialHome: settings.features.show_social_media_home,
-      socialPlatforms: Object.keys(settings.socialMediaRequirements)
+      socialPlatforms: Object.keys(settings.socialMediaRequirements),
+      hasMembershipPlans: Object.keys(settings.membershipPlanRequirements).length > 0,
+      showMembershipPlans: settings.features.showMembershipPlans,
+      membershipPlans: Object.keys(settings.membershipPlanRequirements)
     });
 
     res.json({
@@ -2547,6 +2582,7 @@ router.get('/settings/public', async (req, res) => {
 
 router.get('/settings', auth, admin, async (req, res) => {
   try {
+    // Initialize admin editable settings sections, including toggles and content
     let settings = {
       socialMediaRequirements: {
         facebook: false,
@@ -2556,24 +2592,16 @@ router.get('/settings', auth, admin, async (req, res) => {
         youtube: false,
         tiktok: false
       },
-      featureToggles: {
-        userRegistration: true,
-        merchantRegistration: true,
-        dealPosting: true,
-        membershipCards: true,
-        socialLogin: false,
-        notifications: true,
-        analytics: true,
-        show_social_media_home: false
+      membershipPlanRequirements: {
+        section_title: 'Choose Your Membership Plan',
+        section_subtitle: 'Select the membership plan that best fits your needs'
       },
-      systemSettings: {
-        siteName: 'Indians in Ghana',
-        maintenanceMode: false,
-        maxUsersPerPlan: 1000,
-        sessionTimeout: 24,
-        enableEmailVerification: false,
-        defaultUserPlan: 'community',
-        defaultMerchantPlan: 'basic_business'
+      featureToggles: {
+        showSocialMediaHome: true,
+        showMembershipPlans: true
+      },
+      content: {
+        terms_conditions: ''
       }
     };
 
@@ -2582,13 +2610,18 @@ router.get('/settings', auth, admin, async (req, res) => {
       try {
         const dbSettings = await queryAsync('SELECT * FROM settings');
         if (dbSettings.length > 0) {
-          // Merge database settings with defaults
+          // Merge database settings into each section
           dbSettings.forEach(setting => {
             const [section, key] = setting.key.split('.');
+            const raw = setting.value;
             if (settings[section] && key) {
-              settings[section][key] = setting.value === 'true' ? true : 
-                                      setting.value === 'false' ? false : 
-                                      setting.value;
+              let value;
+              if (raw === 'true' || raw === 'false') {
+                value = raw === 'true';
+              } else {
+                value = raw;
+              }
+              settings[section][key] = value;
             }
           });
         }
@@ -2610,34 +2643,45 @@ router.get('/settings', auth, admin, async (req, res) => {
 router.put('/settings', auth, admin, async (req, res) => {
   try {
     const { settings } = req.body;
-    
     if (!settings) {
       return res.status(400).json({ success: false, message: 'Settings data is required' });
     }
 
-    // Save to database if settings table exists
+    // If social media section is disabled, clear requirements before saving
+    if (settings.featureToggles?.showSocialMediaHome === false || settings.features?.show_social_media_home === false) {
+      settings.socialMediaRequirements = {};
+    }
+
+    // If membership plans section is disabled, clear requirements before saving
+    if (settings.featureToggles?.showMembershipPlans === false || settings.features?.showMembershipPlans === false) {
+      settings.membershipPlanRequirements = {};
+    }
+
+    // Save to database if settings table exists (preserve dynamicFields section)
     if (await tableExists('settings')) {
       try {
-        // Clear existing settings
-        await queryAsync('DELETE FROM settings');
-        
-        // Insert new settings
+        // Delete only sections being updated (retain dynamicFields)
+        const sections = Object.keys(settings).filter(sec => typeof settings[sec] === 'object');
+        if (sections.length) {
+          const placeholders = sections.map(() => '?').join(',');
+          await queryAsync(
+            `DELETE FROM settings WHERE section IN (${placeholders})`,
+            sections
+          );
+        }
+        // Insert new settings entries
         const insertPromises = [];
-        
-        Object.keys(settings).forEach(section => {
-          if (typeof settings[section] === 'object') {
-            Object.keys(settings[section]).forEach(key => {
-              const value = settings[section][key];
-              insertPromises.push(
-                queryAsync(
-                  'INSERT INTO settings (`key`, value, section, updated_at) VALUES (?, ?, ?, NOW())',
-                  [`${section}.${key}`, value.toString(), section]
-                )
-              );
-            });
-          }
+        sections.forEach(section => {
+          Object.keys(settings[section]).forEach(key => {
+            const value = settings[section][key];
+            insertPromises.push(
+              queryAsync(
+                'INSERT INTO settings (`key`, value, section, updated_at) VALUES (?, ?, ?, NOW())',
+                [`${section}.${key}`, value.toString(), section]
+              )
+            );
+          });
         });
-        
         await Promise.all(insertPromises);
       } catch (settingsError) {
         console.warn('Error saving settings to database:', settingsError);

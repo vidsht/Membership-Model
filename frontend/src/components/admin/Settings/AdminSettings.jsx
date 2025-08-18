@@ -3,9 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useNotification } from '../../../contexts/NotificationContext';
 import api from '../../../services/api';
-import SystemSettings from './SystemSettings';
-import FeatureToggles from './FeatureToggles';
 import SocialMediaSettings from './SocialMediaSettings';
+import MembershipPlanSettings from './MembershipPlanSettings';
 import DynamicFieldsSettings from './DynamicFieldsSettings';
 import Modal from '../../shared/Modal';
 import { useModal } from '../../../hooks/useModal';
@@ -19,11 +18,12 @@ const AdminSettings = () => {
   const { showNotification } = useNotification();
   const { modal, showConfirm, hideModal } = useModal();  const [settings, setSettings] = useState({
     socialMediaRequirements: {},
-    featureToggles: {}
+    membershipPlanRequirements: {},
+    content: {}
   });
   const [isLoading, setIsLoading] = useState(true);
   const [hasLoadedInitialData, setHasLoadedInitialData] = useState(false);
-  const [activeTab, setActiveTab] = useState('system');
+  const [activeTab, setActiveTab] = useState('social');
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   
@@ -138,23 +138,16 @@ const AdminSettings = () => {
     );
   }    const renderActiveTab = () => {
     switch (activeTab) {
-      case 'system':
+      case 'social':
         return (
-          <SystemSettings 
-            settings={settings} 
-            onSettingChange={handleSettingChange}
-          />
-        );
-      case 'features':
-        return (
-          <FeatureToggles 
+          <SocialMediaSettings 
             settings={settings}
             onSettingChange={handleSettingChange} 
           />
         );
-      case 'social':
+      case 'membership':
         return (
-          <SocialMediaSettings 
+          <MembershipPlanSettings 
             settings={settings}
             onSettingChange={handleSettingChange} 
           />
@@ -170,26 +163,25 @@ const AdminSettings = () => {
         return (
           <div className="settings-section">
             <div className="settings-section-header">
-              <h3>Terms and Policies</h3>
-              <p>Manage terms of service and privacy policy content</p>
+              <h3>Terms and Conditions</h3>
+              <p>Manage the content that appears in the terms and conditions section</p>
             </div>
             <div className="form-group">
-              <label>Terms of Service URL</label>
-              <input
-                type="url"
-                value={settings.content?.termsUrl || ''}
-                onChange={(e) => handleSettingChange('content', 'termsUrl', e.target.value)}
-                placeholder="https://yoursite.com/terms"
+              <label>Terms and Conditions Content</label>
+              <textarea
+                value={settings.content?.terms_conditions || ''}
+                onChange={(e) => handleSettingChange('content', 'terms_conditions', e.target.value)}
+                placeholder="Enter your terms and conditions content here..."
+                rows="15"
+                style={{ 
+                  minHeight: '300px',
+                  fontFamily: 'inherit',
+                  resize: 'vertical'
+                }}
               />
-            </div>
-            <div className="form-group">
-              <label>Privacy Policy URL</label>
-              <input
-                type="url"
-                value={settings.content?.privacyUrl || ''}
-                onChange={(e) => handleSettingChange('content', 'privacyUrl', e.target.value)}
-                placeholder="https://yoursite.com/privacy"
-              />
+              <p className="field-description">
+                This content will be displayed in the terms and conditions section throughout the application.
+              </p>
             </div>
           </div>
         );
@@ -237,24 +229,18 @@ const AdminSettings = () => {
         <div className="settings-sidebar">
           <ul className="settings-menu">
             <li 
-              className={activeTab === 'system' ? 'active' : ''}
-              onClick={() => setActiveTab('system')}
-            >
-              <i className="fas fa-sliders-h"></i>
-              <span>System Settings</span>
-            </li>
-            <li 
-              className={activeTab === 'features' ? 'active' : ''}
-              onClick={() => setActiveTab('features')}
-            >
-              <i className="fas fa-toggle-on"></i>
-              <span>Feature Toggles</span>            </li>
-            <li 
               className={activeTab === 'social' ? 'active' : ''}
               onClick={() => setActiveTab('social')}
             >
               <i className="fas fa-share-alt"></i>
               <span>Social Media</span>
+            </li>
+            <li 
+              className={activeTab === 'membership' ? 'active' : ''}
+              onClick={() => setActiveTab('membership')}
+            >
+              <i className="fas fa-credit-card"></i>
+              <span>Membership Plans</span>
             </li>
             <li 
               className={activeTab === 'fields' ? 'active' : ''}

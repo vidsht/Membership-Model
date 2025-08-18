@@ -209,8 +209,8 @@ const Home = () => {
 
       {/* Social Media Section */}
       {(() => {
-        const showSocialHome = adminSettings.features?.show_social_media_home !== false;
-        const hasSocialPlatforms = Object.keys(adminSettings.socialMediaRequirements || {}).length > 0;
+  const showSocialHome = adminSettings.features?.show_social_media_home === true;
+  const hasSocialPlatforms = Object.keys(adminSettings.socialMediaRequirements || {}).length > 0;
         console.log('🔍 Social Media Debug:', {
           showSocialHome,
           hasSocialPlatforms,
@@ -218,7 +218,7 @@ const Home = () => {
           socialMediaRequirements: adminSettings.socialMediaRequirements,
           shouldShow: showSocialHome && hasSocialPlatforms
         });
-        return showSocialHome && hasSocialPlatforms;
+  return showSocialHome && hasSocialPlatforms;
       })() && (
         <section className="social-media-home">
           <div className="social-container">
