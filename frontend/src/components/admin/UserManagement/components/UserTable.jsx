@@ -1,6 +1,7 @@
-// UserTable.jsx - Enhanced with Route Navigation Links
+// UserTable.jsx - Enhanced with Route Navigation Links and Profile Pictures
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useImageUrl, SmartImage, DefaultAvatar } from '../../../../hooks/useImageUrl.jsx';
 
 const UserTable = ({
   users,
@@ -16,6 +17,7 @@ const UserTable = ({
   onPageSizeChange,
   calculatePlanValidity
 }) => {
+  const { getProfileImageUrl } = useImageUrl();
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
     try {
@@ -226,12 +228,15 @@ const UserTable = ({
                   <td>
                     <div className="user-cell">
                       <div className="user-avatar">
-                        {user.profilePicture ? (
-                          <img src={user.profilePicture} alt={user.fullName} />
+                        {user.profilePhoto ? (
+                          <SmartImage 
+                            src={getProfileImageUrl(user)} 
+                            alt={user.fullName}
+                            className="avatar-image"
+                            fallback={<DefaultAvatar size={40} name={user.fullName} />}
+                          />
                         ) : (
-                          <div className="avatar-placeholder">
-                            {user.fullName ? user.fullName.split(' ').map(n => n[0]).join('').toUpperCase() : 'U'}
-                          </div>
+                          <DefaultAvatar size={40} name={user.fullName} />
                         )}
                       </div>
                       <div className="user-info">
@@ -277,22 +282,13 @@ const UserTable = ({
                   <td>{formatDate(user.createdAt)}</td>
                   <td>
                     <div className="action-buttons">
-                      {/* View Button - Route Link */}
+                      {/* View/Edit Button - Route Link */}
                       <Link
-                        to={`/admin/users/${user.id}`}
+                        to={`/admin/users/${user.id}/details`}
                         className="btn-icon btn-view"
-                        title="View Details"
+                        title="View/Edit Details"
                       >
                         <i className="fas fa-eye"></i>
-                      </Link>
-
-                      {/* Edit Button - Route Link */}
-                      <Link
-                        to={`/admin/users/${user.id}/edit`}
-                        className="btn-icon btn-edit"
-                        title="Edit User"
-                      >
-                        <i className="fas fa-edit"></i>
                       </Link>
 
                       {/* Status Actions */}

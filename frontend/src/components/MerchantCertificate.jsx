@@ -1,8 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
+import { withPlanAccess } from '../hooks/usePlanAccess.jsx';
 import api, { authApi } from '../services/api';
 import '../styles/merchant-certificate.css';
+import '../styles/plan-access-blocked.css';
 
 const MerchantCertificate = () => {
   const { user } = useAuth();
@@ -325,32 +327,14 @@ const MerchantCertificate = () => {
     return date.toLocaleDateString('en-GB'); // DD/MM/YYYY format
   };
 
-  // Calculate expiry date - same logic as membership card
+  // Calculate expiry date - only use validationDate as source of truth
   const getCertificateExpiryDate = () => {
+    // ONLY use validationDate (primary and only expiry date source)
     if (user.validationDate) {
       return formatDate(user.validationDate);
     }
     
-    if (user.planExpiryDate) {
-      return formatDate(user.planExpiryDate);
-    }
-    
-    if (user.subscriptionEndDate) {
-      return formatDate(user.subscriptionEndDate);
-    }
-    
-    if (user.planEndDate) {
-      return formatDate(user.planEndDate);
-    }
-    
-    // Fallback: calculate 1 year from issue date
-    if (user.statusUpdatedAt || user.created_at) {
-      const issueDate = new Date(user.statusUpdatedAt || user.created_at);
-      const expiryDate = new Date(issueDate);
-      expiryDate.setFullYear(expiryDate.getFullYear() + 1);
-      return formatDate(expiryDate);
-    }
-    
+    // If no validationDate, show N/A (this indicates an issue that should be resolved)
     return 'N/A';
   };
 
@@ -468,4 +452,4 @@ const MerchantCertificate = () => {
   );
 };
 
-export default MerchantCertificate;
+export default withPlanAccess(MerchantCertificate, 'certificate');

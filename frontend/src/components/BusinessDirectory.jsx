@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useImageUrl, SmartImage, DefaultAvatar } from '../hooks/useImageUrl.jsx';
 import api from '../services/api';
 import './BusinessDirectory.css';
 
@@ -8,6 +9,7 @@ const BusinessDirectory = () => {
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
+  const { getMerchantLogoUrl } = useImageUrl();
   
   // Get unique categories from businesses (match Home page logic)
   const categories = businesses.length > 0
@@ -126,8 +128,17 @@ const BusinessDirectory = () => {
               return (
                 <div key={id} className="business-card">
                   <div className="business-logo">
-                    {logo ? (
-                      <img src={logo} alt={`${name} logo`} />
+                    {getMerchantLogoUrl(business) ? (
+                      <SmartImage 
+                        src={getMerchantLogoUrl(business)} 
+                        alt={`${name} logo`} 
+                        className="logo-image"
+                        fallback={
+                          <div className="logo-placeholder">
+                            <span>{name.charAt(0) || "B"}</span>
+                          </div>
+                        }
+                      />
                     ) : (
                       <div className="logo-placeholder">
                         <span>{name.charAt(0) || "B"}</span>

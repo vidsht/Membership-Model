@@ -84,9 +84,57 @@ router.post('/register', async (req, res) => {
         selectedPlan = defaultPlanResult.length > 0 ? defaultPlanResult[0].key : 'community';
       }
       
+      // Calculate validationDate based on plan's billing cycle
+      let validationDate = new Date();
+      let planBillingCycle = 'yearly'; // default
+      
+      // Get plan details to determine billing cycle
+      if (selectedPlan && selectedPlan !== 'community') {
+        try {
+          const planResult = await new Promise((resolve, reject) => {
+            db.query('SELECT billingCycle FROM plans WHERE `key` = ? AND isActive = 1', [selectedPlan], (err, results) => {
+              if (err) reject(err);
+              else resolve(results);
+            });
+          });
+          if (planResult.length > 0) {
+            planBillingCycle = planResult[0].billingCycle || 'yearly';
+          }
+        } catch (err) {
+          console.warn('Could not fetch plan billing cycle, using default yearly:', err);
+        }
+      }
+      
+      // Calculate validation date based on billing cycle
+      switch (planBillingCycle.toLowerCase()) {
+        case 'monthly':
+          validationDate.setMonth(validationDate.getMonth() + 1);
+          break;
+        case 'quarterly':
+          validationDate.setMonth(validationDate.getMonth() + 3);
+          break;
+        case 'yearly':
+        case 'annual':
+          validationDate.setFullYear(validationDate.getFullYear() + 1);
+          break;
+        case 'lifetime':
+          validationDate = null;
+          break;
+        case 'weekly':
+          validationDate.setDate(validationDate.getDate() + 7);
+          break;
+        case 'none':
+          // Community plan - set to 1 year from now
+          validationDate.setFullYear(validationDate.getFullYear() + 1);
+          break;
+        default:
+          validationDate.setFullYear(validationDate.getFullYear() + 1);
+          break;
+      }
+
       const insertQuery = `INSERT INTO users
-        (fullName, email, password, phone, address, dob, bloodGroup, community, country, state, city, userCategory, profilePicture, preferences, membershipType, socialMediaFollowed, userType, status, adminRole, permissions, termsAccepted)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+        (fullName, email, password, phone, address, dob, bloodGroup, community, country, state, city, userCategory, profilePicture, preferences, membershipType, socialMediaFollowed, userType, status, adminRole, permissions, termsAccepted, validationDate, planAssignedAt)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`;
       const insertValues = [
         fullName,
         email,
@@ -108,7 +156,8 @@ router.post('/register', async (req, res) => {
         status || 'pending',
         adminRole || null,
         permissions || null,
-        termsAccepted ? 1 : 0
+        termsAccepted ? 1 : 0,
+        validationDate ? validationDate.toISOString().slice(0, 19).replace('T', ' ') : null
       ];
       
       db.query(insertQuery, insertValues, (err2, result) => {
@@ -125,12 +174,24 @@ router.post('/register', async (req, res) => {
             // Not fatal, continue
           }
             // Fetch the created user (excluding password)
-          db.query('SELECT id, fullName, email, phone, address, community, country, state, city, profilePicture, preferences, membership, membershipNumber, socialMediaFollowed, userType, status, adminRole, permissions, created_at, lastLogin FROM users WHERE id = ?', [result.insertId], (err3, userRows) => {
+          db.query('SELECT id, fullName, email, phone, address, community, country, state, city, profilePicture, preferences, membership, membershipNumber, socialMediaFollowed, userType, status, adminRole, permissions, created_at, lastLogin, bloodGroup, validationDate, membershipType FROM users WHERE id = ?', [result.insertId], (err3, userRows) => {
             if (err3) {
               console.error('Registration SQL error (SELECT after INSERT):', err3);
               return res.status(500).json({ success: false, message: 'Server error', error: err3.message });
             }
             const user = userRows && userRows[0] ? userRows[0] : null;
+            // Normalize validationDate on registration response
+            try {
+              if (user && user.validationDate) {
+                if (user.validationDate instanceof Date) {
+                  user.validationDate = user.validationDate.toISOString();
+                } else {
+                  user.validationDate = String(user.validationDate);
+                }
+              }
+            } catch (e) {
+              console.warn('Failed to normalize validationDate after registration:', e);
+            }
             // Log activity: user registration
             const activityQuery = `INSERT INTO activities (type, title, description, userId, userName, userEmail, userType, timestamp, icon)
               VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), ?)`;
@@ -185,7 +246,20 @@ router.post('/login', async (req, res) => {
       if (!results.length) return res.status(400).json({ message: 'Invalid email or password. Please check your credentials and try again.' });
       
       const user = results[0];
-      
+
+      // Ensure validationDate is normalized for login responses
+      try {
+        if (user && user.validationDate) {
+          if (user.validationDate instanceof Date) {
+            user.validationDate = user.validationDate.toISOString();
+          } else {
+            user.validationDate = String(user.validationDate);
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to normalize validationDate during login:', e);
+      }
+
       // Allow login for pending users but include status info in response
       // Only block if status is rejected or suspended
       if (user.status === 'rejected' || user.status === 'suspended') {
@@ -242,10 +316,13 @@ router.post('/login', async (req, res) => {
             city: user.city,
             profilePicture: user.profilePicture,
             membership: user.membership,
+            membershipType: user.membershipType,
             membershipNumber: user.membershipNumber,
             socialMediaFollowed: user.socialMediaFollowed ? JSON.parse(user.socialMediaFollowed) : {},
             userType: user.userType,
             status: user.status,
+            bloodGroup: user.bloodGroup,
+            validationDate: user.validationDate,
             created_at: user.created_at
           },
           success: true,
@@ -417,6 +494,20 @@ router.post('/merchant/register', async (req, res) => {
               }
               // Auto-login: create session for the new merchant
               req.session.userId = user.id;
+
+              // Normalize validationDate for merchant registration response
+              try {
+                if (user && user.validationDate) {
+                  if (user.validationDate instanceof Date) {
+                    user.validationDate = user.validationDate.toISOString();
+                  } else {
+                    user.validationDate = String(user.validationDate);
+                  }
+                }
+              } catch (e) {
+                console.warn('Failed to normalize validationDate for merchant registration response:', e);
+              }
+              
               req.session.save((err2) => {
                 if (err2) {
                   return res.status(500).json({ success: false, message: 'Session error after registration' });
@@ -449,58 +540,72 @@ router.post('/logout', (req, res) => {
 
 // Get current user
 router.get('/me', auth, (req, res) => {
-  const userId = req.session.userId;
-  if (!userId) {
-    return res.status(401).json({ message: 'Not authenticated' });
-  }
-
-  // Fetch user and include business details for merchants
-  const userQuery = `SELECT id, fullName, email, phone, address, dob, community, country, state, city, profilePicture, preferences, membership, membershipType, membershipNumber, socialMediaFollowed, userType, status, adminRole, permissions, created_at, lastLogin FROM users WHERE id = ?`;
-
-  db.query(userQuery, [userId], (err, results) => {
-    if (err) {
-      console.error('Get user SQL error:', err);
-      return res.status(500).json({ message: 'Server error' });
-    }
-    if (!results.length) {
-      return res.status(404).json({ message: 'User not found' });
+    const userId = req.session.userId;
+    if (!userId) {
+      return res.status(401).json({ message: 'Not authenticated' });
     }
 
-    const user = results[0];
+    // Fetch user and include business details for merchants
+    const userQuery = `SELECT id, fullName, email, phone, address, dob, community, country, state, city, profilePicture, preferences, membership, membershipType, membershipNumber, socialMediaFollowed, userType, status, adminRole, permissions, created_at, lastLogin, bloodGroup, validationDate FROM users WHERE id = ?`;
+
+    db.query(userQuery, [userId], (err, results) => {
+      if (err) {
+        console.error('Get user SQL error:', err);
+        return res.status(500).json({ message: 'Server error' });
+      }
+      if (!results.length) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      const user = results[0];
+
+      // Ensure validationDate is sent as an ISO string (so frontend reads it consistently like other profile fields)
+      try {
+        if (user && user.validationDate) {
+          if (user.validationDate instanceof Date) {
+            user.validationDate = user.validationDate.toISOString();
+          } else {
+            // Fallback: coerce to string
+            user.validationDate = String(user.validationDate);
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to normalize validationDate for /me:', e);
+      }
 
     // If user is a merchant, fetch their business row and attach it
     if (user.userType === 'merchant') {
-      db.query('SELECT businessId, businessName, businessDescription, businessCategory, businessAddress, businessPhone, businessEmail, website, businessLicense, taxId, isVerified, verificationDate, status as businessStatus, created_at as businessCreatedAt FROM businesses WHERE userId = ? LIMIT 1', [userId], (bizErr, bizResults) => {
-        if (bizErr) {
-          console.error('Error fetching business for /me:', bizErr);
-          // Return user without business on error
+        db.query('SELECT businessId, businessName, businessDescription, businessCategory, businessAddress, businessPhone, businessEmail, website, businessLicense, taxId, isVerified, verificationDate, status as businessStatus, created_at as businessCreatedAt FROM businesses WHERE userId = ? LIMIT 1', [userId], (bizErr, bizResults) => {
+          if (bizErr) {
+            console.error('Error fetching business for /me:', bizErr);
+            // Return user without business on error
+            return res.json({
+              user: {
+                ...user,
+                socialMediaFollowed: user.socialMediaFollowed ? JSON.parse(user.socialMediaFollowed) : {}
+              }
+            });
+          }
+
+          const business = bizResults && bizResults[0] ? bizResults[0] : null;
+
           return res.json({
             user: {
               ...user,
-              socialMediaFollowed: user.socialMediaFollowed ? JSON.parse(user.socialMediaFollowed) : {}
+              socialMediaFollowed: user.socialMediaFollowed ? JSON.parse(user.socialMediaFollowed) : {},
+              business
             }
           });
-        }
-
-        const business = bizResults && bizResults[0] ? bizResults[0] : null;
-
+        });
+      } else {
         return res.json({
           user: {
             ...user,
-            socialMediaFollowed: user.socialMediaFollowed ? JSON.parse(user.socialMediaFollowed) : {},
-            business
+            socialMediaFollowed: user.socialMediaFollowed ? JSON.parse(user.socialMediaFollowed) : {}
           }
         });
-      });
-    } else {
-      return res.json({
-        user: {
-          ...user,
-          socialMediaFollowed: user.socialMediaFollowed ? JSON.parse(user.socialMediaFollowed) : {}
-        }
-      });
-    }
-  });
+      }
+    });
 });
 
 // Forgot Password

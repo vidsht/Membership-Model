@@ -1,30 +1,43 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
+import PlanExpiryBanner from '../components/PlanExpiryBanner';
+import ImageUpload from '../components/common/ImageUpload';
+import { useImageUrl } from '../hooks/useImageUrl.jsx';
 import api from '../services/api';
 import Modal from '../components/shared/Modal';
 import { useModal } from '../hooks/useModal';
+import '../styles/user-settings.css';
 
 const UserSettings = () => {
   const { user, updateUser } = useAuth();
   const { showNotification } = useNotification();
   const { modal, showDeleteConfirm, hideModal } = useModal();
+  const { getProfileImageUrl } = useImageUrl();
   const [formData, setFormData] = useState({
-    name: '',
+    fullName: '',
+    firstName: '',
+    lastName: '',
     email: '',
     phone: '',
-    address: {
-      street: '',
-      city: '',
-      state: '',
-      zipCode: '',
-      country: 'Ghana'
-    },
+    dob: '',
+    gender: '',
+    bloodGroup: '',
+    community: '',
+    address: '',
+    country: 'Ghana',
+    state: '',
+    city: '',
     profilePicture: '',
+    membershipType: '',
+    membershipNumber: '',
+    socialMediaFollowed: {},
     preferences: {
       newsletter: true,
       eventNotifications: true,
-      memberDirectory: true
+      memberDirectory: true,
+      emailNotifications: true,
+      smsNotifications: false
     }
   });
   const [passwordForm, setPasswordForm] = useState({
@@ -41,22 +54,58 @@ const UserSettings = () => {
 
   useEffect(() => {
     if (user) {
+      // Normalize address: backend may return string or object
+      let normalizedAddress = { street: '', city: '', state: '', zipCode: '' };
+      if (user.address) {
+        if (typeof user.address === 'object') {
+          normalizedAddress = {
+            street: user.address.street || user.address.address || '',
+            city: user.address.city || '',
+            state: user.address.state || '',
+            zipCode: user.address.zipCode || user.address.zip || ''
+          };
+        } else if (typeof user.address === 'string') {
+          // Try to parse JSON string, otherwise place the whole string into street
+          try {
+            const parsed = JSON.parse(user.address);
+            normalizedAddress = {
+              street: parsed.street || parsed.address || user.address || '',
+              city: parsed.city || '',
+              state: parsed.state || '',
+              zipCode: parsed.zipCode || parsed.zip || ''
+            };
+          } catch (e) {
+            normalizedAddress = { street: user.address, city: '', state: '', zipCode: '' };
+          }
+        }
+      }
+
       setFormData({
-        name: user.name || '',
+        fullName: user.fullName || '',
+        // alias used by some inputs which expect `name`
+        name: user.fullName || '',
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
         email: user.email || '',
         phone: user.phone || '',
-        address: {
-          street: user.address?.street || '',
-          city: user.address?.city || '',
-          state: user.address?.state || '',
-          zipCode: user.address?.zipCode || '',
-          country: user.address?.country || 'Ghana'
-        },
+        dob: user.dob ? user.dob.split('T')[0] : '',
+        gender: user.gender || '',
+        bloodGroup: user.bloodGroup || '',
+        community: user.community || '',
+        address: normalizedAddress,
+        country: user.country || 'Ghana',
+        state: user.state || '',
+        city: user.city || '',
         profilePicture: user.profilePicture || '',
+        membershipType: user.membershipType || user.membership || '',
+        membershipNumber: user.membershipNumber || '',
+        socialMediaFollowed: user.socialMediaFollowed || {},
         preferences: {
           newsletter: user.preferences?.newsletter ?? true,
           eventNotifications: user.preferences?.eventNotifications ?? true,
-          memberDirectory: user.preferences?.memberDirectory ?? true
+          memberDirectory: user.preferences?.memberDirectory ?? true,
+          emailNotifications: user.preferences?.emailNotifications ?? true,
+          smsNotifications: user.preferences?.smsNotifications ?? false
         }
       });
     }
@@ -265,6 +314,33 @@ const UserSettings = () => {
                   </div>
                   <div className="card-body">
                     <form onSubmit={handleProfileUpdate}>
+                      {/* Profile Photo Upload Section */}
+                      <div className="row mb-4">
+                        <div className="col-12">
+                          <h5 className="mb-3">
+                            <i className="fas fa-camera me-2"></i>
+                            Profile Photo
+                          </h5>
+                          <ImageUpload
+                            type="profile"
+                            entityId={user?.id}
+                            currentImage={getProfileImageUrl(user)}
+                            onUploadSuccess={(data) => {
+                              showNotification('Profile photo updated successfully!', 'success');
+                              // Update user data in context
+                              updateUser({ ...user, profilePhoto: data.filename });
+                            }}
+                            onUploadError={(error) => {
+                              showNotification('Failed to upload profile photo', 'error');
+                            }}
+                            label="Upload Profile Photo"
+                            description="This will be displayed on your membership card and in the community directory"
+                            aspectRatio="1:1"
+                            className="mb-4"
+                          />
+                        </div>
+                      </div>
+
                       <div className="row">
                         <div className="col-md-6">
                           <div className="mb-3">
@@ -302,20 +378,7 @@ const UserSettings = () => {
                               value={formData.phone}
                               onChange={handleInputChange}
                               placeholder="+233 XX XXX XXXX"
-                            />
-                          </div>
-
-                          <div className="form-group">
-                            <label htmlFor="profilePicture">
-                              <i className="fas fa-image"></i> Profile Picture URL
-                            </label>
-                            <input
-                              type="url"
-                              id="profilePicture"
-                              name="profilePicture"
-                              value={formData.profilePicture}
-                              onChange={handleInputChange}
-                              placeholder="https://example.com/your-photo.jpg"
+                              name="phone"
                             />
                           </div>
                         </div>

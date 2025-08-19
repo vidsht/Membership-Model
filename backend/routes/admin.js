@@ -95,7 +95,6 @@ router.get('/dashboard', auth, admin, async (req, res) => {
     // Get basic stats
     const totalUsers = await queryAsync('SELECT COUNT(*) AS count FROM users WHERE userType != "merchant"');
     const totalMerchants = await queryAsync('SELECT COUNT(*) AS count FROM users WHERE userType = "merchant"');
-    const pendingApprovals = await queryAsync('SELECT COUNT(*) AS count FROM users WHERE status = "pending"');
     const activeBusinesses = await queryAsync('SELECT COUNT(*) AS count FROM users WHERE userType = "merchant" AND status = "approved"');
     
     let totalDeals = [{ count: 0 }];
@@ -108,7 +107,6 @@ router.get('/dashboard', auth, admin, async (req, res) => {
     const stats = {
       totalUsers: totalUsers[0]?.count || 0,
       totalMerchants: totalMerchants[0]?.count || 0,
-      pendingApprovals: pendingApprovals[0]?.count || 0,
       activeBusinesses: activeBusinesses[0]?.count || 0,
       activePlans: planKeys.length,
       totalDeals: totalDeals[0]?.count || 0,
@@ -129,8 +127,6 @@ router.get('/stats', auth, admin, async (req, res) => {
   try {
     const [userCount] = await queryAsync('SELECT COUNT(*) as count FROM users WHERE userType != "merchant"');
     const [merchantCount] = await queryAsync('SELECT COUNT(*) as count FROM users WHERE userType = "merchant"');
-    const [pendingUserApprovals] = await queryAsync('SELECT COUNT(*) as count FROM users WHERE status = "pending" AND userType != "merchant"');
-    const [pendingMerchantApprovals] = await queryAsync('SELECT COUNT(*) as count FROM users WHERE status = "pending" AND userType = "merchant"');
     const [activeBusinesses] = await queryAsync('SELECT COUNT(*) as count FROM users WHERE status = "approved" AND userType = "merchant"');
     
     let totalDeals = [{ count: 0 }];
@@ -143,7 +139,6 @@ router.get('/stats', auth, admin, async (req, res) => {
     const stats = {
       totalUsers: userCount?.count || 0,
       totalMerchants: merchantCount?.count || 0,
-      pendingApprovals: (pendingUserApprovals?.count || 0) + (pendingMerchantApprovals?.count || 0),
       activeBusinesses: activeBusinesses?.count || 0,
       totalDeals: totalDeals[0]?.count || 0,
       totalRevenue: 0
@@ -398,6 +393,113 @@ router.get('/users', auth, admin, async (req, res) => {
   } catch (err) {
     console.error('Error fetching users:', err);
     res.status(500).json({ success: false, message: 'Server error fetching users' });
+  }
+});
+
+// Replace existing /users/export handler with enhanced CSV including address, dob, validationDate, bloodGroup
+router.get('/users/export', auth, admin, async (req, res) => {
+  try {
+    const {
+      status,
+      userType,
+      community,
+      search
+    } = req.query;
+
+    let whereClause = 'WHERE 1=1';
+    const params = [];
+
+    if (status && status !== 'all') {
+      whereClause += ' AND u.status = ?';
+      params.push(status);
+    }
+
+    if (userType && userType !== 'all') {
+      whereClause += ' AND u.userType = ?';
+      params.push(userType);
+    }
+
+    if (community && community !== 'all') {
+      whereClause += ' AND u.community = ?';
+      params.push(community);
+    }
+
+    if (search && search.trim()) {
+      whereClause += ' AND (u.fullName LIKE ? OR u.email LIKE ? OR u.phone LIKE ? OR u.membershipNumber LIKE ?)';
+      const searchTerm = `%${search.trim()}%`;
+      params.push(searchTerm, searchTerm, searchTerm, searchTerm);
+    }
+
+    // Select additional fields requested: address, dob, validationDate, bloodGroup
+    let exportQuery = `
+      SELECT 
+        u.id, u.fullName, u.email, u.phone, u.address, u.dob, u.community, u.membershipType,
+        u.userType, u.status, u.createdAt, u.lastLogin, u.validationDate, u.bloodGroup,
+        u.country, u.state, u.city, u.membershipNumber`;
+
+    if (await tableExists('plans')) {
+      exportQuery += `, p.name as planName, p.price as planPrice`;
+    }
+
+    exportQuery += ` FROM users u`;
+
+    if (await tableExists('plans')) {
+      exportQuery += ` LEFT JOIN plans p ON u.membershipType = p.key`;
+    }
+
+    exportQuery += ` ${whereClause} ORDER BY u.createdAt DESC`;
+
+    const users = await queryAsync(exportQuery, params);
+
+    const headers = [
+      'ID', 'Full Name', 'Email', 'Phone', 'Address', 'DOB', 'Community', 'Plan', 'User Type',
+      'Status', 'Registration Date', 'Last Login', 'Validation Date', 'Blood Group', 'Country', 'State', 'City',
+      'Membership Number'
+    ];
+
+    // helper to safely escape CSV values
+    const csvSafe = (val) => {
+      if (val === null || val === undefined) return '';
+      const s = typeof val === 'string' ? val : String(val);
+      return `"${s.replace(/"/g, '""')}"`;
+    };
+
+    const fmtDate = (d) => d ? new Date(d).toLocaleDateString() : '';
+
+    const csvRows = [headers.join(',')];
+
+    users.forEach(user => {
+      const row = [
+        user.id,
+        csvSafe(user.fullName || ''),
+        user.email || '',
+        user.phone || '',
+        csvSafe(user.address || ''),
+        fmtDate(user.dob),
+        user.community || '',
+        user.planName || user.membershipType || '',
+        user.userType || '',
+        user.status || '',
+        user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '',
+        user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : '',
+        user.validationDate ? new Date(user.validationDate).toLocaleDateString() : '',
+        user.bloodGroup || '',
+        user.country || '',
+        user.state || '',
+        user.city || '',
+        user.membershipNumber || ''
+      ];
+      csvRows.push(row.join(','));
+    });
+
+    const csvContent = csvRows.join('\n');
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename=users-export-${new Date().toISOString().split('T')[0]}.csv`);
+    res.send(csvContent);
+  } catch (err) {
+    console.error('Error exporting users:', err);
+    res.status(500).json({ success: false, message: 'Server error exporting users' });
   }
 });
 
@@ -1312,6 +1414,7 @@ router.get('/partners/:id', auth, admin, async (req, res) => {
       return res.status(400).json({ success: false, message: 'Valid partner ID is required' });
     }
 
+    // Check if businesses table exists
     const businessTableExists = await tableExists('businesses');
     
     let query;
@@ -1353,7 +1456,7 @@ router.get('/partners/:id', auth, admin, async (req, res) => {
       return res.status(404).json({ success: false, message: 'Partner not found' });
     }
 
-    res.json({ success: true, merchant: result[0] });
+    res.json({ success: true, partner: result[0] });
   } catch (err) {
     console.error('Error fetching partner:', err);
     res.status(500).json({ success: false, message: 'Server error fetching partner' });
@@ -2070,6 +2173,8 @@ router.post('/deals', auth, admin, [
       });
     }
 
+
+
     if (!(await tableExists('deals'))) {
       return res.status(404).json({ success: false, message: 'Deals table not found' });
     }
@@ -2619,7 +2724,17 @@ router.get('/settings', auth, admin, async (req, res) => {
               if (raw === 'true' || raw === 'false') {
                 value = raw === 'true';
               } else {
-                value = raw;
+                // Try to parse JSON objects
+                try {
+                  if (raw.startsWith('{') || raw.startsWith('[')) {
+                    value = JSON.parse(raw);
+                  } else {
+                    value = raw;
+                  }
+                } catch (parseError) {
+                  // If parsing fails, use the raw value
+                  value = raw;
+                }
               }
               settings[section][key] = value;
             }
@@ -2674,10 +2789,14 @@ router.put('/settings', auth, admin, async (req, res) => {
         sections.forEach(section => {
           Object.keys(settings[section]).forEach(key => {
             const value = settings[section][key];
+            // Properly stringify objects, keep primitives as-is
+            const stringValue = typeof value === 'object' && value !== null 
+              ? JSON.stringify(value) 
+              : value.toString();
             insertPromises.push(
               queryAsync(
                 'INSERT INTO settings (`key`, value, section, updated_at) VALUES (?, ?, ?, NOW())',
-                [`${section}.${key}`, value.toString(), section]
+                [`${section}.${key}`, stringValue, section]
               )
             );
           });
@@ -3766,6 +3885,103 @@ router.post('/fix-deals-status-enum', auth, admin, async (req, res) => {
     res.status(500).json({ 
       success: false, 
       message: 'Server error fixing status enum',
+      error: err.message 
+    });
+  }
+});
+
+// @route   POST /api/admin/test/expire-plan/:userId
+// @desc    Test endpoint to simulate plan expiry (sets validationDate to yesterday)
+// @access  Private (Admin only)
+router.post('/test/expire-plan/:userId', admin, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    // Update user's validationDate to yesterday to simulate expiry
+    const result = await queryAsync(
+      'UPDATE users SET validationDate = ? WHERE id = ?',
+      [yesterday, userId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Get updated user info
+    const userResult = await queryAsync(
+      'SELECT id, fullName, email, membershipType, validationDate FROM users WHERE id = ?',
+      [userId]
+    );
+
+    res.json({
+      success: true,
+      message: 'Plan expiry simulated successfully',
+      user: userResult[0],
+      testInfo: {
+        originalValidationDate: 'Set to yesterday',
+        expiryDate: yesterday.toISOString(),
+        note: 'User plan is now expired for testing purposes'
+      }
+    });
+
+  } catch (err) {
+    console.error('Error simulating plan expiry:', err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error simulating plan expiry',
+      error: err.message 
+    });
+  }
+});
+
+// @route   POST /api/admin/test/restore-plan/:userId
+// @desc    Test endpoint to restore plan (sets validationDate to next year)
+// @access  Private (Admin only)
+router.post('/test/restore-plan/:userId', admin, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const nextYear = new Date();
+    nextYear.setFullYear(nextYear.getFullYear() + 1);
+
+    // Update user's validationDate to next year to restore access
+    const result = await queryAsync(
+      'UPDATE users SET validationDate = ? WHERE id = ?',
+      [nextYear, userId]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Get updated user info
+    const userResult = await queryAsync(
+      'SELECT id, fullName, email, membershipType, validationDate FROM users WHERE id = ?',
+      [userId]
+    );
+
+    res.json({
+      success: true,
+      message: 'Plan access restored successfully',
+      user: userResult[0],
+      testInfo: {
+        newValidationDate: nextYear.toISOString(),
+        note: 'User plan is now active for testing purposes'
+      }
+    });
+
+  } catch (err) {
+    console.error('Error restoring plan access:', err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error restoring plan access',
       error: err.message 
     });
   }

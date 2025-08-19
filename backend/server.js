@@ -29,19 +29,16 @@ app.use(express.urlencoded({ extended: true }));
 // Session configuration (MySQL store)
 const MySQLStore = require('express-mysql-session')(session);
 
-// Create session store with enhanced error handling
-const sessionStore = new MySQLStore({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
+// Import existing pool from db.js to share connections
+const dbPool = require('./db');
+
+// Create session store using the existing pool for better connection handling
+const sessionStoreOptions = {
   clearExpired: true,
-  checkExpirationInterval: 900000,
-  expiration: 86400000,
+  checkExpirationInterval: 900000, // 15 minutes
+  expiration: 86400000, // 1 day
   createDatabaseTable: true,
-  reconnect: true,
-  acquireTimeout: 60000,
-  reconnectTimeout: 60000,
+  // Use the pool's promise-based connections
   schema: {
     tableName: 'sessions',
     columnNames: {
@@ -50,7 +47,9 @@ const sessionStore = new MySQLStore({
       data: 'data'
     }
   }
-});
+};
+
+const sessionStore = new MySQLStore(sessionStoreOptions, dbPool.promise ? dbPool.promise() : dbPool);
 
 // Add error handling for session store
 sessionStore.onReady = function() {
@@ -97,6 +96,9 @@ app.use('/api/plans', require('./routes/plans'));
 // Admin routes
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/admin', require('./routes/roles'));
+
+// Upload routes
+app.use('/api/upload', require('./routes/upload'));
 
 // Serve uploaded files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

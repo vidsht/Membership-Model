@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useDynamicFields } from '../hooks/useDynamicFields';
 import '../styles/registration.css';
+import '../styles/global.css';
 
 
 
@@ -101,13 +102,33 @@ const UnifiedRegistration = () => {
     const links = {};
     const requirements = adminSettings.socialMediaRequirements || {};
     
+    // Match Home page logic - check for truthy values and parse properly
     Object.keys(requirements).forEach(platform => {
-      if (requirements[platform].url) {
+      const platformData = requirements[platform];
+      
+      // Include platform if it's truthy and not false
+      if (platformData && platformData !== false && platformData !== 'false') {
+        let parsedData = {};
+        
+        // Try to parse if it's a JSON string
+        if (typeof platformData === 'string' && platformData.startsWith('{')) {
+          try {
+            parsedData = JSON.parse(platformData);
+          } catch (e) {
+            console.warn(`Failed to parse social media data for ${platform}:`, e);
+          }
+        } else if (typeof platformData === 'object') {
+          parsedData = platformData;
+        }
+        
+        // Use parsed URL or fallback to placeholder
+        const url = parsedData.url || `#${platform}`;
+        
         links[platform] = {
-          url: requirements[platform].url,
+          url: url,
           name: getSocialPlatformName(platform),
           icon: getSocialPlatformIcon(platform),
-          required: requirements[platform].required || false
+          required: parsedData.required || false
         };
       }
     });
@@ -127,7 +148,7 @@ const UnifiedRegistration = () => {
   };
     const getSocialPlatformIcon = (platform) => {
     const icons = {
-      facebook: 'fab fa-facebook',
+      facebook: 'fab fa-facebook-f',
       instagram: 'fab fa-instagram',
       youtube: 'fab fa-youtube',
       whatsappChannel: 'fab fa-whatsapp',

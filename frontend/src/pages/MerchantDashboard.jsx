@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { merchantApi, getNotifications, markNotificationAsRead, markAllNotificationsAsRead, getRedemptionRequests, approveRedemptionRequest, rejectRedemptionRequest, getAllPlans } from '../services/api';
 import MerchantDealForm from '../components/MerchantDealForm';
+import PlanExpiryBanner from '../components/PlanExpiryBanner';
 import axios from 'axios';
 import '../styles/MerchantDashboard.css';
 
@@ -681,6 +682,9 @@ const MerchantDashboard = () => {
         <h1>Merchant Dashboard</h1>
         <p>Welcome back, {user?.businessInfo?.businessName || user?.firstName}!</p>
       </div>
+
+      {/* Plan Expiry Banner */}
+      <PlanExpiryBanner />
 
       {/* Notifications Section */}
       {notifications.length > 0 && (

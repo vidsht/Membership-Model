@@ -1,12 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
+import { withPlanAccess } from '../hooks/usePlanAccess.jsx';
+import { useImageUrl, SmartImage, DefaultAvatar } from '../hooks/useImageUrl.jsx';
 import api from '../services/api';
 import '../styles/membership-card.css';
+import '../styles/plan-access-blocked.css';
 
 const MembershipCard = () => {
   const { user } = useAuth();
   const { showNotification } = useNotification();
+  const { getProfileImageUrl } = useImageUrl();
   const qrCodeRef = useRef();
   const barcodeRef = useRef();
   const cardRef = useRef();
@@ -36,7 +40,7 @@ const MembershipCard = () => {
   useEffect(() => {
     if (user && user.membershipNumber) {
       // Small delay to ensure DOM elements are ready
-      setTimeout(() => {
+      setTimeout(async () => {
         // Generate QR Code with multiple fallback approaches
         if (qrCodeRef.current && cardSettings.show_qr_code) {
           let qrGenerated = false;
@@ -59,27 +63,25 @@ const MembershipCard = () => {
             }
           }
           
-          // Method 2: Try qrcode canvas approach
-          if (!qrGenerated && typeof window !== 'undefined' && window.qrcode) {
+          // Method 2: Use the installed 'qrcode' package via dynamic import (preferred)
+          if (!qrGenerated) {
             try {
+              const QR = await import('qrcode');
               const canvas = document.createElement('canvas');
-              window.qrcode.toCanvas(canvas, user.membershipNumber.toString(), {
+              await QR.toCanvas(canvas, user.membershipNumber.toString(), {
                 width: 100,
                 margin: 1,
                 color: { dark: '#000000', light: '#ffffff' }
-              }, (error) => {
-                if (!error) {
-                  qrCodeRef.current.innerHTML = '';
-                  qrCodeRef.current.appendChild(canvas);
-                  qrGenerated = true;
-                }
               });
+              qrCodeRef.current.innerHTML = '';
+              qrCodeRef.current.appendChild(canvas);
+              qrGenerated = true;
             } catch (error) {
-              console.error('qrcode canvas error:', error);
+              console.error('qrcode (npm) toCanvas error:', error);
             }
           }
           
-          // Method 3: Try qrcode-generator
+          // Method 3: Try qrcode-generator (legacy global)
           if (!qrGenerated && typeof window !== 'undefined' && window.qrCode) {
             try {
               const qr = window.qrCode(4, 'M');
@@ -170,8 +172,8 @@ const MembershipCard = () => {
         useCORS: true,
         allowTaint: true,
         foreignObjectRendering: true,
-        width: 854, // Standard ID card width in pixels (85.6mm * 10)
-        height: 540  // Standard ID card height in pixels (53.98mm * 10)
+        width: 500, // Standard ID card width in pixels (85.6mm * 10)
+        height: 300  // Standard ID card height in pixels (53.98mm * 10)
       });
 
       // Create download link
@@ -323,8 +325,6 @@ const MembershipCard = () => {
     );
   }
 
-  // Debug log to see user data
-  console.log('User data for membership card:', user);
 
   // Helper function to format membership number for display (with spaces)
   const formatMembershipNumber = (membershipNumber) => {
@@ -374,36 +374,14 @@ const MembershipCard = () => {
     return date.toLocaleDateString('en-GB'); // DD/MM/YYYY format
   };
 
-  // Calculate expiry date based on user's plan - same logic as admin panel
+  // Calculate expiry date based on user's validationDate - the only source of truth
   const getExpiryDate = () => {
-    // Priority 1: validationDate (same as admin panel uses)
+    // ONLY use validationDate (primary and only expiry date source)
     if (user.validationDate) {
       return formatDate(user.validationDate);
     }
     
-    // Priority 2: planExpiryDate
-    if (user.planExpiryDate) {
-      return formatDate(user.planExpiryDate);
-    }
-    
-    // Priority 3: subscriptionEndDate
-    if (user.subscriptionEndDate) {
-      return formatDate(user.subscriptionEndDate);
-    }
-    
-    // Priority 4: planEndDate
-    if (user.planEndDate) {
-      return formatDate(user.planEndDate);
-    }
-    
-    // Fallback: calculate 1 year from issue date
-    if (user.statusUpdatedAt || user.created_at) {
-      const issueDate = new Date(user.statusUpdatedAt || user.created_at);
-      const expiryDate = new Date(issueDate);
-      expiryDate.setFullYear(expiryDate.getFullYear() + 1);
-      return formatDate(expiryDate);
-    }
-    
+    // If no validationDate, show N/A (this indicates an issue that should be resolved)
     return 'N/A';
   };
 
@@ -441,14 +419,27 @@ const MembershipCard = () => {
             <div className="photo-qr-container"> 
               {/* Profile Photo */}
               <div className="profile-photo">
-              {user.profilePicture ? (
-                <img src={user.profilePicture} alt="Profile" />
-              ) : (
-                <div className="default-avatar">
-                  <i className="fas fa-user"></i>
-                </div>
-              )}
-            </div>
+                {getProfileImageUrl(user) ? (
+                  <SmartImage 
+                    src={getProfileImageUrl(user)} 
+                    alt="Profile" 
+                    className="profile-image"
+                    fallback={
+                      <DefaultAvatar 
+                        name={user.fullName} 
+                        size={100} 
+                        className="default-avatar-img"
+                      />
+                    }
+                  />
+                ) : (
+                  <DefaultAvatar 
+                    name={user.fullName} 
+                    size={100} 
+                    className="default-avatar-img"
+                  />
+                )}
+              </div>
 
             {/* QR Code */}
             {cardSettings.show_qr_code && (
@@ -521,4 +512,4 @@ const MembershipCard = () => {
   );
 };
 
-export default MembershipCard;
+export default withPlanAccess(MembershipCard, 'card');

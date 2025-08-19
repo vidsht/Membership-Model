@@ -200,14 +200,14 @@ const MerchantManagementEnhanced = () => {
     }
   };
 
-  // Route-based edit (like user management) - navigate to edit route
+  // Route-based edit (like user management) - navigate to detail-edit route
   const handleEditMerchant = useCallback((merchant) => {
     if (!merchant || !merchant.id) {
       showNotification('Invalid merchant data', 'error');
       return;
     }
-    // Navigate to edit route - this will render PartnerRegistration component in edit mode
-    navigate(`/admin/partners/${merchant.id}/edit`);
+    // Navigate to detail-edit route - this will render MerchantDetailEdit component
+    navigate(`/admin/partners/${merchant.id}/detail-edit`);
   }, [navigate, showNotification]);
 
   const handleEditMerchantModal = useCallback((merchant) => {
@@ -473,6 +473,78 @@ const MerchantManagementEnhanced = () => {
     setPagination(prev => ({ ...prev, page: 1 }));
   };
 
+  // CSV Export functionality
+  const handleExportMerchants = useCallback(async () => {
+    try {
+      showNotification('Preparing merchant export...', 'info');
+
+      // Build query params the same way as fetchMerchants to avoid sending empty/'all' values
+      const queryParams = new URLSearchParams();
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value && value !== 'all' && (typeof value !== 'string' || value.trim() !== '')) {
+          queryParams.set(key, value);
+        }
+      });
+
+      const queryString = queryParams.toString();
+      const url = queryString ? `/admin/partners/export?${queryString}` : `/admin/partners/export`;
+
+      const response = await api.get(url, {
+        responseType: 'blob'
+      });
+
+      // If backend returned JSON (error) as a blob, parse and surface message
+      if (response.data && response.data.type && response.data.type.includes('application/json')) {
+        try {
+          const text = await response.data.text();
+          const json = JSON.parse(text);
+          const msg = json?.message || json?.error || 'Failed to export merchants';
+          showNotification(msg, 'error');
+          return;
+        } catch (e) {
+          console.error('Failed to parse JSON error blob from export response', e);
+          showNotification('Failed to export merchants', 'error');
+          return;
+        }
+      }
+
+      const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.setAttribute('download', `merchants-export-${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(blobUrl);
+
+      showNotification('Merchants exported successfully', 'success');
+    } catch (err) {
+      console.error('Export error:', err);
+      // If server returned a JSON error as a blob (axios error with blob body), parse it
+      try {
+        const errData = err.response?.data;
+        if (errData && typeof errData.text === 'function') {
+          const text = await errData.text();
+          try {
+            const json = JSON.parse(text);
+            const message = json?.message || json?.error || 'Failed to export merchants';
+            showNotification(message, 'error');
+            return;
+          } catch (parseErr) {
+            // not JSON
+            showNotification('Failed to export merchants', 'error');
+            return;
+          }
+        }
+      } catch (e) {
+        // ignore parsing errors
+      }
+
+      const message = err.response?.data?.message || 'Failed to export merchants';
+      showNotification(message, 'error');
+    }
+  }, [filters, showNotification]);
+
   // Single useEffect for component mounting (reduced logging)
   useEffect(() => {
   }, []);
@@ -511,6 +583,9 @@ const MerchantManagementEnhanced = () => {
             <>
               <button className="btn btn-primary" onClick={handleAddMerchant}>
                 <i className="fas fa-plus"></i> Add Partner
+              </button>
+              <button className="btn btn-secondary" onClick={handleExportMerchants}>
+                <i className="fas fa-download"></i> Export CSV
               </button>
               {selectedMerchants.length > 0 && (
                 <button className="btn btn-secondary" onClick={() => setShowBulkActions(!showBulkActions)}>

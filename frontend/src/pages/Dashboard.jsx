@@ -2,6 +2,7 @@ import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import MembershipCard from '../components/MembershipCard';
 import MerchantCertificate from '../components/MerchantCertificate';
+import PlanExpiryBanner from '../components/PlanExpiryBanner';
 import '../styles/MerchantDashboard.css'; // Import for status-alert styles
 
 const Dashboard = () => {
@@ -85,6 +86,9 @@ const Dashboard = () => {
         <h1>Welcome back, {user.fullName}!</h1>
         <p>Manage your membership and explore community benefits</p>
       </div>
+
+      {/* Plan Expiry Banner */}
+      <PlanExpiryBanner />
 
       <div className="dashboard-grid">
         {/* Membership Card/Certificate Section */}

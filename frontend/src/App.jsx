@@ -27,6 +27,7 @@ import AdminDashboard from './components/admin/AdminDashboard';
 import UserManagement from './components/admin/UserManagement/UserManagement';
 import UserForm from './components/admin/UserManagement/UserForm';
 import UserDetailPage from './components/admin/UserManagement/UserDetailPage';
+import UserDetailEdit from './components/admin/UserManagement/UserDetailEdit';
 import AdminSettings from './components/admin/Settings/AdminSettings';
 import PlanSettings from './components/admin/Settings/PlanSettings';
 import PlanAssignment from './components/admin/PlanManagement/PlanAssignment';
@@ -38,6 +39,7 @@ import Activities from './components/admin/Activities/Activities';
 import PartnerRegistration from './components/admin/BusinessPartners/PartnerRegistration';
 import PartnerDetail from './components/admin/BusinessPartners/PartnerDetail';
 import QuickEditDealLimit from './components/admin/BusinessPartners/QuickEditDealLimit';
+import MerchantDetailEdit from './components/admin/BusinessPartners/MerchantDetailEdit';
 
 function AppContent() {
   const location = useLocation();
@@ -104,6 +106,12 @@ function AppContent() {
             </AdminRoute>
           } />
 
+          <Route path="/admin/users/:userId/details" element={
+            <AdminRoute>
+              <UserDetailEdit />
+            </AdminRoute>
+          } />
+
           <Route path="/admin/users/:userId/edit" element={
             <AdminRoute>
               <UserForm />
@@ -144,6 +152,12 @@ function AppContent() {
           <Route path="/admin/partners/:id/details" element={
             <AdminRoute>
               <PartnerDetail />
+            </AdminRoute>
+          } />
+          
+          <Route path="/admin/partners/:id/detail-edit" element={
+            <AdminRoute>
+              <MerchantDetailEdit />
             </AdminRoute>
           } />
           

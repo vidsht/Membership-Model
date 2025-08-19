@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { getAllDeals, redeemDeal, getAllPlans } from '../services/api';
 import DealFilters from '../components/deals/DealFilters';
+import PlanExpiryBanner from '../components/PlanExpiryBanner';
+import usePlanAccess from '../hooks/usePlanAccess.jsx';
 import '../styles/deals.css';
 
 /**
@@ -64,6 +66,7 @@ function getPlanNameByPriority(priority, plans) {
 
 const Deals = () => {
   const { user } = useAuth();
+  const planAccess = usePlanAccess();
   const [deals, setDeals] = useState([]);
   const [plans, setPlans] = useState([]);
   const [filteredDeals, setFilteredDeals] = useState([]);
@@ -155,6 +158,16 @@ const Deals = () => {
       setRedeemStatus({ ...redeemStatus, [dealId]: 'Please log in to redeem.' });
       return;
     }
+
+    // Check if plan is expired
+    if (!planAccess.canAccess('redeem')) {
+      setRedeemStatus({ 
+        ...redeemStatus, 
+        [dealId]: planAccess.getBlockingMessage('redeem')
+      });
+      return;
+    }
+
     if (!canRedeem(user, minPlanPriority, plans)) {
       setRedeemStatus({ ...redeemStatus, [dealId]: 'This deal is not available for your membership plan.' });
       return;
@@ -242,6 +255,11 @@ const Deals = () => {
             </div>
           </div> */}
         </div>
+      </div>
+
+      {/* Plan Expiry Banner */}
+      <div className="deals-content">
+        <PlanExpiryBanner />
       </div>
 
       {/* Filters Section */}

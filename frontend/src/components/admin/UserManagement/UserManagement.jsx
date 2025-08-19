@@ -31,6 +31,14 @@ const UserManagement = () => {
     data: null
   });
 
+  // Plan assignment UI state (missing previously) - used by modal to show available plans
+  const [planAssignmentState, setPlanAssignmentState] = useState({
+    isLoading: false,
+    selectedUser: null,
+    availablePlans: [],
+    userType: null
+  });
+
   // Filter & Pagination State
   const [filters, setFilters] = useState({
     search: '',
@@ -95,9 +103,9 @@ const UserManagement = () => {
     return { totalUsers, pendingApprovals, activeUsers, suspendedUsers };
   }, [users]);
 
-  // Calculate plan validity
+  // Calculate plan validity - ONLY use validationDate as source of truth
   const calculatePlanValidity = useCallback((user, planDetails) => {
-    // If validationDate is present, use it
+    // ONLY use validationDate - this is the source of truth for plan expiry
     if (user.validationDate) {
       try {
         const validationDate = new Date(user.validationDate);
@@ -114,40 +122,9 @@ const UserManagement = () => {
         return 'Invalid date';
       }
     }
-    // If no validationDate, fallback to planAssignedAt + billingCycle (like MerchantManagement)
-    const baseDate = user.planAssignedAt || user.createdAt;
-    if (!baseDate) return 'No validity set';
-    let validityDate = new Date(baseDate);
-    const billingCycle = (planDetails && planDetails.billingCycle) ? planDetails.billingCycle.toLowerCase() : 'yearly';
-    switch (billingCycle) {
-      case 'monthly':
-        validityDate.setMonth(validityDate.getMonth() + 1);
-        break;
-      case 'quarterly':
-        validityDate.setMonth(validityDate.getMonth() + 3);
-        break;
-      case 'yearly':
-      case 'annual':
-        validityDate.setFullYear(validityDate.getFullYear() + 1);
-        break;
-      case 'lifetime':
-        return 'Lifetime';
-      case 'weekly':
-        validityDate.setDate(validityDate.getDate() + 7);
-        break;
-      default:
-        validityDate.setFullYear(validityDate.getFullYear() + 1);
-        break;
-    }
-    const now = new Date();
-    if (validityDate < now) {
-      return 'Expired';
-    }
-    return validityDate.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+    
+    // If no validationDate set, this indicates an issue that should be resolved
+    return 'No validity set';
   }, []);
 
   // Stable callback functions
@@ -348,39 +325,64 @@ const UserManagement = () => {
   }, [showNotification, refreshData]);
 
   const handleBulkAction = useCallback(async (action, userIds = selectedUsers) => {
-    if (!userIds.length) {
+    if (!userIds || userIds.length === 0) {
       showNotification('No users selected', 'warning');
       return;
     }
 
     try {
-      let response;
-      if (action === 'delete') {
-        const promises = userIds.map(id => api.delete(`/admin/users/${id}`));
-        await Promise.all(promises);
-        response = { data: { success: true } };
-      } else {
-        response = await api.post('/admin/users/bulk-action', { action, userIds });
+      // Validate session first
+      const isSessionValid = await validateSession();
+      if (!isSessionValid) {
+        showNotification('Your session has expired. Please log in again.', 'error');
+        return;
       }
 
-      if (response.data.success) {
+      // Call both endpoints: users and partners. Each backend endpoint only updates matching userType rows.
+      const [usersRes, partnersRes] = await Promise.allSettled([
+        api.post('/admin/users/bulk-action', { action, userIds }),
+        api.post('/admin/partners/bulk-action', { action, merchantIds: userIds })
+      ]);
+
+      const usersSuccess = usersRes.status === 'fulfilled' && usersRes.value?.data?.success;
+      const partnersSuccess = partnersRes.status === 'fulfilled' && partnersRes.value?.data?.success;
+
+      if (usersSuccess || partnersSuccess) {
         const actionText = action === 'approve' ? 'approved' : 
                           action === 'reject' ? 'rejected' : 
                           action === 'suspend' ? 'suspended' : 
                           action === 'activate' ? 'activated' : 
                           action === 'delete' ? 'deleted' : action;
-        
-        showNotification(`Successfully ${actionText} ${userIds.length} users`, 'success');
-        refreshData();
+
+        const totalCount = Array.isArray(userIds) ? userIds.length : 0;
+
+        showNotification(`Successfully ${actionText} ${totalCount} users/partners.`, 'success');
+        setSelectedUsers([]);
         closeModal();
+        // Refresh both immediately and via refresh trigger to ensure UI updates
+        try {
+          await fetchUsers();
+        } catch (e) {
+          // ignore fetch error, still trigger refresh
+        }
+        refreshData();
       } else {
-        throw new Error(response.data.message || 'Bulk action failed');
+        // Aggregate errors
+        const userErr = usersRes.status === 'rejected' ? usersRes.reason : null;
+        const partnerErr = partnersRes.status === 'rejected' ? partnersRes.reason : null;
+        console.error('Bulk action failures:', { userErr, partnerErr });
+        throw new Error(usersRes.status === 'rejected' ? usersRes.reason?.message || 'Users bulk action failed' : partnerErr?.message || 'Partners bulk action failed');
       }
     } catch (err) {
-      const message = err.response?.data?.message || 'Bulk action failed';
+      console.error('Bulk action error:', err);
+      if (err.response?.status === 401) {
+        handleSessionExpired();
+        return;
+      }
+      const message = err.response?.data?.message || err.message || 'Bulk action failed';
       showNotification(message, 'error');
     }
-  }, [selectedUsers, showNotification, refreshData, closeModal]);
+  }, [selectedUsers, showNotification, validateSession, handleSessionExpired, closeModal, refreshData]);
 
   // UI handlers
   const handleFilterChange = useCallback((newFilters) => {
@@ -428,25 +430,75 @@ const UserManagement = () => {
     });
   }, [selectedUsers.length]);
 
-  const handleExportUsers = useCallback(async (exportFilters = filters) => {
+  const handleExportUsers = useCallback(async () => {
     try {
-      const queryParams = new URLSearchParams(exportFilters);
-      const response = await api.get(`/admin/users/export?${queryParams}`, {
+      showNotification('Preparing user export...', 'info');
+      
+      // Build query params the same way as fetchUsers to avoid sending empty/'all' values
+      const queryParams = new URLSearchParams();
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value && value !== 'all' && (typeof value !== 'string' || value.trim() !== '')) {
+          queryParams.set(key, value);
+        }
+      });
+
+      const queryString = queryParams.toString();
+      const url = queryString ? `/admin/users/export?${queryString}` : `/admin/users/export`;
+
+      const response = await api.get(url, {
         responseType: 'blob'
       });
 
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      // If backend returned JSON (error) as a blob, parse and surface message
+      if (response.data && response.data.type && response.data.type.includes('application/json')) {
+        try {
+          const text = await response.data.text();
+          const json = JSON.parse(text);
+          const msg = json?.message || json?.error || 'Failed to export users';
+          showNotification(msg, 'error');
+          return;
+        } catch (e) {
+          console.error('Failed to parse JSON error blob from export response', e);
+          showNotification('Failed to export users', 'error');
+          return;
+        }
+      }
+
+      const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
-      link.href = url;
+      link.href = blobUrl;
       link.setAttribute('download', `users-export-${new Date().toISOString().split('T')[0]}.csv`);
       document.body.appendChild(link);
       link.click();
       link.remove();
-      window.URL.revokeObjectURL(url);
+      window.URL.revokeObjectURL(blobUrl);
 
       showNotification('Users exported successfully', 'success');
     } catch (err) {
-      showNotification('Failed to export users', 'error');
+      console.error('Export error:', err);
+
+      // If server returned a JSON error as a blob (axios error with blob body), parse it
+      try {
+        const errData = err.response?.data;
+        if (errData && typeof errData.text === 'function') {
+          const text = await errData.text();
+          try {
+            const json = JSON.parse(text);
+            const message = json?.message || json?.error || 'Failed to export users';
+            showNotification(message, 'error');
+            return;
+          } catch (parseErr) {
+            // not JSON
+            showNotification('Failed to export users', 'error');
+            return;
+          }
+        }
+      } catch (e) {
+        // ignore parsing errors
+      }
+
+      const message = err.response?.data?.message || 'Failed to export users';
+      showNotification(message, 'error');
     }
   }, [filters, showNotification]);
 

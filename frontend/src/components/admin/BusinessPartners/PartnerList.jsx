@@ -376,40 +376,25 @@ const PartnerList = () => {
   };
   
   const calculateValidityDate = (partner) => {
-    // Use plan assignment date if available, otherwise use created date
-    const baseDate = partner.planAssignedAt || partner.createdAt;
-    if (!baseDate) return 'N/A';
-    
-    const assignedDate = new Date(baseDate);
-    if (isNaN(assignedDate.getTime())) return 'N/A';
-    
-    // Get billing cycle from partner data
-    const billingCycle = partner.billingCycle || 'yearly';
-    let validityDate = new Date(assignedDate);
-    
-    switch (billingCycle.toLowerCase()) {
-      case 'monthly':
-        validityDate.setMonth(validityDate.getMonth() + 1);
-        break;
-      case 'quarterly':
-        validityDate.setMonth(validityDate.getMonth() + 3);
-        break;
-      case 'yearly':
-      case 'annual':
-        validityDate.setFullYear(validityDate.getFullYear() + 1);
-        break;
-      case 'lifetime':
-        return 'Lifetime';
-      case 'weekly':
-        validityDate.setDate(validityDate.getDate() + 7);
-        break;
-      default:
-        // Default to 1 year if unknown billing cycle
-        validityDate.setFullYear(validityDate.getFullYear() + 1);
-        break;
+    // ONLY use validationDate - this is the source of truth for plan expiry
+    if (partner.validationDate) {
+      try {
+        const validationDate = new Date(partner.validationDate);
+        if (isNaN(validationDate.getTime())) return 'Invalid Date';
+        
+        const now = new Date();
+        if (validationDate < now) {
+          return 'Expired';
+        }
+        
+        return formatDate(validationDate);
+      } catch (error) {
+        return 'Invalid Date';
+      }
     }
     
-    return formatDate(validityDate);
+    // If no validationDate set, this indicates an issue that should be resolved
+    return 'No validity set';
   };
   
   const getStatusBadgeClass = (status) => {

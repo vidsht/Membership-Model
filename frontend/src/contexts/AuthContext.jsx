@@ -256,36 +256,42 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
+    // Clear any refresh timer
+    if (refreshTimerRef.current) {
+      clearTimeout(refreshTimerRef.current);
+      refreshTimerRef.current = null;
+    }
+
     try {
-      // Clear any refresh timer
-      if (refreshTimerRef.current) {
-        clearTimeout(refreshTimerRef.current);
-        refreshTimerRef.current = null;
-      }
-      
       const response = await authApi.logout();
+
+      // Clear user state on successful logout
       setUser(null);
       setIsAuthenticated(false);
       setSessionExpired(false);
-      
+
       // Clear any remembered credentials
       localStorage.removeItem('authRemembered');
-      
+
       // Show success notification
       showToast('You have been logged out successfully', 'success');
-      
-      return response; // Return response so components can show the success message
+
+      // Return response so components can show the success message
+      return response;
     } catch (error) {
       console.error('Logout error:', error);
-    } finally {
+
+      // Ensure local state is cleared even if server logout failed
       setUser(null);
       setIsAuthenticated(false);
       setSessionExpired(false);
-      
-      // Show error notification
+      localStorage.removeItem('authRemembered');
+
+      // Informational notification (only when an actual error occurred)
       showToast('There was an issue logging out, but you have been logged out of this device', 'info');
-      
-      throw error;
+
+      // Return a consistent response object instead of throwing so callers can continue (e.g., navigate to home)
+      return { message: 'There was an issue logging out, but you have been logged out of this device' };
     }
   };
 

@@ -281,7 +281,12 @@ router.get('/home-stats', async (req, res) => {
     } catch (e) { console.log('Businesses table error:', e.message); }
     
     try {
-      const dealCount = await queryAsync('SELECT COUNT(*) as count FROM deals');
+      const dealCount = await queryAsync(`
+        SELECT COUNT(*) as count FROM deals
+        WHERE status = 'active'
+          AND (validUntil IS NULL OR validUntil >= CURDATE())
+          AND (expiration_date IS NULL OR expiration_date >= CURDATE())
+      `);
       totalDeals = dealCount[0]?.count || 0;
     } catch (e) { console.log('Deals table error:', e.message); }
     
