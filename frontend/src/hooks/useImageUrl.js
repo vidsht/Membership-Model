@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 
-// Base URL for images - should be your Hostinger domain
-const IMAGE_BASE_URL = process.env.REACT_APP_IMAGE_BASE_URL || 'https://yourdomain.com';
+// Base URL for images - use API base URL or fallback
+const IMAGE_BASE_URL = process.env.REACT_APP_API_URL || process.env.REACT_APP_IMAGE_BASE_URL || 'https://membership-model.onrender.com';
 
 // Helper hook for handling image URLs
 export const useImageUrl = () => {

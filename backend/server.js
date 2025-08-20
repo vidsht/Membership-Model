@@ -23,7 +23,6 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // Basic middleware
-app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -71,12 +70,10 @@ app.use(session({
   name: 'sessionId',
   store: sessionStore,
   cookie: {
-    // secure: false,
-    secure: true,
+    secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
     maxAge: 1000 * 60 * 60 * 24 * 7,
-    // sameSite: 'lax'
-    sameSite: 'none'
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
   }
 }));
 
@@ -107,7 +104,9 @@ app.use('/api/admin', require('./routes/roles'));
 app.use('/api/upload', require('./routes/upload'));
 
 // Serve uploaded files
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// For Hostinger: ensure uploads are accessible from public_html
+const uploadsPath = process.env.UPLOADS_PATH || path.join(__dirname, 'uploads');
+app.use('/uploads', express.static(uploadsPath));
 
 
 // Health check

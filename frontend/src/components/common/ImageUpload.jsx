@@ -212,7 +212,12 @@ const ImageUpload = ({
         return;
       }
       
-      const response = await api.delete(`/upload/image/${type}/${entityId}`);
+      // Ensure we have both type and entityId for the delete endpoint
+      if (!finalType || !entityId) {
+        throw new Error('Type and entity ID are required for image deletion');
+      }
+      
+      const response = await api.delete(`/upload/image/${finalType}/${entityId}`);
       
       if (response.data.success) {
         showNotification('Image removed successfully!', 'success');

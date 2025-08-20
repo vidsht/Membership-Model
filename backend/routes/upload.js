@@ -26,19 +26,19 @@ const UPLOAD_CONFIGS = {
   profile: {
     maxSize: 5 * 1024 * 1024, // 5MB
     dimensions: { width: 500, height: 500 },
-    directory: '/uploads/profile_photos/',
+    directory: '/public_html/uploads/profile_photos/',
     allowedTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/gif']
   },
   merchant: {
     maxSize: 3 * 1024 * 1024, // 3MB
     dimensions: { width: 300, height: 300 },
-    directory: '/uploads/merchant_logos/',
+    directory: '/public_html/uploads/merchant_logos/',
     allowedTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/gif']
   },
   deal: {
     maxSize: 8 * 1024 * 1024, // 8MB
     dimensions: { width: 800, height: 400 },
-    directory: '/uploads/deal_banners/',
+    directory: '/public_html/uploads/deal_banners/',
     allowedTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/gif']
   }
 };
@@ -94,7 +94,7 @@ async function deleteFromFTP(remotePath) {
     console.log(`⚠️ Could not delete FTP file: ${remotePath}`, error.message);
     // Try to delete local fallback copy if exists
     try {
-      const subPath = remotePath.replace(/^\/uploads\//, '').replace(/^\//, '');
+      const subPath = remotePath.replace(/^\/public_html\/uploads\//, '').replace(/^\/uploads\//, '').replace(/^\//, '');
       const localPath = path.join(__dirname, '..', 'uploads', subPath);
       if (fs.existsSync(localPath)) {
         fs.unlinkSync(localPath);
@@ -204,7 +204,7 @@ async function handleImageUpload(req, res, uploadType, idField, tableField, tabl
       console.warn('FTP upload failed or not configured, falling back to local storage:', ftpErr.message);
       // Ensure local uploads directory exists and copy processed file there
       try {
-        const subDir = config.directory.replace(/^\/uploads\//, '').replace(/^\//, '').replace(/\/$/, '');
+        const subDir = config.directory.replace(/^\/public_html\/uploads\//, '').replace(/^\/uploads\//, '').replace(/^\//, '').replace(/\/$/, '');
         const localDir = path.join(__dirname, '..', 'uploads', subDir);
         fs.mkdirSync(localDir, { recursive: true });
         const localDest = path.join(localDir, filename);
@@ -236,16 +236,10 @@ async function handleImageUpload(req, res, uploadType, idField, tableField, tabl
     fs.unlinkSync(processedPath);
     
     // Return success response
-    // Build public URL depending on where file was saved
+    // Build public URL - always use the same pattern for consistency
     const domain = process.env.DOMAIN_URL || 'https://yourdomain.com';
-    let imageUrl;
-    if (uploadedToFTP) {
-      imageUrl = `${domain}${remotePath}`;
-    } else {
-      // local fallback: serve from /uploads/<subdir>/<filename>
-      const subDir = config.directory.replace(/^\/uploads\//, '').replace(/^\//, '').replace(/\/$/, '');
-      imageUrl = `${domain}/uploads/${subDir}/${filename}`;
-    }
+    const subDir = config.directory.replace(/^\/public_html\/uploads\//, '').replace(/^\/uploads\//, '').replace(/^\//, '').replace(/\/$/, '');
+    const imageUrl = `${domain}/uploads/${subDir}/${filename}`;
     
     res.json({
       success: true,
@@ -294,7 +288,8 @@ router.get('/image-url/:type/:filename', (req, res) => {
     return res.status(400).json({ success: false, message: 'Invalid image type' });
   }
   
-  const imageUrl = `${process.env.DOMAIN_URL || 'https://yourdomain.com'}${config.directory}${filename}`;
+  const subDir = config.directory.replace(/^\/public_html\/uploads\//, '').replace(/^\/uploads\//, '').replace(/^\//, '').replace(/\/$/, '');
+  const imageUrl = `${process.env.DOMAIN_URL || 'https://yourdomain.com'}/uploads/${subDir}/${filename}`;
   
   res.json({
     success: true,

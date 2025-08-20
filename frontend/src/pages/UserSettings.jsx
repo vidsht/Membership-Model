@@ -382,7 +382,7 @@ const UserSettings = () => {
         <div className="user-profile-photo-section">
           <div className="profile-photo-container">
             <img 
-              src={getProfileImageUrl(userProfile.profilePicture, user?.id) || '/default-avatar.png'} 
+              src={getProfileImageUrl(userProfile.profilePicture, user?.id) || '/uploads/default-avatar.png'} 
               alt="Profile"
               className="profile-photo-display"
             />
