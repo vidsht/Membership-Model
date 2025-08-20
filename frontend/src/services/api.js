@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://membership-model.onrender.com';
+const API_BASE_URL = import.meta.env.VITE_API_URL || (typeof window !== 'undefined' ? window.location.origin : 'https://membership-model.onrender.com');
 
 // Create axios instance
 const api = axios.create({
