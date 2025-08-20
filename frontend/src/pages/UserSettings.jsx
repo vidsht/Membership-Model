@@ -67,7 +67,7 @@ const UserSettings = () => {
   const fetchUserProfileData = async () => {
     try {
       setIsLoading(true);
-      const response = await api.get('/users/profile/complete');
+  const response = await api.get('/api/users/profile/complete');
       const userData = response.data.user || user;
       
       // Parse address if it's a string
@@ -126,7 +126,7 @@ const UserSettings = () => {
   const fetchRedemptionHistory = async () => {
     try {
       setRedemptionsLoadingState(true);
-      const response = await api.get('/redemptions/user-history');
+  const response = await api.get('/api/redemptions/user-history');
       setUserRedemptions(response.data.redemptions || []);
     } catch (error) {
       console.error('Error fetching redemption history:', error);
@@ -243,41 +243,46 @@ const UserSettings = () => {
     }
   };
 
-  const handleProfilePhotoUpload = async (response) => {
+  const handleProfilePhotoUpload = async (file) => {
     try {
       setIsLoading(true);
-      if (response?.imageUrl) {
-        const updatedUser = { ...user, profilePicture: response.imageUrl };
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const response = await api.post(`/upload/profile-photo/${user.id}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      if (response.data.imageUrl) {
+        const updatedUser = { ...user, profilePicture: response.data.imageUrl };
         await updateUser(updatedUser);
-        setUserProfile(prev => ({ ...prev, profilePicture: response.imageUrl }));
+        setUserProfile(prev => ({ ...prev, profilePicture: response.data.imageUrl }));
         showNotification('Profile photo updated successfully!', 'success');
       }
     } catch (error) {
-      console.error('Error handling profile photo upload:', error);
-      showNotification('Failed to process uploaded profile photo', 'error');
+      console.error('Error uploading profile photo:', error);
+      showNotification('Failed to upload profile photo', 'error');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleMerchantLogoUpload = async (response) => {
+  const handleMerchantLogoUpload = async (file) => {
     try {
       setIsLoading(true);
-      if (response?.imageUrl || response?.filename) {
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const response = await api.post(`/upload/merchant-logo/${user.id}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      if (response.data.imageUrl) {
         showNotification('Business logo updated successfully!', 'success');
-        if (response.filename && user?.business) {
-          updateUser({
-            ...user,
-            business: {
-              ...user.business,
-              logo: response.filename
-            }
-          });
-        }
       }
     } catch (error) {
-      console.error('Error handling merchant logo upload:', error);
-      showNotification('Failed to process business logo upload', 'error');
+      console.error('Error uploading merchant logo:', error);
+      showNotification('Failed to upload business logo', 'error');
     } finally {
       setIsLoading(false);
     }
@@ -343,9 +348,7 @@ const UserSettings = () => {
             
             <div className="logo-upload-controls">
               <ImageUpload
-                type="merchant"
-                entityId={user?.id}
-                onUploadSuccess={handleMerchantLogoUpload}
+                onImageUpload={handleMerchantLogoUpload}
                 currentImage={getMerchantLogoUrl(user?.id)}
                 className="merchant-logo-upload"
                 accept="image/*"
@@ -366,7 +369,7 @@ const UserSettings = () => {
   const ProfileInformationTab = () => (
     <div className="user-settings-tab-content">
       <form onSubmit={updateUserProfile} className="user-profile-form">
-        <div className="user-profile-header-section">
+        <div className="user-profile-header">
           <h2 className="user-profile-section-title">Profile Information</h2>
           <p className="user-profile-section-description">
             Update your personal information and membership details
@@ -383,9 +386,7 @@ const UserSettings = () => {
             />
             <div className="photo-upload-controls">
               <ImageUpload
-                type="profile"
-                entityId={user?.id}
-                onUploadSuccess={handleProfilePhotoUpload}
+                onImageUpload={handleProfilePhotoUpload}
                 currentImage={userProfile.profilePicture}
                 className="profile-photo-upload"
                 accept="image/*"
@@ -654,7 +655,7 @@ const UserSettings = () => {
     <div className="user-settings-tab-content">
       <form onSubmit={updateUserPassword} className="user-profile-form">
         <div className="user-profile-header-section">
-          <h2 className="user-profile-section-title">Security Settings</h2>
+          <h2 className="user-profile-title">Security Settings</h2>
           <p className="user-profile-section-description">
             Change your password to keep your account secure
           </p>
