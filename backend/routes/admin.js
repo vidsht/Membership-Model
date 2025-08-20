@@ -1805,7 +1805,7 @@ router.post('/partners/bulk-action', auth, admin, async (req, res) => {
     }
 
     // Validate action
-    const validActions = ['approve', 'reject', 'suspend', 'activate', 'delete'];
+    const validActions = ['approve', 'reject', 'suspend'];
     if (!validActions.includes(action)) {
       return res.status(400).json({ 
         success: false, 
@@ -1845,20 +1845,6 @@ router.post('/partners/bulk-action', auth, admin, async (req, res) => {
               [merchantId]
             );
             break;
-          case 'activate':
-            await queryAsync(
-              'UPDATE users SET status = "approved", updated_at = NOW() WHERE id = ? AND userType = "merchant"',
-              [merchantId]
-            );
-            break;
-          case 'delete':
-            // Delete from businesses table first (if exists)
-            if (await tableExists('businesses')) {
-              await queryAsync('DELETE FROM businesses WHERE userId = ?', [merchantId]);
-            }
-            // Delete the user
-            await queryAsync('DELETE FROM users WHERE id = ? AND userType = "merchant"', [merchantId]);
-            break;
         }
         results.success++;
       } catch (error) {
@@ -1891,7 +1877,7 @@ router.post('/users/bulk-action', auth, admin, async (req, res) => {
     }
 
     // Validate action
-    const validActions = ['approve', 'reject', 'suspend', 'activate', 'delete'];
+    const validActions = ['approve', 'reject', 'suspend'];
     if (!validActions.includes(action)) {
       return res.status(400).json({ 
         success: false, 
@@ -1930,16 +1916,6 @@ router.post('/users/bulk-action', auth, admin, async (req, res) => {
               'UPDATE users SET status = "suspended", updated_at = NOW() WHERE id = ? AND userType != "merchant"',
               [userId]
             );
-            break;
-          case 'activate':
-            await queryAsync(
-              'UPDATE users SET status = "approved", updated_at = NOW() WHERE id = ? AND userType != "merchant"',
-              [userId]
-            );
-            break;
-          case 'delete':
-            // Delete the user (only non-merchants)
-            await queryAsync('DELETE FROM users WHERE id = ? AND userType != "merchant"', [userId]);
             break;
         }
         results.success++;

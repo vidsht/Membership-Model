@@ -92,6 +92,18 @@ async function deleteFromFTP(remotePath) {
     return true;
   } catch (error) {
     console.log(`⚠️ Could not delete FTP file: ${remotePath}`, error.message);
+    // Try to delete local fallback copy if exists
+    try {
+      const subPath = remotePath.replace(/^\/uploads\//, '').replace(/^\//, '');
+      const localPath = path.join(__dirname, '..', 'uploads', subPath);
+      if (fs.existsSync(localPath)) {
+        fs.unlinkSync(localPath);
+        console.log(`✅ Deleted local fallback file: ${localPath}`);
+        return true;
+      }
+    } catch (localErr) {
+      console.warn('Failed to delete local fallback file:', localErr.message);
+    }
     return false;
   } finally {
     client.close();
@@ -179,8 +191,31 @@ async function handleImageUpload(req, res, uploadType, idField, tableField, tabl
     
     // Upload to FTP
     const remotePath = config.directory + filename;
-    await uploadToFTP(processedPath, remotePath, config);
-    
+    let uploadedToFTP = false;
+    try {
+      // Try FTP upload first (if FTP configured)
+      if (FTP_CONFIG && FTP_CONFIG.host && FTP_CONFIG.host !== 'ftp.yourdomain.com') {
+        await uploadToFTP(processedPath, remotePath, config);
+        uploadedToFTP = true;
+      } else {
+        throw new Error('FTP not configured, using local storage fallback');
+      }
+    } catch (ftpErr) {
+      console.warn('FTP upload failed or not configured, falling back to local storage:', ftpErr.message);
+      // Ensure local uploads directory exists and copy processed file there
+      try {
+        const subDir = config.directory.replace(/^\/uploads\//, '').replace(/^\//, '').replace(/\/$/, '');
+        const localDir = path.join(__dirname, '..', 'uploads', subDir);
+        fs.mkdirSync(localDir, { recursive: true });
+        const localDest = path.join(localDir, filename);
+        fs.copyFileSync(processedPath, localDest);
+        console.log('✅ File copied to local uploads folder:', localDest);
+      } catch (localCopyErr) {
+        console.error('Failed to save file locally as fallback:', localCopyErr);
+        throw localCopyErr; // let outer catch handle response
+      }
+    }
+
     // Get old image for cleanup
     const oldImageQuery = `SELECT ${tableField} FROM ${tableName} WHERE ${idField} = ?`;
     const oldImageResult = await queryAsync(oldImageQuery, [entityId]);
@@ -200,7 +235,16 @@ async function handleImageUpload(req, res, uploadType, idField, tableField, tabl
     fs.unlinkSync(processedPath);
     
     // Return success response
-    const imageUrl = `${process.env.DOMAIN_URL || 'https://yourdomain.com'}${remotePath}`;
+    // Build public URL depending on where file was saved
+    const domain = process.env.DOMAIN_URL || 'https://yourdomain.com';
+    let imageUrl;
+    if (uploadedToFTP) {
+      imageUrl = `${domain}${remotePath}`;
+    } else {
+      // local fallback: serve from /uploads/<subdir>/<filename>
+      const subDir = config.directory.replace(/^\/uploads\//, '').replace(/^\//, '').replace(/\/$/, '');
+      imageUrl = `${domain}/uploads/${subDir}/${filename}`;
+    }
     
     res.json({
       success: true,

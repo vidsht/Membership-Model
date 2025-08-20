@@ -46,7 +46,7 @@ const Header = () => {
       <div className="header-content">
         <div className="logo">
           <img 
-            src="../logo.jpeg" 
+            src="/logo.jpeg" 
             alt="logo" 
             className="logo-img"
           />

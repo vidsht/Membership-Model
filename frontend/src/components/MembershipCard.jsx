@@ -395,7 +395,7 @@ const MembershipCard = () => {
         <div className="card-header-new">
           <div className="card-logo">
             <div className="logo-circle">
-              <img src="/public/logo.jpeg" alt="Logo" />
+              <img src="/logo.jpeg" alt="Logo" />
             </div>
           </div>
           <div className="card-title-section">

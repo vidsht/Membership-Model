@@ -54,13 +54,6 @@ const BulkActions = ({ selectedCount, onBulkAction, onBulkDelete }) => {
       icon: 'fa-ban',
       className: 'btn-warning',
       description: 'Suspend all selected users'
-    },
-    {
-      key: 'activate',
-      label: 'Activate Selected',
-      icon: 'fa-check-circle',
-      className: 'btn-info',
-      description: 'Activate all selected users'
     }
   ];
 
@@ -105,15 +98,7 @@ const BulkActions = ({ selectedCount, onBulkAction, onBulkDelete }) => {
                 
                 <div className="dropdown-divider"></div>
                 
-                <button
-                  onClick={handleBulkDelete}
-                  className="dropdown-item btn-danger"
-                  disabled={loading}
-                  title="Permanently delete all selected users"
-                >
-                  <i className="fas fa-trash"></i>
-                  Delete Selected
-                </button>
+                {/* Delete Selected button removed to prevent user deletion from admin bulk actions */}
               </div>
             )}
           </div>

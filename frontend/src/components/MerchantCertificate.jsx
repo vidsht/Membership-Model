@@ -349,7 +349,7 @@ const MerchantCertificate = () => {
         <div className="certificate-header">
           <div className="certificate-logo">
             <div className="logo-circle">
-              <img src="/public/logo.jpeg" alt="Logo" />
+              <img src="/logo.jpeg" alt="Logo" />
             </div>
           </div>
           <div className="certificate-title-section">
@@ -388,7 +388,7 @@ const MerchantCertificate = () => {
               {/* Signature Section */}
                 <div className="signature-section-new">
                     <div className="signature-line-new">
-                        <img className='signature-image' src="/public/signature.jpeg" alt="Signature" />
+                        <img className='signature-image' src="/signature.jpeg" alt="Signature" />
                     </div>
                     <div className="signature-name">Sachin Hursale</div>
                     <div className="signature-org">Indians in Ghana</div>
