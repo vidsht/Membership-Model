@@ -89,13 +89,12 @@
 .user-id, .membership-number {
   display: inline-block;
   font-size: 0.875rem;
-  color: #6b7280;
+  color: #FFC107;
   margin-right: 1rem;
 }
 
 .membership-number {
-  background: #dbeafe;
-  color: #1e40af;
+  color: #FFC107;
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
   font-weight: 500;

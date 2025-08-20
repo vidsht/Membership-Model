@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 
-// Base URL for images - should be your Hostinger domain
-const IMAGE_BASE_URL = import.meta.env.VITE_IMAGE_BASE_URL || 'https://yourdomain.com';
+// Base URL for images - fallback to local backend if env var not set
+const IMAGE_BASE_URL = import.meta.env.VITE_IMAGE_BASE_URL || 'https://membership-model.onrender.com';
 
 // Helper hook for handling image URLs
 export const useImageUrl = () => {

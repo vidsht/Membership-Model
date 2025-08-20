@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useNotification } from '../../../contexts/NotificationContext';
 import { useDynamicFields } from '../../../hooks/useDynamicFields';
+import { useImageUrl } from '../../../hooks/useImageUrl.jsx';
 import api from '../../../services/api';
 import './DealForm.css';
 
@@ -10,11 +11,14 @@ const DealForm = () => {
   const navigate = useNavigate();
   const { showNotification } = useNotification();
   const { getDealCategoryOptions } = useDynamicFields();
+  const { getDealBannerUrl } = useImageUrl();
   const isEditMode = Boolean(dealId);
-    const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [businesses, setBusinesses] = useState([]);
-  const [userPlans, setUserPlans] = useState([]);  const [formData, setFormData] = useState({
+  const [userPlans, setUserPlans] = useState([]);
+  const [bannerImageFile, setBannerImageFile] = useState(null);
+  const [formData, setFormData] = useState({
     title: '',
     description: '',
     businessId: '',
@@ -222,6 +226,10 @@ const DealForm = () => {
         [name]: ''
       }));
     }
+  };
+
+  const handleBannerImageUpload = (file) => {
+    setBannerImageFile(file);
   };const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -234,27 +242,48 @@ const DealForm = () => {
       setIsSaving(true);
       
       // Prepare data for submission
-      const submitData = { ...formData };      // Remove fields that shouldn't be sent to backend
-      delete submitData.featuredImage; // Handle file uploads separately if needed
+      const submitData = { ...formData };
+      // Remove fields that shouldn't be sent to backend
+      delete submitData.featuredImage; // Handle file uploads separately
       
       // Ensure requiredPlanPriority is included
       submitData.requiredPlanPriority = parseInt(submitData.requiredPlanPriority);
       
-      // Add calculated fields if needed
-      if (submitData.discount && submitData.discountType === 'percentage') {
-        // Backend might expect originalPrice and discountedPrice
-        // For now, we'll send the discount value and type
-      }
-      
       // Add debug logging (remove after testing)
       console.log('Submitting deal data:', submitData);
       
+      let dealIdForUpload;
+      let response;
+      
       if (isEditMode) {
-        await api.put(`/admin/deals/${dealId}`, submitData);
+        response = await api.put(`/admin/deals/${dealId}`, submitData);
+        dealIdForUpload = dealId;
         showNotification('Deal updated successfully', 'success');
       } else {
-        await api.post('/admin/deals', submitData);
+        response = await api.post('/admin/deals', submitData);
+        dealIdForUpload = response.data?.deal?.id || response.data?.id;
         showNotification('Deal created successfully', 'success');
+      }
+
+      // Upload banner image if one was selected
+      if (bannerImageFile && dealIdForUpload) {
+        try {
+          const formData = new FormData();
+          formData.append('dealBanner', bannerImageFile);
+          
+          const uploadResponse = await api.post(`/upload/deal-banner/${dealIdForUpload}`, formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          });
+          
+          if (uploadResponse.data.success) {
+            console.log('✅ Banner image uploaded successfully:', uploadResponse.data.filename);
+          }
+        } catch (uploadError) {
+          console.error('❌ Banner image upload failed:', uploadError);
+          showNotification('Deal saved but banner image upload failed. You can add it later.', 'warning');
+        }
       }
       
       navigateToDealsTab();
@@ -522,22 +551,31 @@ const DealForm = () => {
             </div>
             
             <div className="form-group">
-              <label htmlFor="featuredImage">Featured Image</label>
+              <label htmlFor="bannerImage">
+                <i className="fas fa-image"></i>
+                Deal Banner Image
+              </label>
               <input
                 type="file"
-                id="featuredImage"
-                name="featuredImage"
-                onChange={handleChange}
+                id="bannerImage"
+                name="bannerImage"
+                onChange={(e) => handleBannerImageUpload(e.target.files[0])}
                 accept="image/*"
               />
               <span className="help-text">
-                Recommended size: 800×450px (16:9 ratio)
+                Upload a banner image for your deal (recommended: 800x400px, max 8MB)
               </span>
               
-              {formData.imageUrl && (
-                <div className="current-image">
-                  <p>Current image:</p>
-                  <img src={formData.imageUrl} alt="Deal featured image" />
+              {bannerImageFile && (
+                <div className="image-preview">
+                  <p><i className="fas fa-check-circle text-success"></i> Selected: {bannerImageFile.name}</p>
+                </div>
+              )}
+              
+              {isEditMode && formData.bannerImage && !bannerImageFile && (
+                <div className="current-image-info">
+                  <p><i className="fas fa-info-circle text-info"></i> Current banner: {formData.bannerImage}</p>
+                  <small>Select a new file to replace it</small>
                 </div>
               )}
             </div>

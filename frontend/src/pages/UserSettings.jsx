@@ -5,16 +5,13 @@ import PlanExpiryBanner from '../components/PlanExpiryBanner';
 import ImageUpload from '../components/common/ImageUpload';
 import { useImageUrl } from '../hooks/useImageUrl.jsx';
 import api from '../services/api';
-import Modal from '../components/shared/Modal';
-import { useModal } from '../hooks/useModal';
-import '../styles/user-settings.css';
+import '../styles/enhanced-user-settings.css';
 
 const UserSettings = () => {
   const { user, updateUser } = useAuth();
   const { showNotification } = useNotification();
-  const { modal, showDeleteConfirm, hideModal } = useModal();
-  const { getProfileImageUrl } = useImageUrl();
-  const [formData, setFormData] = useState({
+  const { getProfileImageUrl, getMerchantLogoUrl } = useImageUrl();
+  const [userProfile, setUserProfile] = useState({
     fullName: '',
     firstName: '',
     lastName: '',
@@ -24,689 +21,806 @@ const UserSettings = () => {
     gender: '',
     bloodGroup: '',
     community: '',
-    address: '',
+    address: {
+      street: '',
+      city: '',
+      state: '',
+      zipCode: ''
+    },
     country: 'Ghana',
-    state: '',
-    city: '',
     profilePicture: '',
     membershipType: '',
     membershipNumber: '',
-    socialMediaFollowed: {},
-    preferences: {
-      newsletter: true,
-      eventNotifications: true,
-      memberDirectory: true,
-      emailNotifications: true,
-      smsNotifications: false
-    }
+    createdAt: '',
+    status: '',
+    role: ''
   });
-  const [passwordForm, setPasswordForm] = useState({
+  const [passwordFormData, setPasswordFormData] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
   });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [activeTab, setActiveTab] = useState('profile');
-  const [redemptions, setRedemptions] = useState([]);
-  const [redemptionsLoading, setRedemptionsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [notificationState, setNotificationState] = useState({ message: '', type: '' });
+  const [currentActiveTab, setCurrentActiveTab] = useState(() => {
+    return user?.role === 'merchant' ? 'business' : 'profile';
+  });
+  const [userRedemptions, setUserRedemptions] = useState([]);
+  const [redemptionsLoadingState, setRedemptionsLoadingState] = useState(false);
 
+  // Update active tab when user role changes
+  useEffect(() => {
+    if (user?.role === 'merchant' && currentActiveTab === 'profile') {
+      setCurrentActiveTab('business');
+    } else if (user?.role !== 'merchant' && currentActiveTab === 'business') {
+      setCurrentActiveTab('profile');
+    }
+  }, [user?.role, currentActiveTab]);
+
+  // Fetch comprehensive user data
   useEffect(() => {
     if (user) {
-      // Normalize address: backend may return string or object
-      let normalizedAddress = { street: '', city: '', state: '', zipCode: '' };
-      if (user.address) {
-        if (typeof user.address === 'object') {
-          normalizedAddress = {
-            street: user.address.street || user.address.address || '',
-            city: user.address.city || '',
-            state: user.address.state || '',
-            zipCode: user.address.zipCode || user.address.zip || ''
+      fetchUserProfileData();
+    }
+  }, [user]);
+
+  const fetchUserProfileData = async () => {
+    try {
+      setIsLoading(true);
+      const response = await api.get('/users/profile/complete');
+      const userData = response.data.user || user;
+      
+      // Parse address if it's a string
+      let parsedAddress = { street: '', city: '', state: '', zipCode: '' };
+      if (userData.address) {
+        if (typeof userData.address === 'object') {
+          parsedAddress = {
+            street: userData.address.street || userData.address.address || '',
+            city: userData.address.city || '',
+            state: userData.address.state || '',
+            zipCode: userData.address.zipCode || userData.address.zip || ''
           };
-        } else if (typeof user.address === 'string') {
-          // Try to parse JSON string, otherwise place the whole string into street
+        } else if (typeof userData.address === 'string') {
           try {
-            const parsed = JSON.parse(user.address);
-            normalizedAddress = {
-              street: parsed.street || parsed.address || user.address || '',
+            const parsed = JSON.parse(userData.address);
+            parsedAddress = {
+              street: parsed.street || parsed.address || userData.address || '',
               city: parsed.city || '',
               state: parsed.state || '',
               zipCode: parsed.zipCode || parsed.zip || ''
             };
           } catch (e) {
-            normalizedAddress = { street: user.address, city: '', state: '', zipCode: '' };
+            parsedAddress = { street: userData.address, city: '', state: '', zipCode: '' };
           }
         }
       }
 
-      setFormData({
-        fullName: user.fullName || '',
-        // alias used by some inputs which expect `name`
-        name: user.fullName || '',
-        firstName: user.firstName || '',
-        lastName: user.lastName || '',
-        email: user.email || '',
-        phone: user.phone || '',
-        dob: user.dob ? user.dob.split('T')[0] : '',
-        gender: user.gender || '',
-        bloodGroup: user.bloodGroup || '',
-        community: user.community || '',
-        address: normalizedAddress,
-        country: user.country || 'Ghana',
-        state: user.state || '',
-        city: user.city || '',
-        profilePicture: user.profilePicture || '',
-        membershipType: user.membershipType || user.membership || '',
-        membershipNumber: user.membershipNumber || '',
-        socialMediaFollowed: user.socialMediaFollowed || {},
-        preferences: {
-          newsletter: user.preferences?.newsletter ?? true,
-          eventNotifications: user.preferences?.eventNotifications ?? true,
-          memberDirectory: user.preferences?.memberDirectory ?? true,
-          emailNotifications: user.preferences?.emailNotifications ?? true,
-          smsNotifications: user.preferences?.smsNotifications ?? false
-        }
+      setUserProfile({
+        fullName: userData.fullName || '',
+        firstName: userData.firstName || '',
+        lastName: userData.lastName || '',
+        email: userData.email || '',
+        phone: userData.phone || '',
+        dob: userData.dob ? userData.dob.split('T')[0] : '',
+        gender: userData.gender || '',
+        bloodGroup: userData.bloodGroup || '',
+        community: userData.community || '',
+        address: parsedAddress,
+        country: userData.country || 'Ghana',
+        profilePicture: userData.profilePicture || userData.profilePhoto || '',
+        membershipType: userData.membershipType || userData.membership || '',
+        membershipNumber: userData.membershipNumber || '',
+        createdAt: userData.createdAt || '',
+        status: userData.status || '',
+        role: userData.role || ''
       });
-    }
-  }, [user]);
-
-  // Fetch user redemptions when redemptions tab is active
-  const fetchRedemptions = async () => {
-    if (activeTab !== 'redemptions') return;
-    
-    setRedemptionsLoading(true);
-    try {
-      const response = await api.get('/deals/user/redeemed');
-      if (response.data.success) {
-        setRedemptions(response.data.redeemedDeals || []);
-      }
-    } catch (err) {
-      console.error('Error fetching redemptions:', err);
-      showNotification('Failed to load redemption history', 'error');
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      showNotification('Failed to load user profile data', 'error');
     } finally {
-      setRedemptionsLoading(false);
+      setIsLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchRedemptions();
-  }, [activeTab]);
+  // Fetch user redemption history
+  const fetchRedemptionHistory = async () => {
+    try {
+      setRedemptionsLoadingState(true);
+      const response = await api.get('/redemptions/user-history');
+      setUserRedemptions(response.data.redemptions || []);
+    } catch (error) {
+      console.error('Error fetching redemption history:', error);
+      showNotification('Failed to load redemption history', 'error');
+    } finally {
+      setRedemptionsLoadingState(false);
+    }
+  };
 
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
+  // Load redemptions when redemption tab is active
+  useEffect(() => {
+    if (currentActiveTab === 'redemptions' && userRedemptions.length === 0) {
+      fetchRedemptionHistory();
+    }
+  }, [currentActiveTab]);
+
+  const handleProfileInputChange = (e) => {
+    const { name, value } = e.target;
     
-    if (name.includes('.')) {
-      const [parent, child] = name.split('.');
-      setFormData(prev => ({
+    if (name.startsWith('address.')) {
+      const addressField = name.split('.')[1];
+      setUserProfile(prev => ({
         ...prev,
-        [parent]: {
-          ...prev[parent],
-          [child]: type === 'checkbox' ? checked : value
+        address: {
+          ...prev.address,
+          [addressField]: value
         }
       }));
     } else {
-      setFormData(prev => ({
+      setUserProfile(prev => ({
         ...prev,
-        [name]: type === 'checkbox' ? checked : value
+        [name]: value
       }));
     }
   };
 
   const handlePasswordInputChange = (e) => {
-    const { name, value } = e.target;    setPasswordForm(prev => ({
+    const { name, value } = e.target;
+    setPasswordFormData(prev => ({
       ...prev,
       [name]: value
     }));
   };
 
-  const handleProfileUpdate = async (e) => {
+  const updateUserProfile = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError('');
-    setSuccess('');
+    setIsLoading(true);
+    setNotificationState({ message: '', type: '' });
 
     try {
-      const response = await api.put('/users/profile', formData);
-      // Wait 600ms before showing notification (for toggle UX)
-      await new Promise(resolve => setTimeout(resolve, 600));
-      if (response && response.data && response.data.user) {
-        updateUser(response.data.user);
-        setSuccess('Profile updated successfully! Your changes have been saved.');
-        showNotification('Profile updated successfully! Your changes have been saved.', 'success');
-      } else {
-        setError('Failed to update profile. Please try again.');
-        showNotification('Failed to update profile. Please try again.', 'error');
+      const addressData = typeof userProfile.address === 'object' 
+        ? JSON.stringify(userProfile.address) 
+        : userProfile.address;
+
+      const profileUpdateData = {
+        fullName: userProfile.fullName,
+        firstName: userProfile.firstName,
+        lastName: userProfile.lastName,
+        email: userProfile.email,
+        phone: userProfile.phone,
+        dob: userProfile.dob,
+        gender: userProfile.gender,
+        bloodGroup: userProfile.bloodGroup,
+        community: userProfile.community,
+        address: addressData,
+        country: userProfile.country
+      };
+
+      const response = await api.put('/users/profile', profileUpdateData);
+      
+      if (response.data.user) {
+        await updateUser(response.data.user);
+        setNotificationState({ message: 'Profile updated successfully!', type: 'success' });
       }
-    } catch (err) {
-      await new Promise(resolve => setTimeout(resolve, 600));
-      const errorMessage = err.response?.data?.message || 'Failed to update profile. Please try again.';
-      setError(errorMessage);
-      showNotification(errorMessage, 'error');
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      const errorMessage = error.response?.data?.message || 'Failed to update profile';
+      setNotificationState({ message: errorMessage, type: 'error' });
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const handlePasswordChange = async (e) => {
+  const updateUserPassword = async (e) => {
     e.preventDefault();
     
-    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      const errorMsg = 'New passwords do not match. Please check and try again.';
-      setError(errorMsg);
-      showNotification(errorMsg, 'error');
+    if (passwordFormData.newPassword !== passwordFormData.confirmPassword) {
+      setNotificationState({ message: 'New passwords do not match', type: 'error' });
       return;
     }
 
-    if (passwordForm.newPassword.length < 6) {
-      const errorMsg = 'New password must be at least 6 characters long.';
-      setError(errorMsg);
-      showNotification(errorMsg, 'error');
+    if (passwordFormData.newPassword.length < 6) {
+      setNotificationState({ message: 'Password must be at least 6 characters long', type: 'error' });
       return;
     }
 
-    setLoading(true);
-    setError('');
-    setSuccess('');
+    setIsLoading(true);
+    setNotificationState({ message: '', type: '' });
 
     try {
       await api.put('/users/password', {
-        currentPassword: passwordForm.currentPassword,
-        newPassword: passwordForm.newPassword
+        currentPassword: passwordFormData.currentPassword,
+        newPassword: passwordFormData.newPassword
       });
       
-      const successMsg = 'Password changed successfully! Your account is now more secure.';
-      setSuccess(successMsg);
-      showNotification(successMsg, 'success');
-      
-      setPasswordForm({
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: ''
-      });
-    } catch (err) {
-      const errorMessage = err.response?.data?.message || 'Failed to change password. Please check your current password and try again.';
-      setError(errorMessage);
-      showNotification(errorMessage, 'error');
+      setPasswordFormData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      setNotificationState({ message: 'Password updated successfully!', type: 'success' });
+    } catch (error) {
+      console.error('Error updating password:', error);
+      const errorMessage = error.response?.data?.message || 'Failed to update password';
+      setNotificationState({ message: errorMessage, type: 'error' });
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
-  const deleteAccount = async () => {
-    const confirmed = await showDeleteConfirm('your account', async () => {
-      try {
-        await api.delete('/users/account');
-        showNotification('Account deleted successfully', 'success');
-        // This would typically redirect to login page
-        window.location.href = '/login';
-      } catch (err) {
-        setError(err.response?.data?.message || 'Failed to delete account');
+
+  const handleProfilePhotoUpload = async (file) => {
+    try {
+      setIsLoading(true);
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const response = await api.post(`/upload/profile-photo/${user.id}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      if (response.data.imageUrl) {
+        const updatedUser = { ...user, profilePicture: response.data.imageUrl };
+        await updateUser(updatedUser);
+        setUserProfile(prev => ({ ...prev, profilePicture: response.data.imageUrl }));
+        showNotification('Profile photo updated successfully!', 'success');
       }
-    }, {
-      title: 'Delete Account',
-      message: 'Are you sure you want to delete your account? This action cannot be undone.',
-      confirmText: 'Delete Account'
-    });
+    } catch (error) {
+      console.error('Error uploading profile photo:', error);
+      showNotification('Failed to upload profile photo', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleMerchantLogoUpload = async (file) => {
+    try {
+      setIsLoading(true);
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const response = await api.post(`/upload/merchant-logo/${user.id}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      if (response.data.imageUrl) {
+        showNotification('Business logo updated successfully!', 'success');
+      }
+    } catch (error) {
+      console.error('Error uploading merchant logo:', error);
+      showNotification('Failed to upload business logo', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const TabNavigation = () => {
+    const availableTabs = [];
+    
+    if (user?.role === 'merchant') {
+      availableTabs.push(
+        { id: 'business', label: 'Business Settings', icon: '🏢' },
+        { id: 'profile', label: 'Profile Information', icon: '👤' },
+        { id: 'security', label: 'Security Settings', icon: '🔒' },
+        { id: 'redemptions', label: 'Redemption History', icon: '🎫' }
+      );
+    } else {
+      availableTabs.push(
+        { id: 'profile', label: 'Profile Information', icon: '👤' },
+        { id: 'security', label: 'Security Settings', icon: '🔒' },
+        { id: 'redemptions', label: 'Redemption History', icon: '🎫' }
+      );
+    }
+
+    return (
+      <div className="user-profile-navigation-container">
+        {availableTabs.map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setCurrentActiveTab(tab.id)}
+            className={`user-profile-tab-button ${currentActiveTab === tab.id ? 'user-profile-tab-active' : ''}`}
+          >
+            <span className="user-profile-tab-icon">{tab.icon}</span>
+            <span className="user-profile-tab-label">{tab.label}</span>
+          </button>
+        ))}
+      </div>
+    );
+  };
+
+  const BusinessSettingsTab = () => (
+    <div className="user-settings-tab-content">
+      <div className="user-settings-business-section">
+        <div className="user-profile-header-section">
+          <h2 className="user-profile-section-title">Business Logo Management</h2>
+          <p className="user-profile-section-description">
+            Upload and manage your business logo for the business directory
+          </p>
+        </div>
+
+        <div className="merchant-business-logo-container">
+          <div className="merchant-logo-upload-section">
+            <div className="current-logo-display">
+              <img 
+                src={getMerchantLogoUrl(user?.id) || '/logo-placeholder.svg'} 
+                alt="Current business logo"
+                className="business-logo-preview"
+              />
+              <div className="logo-info">
+                <h4>Current Business Logo</h4>
+                <p>This logo will appear in the business directory</p>
+              </div>
+            </div>
+            
+            <div className="logo-upload-controls">
+              <ImageUpload
+                onImageUpload={handleMerchantLogoUpload}
+                currentImage={getMerchantLogoUrl(user?.id)}
+                className="merchant-logo-upload"
+                accept="image/*"
+                maxSize={5}
+              />
+              <div className="upload-instructions">
+                <p>• Upload in PNG, JPG, or SVG format</p>
+                <p>• Maximum file size: 5MB</p>
+                <p>• Recommended size: 200x200 pixels</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const ProfileInformationTab = () => (
+    <div className="user-settings-tab-content">
+      <form onSubmit={updateUserProfile} className="user-profile-form">
+        <div className="user-profile-header-section">
+          <h2 className="user-profile-section-title">Profile Information</h2>
+          <p className="user-profile-section-description">
+            Update your personal information and membership details
+          </p>
+        </div>
+
+        {/* Profile Photo Section */}
+        <div className="user-profile-photo-section">
+          <div className="profile-photo-container">
+            <img 
+              src={getProfileImageUrl(userProfile.profilePicture, user?.id) || '/default-avatar.png'} 
+              alt="Profile"
+              className="profile-photo-display"
+            />
+            <div className="photo-upload-controls">
+              <ImageUpload
+                onImageUpload={handleProfilePhotoUpload}
+                currentImage={userProfile.profilePicture}
+                className="profile-photo-upload"
+                accept="image/*"
+                maxSize={5}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Basic Information */}
+        <div className="user-profile-form-section">
+          <h3 className="form-section-title">Basic Information</h3>
+          <div className="user-profile-form-grid">
+            <div className="form-field-group">
+              <label className="form-field-label">Full Name</label>
+              <input
+                type="text"
+                name="fullName"
+                value={userProfile.fullName}
+                onChange={handleProfileInputChange}
+                className="enhanced-form-input"
+                placeholder="Enter your full name"
+              />
+            </div>
+
+            <div className="form-field-group">
+              <label className="form-field-label">First Name</label>
+              <input
+                type="text"
+                name="firstName"
+                value={userProfile.firstName}
+                onChange={handleProfileInputChange}
+                className="enhanced-form-input"
+                placeholder="Enter your first name"
+              />
+            </div>
+
+            <div className="form-field-group">
+              <label className="form-field-label">Last Name</label>
+              <input
+                type="text"
+                name="lastName"
+                value={userProfile.lastName}
+                onChange={handleProfileInputChange}
+                className="enhanced-form-input"
+                placeholder="Enter your last name"
+              />
+            </div>
+
+            <div className="form-field-group">
+              <label className="form-field-label">Email Address</label>
+              <input
+                type="email"
+                name="email"
+                value={userProfile.email}
+                onChange={handleProfileInputChange}
+                className="enhanced-form-input"
+                placeholder="Enter your email address"
+              />
+            </div>
+
+            <div className="form-field-group">
+              <label className="form-field-label">Phone Number</label>
+              <input
+                type="tel"
+                name="phone"
+                value={userProfile.phone}
+                onChange={handleProfileInputChange}
+                className="enhanced-form-input"
+                placeholder="Enter your phone number"
+              />
+            </div>
+
+            <div className="form-field-group">
+              <label className="form-field-label">Date of Birth</label>
+              <input
+                type="date"
+                name="dob"
+                value={userProfile.dob}
+                onChange={handleProfileInputChange}
+                className="enhanced-form-input"
+              />
+            </div>
+
+            <div className="form-field-group">
+              <label className="form-field-label">Gender</label>
+              <select
+                name="gender"
+                value={userProfile.gender}
+                onChange={handleProfileInputChange}
+                className="enhanced-form-select"
+              >
+                <option value="">Select Gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+
+            <div className="form-field-group">
+              <label className="form-field-label">Blood Group</label>
+              <select
+                name="bloodGroup"
+                value={userProfile.bloodGroup}
+                onChange={handleProfileInputChange}
+                className="enhanced-form-select"
+              >
+                <option value="">Select Blood Group</option>
+                <option value="A+">A+</option>
+                <option value="A-">A-</option>
+                <option value="B+">B+</option>
+                <option value="B-">B-</option>
+                <option value="AB+">AB+</option>
+                <option value="AB-">AB-</option>
+                <option value="O+">O+</option>
+                <option value="O-">O-</option>
+              </select>
+            </div>
+
+            <div className="form-field-group">
+              <label className="form-field-label">Community</label>
+              <input
+                type="text"
+                name="community"
+                value={userProfile.community}
+                onChange={handleProfileInputChange}
+                className="enhanced-form-input"
+                placeholder="Enter your community"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Address Information */}
+        <div className="user-profile-form-section">
+          <h3 className="form-section-title">Address Information</h3>
+          <div className="user-profile-form-grid">
+            <div className="form-field-group form-field-full-width">
+              <label className="form-field-label">Street Address</label>
+              <input
+                type="text"
+                name="address.street"
+                value={userProfile.address.street}
+                onChange={handleProfileInputChange}
+                className="enhanced-form-input"
+                placeholder="Enter your street address"
+              />
+            </div>
+
+            <div className="form-field-group">
+              <label className="form-field-label">City</label>
+              <input
+                type="text"
+                name="address.city"
+                value={userProfile.address.city}
+                onChange={handleProfileInputChange}
+                className="enhanced-form-input"
+                placeholder="Enter your city"
+              />
+            </div>
+
+            <div className="form-field-group">
+              <label className="form-field-label">State/Region</label>
+              <input
+                type="text"
+                name="address.state"
+                value={userProfile.address.state}
+                onChange={handleProfileInputChange}
+                className="enhanced-form-input"
+                placeholder="Enter your state or region"
+              />
+            </div>
+
+            <div className="form-field-group">
+              <label className="form-field-label">ZIP/Postal Code</label>
+              <input
+                type="text"
+                name="address.zipCode"
+                value={userProfile.address.zipCode}
+                onChange={handleProfileInputChange}
+                className="enhanced-form-input"
+                placeholder="Enter your postal code"
+              />
+            </div>
+
+            <div className="form-field-group">
+              <label className="form-field-label">Country</label>
+              <select
+                name="country"
+                value={userProfile.country}
+                onChange={handleProfileInputChange}
+                className="enhanced-form-select"
+              >
+                <option value="Ghana">Ghana</option>
+                <option value="India">India</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Membership Information (Read-only) */}
+        <div className="user-profile-form-section">
+          <h3 className="form-section-title">Membership Information</h3>
+          <div className="user-profile-form-grid">
+            <div className="form-field-group">
+              <label className="form-field-label">Membership Type</label>
+              <input
+                type="text"
+                value={userProfile.membershipType}
+                className="enhanced-form-input disabled-input"
+                disabled
+                placeholder="Membership type"
+              />
+            </div>
+
+            <div className="form-field-group">
+              <label className="form-field-label">Membership Number</label>
+              <input
+                type="text"
+                value={userProfile.membershipNumber}
+                className="enhanced-form-input disabled-input"
+                disabled
+                placeholder="Membership number"
+              />
+            </div>
+
+            <div className="form-field-group">
+              <label className="form-field-label">Member Since</label>
+              <input
+                type="text"
+                value={userProfile.createdAt ? new Date(userProfile.createdAt).toLocaleDateString() : ''}
+                className="enhanced-form-input disabled-input"
+                disabled
+                placeholder="Member since"
+              />
+            </div>
+
+            <div className="form-field-group">
+              <label className="form-field-label">Account Status</label>
+              <input
+                type="text"
+                value={userProfile.status}
+                className="enhanced-form-input disabled-input"
+                disabled
+                placeholder="Account status"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="form-action-buttons">
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="enhanced-primary-button"
+          >
+            {isLoading ? 'Updating...' : 'Update Profile'}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+
+  const SecuritySettingsTab = () => (
+    <div className="user-settings-tab-content">
+      <form onSubmit={updateUserPassword} className="user-profile-form">
+        <div className="user-profile-header-section">
+          <h2 className="user-profile-section-title">Security Settings</h2>
+          <p className="user-profile-section-description">
+            Change your password to keep your account secure
+          </p>
+        </div>
+
+        <div className="user-profile-form-section">
+          <h3 className="form-section-title">Change Password</h3>
+          <div className="user-profile-form-grid">
+            <div className="form-field-group form-field-full-width">
+              <label className="form-field-label">Current Password</label>
+              <input
+                type="password"
+                name="currentPassword"
+                value={passwordFormData.currentPassword}
+                onChange={handlePasswordInputChange}
+                className="enhanced-form-input"
+                placeholder="Enter your current password"
+                required
+              />
+            </div>
+
+            <div className="form-field-group">
+              <label className="form-field-label">New Password</label>
+              <input
+                type="password"
+                name="newPassword"
+                value={passwordFormData.newPassword}
+                onChange={handlePasswordInputChange}
+                className="enhanced-form-input"
+                placeholder="Enter new password"
+                required
+                minLength="6"
+              />
+            </div>
+
+            <div className="form-field-group">
+              <label className="form-field-label">Confirm New Password</label>
+              <input
+                type="password"
+                name="confirmPassword"
+                value={passwordFormData.confirmPassword}
+                onChange={handlePasswordInputChange}
+                className="enhanced-form-input"
+                placeholder="Confirm new password"
+                required
+                minLength="6"
+              />
+            </div>
+          </div>
+
+          <div className="password-requirements">
+            <h4>Password Requirements:</h4>
+            <ul>
+              <li>At least 6 characters long</li>
+              <li>Both passwords must match</li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="form-action-buttons">
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="enhanced-primary-button"
+          >
+            {isLoading ? 'Updating...' : 'Update Password'}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+
+  const RedemptionHistoryTab = () => (
+    <div className="user-settings-tab-content">
+      <div className="user-profile-header-section">
+        <h2 className="user-profile-section-title">Redemption History</h2>
+        <p className="user-profile-section-description">
+          View your redeemed deals and offers
+        </p>
+      </div>
+
+      <div className="redemption-history-container">
+        {redemptionsLoadingState ? (
+          <div className="loading-state">Loading redemption history...</div>
+        ) : userRedemptions.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-state-icon">🎫</div>
+            <h3>No Redemptions Yet</h3>
+            <p>You haven't redeemed any deals yet. Start exploring our deals to save money!</p>
+          </div>
+        ) : (
+          <div className="redemption-cards-grid">
+            {userRedemptions.map((redemption, index) => (
+              <div key={index} className="redemption-card">
+                <div className="redemption-card-header">
+                  <h4 className="deal-title">{redemption.dealTitle || 'Deal'}</h4>
+                  <span className="redemption-date">
+                    {new Date(redemption.redeemedAt).toLocaleDateString()}
+                  </span>
+                </div>
+                <div className="redemption-card-body">
+                  <p className="business-name">{redemption.businessName}</p>
+                  <p className="redemption-code">Code: {redemption.redemptionCode}</p>
+                  <div className="redemption-status">
+                    <span className="status-badge">Redeemed</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  const renderTabContent = () => {
+    switch (currentActiveTab) {
+      case 'business':
+        return <BusinessSettingsTab />;
+      case 'profile':
+        return <ProfileInformationTab />;
+      case 'security':
+        return <SecuritySettingsTab />;
+      case 'redemptions':
+        return <RedemptionHistoryTab />;
+      default:
+        return <ProfileInformationTab />;
+    }
   };
 
   return (
-    <div className="page active">
-      <div className="container">
-        <div className="row justify-content-center">
-          <div className="col-lg-8">
-            <div className="page-header">
-              <h1>
-                <i className="fas fa-user-cog me-2"></i>
-                Account Settings
-              </h1>
-              <p className="lead">Manage your account information and preferences</p>
-            </div>
+    <div className="enhanced-user-settings-container">
+      <PlanExpiryBanner />
+      
+      <div className="user-settings-content-wrapper">
+        <div className="user-profile-header-section">
+          <h1 className="user-settings-main-title">Account Settings</h1>
+          <p className="user-settings-main-description">
+            Manage your account information, security settings, and preferences
+          </p>
+        </div>
 
-            {/* Notification */}
-            {(error || success) && (
-              <div className={`notification ${success ? 'success' : 'error'}`}>
-                <span>{error || success}</span>
-                <button onClick={() => {
-                  setError('');
-                  setSuccess('');
-                }}>×</button>
-              </div>
-            )}
+        {/* Notification Display */}
+        {notificationState.message && (
+          <div className={`user-settings-notification ${notificationState.type === 'success' ? 'notification-success' : 'notification-error'}`}>
+            <span>{notificationState.message}</span>
+            <button 
+              onClick={() => setNotificationState({ message: '', type: '' })}
+              className="notification-close-button"
+            >
+              ×
+            </button>
+          </div>
+        )}
 
-            {/* Tab Navigation */}
-            <div className="settings-tabs">
-              <button 
-                className={`tab ${activeTab === 'profile' ? 'active' : ''}`}
-                onClick={() => setActiveTab('profile')}
-              >
-                <i className="fas fa-user"></i> Profile
-              </button>
-              <button 
-                className={`tab ${activeTab === 'security' ? 'active' : ''}`}
-                onClick={() => setActiveTab('security')}
-              >
-                <i className="fas fa-shield-alt"></i> Security
-              </button>
-              <button 
-                className={`tab ${activeTab === 'preferences' ? 'active' : ''}`}
-                onClick={() => setActiveTab('preferences')}
-              >
-                <i className="fas fa-cog"></i> Preferences
-              </button>
-              <button 
-                className={`tab ${activeTab === 'redemptions' ? 'active' : ''}`}
-                onClick={() => setActiveTab('redemptions')}
-              >
-                <i className="fas fa-ticket-alt"></i> Redemptions
-              </button>
-            </div>
+        <div className="user-settings-layout">
+          <div className="user-settings-sidebar">
+            <TabNavigation />
+          </div>
 
-            {/* Profile Tab */}
-            {activeTab === 'profile' && (
-              <div className="settings-section">
-                {/* Profile Information */}
-                <div className="card mb-4">
-                  <div className="card-header">
-                    <h4 className="mb-0">
-                      <i className="fas fa-user me-2"></i>
-                      Profile Information
-                    </h4>
-                  </div>
-                  <div className="card-body">
-                    <form onSubmit={handleProfileUpdate}>
-                      {/* Profile Photo Upload Section */}
-                      <div className="row mb-4">
-                        <div className="col-12">
-                          <h5 className="mb-3">
-                            <i className="fas fa-camera me-2"></i>
-                            Profile Photo
-                          </h5>
-                          <ImageUpload
-                            type="profile"
-                            entityId={user?.id}
-                            currentImage={getProfileImageUrl(user)}
-                            onUploadSuccess={(data) => {
-                              showNotification('Profile photo updated successfully!', 'success');
-                              // Update user data in context
-                              updateUser({ ...user, profilePhoto: data.filename });
-                            }}
-                            onUploadError={(error) => {
-                              showNotification('Failed to upload profile photo', 'error');
-                            }}
-                            label="Upload Profile Photo"
-                            description="This will be displayed on your membership card and in the community directory"
-                            aspectRatio="1:1"
-                            className="mb-4"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="row">
-                        <div className="col-md-6">
-                          <div className="mb-3">
-                            <label className="form-label">Full Name</label>
-                            <input
-                              type="text"
-                              className="form-control"
-                              value={formData.name}
-                              onChange={(e) => setFormData({...formData, name: e.target.value})}
-                              required
-                            />
-                          </div>
-                        </div>
-                        <div className="col-md-6">
-                          <div className="mb-3">
-                            <label className="form-label">Email Address</label>
-                            <input
-                              type="email"
-                              className="form-control"
-                              value={formData.email}
-                              onChange={(e) => setFormData({...formData, email: e.target.value})}
-                              required
-                            />
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="row">
-                        <div className="col-md-6">
-                          <div className="mb-3">
-                            <label className="form-label">Phone Number</label>
-                            <input
-                              type="tel"
-                              className="form-control"
-                              value={formData.phone}
-                              onChange={handleInputChange}
-                              placeholder="+233 XX XXX XXXX"
-                              name="phone"
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="address-section">
-                        <h3>Address Information</h3>
-                        <div className="form-grid">
-                          <div className="form-group">
-                            <label htmlFor="street">
-                              <i className="fas fa-road"></i> Street Address
-                            </label>
-                            <input
-                              type="text"
-                              id="street"
-                              name="address.street"
-                              value={formData.address.street}
-                              onChange={handleInputChange}
-                            />
-                          </div>
-
-                          <div className="form-group">
-                            <label htmlFor="city">
-                              <i className="fas fa-city"></i> City
-                            </label>
-                            <input
-                              type="text"
-                              id="city"
-                              name="address.city"
-                              value={formData.address.city}
-                              onChange={handleInputChange}
-                            />
-                          </div>
-
-                          <div className="form-group">
-                            <label htmlFor="state">
-                              <i className="fas fa-map"></i> State/Region
-                            </label>
-                            <input
-                              type="text"
-                              id="state"
-                              name="address.state"
-                              value={formData.address.state}
-                              onChange={handleInputChange}
-                            />
-                          </div>
-
-                          <div className="form-group">
-                            <label htmlFor="zipCode">
-                              <i className="fas fa-mail-bulk"></i> ZIP/Postal Code
-                            </label>
-                            <input
-                              type="text"
-                              id="zipCode"
-                              name="address.zipCode"
-                              value={formData.address.zipCode}
-                              onChange={handleInputChange}
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      <button
-                        type="submit"
-                        className="btn btn-primary"
-                        disabled={loading}
-                      >
-                        {loading ? 'Updating...' : 'Update Profile'}
-                      </button>
-                    </form>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Security Tab */}
-            {activeTab === 'security' && (
-              <div className="settings-section">
-                <h2>Security Settings</h2>
-                <form onSubmit={handlePasswordChange} className="settings-form">
-                  <div className="form-group">
-                    <label htmlFor="currentPassword">
-                      <i className="fas fa-lock"></i> Current Password
-                    </label>
-                    <input
-                      type="password"
-                      id="currentPassword"
-                      name="currentPassword"
-                      value={passwordForm.currentPassword}
-                      onChange={handlePasswordInputChange}
-                      required
-                    />
-                  </div>
-                  
-                  <div className="form-group">
-                    <label htmlFor="newPassword">
-                      <i className="fas fa-key"></i> New Password
-                    </label>
-                    <input
-                      type="password"
-                      id="newPassword"
-                      name="newPassword"
-                      value={passwordForm.newPassword}
-                      onChange={handlePasswordInputChange}
-                      minLength="6"
-                      required
-                    />
-                  </div>
-                  
-                  <div className="form-group">
-                    <label htmlFor="confirmPassword">
-                      <i className="fas fa-check"></i> Confirm New Password
-                    </label>
-                    <input
-                      type="password"
-                      id="confirmPassword"
-                      name="confirmPassword"
-                      value={passwordForm.confirmPassword}
-                      onChange={handlePasswordInputChange}
-                      minLength="6"
-                      required
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="btn btn-warning"
-                    disabled={loading}
-                  >
-                    {loading ? (
-                      <>
-                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                        Changing...
-                      </>
-                    ) : (
-                      <>
-                        <i className="fas fa-key me-2"></i>
-                        Change Password
-                      </>
-                    )}
-                  </button>
-                </form>
-              </div>
-            )}
-
-            {/* Preferences Tab */}
-            {activeTab === 'preferences' && (
-              <div className="settings-section">
-                <h2>Notification Preferences</h2>
-                <form onSubmit={handleProfileUpdate} className="settings-form">
-                  <div className="preferences-grid">
-                    <div className="preference-item">
-                      <div className="preference-info">
-                        <h4>Newsletter Subscription</h4>
-                        <p>Receive monthly community updates and announcements</p>
-                      </div>
-                      <label className="toggle-switch">
-                        <input
-                          type="checkbox"
-                          name="preferences.newsletter"
-                          checked={formData.preferences.newsletter}
-                          onChange={handleInputChange}
-                        />
-                        <span className="slider"></span>
-                      </label>
-                    </div>
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="btn btn-primary"
-                    disabled={loading}
-                  >
-                    {loading ? 'Saving...' : 'Save Preferences'}
-                  </button>
-                </form>
-
-                <div className="card-body">
-                  <div className="row">
-                    <div className="col-md-6">
-                      <div className="info-item">
-                        <strong>Member ID:</strong>
-                        <span className="ms-2">{user?.memberId || 'IIG-' + user?._id?.slice(-6).toUpperCase()}</span>
-                      </div>
-                    </div>
-                    <div className="col-md-6">
-                      <div className="info-item">
-                        <strong>Account Status:</strong>
-                        <span className={`badge ms-2 ${user?.status === 'active' ? 'bg-success' : 'bg-warning'}`}>
-                          {user?.status || 'Active'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="row mt-3">
-                    <div className="col-md-6">
-                      <div className="info-item">
-                        <strong>Member Since:</strong>
-                        <span className="ms-2">{user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}</span>
-                      </div>
-                    </div>
-                    <div className="col-md-6">
-                      <div className="info-item">
-                        <strong>Account Type:</strong>
-                        <span className={`badge ms-2 ${user?.role === 'admin' ? 'bg-danger' : user?.role === 'merchant' ? 'bg-warning' : 'bg-primary'}`}>
-                          {user?.role || 'User'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Redemptions History Tab */}
-            {activeTab === 'redemptions' && (
-              <div className="settings-section">
-                <div className="card">
-                  <div className="card-header">
-                    <h4 className="mb-0">
-                      <i className="fas fa-ticket-alt me-2"></i>
-                      Redemption History
-                    </h4>
-                  </div>
-                  <div className="card-body">
-                    {redemptionsLoading ? (
-                      <div className="text-center py-4">
-                        <div className="spinner-border" role="status">
-                          <span className="visually-hidden">Loading...</span>
-                        </div>
-                        <p className="mt-2">Loading redemption history...</p>
-                      </div>
-                    ) : redemptions.length === 0 ? (
-                      <div className="text-center py-4">
-                        <i className="fas fa-ticket-alt fa-3x text-muted mb-3"></i>
-                        <h5 className="text-muted">No Redemptions Yet</h5>
-                        <p className="text-muted">You haven't redeemed any deals yet. Start exploring deals to see your redemption history here!</p>
-                      </div>
-                    ) : (
-                      <div className="redemptions-list">
-                        {redemptions.map((redemption) => (
-                          <div key={redemption.id} className="redemption-item card mb-3">
-                            <div className="card-body">
-                              <div className="row align-items-center">
-                                <div className="col-md-8">
-                                  <h5 className="deal-title mb-1">{redemption.title}</h5>
-                                  <p className="business-name text-muted mb-1">
-                                    <i className="fas fa-store me-1"></i>
-                                    {redemption.businessName}
-                                  </p>
-                                  {redemption.businessAddress && (
-                                    <p className="business-address text-muted mb-1">
-                                      <i className="fas fa-map-marker-alt me-1"></i>
-                                      {redemption.businessAddress}
-                                    </p>
-                                  )}
-                                  <p className="deal-discount mb-2">
-                                    <span className="badge bg-success">
-                                      {redemption.discountType === 'percentage' 
-                                        ? `${redemption.discount}% OFF` 
-                                        : `$${redemption.discount} OFF`
-                                      }
-                                    </span>
-                                  </p>
-                                </div>
-                                <div className="col-md-4 text-md-end">
-                                  <div className="redemption-status mb-2">
-                                    <span className={`badge ${
-                                      redemption.status === 'approved' ? 'bg-success' :
-                                      redemption.status === 'pending' ? 'bg-warning' :
-                                      redemption.status === 'rejected' ? 'bg-danger' : 'bg-secondary'
-                                    }`}>
-                                      <i className={`fas ${
-                                        redemption.status === 'approved' ? 'fa-check' :
-                                        redemption.status === 'pending' ? 'fa-clock' :
-                                        redemption.status === 'rejected' ? 'fa-times' : 'fa-question'
-                                      } me-1`}></i>
-                                      {redemption.status?.charAt(0).toUpperCase() + redemption.status?.slice(1) || 'Unknown'}
-                                    </span>
-                                  </div>
-                                  <small className="text-muted">
-                                    <i className="fas fa-calendar me-1"></i>
-                                    {new Date(redemption.redeemed_at).toLocaleDateString()}
-                                  </small>
-                                  {redemption.status === 'rejected' && redemption.rejection_reason && (
-                                    <div className="mt-2">
-                                      <small className="text-danger">
-                                        <i className="fas fa-exclamation-triangle me-1"></i>
-                                        Reason: {redemption.rejection_reason}
-                                      </small>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Danger Zone */}
-            <div className="card border-danger">
-              <div className="card-header bg-danger text-white">
-                <h4 className="mb-0">
-                  <i className="fas fa-exclamation-triangle me-2"></i>
-                  Danger Zone
-                </h4>
-              </div>
-              <div className="card-body">
-                <p className="card-text">
-                  Once you delete your account, there is no going back. Please be certain.
-                </p>
-                <button
-                  className="btn btn-danger"
-                  onClick={deleteAccount}
-                >
-                  <i className="fas fa-trash me-2"></i>
-                  Delete Account
-                </button>
-              </div>
-            </div>
-          </div>        </div>
+          <div className="user-settings-main-content">
+            {renderTabContent()}
+          </div>
+        </div>
       </div>
-      <Modal modal={modal} onClose={hideModal} />
     </div>
   );
 };

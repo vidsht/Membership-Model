@@ -3,13 +3,17 @@ import { useNotification } from '../contexts/NotificationContext';
 import { useDynamicFields } from '../hooks/useDynamicFields';
 import { merchantApi } from '../services/api';
 import api from '../services/api';
+import ImageUpload from './common/ImageUpload';
+import { useImageUrl } from '../hooks/useImageUrl.jsx';
 import './MerchantDealForm.css';
 
 const MerchantDealForm = ({ deal, onDealCreated, onClose, isEditing = false }) => {
   const { showNotification } = useNotification();
   const { getDealCategoryOptions } = useDynamicFields();
+  const { getDealBannerUrl } = useImageUrl();
   const [isSaving, setIsSaving] = useState(false);
   const [userPlans, setUserPlans] = useState([]);
+  const [bannerImageFile, setBannerImageFile] = useState(null);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -197,6 +201,10 @@ const MerchantDealForm = ({ deal, onDealCreated, onClose, isEditing = false }) =
       }));
     }
   };
+
+  const handleBannerImageUpload = (file) => {
+    setBannerImageFile(file);
+  };
   
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -208,7 +216,7 @@ const MerchantDealForm = ({ deal, onDealCreated, onClose, isEditing = false }) =
     
     try {
       setIsSaving(true);
-      // Send JSON only (no file upload)
+      // Send JSON only for deal creation/update
       const dealData = {
         title: formData.title,
         description: formData.description,
@@ -223,18 +231,46 @@ const MerchantDealForm = ({ deal, onDealCreated, onClose, isEditing = false }) =
         requiredPlanPriority: parseInt(formData.requiredPlanPriority)
       };
 
+      let dealId;
+      let createdDeal;
+
       if (isEditing && deal) {
         // Update existing deal
-        await merchantApi.updateDeal(deal.id, dealData);
+        const response = await merchantApi.updateDeal(deal.id, dealData);
+        dealId = deal.id;
+        createdDeal = { ...deal, ...dealData };
         showNotification('Deal updated successfully! It will be reviewed by admin before going live.', 'success');
       } else {
         // Create new deal
-        await merchantApi.createDeal(dealData);
+        const response = await merchantApi.createDeal(dealData);
+        dealId = response.data?.deal?.id || response.data?.id;
+        createdDeal = response.data?.deal || response.data;
         showNotification('Deal submitted successfully! It will be reviewed by admin before going live.', 'success');
+      }
+
+      // Upload banner image if one was selected
+      if (bannerImageFile && dealId) {
+        try {
+          const formData = new FormData();
+          formData.append('dealBanner', bannerImageFile);
+          
+          const uploadResponse = await api.post(`/upload/deal-banner/${dealId}`, formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          });
+          
+          if (uploadResponse.data.success) {
+            console.log('✅ Banner image uploaded successfully:', uploadResponse.data.filename);
+          }
+        } catch (uploadError) {
+          console.error('❌ Banner image upload failed:', uploadError);
+          showNotification('Deal created but banner image upload failed. You can add it later.', 'warning');
+        }
       }
       
       if (onDealCreated) {
-        onDealCreated(isEditing ? { ...deal, ...dealData } : null);
+        onDealCreated(createdDeal);
       }
       
       if (onClose) {
@@ -463,15 +499,29 @@ const MerchantDealForm = ({ deal, onDealCreated, onClose, isEditing = false }) =
         </div>
         
         <div className="form-group">
-          <label htmlFor="featuredImage">Featured Image</label>
+          <label htmlFor="bannerImage">
+            <i className="fas fa-image"></i>
+            Deal Banner Image
+          </label>
           <input
             type="file"
-            id="featuredImage"
-            name="featuredImage"
-            onChange={handleChange}
+            id="bannerImage"
+            name="bannerImage"
+            onChange={(e) => handleBannerImageUpload(e.target.files[0])}
             accept="image/*"
           />
-          <small className="form-hint">Upload an image for your deal (max 5MB)</small>
+          <small className="form-hint">Upload a banner image for your deal (recommended: 800x400px, max 8MB)</small>
+          {bannerImageFile && (
+            <div className="image-preview">
+              <p><i className="fas fa-check-circle text-success"></i> Selected: {bannerImageFile.name}</p>
+            </div>
+          )}
+          {isEditing && deal?.bannerImage && !bannerImageFile && (
+            <div className="current-image-info">
+              <p><i className="fas fa-info-circle text-info"></i> Current banner: {deal.bannerImage}</p>
+              <small>Select a new file to replace it</small>
+            </div>
+          )}
         </div>
         
         <div className="form-actions">

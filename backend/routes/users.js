@@ -28,66 +28,161 @@ router.get('/profile', auth, (req, res) => {
   });
 });
 
+// @route   GET /api/users/profile/complete
+// @desc    Get complete user profile with all fields
+// @access  Private
+router.get('/profile/complete', auth, (req, res) => {
+  const userId = req.user.id;
+  
+  // Get all available user fields
+  const query = `
+    SELECT 
+      id, fullName, firstName, lastName, email, phone, dob, gender, bloodGroup, 
+      community, address, country, state, city, profilePicture, profilePhoto,
+      membership, membershipType, membershipNumber, status, role, 
+      socialMediaFollowed, preferences, statusUpdatedAt, validationDate, 
+      planExpiryDate, subscriptionEndDate, planEndDate, created_at, updated_at,
+      lastLogin, emailVerified, phoneVerified
+    FROM users 
+    WHERE id = ?
+  `;
+  
+  db.query(query, [userId], (err, results) => {
+    if (err) {
+      console.error('Get complete profile error:', err);
+      return res.status(500).json({ message: 'Server error' });
+    }
+    
+    if (!results.length) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    const user = results[0];
+    
+    // Parse JSON fields if they exist
+    if (user.socialMediaFollowed) {
+      try {
+        user.socialMediaFollowed = JSON.parse(user.socialMediaFollowed);
+      } catch (e) {
+        user.socialMediaFollowed = {};
+      }
+    }
+    
+    if (user.preferences) {
+      try {
+        user.preferences = JSON.parse(user.preferences);
+      } catch (e) {
+        user.preferences = {};
+      }
+    }
+    
+    if (user.address && typeof user.address === 'string') {
+      try {
+        user.address = JSON.parse(user.address);
+      } catch (e) {
+        // Keep as string if not valid JSON
+      }
+    }
+    
+    res.json({ user });
+  });
+});
+
 // @route   PUT /api/users/profile
 // @desc    Update user profile
 // @access  Private
-// Update user profile (MySQL)
 router.put('/profile', auth, (req, res) => {
   const userId = req.user.id;
-  const { fullName, email, phone, address, profilePicture, preferences, socialMediaFollowed } = req.body;
-  // Serialize address and preferences if they are objects
+  const { 
+    fullName, firstName, lastName, email, phone, dob, gender, 
+    bloodGroup, community, address, country 
+  } = req.body;
+  
+  // Serialize address if it's an object
   const addressStr = address && typeof address === 'object' ? JSON.stringify(address) : address || null;
-  const preferencesStr = preferences && typeof preferences === 'object' ? JSON.stringify(preferences) : preferences || null;
+  
   // Check if email is already taken by another user
   if (email) {
     db.query('SELECT id FROM users WHERE email = ? AND id != ?', [email, userId], (err, results) => {
       if (err) return res.status(500).json({ message: 'Server error' });
       if (results.length) return res.status(400).json({ message: 'Email is already taken' });
-      // Update user
+      
+      // Update user with email
       db.query(
-        'UPDATE users SET fullName=?, email=?, phone=?, address=?, profilePicture=?, preferences=?, socialMediaFollowed=?, lastLogin=NOW() WHERE id=?',
-        [fullName, email, phone, addressStr, profilePicture, preferencesStr, socialMediaFollowed ? JSON.stringify(socialMediaFollowed) : null, userId],
+        `UPDATE users SET 
+         fullName=?, firstName=?, lastName=?, email=?, phone=?, dob=?, 
+         gender=?, bloodGroup=?, community=?, address=?, country=?, updated_at=NOW() 
+         WHERE id=?`,
+        [fullName, firstName, lastName, email, phone, dob, gender, bloodGroup, community, addressStr, country, userId],
         (err2) => {
-          if (err2) return res.status(500).json({ message: 'Server error' });
-          db.query('SELECT id, fullName, email, phone, address, profilePicture, preferences, membership, socialMediaFollowed, membershipNumber, membershipType, bloodGroup, statusUpdatedAt, validationDate, planExpiryDate, subscriptionEndDate, planEndDate, created_at FROM users WHERE id = ?', [userId], (err3, results2) => {
-            if (err3) return res.status(500).json({ message: 'Server error' });
-            const user = results2[0];
-            // Parse JSON fields
-            if (user.address) {
-              try { user.address = JSON.parse(user.address); } catch (e) { user.address = {}; }
+          if (err2) {
+            console.error('Profile update error:', err2);
+            return res.status(500).json({ message: 'Server error' });
+          }
+          
+          // Fetch updated user data
+          db.query(
+            `SELECT id, fullName, firstName, lastName, email, phone, dob, gender, 
+             bloodGroup, community, address, country, profilePicture, membership, 
+             membershipType, membershipNumber, status, role, created_at 
+             FROM users WHERE id = ?`, 
+            [userId], 
+            (err3, results2) => {
+              if (err3) return res.status(500).json({ message: 'Server error' });
+              const user = results2[0];
+              
+              // Parse address if it's JSON string
+              if (user.address && typeof user.address === 'string') {
+                try { 
+                  user.address = JSON.parse(user.address); 
+                } catch (e) { 
+                  // Keep as string if not valid JSON
+                }
+              }
+              
+              res.json({ user });
             }
-            if (user.preferences) {
-              try { user.preferences = JSON.parse(user.preferences); } catch (e) { user.preferences = {}; }
-            }
-            if (user.socialMediaFollowed) {
-              try { user.socialMediaFollowed = JSON.parse(user.socialMediaFollowed); } catch (e) { user.socialMediaFollowed = {}; }
-            }
-            res.json({ user });
-          });
+          );
         }
       );
     });
   } else {
+    // Update user without email change
     db.query(
-      'UPDATE users SET fullName=?, phone=?, address=?, profilePicture=?, preferences=?, socialMediaFollowed=?, lastLogin=NOW() WHERE id=?',
-      [fullName, phone, addressStr, profilePicture, preferencesStr, socialMediaFollowed ? JSON.stringify(socialMediaFollowed) : null, userId],
+      `UPDATE users SET 
+       fullName=?, firstName=?, lastName=?, phone=?, dob=?, 
+       gender=?, bloodGroup=?, community=?, address=?, country=?, updated_at=NOW() 
+       WHERE id=?`,
+      [fullName, firstName, lastName, phone, dob, gender, bloodGroup, community, addressStr, country, userId],
       (err2) => {
-        if (err2) return res.status(500).json({ message: 'Server error' });
-        db.query('SELECT id, fullName, email, phone, address, profilePicture, preferences, membership, socialMediaFollowed, membershipNumber, membershipType, bloodGroup, statusUpdatedAt, validationDate, planExpiryDate, subscriptionEndDate, planEndDate, created_at FROM users WHERE id = ?', [userId], (err3, results2) => {
-          if (err3) return res.status(500).json({ message: 'Server error' });
-          const user = results2[0];
-          // Parse JSON fields
-          if (user.address) {
-            try { user.address = JSON.parse(user.address); } catch (e) { user.address = {}; }
+        if (err2) {
+          console.error('Profile update error:', err2);
+          return res.status(500).json({ message: 'Server error' });
+        }
+        
+        // Fetch updated user data
+        db.query(
+          `SELECT id, fullName, firstName, lastName, email, phone, dob, gender, 
+           bloodGroup, community, address, country, profilePicture, membership, 
+           membershipType, membershipNumber, status, role, created_at 
+           FROM users WHERE id = ?`, 
+          [userId], 
+          (err3, results2) => {
+            if (err3) return res.status(500).json({ message: 'Server error' });
+            const user = results2[0];
+            
+            // Parse address if it's JSON string
+            if (user.address && typeof user.address === 'string') {
+              try { 
+                user.address = JSON.parse(user.address); 
+              } catch (e) { 
+                // Keep as string if not valid JSON
+              }
+            }
+            
+            res.json({ user });
           }
-          if (user.preferences) {
-            try { user.preferences = JSON.parse(user.preferences); } catch (e) { user.preferences = {}; }
-          }
-          if (user.socialMediaFollowed) {
-            try { user.socialMediaFollowed = JSON.parse(user.socialMediaFollowed); } catch (e) { user.socialMediaFollowed = {}; }
-          }
-          res.json({ user });
-        });
+        );
       }
     );
   }
@@ -96,7 +191,6 @@ router.put('/profile', auth, (req, res) => {
 // @route   PUT /api/users/password
 // @desc    Change user password
 // @access  Private
-// Change user password (MySQL)
 router.put('/password', auth, async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
@@ -109,10 +203,76 @@ router.put('/password', auth, async (req, res) => {
       const hashedPassword = await bcrypt.hash(newPassword, 10);
       db.query('UPDATE users SET password=? WHERE id=?', [hashedPassword, req.user.id], (err2) => {
         if (err2) return res.status(500).json({ message: 'Server error' });
-    res.json({ message: 'Password updated successfully' });
+        res.json({ message: 'Password updated successfully' });
       });
     });
   } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// @route   GET /api/redemptions/user-history
+// @desc    Get user redemption history
+// @access  Private
+router.get('/redemptions/user-history', auth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    // Check if deal_redemptions table exists
+    const checkTableQuery = `
+      SELECT COUNT(*) as tableExists 
+      FROM information_schema.tables 
+      WHERE table_schema = DATABASE() 
+      AND table_name = 'deal_redemptions'
+    `;
+    
+    db.query(checkTableQuery, (err, results) => {
+      if (err) {
+        console.error('Error checking table existence:', err);
+        return res.status(500).json({ message: 'Server error' });
+      }
+      
+      if (!results[0].tableExists) {
+        return res.json({ 
+          redemptions: [],
+          message: 'No redemption history available'
+        });
+      }
+      
+      // Fetch user redemption history
+      const redemptionQuery = `
+        SELECT 
+          dr.id,
+          dr.deal_id,
+          dr.user_id,
+          dr.redemption_code,
+          dr.redeemed_at,
+          dr.status,
+          d.title as dealTitle,
+          d.description as dealDescription,
+          b.businessName
+        FROM deal_redemptions dr
+        LEFT JOIN deals d ON dr.deal_id = d.id
+        LEFT JOIN businesses b ON d.business_id = b.id
+        WHERE dr.user_id = ?
+        ORDER BY dr.redeemed_at DESC
+        LIMIT 50
+      `;
+      
+      db.query(redemptionQuery, [userId], (err2, redemptions) => {
+        if (err2) {
+          console.error('Error fetching redemption history:', err2);
+          return res.status(500).json({ message: 'Server error' });
+        }
+        
+        res.json({ 
+          redemptions: redemptions || [],
+          total: redemptions ? redemptions.length : 0
+        });
+      });
+    });
+  } catch (error) {
+    console.error('Error in redemption history endpoint:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });

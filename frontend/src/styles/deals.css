@@ -105,7 +105,98 @@
   border-color: rgba(102, 126, 234, 0.2);
 }
 
-/* Enhanced Business Info Styles */
+/* Deal Banner Styles */
+.deal-banner {
+  width: 100%;
+  height: 200px;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+}
+
+.deal-banner-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.deal-card:hover .deal-banner-image {
+  transform: scale(1.05);
+}
+
+.deal-banner-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  color: #94a3b8;
+  font-size: 1rem;
+}
+
+.deal-banner-placeholder i {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Minimal Business Info Styles */
+.deal-business-minimal {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid rgba(102, 126, 234, 0.1);
+  background: #ffffff;
+}
+
+.business-logo-name {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.business-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 2px solid rgba(102, 126, 234, 0.1);
+}
+
+.business-logo-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.business-logo-placeholder {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: white;
+  font-size: 1rem;
+}
+
+.business-name-link {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #667eea;
+  text-decoration: none;
+  transition: color 0.3s ease;
+  line-height: 1.2;
+}
+
+.business-name-link:hover {
+  color: #5a67d8;
+  text-decoration: underline;
+}
+
+/* Enhanced Business Info Styles - Keep for backward compatibility */
 .deal-business-info {
   background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
   padding: 1.5rem;

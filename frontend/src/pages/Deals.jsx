@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getAllDeals, redeemDeal, getAllPlans } from '../services/api';
 import DealFilters from '../components/deals/DealFilters';
 import PlanExpiryBanner from '../components/PlanExpiryBanner';
 import usePlanAccess from '../hooks/usePlanAccess.jsx';
+import { useImageUrl } from '../hooks/useImageUrl.jsx';
 import '../styles/deals.css';
 
 /**
@@ -67,6 +69,7 @@ function getPlanNameByPriority(priority, plans) {
 const Deals = () => {
   const { user } = useAuth();
   const planAccess = usePlanAccess();
+  const { getDealBannerUrl, getMerchantLogoUrl } = useImageUrl();
   const [deals, setDeals] = useState([]);
   const [plans, setPlans] = useState([]);
   const [filteredDeals, setFilteredDeals] = useState([]);
@@ -279,44 +282,45 @@ const Deals = () => {
         <div className="deals-grid">
           {filteredDeals.map(deal => (
             <div className="deal-card" key={deal.id}>
-              {/* Business Info Header */}
-              <div className="deal-business-info">
-                <div className="business-header">
-                  <h3 className="business-name">{deal.businessName}</h3>
-                  {deal.businessCategory && (
-                    <span className="business-category">{deal.businessCategory}</span>
-                  )}
-                </div>
-                {deal.businessDescription && (
-                  <p className="business-desc">{deal.businessDescription}</p>
+              {/* Deal Banner Image */}
+              <div className="deal-banner">
+                {getDealBannerUrl(deal) ? (
+                  <img 
+                    src={getDealBannerUrl(deal)} 
+                    alt={deal.title}
+                    className="deal-banner-image"
+                  />
+                ) : (
+                  <div className="deal-banner-placeholder">
+                    <i className="fas fa-image"></i>
+                    <span>No Banner</span>
+                  </div>
                 )}
-                <div className="business-meta">
-                  {deal.businessAddress && (
-                    <span className="business-address">
-                      <i className="fas fa-map-marker-alt"></i>
-                      {deal.businessAddress}
-                    </span>
-                  )}
-                  {deal.businessPhone && (
-                    <span className="business-phone">
-                      <i className="fas fa-phone"></i>
-                      {deal.businessPhone}
-                    </span>
-                  )}
-                  {deal.businessEmail && (
-                    <span className="business-email">
-                      <i className="fas fa-envelope"></i>
-                      {deal.businessEmail}
-                    </span>
-                  )}
-                  {deal.website && (
-                    <span className="business-website">
-                      <i className="fas fa-globe"></i>
-                      <a href={deal.website} target="_blank" rel="noopener noreferrer">
-                        Visit Website
-                      </a>
-                    </span>
-                  )}
+              </div>
+
+              {/* Business Info - Minimal */}
+              <div className="deal-business-minimal">
+                <div className="business-logo-name">
+                  <div className="business-logo">
+                    {getMerchantLogoUrl({ logo: deal.businessLogo }) ? (
+                      <img 
+                        src={getMerchantLogoUrl({ logo: deal.businessLogo })} 
+                        alt={deal.businessName}
+                        className="business-logo-image"
+                      />
+                    ) : (
+                      <div className="business-logo-placeholder">
+                        <span>{deal.businessName?.charAt(0) || 'B'}</span>
+                      </div>
+                    )}
+                  </div>
+                  <Link 
+                    to="/business-directory"
+                    state={{ highlightBusiness: deal.businessId }}
+                    className="business-name-link"
+                  >
+                    {deal.businessName}
+                  </Link>
                 </div>
               </div>
 

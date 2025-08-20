@@ -222,7 +222,8 @@ async function handleImageUpload(req, res, uploadType, idField, tableField, tabl
     const oldImage = oldImageResult[0]?.[tableField];
     
     // Update database
-    const updateQuery = `UPDATE ${tableName} SET ${tableField} = ?, ${tableField.replace(/([A-Z])/g, '_$1').toLowerCase()}_uploaded_at = NOW() WHERE ${idField} = ?`;
+    // Use updated_at (widely available) instead of assuming a '<field>_uploaded_at' column exists
+    const updateQuery = `UPDATE ${tableName} SET ${tableField} = ?, updated_at = NOW() WHERE ${idField} = ?`;
     await queryAsync(updateQuery, [filename, entityId]);
     
     // Delete old image from FTP if exists
@@ -343,7 +344,7 @@ router.delete('/image/:type/:id', auth, async (req, res) => {
       await deleteFromFTP(config.directory + currentImage);
       
       // Update database
-      const updateQuery = `UPDATE ${tableName} SET ${tableField} = NULL WHERE ${idField} = ?`;
+      const updateQuery = `UPDATE ${tableName} SET ${tableField} = NULL, updated_at = NOW() WHERE ${idField} = ?`;
       await queryAsync(updateQuery, [id]);
     }
     

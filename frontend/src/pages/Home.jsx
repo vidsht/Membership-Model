@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useImageUrl } from '../hooks/useImageUrl.jsx';
 import api from '../services/api';
 import '../styles/global.css';
 import '../styles/home.css';
@@ -9,6 +10,7 @@ import '../styles/social-media-home.css';
 
 const Home = () => {
   const { isAuthenticated } = useAuth();
+  const { getMerchantLogoUrl } = useImageUrl();
   const location = useLocation();
   const [businesses, setBusinesses] = useState([]);
   const [stats, setStats] = useState({});
@@ -397,8 +399,8 @@ const Home = () => {
                   {[...businesses, ...businesses].map((business, index) => (
                     <div key={`${business.id || index}-${index}`} className="business-carousel-card">
                       <div className="business-carousel-logo">
-                        {business.logo ? (
-                          <img src={business.logo} alt={business.businessName} />
+                        {getMerchantLogoUrl(business) ? (
+                          <img src={getMerchantLogoUrl(business)} alt={business.businessName || business.name} />
                         ) : (
                           <div className="business-carousel-placeholder">
                             <i className="fas fa-store"></i>
