@@ -1,6 +1,6 @@
 // frontend/src/components/deals/DealForm.jsx
 import React, { useState, useEffect } from 'react';
-import { ImageUpload } from '../common/ImageUpload';
+import ImageUpload from '../common/ImageUpload';
 import './DealForm.css';
 
 const DealForm = ({ 
@@ -77,22 +77,32 @@ const DealForm = ({
     }
   };
 
-  const handleImageUpload = (file) => {
-    setFormData(prev => ({
-      ...prev,
-      bannerImage: file
-    }));
-    
-    // Create preview
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setBannerPreview(e.target.result);
-      };
-      reader.readAsDataURL(file);
-    } else {
+  const handleImageUpload = (fileOrResponse) => {
+    // Accept either a File (from input) or an upload response (from ImageUpload onUploadSuccess)
+    if (!fileOrResponse) {
+      setFormData(prev => ({ ...prev, bannerImage: null }));
       setBannerPreview(deal?.bannerImage || null);
+      return;
     }
+
+    // If it's a File object
+    if (fileOrResponse instanceof File) {
+      const file = fileOrResponse;
+      setFormData(prev => ({ ...prev, bannerImage: file }));
+
+      const reader = new FileReader();
+      reader.onload = (e) => setBannerPreview(e.target.result);
+      reader.readAsDataURL(file);
+      return;
+    }
+
+    // Otherwise assume it's an upload response with imageUrl/filename
+    const resp = fileOrResponse;
+    const imageUrl = resp.imageUrl || resp.url || null;
+    const filename = resp.filename || resp.fileName || null;
+    setFormData(prev => ({ ...prev, bannerImage: filename || imageUrl }));
+    if (imageUrl) setBannerPreview(imageUrl);
+    else setBannerPreview(deal?.bannerImage || null);
   };
 
   const validateForm = () => {
@@ -343,11 +353,12 @@ const DealForm = ({
               Deal Banner Image
             </label>
             <ImageUpload
-              context="deal-banner"
-              onUpload={handleImageUpload}
-              currentImage={bannerPreview}
-              placeholder="Upload deal banner image"
-            />
+              type="deal"
+              entityId={deal?.id}
+              onUploadSuccess={handleImageUpload}
+               currentImage={bannerPreview}
+               placeholder="Upload deal banner image"
+             />
             <small className="form-help">
               Recommended: 1200x600px, max 5MB. Supports JPG, PNG, GIF
             </small>

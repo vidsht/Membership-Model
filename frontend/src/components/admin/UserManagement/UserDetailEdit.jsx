@@ -405,12 +405,13 @@ const UserDetailEdit = () => {
                 {editMode && (
                   <div className="image-upload-overlay">
                     <ImageUpload
-                      context="profile-photo"
-                      onUpload={handleProfileImageUpload}
-                      currentImage={profileImage}
-                      showPreview={false}
-                      className="profile-image-upload"
-                    >
+                      type="profile"
+                      entityId={userId}
+                      onUploadSuccess={handleProfileImageUpload}
+                       currentImage={profileImage}
+                       showPreview={false}
+                       className="profile-image-upload"
+                     >
                       <div className="upload-trigger">
                         <i className="fas fa-camera"></i>
                         <span>Change Photo</span>

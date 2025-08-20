@@ -69,7 +69,6 @@ export const DefaultAvatar = ({ size = 40, className = '', name = '' }) => {
 			style={{
 				width: size,
 				height: size,
-				borderRadius: '50%',
 				backgroundColor: '#e5e7eb',
 				display: 'flex',
 				alignItems: 'center',

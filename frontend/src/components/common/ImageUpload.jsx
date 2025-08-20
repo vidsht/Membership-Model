@@ -14,8 +14,32 @@ const ImageUpload = ({
   label = 'Upload Image',
   description = '',
   showPreview = true,
-  aspectRatio = '1:1' // '1:1', '16:9', '4:3', etc.
+  aspectRatio = '1:1', // '1:1', '16:9', '4:3', etc.
+  // optional overrides when `type` is not provided or custom behavior is needed
+  accept,
+  maxSize: propMaxSize,
+  dimensions: propDimensions,
+  allowedTypes: propAllowedTypes,
+  endpoint: propEndpoint,
+  fieldName: propFieldName,
+  // legacy/alternate props kept for backward compatibility
+  context, // old prop name used across the codebase
+  onUpload // legacy callback name
 }) => {
+  // Map some common legacy context values to the new type keys
+  const contextTypeMap = {
+    'profile-photo': 'profile',
+    'merchant-logo': 'merchant',
+    'deal-banner': 'deal',
+    'profile': 'profile',
+    'merchant': 'merchant',
+    'deal': 'deal'
+  };
+
+  // Determine final type and upload callback (support old and new prop names)
+  const finalType = type || contextTypeMap[context] || context || null;
+  const uploadCallback = onUploadSuccess || onUpload;
+
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState(currentImage || null);
   const [dragActive, setDragActive] = useState(false);
@@ -47,7 +71,15 @@ const ImageUpload = ({
     }
   };
 
-  const config = uploadConfigs[type];
+  // Build a safe config: prefer explicit props, then type-based config, then sensible defaults
+  const baseConfig = (finalType && uploadConfigs[finalType]) ? uploadConfigs[finalType] : {};
+  const config = {
+    maxSize: propMaxSize || baseConfig.maxSize || 5,
+    dimensions: propDimensions || baseConfig.dimensions || '500x500px',
+    allowedTypes: propAllowedTypes || (accept ? accept.split(',').map(s => s.trim()) : baseConfig.allowedTypes) || ['image/jpeg', 'image/png', 'image/gif'],
+    endpoint: propEndpoint || baseConfig.endpoint || (entityId ? `/upload/image/${entityId}` : '/upload/image'),
+    fieldName: propFieldName || baseConfig.fieldName || 'image'
+  };
 
   const validateFile = (file) => {
     // Check file type
@@ -73,7 +105,18 @@ const ImageUpload = ({
       reader.onload = () => setPreview(reader.result);
       reader.readAsDataURL(file);
 
-      // Upload file
+      // If legacy onUpload prop is provided, delegate the upload to the parent and skip internal upload
+      if (onUpload) {
+        try {
+          onUpload(file);
+          showNotification('Image ready for upload', 'info');
+        } catch (err) {
+          console.warn('Legacy onUpload handler threw an error:', err);
+        }
+        return;
+      }
+
+      // Upload file (internal flow)
       setUploading(true);
       
       const formData = new FormData();
@@ -88,6 +131,7 @@ const ImageUpload = ({
       if (response.data.success) {
         showNotification('Image uploaded successfully!', 'success');
         setPreview(response.data.imageUrl);
+        // Call modern callback with upload response
         onUploadSuccess && onUploadSuccess(response.data);
       } else {
         throw new Error(response.data.message || 'Upload failed');
@@ -100,7 +144,7 @@ const ImageUpload = ({
     } finally {
       setUploading(false);
     }
-  }, [config, entityId, currentImage, onUploadSuccess, onUploadError, showNotification]);
+  }, [config, entityId, currentImage, onUpload, onUploadSuccess, onUploadError, showNotification]);
 
   const handleInputChange = (e) => {
     const file = e.target.files[0];
@@ -142,12 +186,24 @@ const ImageUpload = ({
     try {
       setUploading(true);
       
+      // If legacy onUpload handler exists, inform parent removal instead of internal delete
+      if (onUpload) {
+        try {
+          onUpload(null);
+          showNotification('Image removal requested', 'info');
+        } catch (err) {
+          console.warn('Legacy onUpload handler threw an error on remove:', err);
+        }
+        setPreview(null);
+        return;
+      }
+      
       const response = await api.delete(`/upload/image/${type}/${entityId}`);
       
       if (response.data.success) {
         showNotification('Image removed successfully!', 'success');
         setPreview(null);
-        onUploadSuccess && onUploadSuccess({ imageUrl: null });
+        uploadCallback && uploadCallback({ imageUrl: null });
       } else {
         throw new Error(response.data.message || 'Failed to remove image');
       }

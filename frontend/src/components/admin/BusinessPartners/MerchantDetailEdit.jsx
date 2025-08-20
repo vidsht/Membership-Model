@@ -535,12 +535,13 @@ const MerchantDetailEdit = () => {
                   {editMode && (
                     <div className="image-upload-overlay">
                       <ImageUpload
-                        context="profile-photo"
-                        onUpload={handleProfileImageUpload}
-                        currentImage={profileImage}
-                        showPreview={false}
-                        className="profile-image-upload"
-                      >
+                        type="profile"
+                        entityId={merchantId}
+                        onUploadSuccess={handleProfileImageUpload}
+                         currentImage={profileImage}
+                         showPreview={false}
+                         className="profile-image-upload"
+                       >
                         <div className="upload-trigger">
                           <i className="fas fa-camera"></i>
                         </div>
@@ -566,12 +567,13 @@ const MerchantDetailEdit = () => {
                   {editMode && (
                     <div className="image-upload-overlay">
                       <ImageUpload
-                        context="merchant-logo"
-                        onUpload={handleLogoUpload}
-                        currentImage={logoImage}
-                        showPreview={false}
-                        className="logo-image-upload"
-                      >
+                        type="merchant"
+                        entityId={merchantId}
+                        onUploadSuccess={handleLogoUpload}
+                         currentImage={logoImage}
+                         showPreview={false}
+                         className="logo-image-upload"
+                       >
                         <div className="upload-trigger">
                           <i className="fas fa-camera"></i>
                         </div>

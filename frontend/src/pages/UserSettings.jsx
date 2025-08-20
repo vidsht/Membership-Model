@@ -243,46 +243,41 @@ const UserSettings = () => {
     }
   };
 
-  const handleProfilePhotoUpload = async (file) => {
+  const handleProfilePhotoUpload = async (response) => {
     try {
       setIsLoading(true);
-      const formData = new FormData();
-      formData.append('image', file);
-
-      const response = await api.post(`/upload/profile-photo/${user.id}`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-
-      if (response.data.imageUrl) {
-        const updatedUser = { ...user, profilePicture: response.data.imageUrl };
+      if (response?.imageUrl) {
+        const updatedUser = { ...user, profilePicture: response.imageUrl };
         await updateUser(updatedUser);
-        setUserProfile(prev => ({ ...prev, profilePicture: response.data.imageUrl }));
+        setUserProfile(prev => ({ ...prev, profilePicture: response.imageUrl }));
         showNotification('Profile photo updated successfully!', 'success');
       }
     } catch (error) {
-      console.error('Error uploading profile photo:', error);
-      showNotification('Failed to upload profile photo', 'error');
+      console.error('Error handling profile photo upload:', error);
+      showNotification('Failed to process uploaded profile photo', 'error');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleMerchantLogoUpload = async (file) => {
+  const handleMerchantLogoUpload = async (response) => {
     try {
       setIsLoading(true);
-      const formData = new FormData();
-      formData.append('image', file);
-
-      const response = await api.post(`/upload/merchant-logo/${user.id}`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-
-      if (response.data.imageUrl) {
+      if (response?.imageUrl || response?.filename) {
         showNotification('Business logo updated successfully!', 'success');
+        if (response.filename && user?.business) {
+          updateUser({
+            ...user,
+            business: {
+              ...user.business,
+              logo: response.filename
+            }
+          });
+        }
       }
     } catch (error) {
-      console.error('Error uploading merchant logo:', error);
-      showNotification('Failed to upload business logo', 'error');
+      console.error('Error handling merchant logo upload:', error);
+      showNotification('Failed to process business logo upload', 'error');
     } finally {
       setIsLoading(false);
     }
@@ -348,7 +343,9 @@ const UserSettings = () => {
             
             <div className="logo-upload-controls">
               <ImageUpload
-                onImageUpload={handleMerchantLogoUpload}
+                type="merchant"
+                entityId={user?.id}
+                onUploadSuccess={handleMerchantLogoUpload}
                 currentImage={getMerchantLogoUrl(user?.id)}
                 className="merchant-logo-upload"
                 accept="image/*"
@@ -386,7 +383,9 @@ const UserSettings = () => {
             />
             <div className="photo-upload-controls">
               <ImageUpload
-                onImageUpload={handleProfilePhotoUpload}
+                type="profile"
+                entityId={user?.id}
+                onUploadSuccess={handleProfilePhotoUpload}
                 currentImage={userProfile.profilePicture}
                 className="profile-photo-upload"
                 accept="image/*"
