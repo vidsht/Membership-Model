@@ -24,19 +24,36 @@ export const useImageUrl = () => {
 	}, []);
 
 	const getProfileImageUrl = useMemo(() => {
-		return (user) => {
-			// Check multiple possible fields for backward compatibility
-			const imageField = user?.profilePhoto || user?.profilePicture;
-			return getImageUrl(imageField, 'profile');
-		};
-	}, [getImageUrl]);
+    return (userOrImageField, userId) => {
+        // If first param is a user object, extract the image field
+        if (typeof userOrImageField === 'object' && userOrImageField !== null) {
+            const user = userOrImageField;
+            const imageField = user?.profilePhoto || user?.profilePicture;
+            return getImageUrl(imageField, 'profile');
+        }
+        // If it's a string (image field directly), use it
+        if (typeof userOrImageField === 'string') {
+            return getImageUrl(userOrImageField, 'profile');
+        }
+        return null;
+    };
+}, [getImageUrl]);
+
 
 	const getMerchantLogoUrl = useMemo(() => {
-		return (merchant) => {
-			const logoField = merchant?.logo;
-			return getImageUrl(logoField, 'merchant');
-		};
+    return (merchantOrId) => {
+        // If it's an object, extract logo field
+        if (typeof merchantOrId === 'object' && merchantOrId !== null) {
+            const logoField = merchantOrId?.logo;
+            return getImageUrl(logoField, 'merchant');
+        }
+        // For merchant logo by user ID, we need to handle differently
+        // Since we don't have the logo filename without the merchant object,
+        // return null for now (this means we need merchant data from user object)
+        return null;
+    	};
 	}, [getImageUrl]);
+
 
 	const getDealBannerUrl = useMemo(() => {
 		return (deal) => {

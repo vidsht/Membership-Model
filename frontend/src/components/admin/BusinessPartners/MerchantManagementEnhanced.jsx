@@ -1048,7 +1048,7 @@ const MerchantManagementEnhanced = () => {
                     <div className="business-card-front">
                       <div className="business-logo">
                         {business.logo ? (
-                          <img src={getMerchantLogoUrl(business) || '/logo-placeholder.svg'} alt={business.name} />
+                          <img src={getMerchantLogoUrl(business) || '/logo-placeholder.jpg'} alt={business.name} />
                         ) : (
                           <div className="business-placeholder">
                             <i className="fas fa-store"></i>

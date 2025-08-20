@@ -85,7 +85,7 @@ const PartnerDetail = () => {
         <div className="user-profile-header">
           <div className="user-profile-image">
             {partner?.logo ? (
-              <img src={getMerchantLogoUrl(partner) || '/logo-placeholder.svg'} alt={partner.businessName || 'Business'} />
+              <img src={getMerchantLogoUrl(partner) || '/logo-placeholder.jpg'} alt={partner.businessName || 'Business'} />
             ) : (
               <div className="user-initials">
                 {partner?.businessName ? partner.businessName.split(' ').map(n => n[0]).join('') : 'B'}

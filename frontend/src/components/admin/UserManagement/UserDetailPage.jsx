@@ -329,7 +329,7 @@ const UserDetailPage = () => {
           <div className="profile-header">
             <div className="profile-avatar">
               {user.profilePicture ? (
-                <img src={getProfileImageUrl(user) || '/uploads/default-avatar.png'} alt={user.fullName} />
+                <img src={getProfileImageUrl(user) || '/uploads/default-avatar.jpg'} alt={user.fullName} />
               ) : (
                  <div className="user-avatar-placeholder">{user.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}</div>
                )}

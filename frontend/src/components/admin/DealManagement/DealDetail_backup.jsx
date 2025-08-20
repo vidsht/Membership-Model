@@ -1144,7 +1144,7 @@ const DealDetail = () => {
                               <div className="user-info">
                                 <div className="user-avatar">
                                   {redemption.userProfilePicture ? (
-                                    <img src={getImageUrl(redemption.userProfilePicture, 'profile') || '/uploads/default-avatar.png'} alt={redemption.userName} />
+                                    <img src={getImageUrl(redemption.userProfilePicture, 'profile') || '/uploads/default-avatar.jpg'} alt={redemption.userName} />
                                   ) : (
                                     <i className="fas fa-user"></i>
                                   )}
@@ -1269,7 +1269,7 @@ const DealDetail = () => {
                   <div className="business-header">
                     <div className="business-image">
                       {business.logo ? (
-                        <img src={getMerchantLogoUrl(business) || '/logo-placeholder.svg'} alt={business.businessName} />
+                        <img src={getMerchantLogoUrl(business) || '/logo-placeholder.jpg'} alt={business.businessName} />
                       ) : (
                         <div className="no-logo">
                           <i className="fas fa-building"></i>

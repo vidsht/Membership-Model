@@ -212,7 +212,7 @@ router.put('/password', auth, async (req, res) => {
 // @route   GET /api/users/redemptions/user-history
 // @desc    Get user redemption history
 // @access  Private
-router.get('/users/redemptions/user-history', auth, async (req, res) => {
+router.get('/redemptions/user-history', auth, async (req, res) => {
   try {
     const userId = req.user.id;
     

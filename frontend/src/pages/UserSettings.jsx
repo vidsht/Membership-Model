@@ -296,49 +296,60 @@ const UserSettings = () => {
   };
 
   const handleProfilePhotoUpload = async (file) => {
-    try {
-      setIsLoading(true);
-      const formData = new FormData();
-      formData.append('image', file);
+  try {
+    setIsLoading(true);
+    const formData = new FormData();
+    formData.append('profilePhoto', file);
 
-      const response = await api.post(`/upload/profile-photo/${user.id}`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+    const response = await api.post(`/upload/profile-photo/${user.id}`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
 
-      if (response.data.imageUrl) {
-        const updatedUser = { ...user, profilePicture: response.data.imageUrl };
-        await updateUser(updatedUser);
-        setUserProfile(prev => ({ ...prev, profilePicture: response.data.imageUrl }));
-        showNotification('Profile photo updated successfully!', 'success');
-      }
-    } catch (error) {
-      console.error('Error uploading profile photo:', error);
-      showNotification('Failed to upload profile photo', 'error');
-    } finally {
-      setIsLoading(false);
+    if (response.data.success && response.data.imageUrl) {
+      const updatedUser = { ...user, profilePicture: response.data.imageUrl };
+      await updateUser(updatedUser);
+      setUserProfile(prev => ({ ...prev, profilePicture: response.data.imageUrl }));
+      showNotification('Profile photo updated successfully!', 'success');
+    } else {
+      throw new Error('Upload failed: No image URL returned');
     }
-  };
+  } catch (error) {
+    console.error('Error uploading profile photo:', error);
+    const errorMessage = error.response?.data?.message || 'Failed to upload profile photo';
+    showNotification(errorMessage, 'error');
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+
 
   const handleMerchantLogoUpload = async (file) => {
-    try {
-      setIsLoading(true);
-      const formData = new FormData();
-      formData.append('image', file);
+  try {
+    setIsLoading(true);
+    const formData = new FormData();
+    formData.append('merchantLogo', file); // ✅ Correct field name for merchant logo
 
-      const response = await api.post(`/upload/merchant-logo/${user.id}`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+    const response = await api.post(`/upload/merchant-logo/${user.id}`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
 
-      if (response.data.imageUrl) {
-        showNotification('Business logo updated successfully!', 'success');
-      }
-    } catch (error) {
-      console.error('Error uploading merchant logo:', error);
-      showNotification('Failed to upload business logo', 'error');
-    } finally {
-      setIsLoading(false);
+    if (response.data.success && response.data.imageUrl) {
+      showNotification('Business logo updated successfully!', 'success');
+      // Optionally refresh the component to show new logo
+      // You might want to update some state here if needed
+    } else {
+      throw new Error('Upload failed: No image URL returned');
     }
-  };
+  } catch (error) {
+    console.error('Error uploading merchant logo:', error);
+    const errorMessage = error.response?.data?.message || 'Failed to upload business logo';
+    showNotification(errorMessage, 'error');
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
   const TabNavigation = () => {
     const availableTabs = [];
@@ -375,50 +386,51 @@ const UserSettings = () => {
   };
 
   const BusinessSettingsTab = () => (
-    <div className="user-settings-tab-content">
-      <div className="user-settings-business-section">
-        <div className="user-profile-header-section">
-          <h2 className="user-profile-section-title">Business Logo Management</h2>
-          <p className="user-profile-section-description">
-            Upload and manage your business logo for the business directory
-          </p>
-        </div>
+  <div className="user-settings-tab-content">
+    <div className="user-settings-business-section">
+      <div className="user-profile-header-section">
+        <h2 className="user-profile-section-title">Business Logo Management</h2>
+        <p className="user-profile-section-description">
+          Upload and manage your business logo for the business directory
+        </p>
+      </div>
 
-        <div className="merchant-business-logo-container">
-          <div className="merchant-logo-upload-section">
-            <div className="current-logo-display">
-              <img 
-                src={getMerchantLogoUrl(user?.id) || '/logo-placeholder.svg'} 
-                alt="Current business logo"
-                className="business-logo-preview"
-              />
-              <div className="logo-info">
-                <h4>Current Business Logo</h4>
-                <p>This logo will appear in the business directory</p>
-              </div>
+      <div className="merchant-business-logo-container">
+        <div className="merchant-logo-upload-section">
+          <div className="current-logo-display">
+            <img 
+              src={getMerchantLogoUrl(user?.business || {}) || '/logo-placeholder.jpg'} 
+              alt="Current business logo"
+              className="business-logo-preview"
+            />
+            <div className="logo-info">
+              <h4>Current Business Logo</h4>
+              <p>This logo will appear in the business directory</p>
             </div>
-            
-            <div className="logo-upload-controls">
-              <ImageUpload
-                type="merchant"
-                entityId={user?.id}
-                onUploadSuccess={handleMerchantLogoUpload}
-                currentImage={getMerchantLogoUrl(user?.id)}
-                className="merchant-logo-upload"
-                accept="image/*"
-                maxSize={5}
-              />
-              <div className="upload-instructions">
-                <p>• Upload in PNG, JPG, or SVG format</p>
-                <p>• Maximum file size: 5MB</p>
-                <p>• Recommended size: 200x200 pixels</p>
-              </div>
+          </div>
+          
+          <div className="logo-upload-controls">
+            <ImageUpload
+              onUpload={handleMerchantLogoUpload}
+              currentImage={getMerchantLogoUrl(user?.business || {}) || '/logo-placeholder.jpg'}
+              className="merchant-logo-upload"
+              accept="image/*"
+              maxSize={3}
+              label="Upload Business Logo"
+              description="Upload your business logo"
+            />
+            <div className="upload-instructions">
+              <p>• Upload in PNG, JPG, or SVG format</p>
+              <p>• Maximum file size: 3MB</p>
+              <p>• Recommended size: 300x300 pixels</p>
             </div>
           </div>
         </div>
       </div>
     </div>
-  );
+  </div>
+);
+
 
   const ProfileInformationTab = () => (
     <div className="user-settings-tab-content">
@@ -434,20 +446,19 @@ const UserSettings = () => {
         <div className="user-profile-photo-section">
           <div className="profile-photo-container">
             <img 
-              src={getProfileImageUrl(userProfile.profilePicture, user?.id) || '/uploads/default-avatar.png'} 
-              alt="Profile"
-              className="profile-photo-display"
+                src={getProfileImageUrl(userProfile) || '/default-avatar.jpg'} 
+                alt="Profile"
+                className="profile-photo-display"
             />
+
             <div className="photo-upload-controls">
-              <ImageUpload
-                type="profile"
-                entityId={user?.id}
-                onUploadSuccess={handleProfilePhotoUpload}
-                currentImage={userProfile.profilePicture}
-                className="profile-photo-upload"
-                accept="image/*"
-                maxSize={5}
-              />
+                <ImageUpload
+                  onUpload={handleProfilePhotoUpload}  // This passes the FILE to your handler
+                  currentImage={getProfileImageUrl(userProfile) || '/default-avatar.jpg'}
+                  className="profile-photo-upload"
+                  accept="image/*"
+                  maxSize={5}
+                />
             </div>
           </div>
         </div>
