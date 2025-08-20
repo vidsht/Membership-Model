@@ -29,7 +29,7 @@
 /* Enhanced Navigation Buttons for User Settings */
 .user-profile-navigation-container {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 8px;
   padding: 16px;
   background: #ffffff;
@@ -117,6 +117,10 @@
   transform: translateX(1px) scale(0.98);
 }
 
+.user-profile-section-title{
+    font-size: 20px;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .user-profile-navigation-container {
@@ -147,10 +151,6 @@
 
 /* Dark mode support (if you want to add it later) */
 @media (prefers-color-scheme: dark) {
-  .user-profile-navigation-container {
-    background: #1f2937;
-    border-color: #374151;
-  }
 
   .user-profile-tab-button {
     color: #9ca3af;
@@ -201,7 +201,6 @@
     box-shadow: 0 10px 40px #667eea33;
     position: relative;
     overflow: hidden;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
 .user-profile-title{

@@ -67,7 +67,7 @@ const UserSettings = () => {
   const fetchUserProfileData = async () => {
     try {
       setIsLoading(true);
-  const response = await api.get('/api/users/profile/complete');
+  const response = await api.get('/users/profile/complete');
       const userData = response.data.user || user;
       
       // Parse address if it's a string
@@ -126,7 +126,7 @@ const UserSettings = () => {
   const fetchRedemptionHistory = async () => {
     try {
       setRedemptionsLoadingState(true);
-  const response = await api.get('/api/redemptions/user-history');
+  const response = await api.get('/redemptions/user-history');
       setUserRedemptions(response.data.redemptions || []);
     } catch (error) {
       console.error('Error fetching redemption history:', error);
@@ -654,7 +654,7 @@ const UserSettings = () => {
   const SecuritySettingsTab = () => (
     <div className="user-settings-tab-content">
       <form onSubmit={updateUserPassword} className="user-profile-form">
-        <div className="user-profile-header-section">
+        <div className="user-profile-header">
           <h2 className="user-profile-title">Security Settings</h2>
           <p className="user-profile-section-description">
             Change your password to keep your account secure
@@ -730,8 +730,8 @@ const UserSettings = () => {
 
   const RedemptionHistoryTab = () => (
     <div className="user-settings-tab-content">
-      <div className="user-profile-header-section">
-        <h2 className="user-profile-section-title">Redemption History</h2>
+      <div className="user-profile-header">
+        <h2 className="user-profile-title">Redemption History</h2>
         <p className="user-profile-section-description">
           View your redeemed deals and offers
         </p>
@@ -739,7 +739,7 @@ const UserSettings = () => {
 
       <div className="redemption-history-container">
         {redemptionsLoadingState ? (
-          <div className="loading-state">Loading redemption history...</div>
+          <div className="loading-state"></div>
         ) : userRedemptions.length === 0 ? (
           <div className="empty-state">
             <div className="empty-state-icon">🎫</div>

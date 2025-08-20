@@ -12,6 +12,27 @@ const api = axios.create({
   timeout: 30000, // 30 second timeout
 });
 
+// Normalize /api prefix on requests to avoid duplicate or missing /api
+api.interceptors.request.use((config) => {
+  try {
+    const resolvedBase = (config.baseURL || API_BASE_URL || '').replace(/\/+$/, '');
+    const baseHasApi = resolvedBase.toLowerCase().endsWith('/api');
+    const reqUrl = config.url || '';
+    const urlHasApi = reqUrl.toLowerCase().startsWith('/api');
+
+    if (baseHasApi && urlHasApi) {
+      // base already contains /api and caller included /api -> strip leading /api from url
+      config.url = reqUrl.replace(/^\/api/i, '');
+    } else if (!baseHasApi && !urlHasApi) {
+      // base does not contain /api and caller did not include /api -> prefix it
+      config.url = '/api' + (reqUrl.startsWith('/') ? reqUrl : '/' + reqUrl);
+    }
+  } catch (e) {
+    // silently ignore normalization errors
+  }
+  return config;
+}, (error) => Promise.reject(error));
+
 // ✅ FIXED: Simple response interceptor without loops
 api.interceptors.response.use(
   (response) => response,
