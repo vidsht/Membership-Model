@@ -348,7 +348,9 @@ const UserSettings = () => {
             
             <div className="logo-upload-controls">
               <ImageUpload
-                onImageUpload={handleMerchantLogoUpload}
+                type="merchant"
+                entityId={user?.id}
+                onUploadSuccess={handleMerchantLogoUpload}
                 currentImage={getMerchantLogoUrl(user?.id)}
                 className="merchant-logo-upload"
                 accept="image/*"
@@ -386,7 +388,9 @@ const UserSettings = () => {
             />
             <div className="photo-upload-controls">
               <ImageUpload
-                onImageUpload={handleProfilePhotoUpload}
+                type="profile"
+                entityId={user?.id}
+                onUploadSuccess={handleProfilePhotoUpload}
                 currentImage={userProfile.profilePicture}
                 className="profile-photo-upload"
                 accept="image/*"
