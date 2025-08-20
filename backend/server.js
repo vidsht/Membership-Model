@@ -11,10 +11,11 @@ const app = express();
 
 const corsOptions = {
   origin: [
-    'http://localhost:3000',
-    'http://localhost:3001',
-    'http://localhost:3002',
-    'http://localhost:3003',
+    'https://membership.indiansinghana.com',
+    // 'http://localhost:3000',
+    // 'http://localhost:3001',
+    // 'http://localhost:3002',
+    // 'http://localhost:3003',
     // Add your deployed frontend URL here
   ],
   credentials: true,
@@ -67,10 +68,12 @@ app.use(session({
   name: 'sessionId',
   store: sessionStore,
   cookie: {
-    secure: false,
+    // secure: false,
+    secure: true,
     httpOnly: true,
     maxAge: 1000 * 60 * 60 * 24 * 7,
-    sameSite: 'lax'
+    // sameSite: 'lax'
+    sameSite: 'none'
   }
 }));
 
