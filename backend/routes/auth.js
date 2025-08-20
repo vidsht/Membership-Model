@@ -533,7 +533,8 @@ router.post('/merchant/register', async (req, res) => {
 router.post('/logout', (req, res) => {
   req.session.destroy((err) => {
     if (err) return res.status(500).json({ message: 'Logout error' });
-    res.clearCookie('connect.sid');
+    // Clear the cookie using the configured session name
+    res.clearCookie('sessionId');
     res.json({ message: 'Logged out successfully', success: true });
   });
 });

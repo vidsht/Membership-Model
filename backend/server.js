@@ -27,6 +27,9 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Trust first proxy (Render / Cloudflare) so secure cookies are set correctly when behind a proxy
+app.set('trust proxy', 1);
+
 // Session configuration (MySQL store)
 const MySQLStore = require('express-mysql-session')(session);
 
