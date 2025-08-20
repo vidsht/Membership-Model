@@ -126,7 +126,7 @@ const UserSettings = () => {
   const fetchRedemptionHistory = async () => {
     try {
       setRedemptionsLoadingState(true);
-  const response = await api.get('/redemptions/user-history');
+      const response = await api.get('/users/redemptions/user-history');
       setUserRedemptions(response.data.redemptions || []);
     } catch (error) {
       console.error('Error fetching redemption history:', error);

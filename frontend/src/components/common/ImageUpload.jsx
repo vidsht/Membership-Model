@@ -73,10 +73,24 @@ const ImageUpload = ({
 
   // Build a safe config: prefer explicit props, then type-based config, then sensible defaults
   const baseConfig = (finalType && uploadConfigs[finalType]) ? uploadConfigs[finalType] : {};
+  
+  // Handle accept prop properly - convert "image/*" to specific MIME types
+  let parsedAllowedTypes = baseConfig.allowedTypes || ['image/jpeg', 'image/png', 'image/gif'];
+  if (accept) {
+    if (accept === 'image/*') {
+      parsedAllowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    } else {
+      parsedAllowedTypes = accept.split(',').map(s => s.trim());
+    }
+  }
+  if (propAllowedTypes) {
+    parsedAllowedTypes = propAllowedTypes;
+  }
+  
   const config = {
     maxSize: propMaxSize || baseConfig.maxSize || 5,
     dimensions: propDimensions || baseConfig.dimensions || '500x500px',
-    allowedTypes: propAllowedTypes || (accept ? accept.split(',').map(s => s.trim()) : baseConfig.allowedTypes) || ['image/jpeg', 'image/png', 'image/gif'],
+    allowedTypes: parsedAllowedTypes,
     endpoint: propEndpoint || baseConfig.endpoint || (entityId ? `/upload/image/${entityId}` : '/upload/image'),
     fieldName: propFieldName || baseConfig.fieldName || 'image'
   };
