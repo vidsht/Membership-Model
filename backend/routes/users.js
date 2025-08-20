@@ -37,7 +37,7 @@ router.get('/profile/complete', auth, (req, res) => {
   // Get all available user fields
   const query = `
     SELECT 
-      id, fullName, firstName, lastName, email, phone, dob, gender, bloodGroup, 
+    id, fullName, lastName, email, phone, dob, bloodGroup, 
       community, address, country, state, city, profilePicture, profilePhoto,
       membership, membershipType, membershipNumber, status, role, 
       socialMediaFollowed, preferences, statusUpdatedAt, validationDate, 
