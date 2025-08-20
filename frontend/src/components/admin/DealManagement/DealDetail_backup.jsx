@@ -5,8 +5,10 @@ import api, { merchantApi } from '../../../services/api';
 import Modal from '../../shared/Modal';
 import { useModal } from '../../../hooks/useModal';
 import './DealDetail.css';
+import useImageUrl from '../../../hooks/useImageUrl';
 
 const DealDetail = () => {  
+  const { getImageUrl, getMerchantLogoUrl, getDealBannerUrl } = useImageUrl();
   const { dealId } = useParams();
   const navigate = useNavigate();
   const { showNotification } = useNotification();
@@ -912,14 +914,14 @@ const DealDetail = () => {
                 <div className="detail-section">
                   <div className="deal-image">
                     {deal.imageUrl ? (
-                      <img src={deal.imageUrl} alt={deal.title} />
+                      <img src={getDealBannerUrl(deal) || getImageUrl(deal.imageUrl, 'deal') || '/uploads/default-banner.png'} alt={deal.title} />
                     ) : (
-                      <div className="no-image">
-                        <i className="fas fa-tag"></i>
-                        <span>No image available</span>
-                      </div>
-                    )}
-                  </div>
+                       <div className="no-image">
+                         <i className="fas fa-tag"></i>
+                         <span>No image available</span>
+                       </div>
+                     )}
+                   </div>
                   
                   <div className="deal-info-card">
                     <h3>Deal Information</h3>
@@ -1142,7 +1144,7 @@ const DealDetail = () => {
                               <div className="user-info">
                                 <div className="user-avatar">
                                   {redemption.userProfilePicture ? (
-                                    <img src={redemption.userProfilePicture} alt={redemption.userName} />
+                                    <img src={getImageUrl(redemption.userProfilePicture, 'profile') || '/uploads/default-avatar.png'} alt={redemption.userName} />
                                   ) : (
                                     <i className="fas fa-user"></i>
                                   )}
@@ -1267,7 +1269,7 @@ const DealDetail = () => {
                   <div className="business-header">
                     <div className="business-image">
                       {business.logo ? (
-                        <img src={business.logo} alt={business.businessName} />
+                        <img src={getMerchantLogoUrl(business) || '/logo-placeholder.svg'} alt={business.businessName} />
                       ) : (
                         <div className="no-logo">
                           <i className="fas fa-building"></i>

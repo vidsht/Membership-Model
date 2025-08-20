@@ -2,11 +2,13 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import './UserDetail.css';
+import useImageUrl from '../../../hooks/useImageUrl';
 
 const UserDetail = ({ user, onClose, onApprove, onReject, onEdit, onDelete }) => {
   const [rejectionReason, setRejectionReason] = useState('');
   const [isRejecting, setIsRejecting] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { getProfileImageUrl } = useImageUrl();
 
   // Safety check - if user is null or undefined, show loading or error
   if (!user) {
@@ -110,12 +112,12 @@ const UserDetail = ({ user, onClose, onApprove, onReject, onEdit, onDelete }) =>
       <div className="user-detail-header">
         <div className="user-avatar-large">
           {user.profilePicture ? (
-            <img src={user.profilePicture} alt="Profile" />
+            <img src={getProfileImageUrl(user) || '/uploads/default-avatar.png'} alt="Profile" />
           ) : (
-            <div className="avatar-placeholder">
-              {user.fullName ? user.fullName.charAt(0).toUpperCase() : '?'}
-            </div>
-          )}
+             <div className="avatar-placeholder">
+               {user.fullName ? user.fullName.charAt(0).toUpperCase() : '?'}
+             </div>
+           )}
         </div>
         <div className="user-basic-info">
           <h2>{user.fullName || 'Unknown User'}</h2>

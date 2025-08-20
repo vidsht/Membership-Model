@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useNotification } from '../../../contexts/NotificationContext';
 import api from '../../../services/api';
+import useImageUrl from '../../../hooks/useImageUrl';
 import './UserDetailPage.css';
 
 const UserDetailPage = () => {
@@ -11,6 +12,7 @@ const UserDetailPage = () => {
   const navigate = useNavigate();
   const { validateSession, handleSessionExpired } = useAuth();
   const { showNotification } = useNotification();
+  const { getProfileImageUrl } = useImageUrl();
 
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -327,12 +329,10 @@ const UserDetailPage = () => {
           <div className="profile-header">
             <div className="profile-avatar">
               {user.profilePicture ? (
-                <img src={user.profilePicture} alt={user.fullName} />
+                <img src={getProfileImageUrl(user) || '/uploads/default-avatar.png'} alt={user.fullName} />
               ) : (
-                <div className="avatar-placeholder">
-                  {user.fullName ? user.fullName.split(' ').map(n => n[0]).join('').toUpperCase() : 'U'}
-                </div>
-              )}
+                 <div className="user-avatar-placeholder">{user.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}</div>
+               )}
             </div>
             <div className="profile-info">
               <h2>{user.fullName || 'Unknown User'}</h2>

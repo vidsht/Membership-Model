@@ -5,6 +5,7 @@ import { useNotification } from '../../../contexts/NotificationContext';
 import './PartnerList.css'; 
 import PlanAssignment from '../PlanManagement/PlanAssignment';
 import RoleAssignment from '../RoleManagement/RoleAssignment';
+import useImageUrl from '../../../hooks/useImageUrl';
 
 // Helper function to format date
 const formatDate = (dateString) => {
@@ -26,6 +27,7 @@ const PartnerDetail = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
   const { showNotification } = useNotification();
+  const { getMerchantLogoUrl } = useImageUrl();
 
   useEffect(() => {
     const fetchPartner = async () => {
@@ -83,7 +85,7 @@ const PartnerDetail = () => {
         <div className="user-profile-header">
           <div className="user-profile-image">
             {partner?.logo ? (
-              <img src={partner.logo} alt={partner.businessName || 'Business'} />
+              <img src={getMerchantLogoUrl(partner) || '/logo-placeholder.svg'} alt={partner.businessName || 'Business'} />
             ) : (
               <div className="user-initials">
                 {partner?.businessName ? partner.businessName.split(' ').map(n => n[0]).join('') : 'B'}

@@ -96,6 +96,31 @@ export const SmartImage = ({
 	...props 
 }) => {
 	const handleError = (e) => {
+		const img = e.target;
+		// Try an alternate host once if available (helps when the URL domain doesn't serve uploads)
+		if (!img.dataset.retryAttempted) {
+			img.dataset.retryAttempted = '1';
+			const altBase = import.meta.env.VITE_IMAGE_BASE_URL || import.meta.env.VITE_API_URL || window.location.origin;
+			try {
+				const currentSrc = img.src;
+				if (currentSrc && (currentSrc.startsWith('http://') || currentSrc.startsWith('https://'))) {
+					try {
+						const parsed = new URL(currentSrc);
+						const altSrc = altBase.replace(/\/$/, '') + parsed.pathname;
+						// prevent setting same src
+						if (altSrc !== currentSrc) {
+							img.src = altSrc;
+							return; // wait for new load/error
+						}
+					} catch (urlErr) {
+						// ignore and fall through to fallback
+					}
+				}
+			} catch (err) {
+				// ignore and fall through
+			}
+		}
+
 		if (fallback) {
 			e.target.src = fallback;
 		} else {

@@ -8,11 +8,13 @@ import UserDetail from './UserDetail';
 import Modal from '../../shared/Modal';
 import { useModal } from '../../../hooks/useModal';
 import './UserList.css';
+import useImageUrl from '../../../hooks/useImageUrl';
 
 const UserList = () => {
   const { validateSession, handleSessionExpired } = useAuth();
   const { showNotification } = useNotification();
   const { modal, showAlert, hideModal } = useModal();
+  const { getProfileImageUrl } = useImageUrl();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [users, setUsers] = useState([]);
@@ -365,21 +367,16 @@ const UserList = () => {
                   <td>
                     <input
                       type="checkbox"
-                      checked={selectedUsers.includes(user.id)} {/* Fixed: use user.id */}
+                      checked={selectedUsers.includes(user.id)}
                       onChange={() => handleUserToggle(user.id)}
                     />
                   </td>
                   <td>
                     <div className="user-info">
                       {user.profilePicture ? (
-                        <img src={user.profilePicture} alt="Profile" className="user-avatar" />
+                        <img src={getProfileImageUrl(user) || '/uploads/default-avatar.png'} alt="Profile" className="user-avatar" />
                       ) : (
-                        <div className="user-avatar-placeholder">
-                          {user.fullName || 'Unknown User'}
-                          <span className="avatar-initials">
-                            {user.fullName ? user.fullName.split(' ').map(n => n[0]).join('') : 'U'}
-                          </span>
-                        </div>
+                        <div className="user-avatar-placeholder">{user.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}</div>
                       )}
                       <span className="user-name">{user.fullName}</span>
                     </div>

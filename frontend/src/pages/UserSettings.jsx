@@ -417,30 +417,6 @@ const UserSettings = () => {
             </div>
 
             <div className="form-field-group">
-              <label className="form-field-label">First Name</label>
-              <input
-                type="text"
-                name="firstName"
-                value={userProfile.firstName}
-                onChange={handleProfileInputChange}
-                className="enhanced-form-input"
-                placeholder="Enter your first name"
-              />
-            </div>
-
-            <div className="form-field-group">
-              <label className="form-field-label">Last Name</label>
-              <input
-                type="text"
-                name="lastName"
-                value={userProfile.lastName}
-                onChange={handleProfileInputChange}
-                className="enhanced-form-input"
-                placeholder="Enter your last name"
-              />
-            </div>
-
-            <div className="form-field-group">
               <label className="form-field-label">Email Address</label>
               <input
                 type="email"
@@ -475,20 +451,6 @@ const UserSettings = () => {
               />
             </div>
 
-            <div className="form-field-group">
-              <label className="form-field-label">Gender</label>
-              <select
-                name="gender"
-                value={userProfile.gender}
-                onChange={handleProfileInputChange}
-                className="enhanced-form-select"
-              >
-                <option value="">Select Gender</option>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
 
             <div className="form-field-group">
               <label className="form-field-label">Blood Group</label>
@@ -529,7 +491,7 @@ const UserSettings = () => {
           <h3 className="form-section-title">Address Information</h3>
           <div className="user-profile-form-grid">
             <div className="form-field-group form-field-full-width">
-              <label className="form-field-label">Street Address</label>
+              <label className="form-field-label">Address</label>
               <input
                 type="text"
                 name="address.street"
@@ -537,42 +499,6 @@ const UserSettings = () => {
                 onChange={handleProfileInputChange}
                 className="enhanced-form-input"
                 placeholder="Enter your street address"
-              />
-            </div>
-
-            <div className="form-field-group">
-              <label className="form-field-label">City</label>
-              <input
-                type="text"
-                name="address.city"
-                value={userProfile.address.city}
-                onChange={handleProfileInputChange}
-                className="enhanced-form-input"
-                placeholder="Enter your city"
-              />
-            </div>
-
-            <div className="form-field-group">
-              <label className="form-field-label">State/Region</label>
-              <input
-                type="text"
-                name="address.state"
-                value={userProfile.address.state}
-                onChange={handleProfileInputChange}
-                className="enhanced-form-input"
-                placeholder="Enter your state or region"
-              />
-            </div>
-
-            <div className="form-field-group">
-              <label className="form-field-label">ZIP/Postal Code</label>
-              <input
-                type="text"
-                name="address.zipCode"
-                value={userProfile.address.zipCode}
-                onChange={handleProfileInputChange}
-                className="enhanced-form-input"
-                placeholder="Enter your postal code"
               />
             </div>
 
@@ -597,7 +523,7 @@ const UserSettings = () => {
           <h3 className="form-section-title">Membership Information</h3>
           <div className="user-profile-form-grid">
             <div className="form-field-group">
-              <label className="form-field-label">Membership Type</label>
+              <label className="form-field-label">Membership Plan</label>
               <input
                 type="text"
                 value={userProfile.membershipType}
@@ -618,27 +544,6 @@ const UserSettings = () => {
               />
             </div>
 
-            <div className="form-field-group">
-              <label className="form-field-label">Member Since</label>
-              <input
-                type="text"
-                value={userProfile.createdAt ? new Date(userProfile.createdAt).toLocaleDateString() : ''}
-                className="enhanced-form-input disabled-input"
-                disabled
-                placeholder="Member since"
-              />
-            </div>
-
-            <div className="form-field-group">
-              <label className="form-field-label">Account Status</label>
-              <input
-                type="text"
-                value={userProfile.status}
-                className="enhanced-form-input disabled-input"
-                disabled
-                placeholder="Account status"
-              />
-            </div>
           </div>
         </div>
 

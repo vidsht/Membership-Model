@@ -3,10 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../../services/api';
 import { useNotification } from '../../../contexts/NotificationContext';
 import { useDynamicFields } from '../../../hooks/useDynamicFields';
+import useImageUrl from '../../../hooks/useImageUrl';
 import './MerchantManagementEnhanced.css';
 
 const MerchantManagementEnhanced = () => {
   const { showNotification } = useNotification();
+  const { getMerchantLogoUrl } = useImageUrl();
   const navigate = useNavigate();
   const { getCommunityOptions, getBusinessCategoryOptions } = useDynamicFields();
   const [merchants, setMerchants] = useState([]);
@@ -1046,7 +1048,7 @@ const MerchantManagementEnhanced = () => {
                     <div className="business-card-front">
                       <div className="business-logo">
                         {business.logo ? (
-                          <img src={business.logo} alt={business.name} />
+                          <img src={getMerchantLogoUrl(business.logo)} alt={business.name} />
                         ) : (
                           <div className="business-placeholder">
                             <i className="fas fa-store"></i>
