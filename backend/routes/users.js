@@ -35,17 +35,15 @@ router.get('/profile/complete', auth, (req, res) => {
   const userId = req.user.id;
   
   // Get all available user fields
-  const query = `
-    SELECT 
-    id, fullName, email, phone, dob, bloodGroup, 
-      community, address, country, state, city, profilePicture, profilePhoto,
-      membership, membershipType, membershipNumber, status, role, 
-      socialMediaFollowed, preferences, statusUpdatedAt, validationDate, 
-      planExpiryDate, subscriptionEndDate, planEndDate, created_at, updated_at,
-      lastLogin, emailVerified, phoneVerified
-    FROM users 
-    WHERE id = ?
-  `;
+    const query = `
+      SELECT 
+        id, fullName, email, phone, dob, bloodGroup, 
+        community, address, country, state, city, profilePicture, profilePhoto,
+        membership, membershipType, membershipNumber, preferences, created_at, 
+        lastLogin, updated_at, validationDate
+      FROM users 
+      WHERE id = ?
+    `;
   
   db.query(query, [userId], (err, results) => {
     if (err) {
@@ -243,11 +241,15 @@ router.get('/redemptions/user-history', auth, async (req, res) => {
       const redemptionQuery = `
         SELECT 
           dr.id,
-          dr.deal_id,
           dr.user_id,
-          dr.redemption_code,
+          dr.membership_level,
+          dr.deal_id,
           dr.redeemed_at,
           dr.status,
+          dr.dealId,
+          dr.rejection_reason,
+          dr.approved_at,
+          dr.rejected_at,
           d.title as dealTitle,
           d.description as dealDescription,
           b.businessName
