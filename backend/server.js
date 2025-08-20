@@ -70,10 +70,12 @@ app.use(session({
   name: 'sessionId',
   store: sessionStore,
   cookie: {
-    secure: process.env.NODE_ENV === 'production',
+    // secure: false,
+    secure: true,
     httpOnly: true,
     maxAge: 1000 * 60 * 60 * 24 * 7,
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+    // sameSite: 'lax'
+    sameSite: 'none'
   }
 }));
 

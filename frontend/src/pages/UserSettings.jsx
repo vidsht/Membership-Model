@@ -67,9 +67,61 @@ const UserSettings = () => {
   const fetchUserProfileData = async () => {
     try {
       setIsLoading(true);
-  const response = await api.get('/users/profile/complete');
+      // Prefer the authenticated user available from AuthContext (same as MembershipCard)
+      if (user) {
+        const userData = user;
+
+        // Parse address if it's a string
+        let parsedAddress = { street: '', city: '', state: '', zipCode: '' };
+        if (userData.address) {
+          if (typeof userData.address === 'object') {
+            parsedAddress = {
+              street: userData.address.street || userData.address.address || '',
+              city: userData.address.city || '',
+              state: userData.address.state || '',
+              zipCode: userData.address.zipCode || userData.address.zip || ''
+            };
+          } else if (typeof userData.address === 'string') {
+            try {
+              const parsed = JSON.parse(userData.address);
+              parsedAddress = {
+                street: parsed.street || parsed.address || userData.address || '',
+                city: parsed.city || '',
+                state: parsed.state || '',
+                zipCode: parsed.zipCode || parsed.zip || ''
+              };
+            } catch (e) {
+              parsedAddress = { street: userData.address, city: '', state: '', zipCode: '' };
+            }
+          }
+        }
+
+        setUserProfile({
+          fullName: userData.fullName || '',
+          firstName: userData.firstName || '',
+          lastName: userData.lastName || '',
+          email: userData.email || '',
+          phone: userData.phone || '',
+          dob: userData.dob ? userData.dob.split('T')[0] : '',
+          gender: userData.gender || '',
+          bloodGroup: userData.bloodGroup || '',
+          community: userData.community || '',
+          address: parsedAddress,
+          country: userData.country || 'Ghana',
+          profilePicture: userData.profilePicture || userData.profilePhoto || userData.profilePhotoUrl || '',
+          membershipType: userData.membershipType || userData.membership || '',
+          membershipNumber: userData.membershipNumber || '',
+          createdAt: userData.created_at || '',
+          status: userData.status || '',
+          role: userData.role || userData.userType || ''
+        });
+        return;
+      }
+
+      // Fallback: call the protected endpoint only if context user is not available
+      const response = await api.get('/users/profile/complete');
       const userData = response.data.user || user;
-      
+
       // Parse address if it's a string
       let parsedAddress = { street: '', city: '', state: '', zipCode: '' };
       if (userData.address) {
@@ -110,7 +162,7 @@ const UserSettings = () => {
         profilePicture: userData.profilePicture || userData.profilePhoto || '',
         membershipType: userData.membershipType || userData.membership || '',
         membershipNumber: userData.membershipNumber || '',
-        createdAt: userData.createdAt || '',
+        createdAt: userData.created_at || '',
         status: userData.status || '',
         role: userData.role || ''
       });
@@ -370,7 +422,7 @@ const UserSettings = () => {
 
   const ProfileInformationTab = () => (
     <div className="user-settings-tab-content">
-      <form onSubmit={updateUserProfile} className="user-profile-form">
+      <div className="user-profile-form">
         <div className="user-profile-header">
           <h2 className="user-profile-section-title">Profile Information</h2>
           <p className="user-profile-section-description">
@@ -400,7 +452,7 @@ const UserSettings = () => {
           </div>
         </div>
 
-        {/* Basic Information */}
+        {/* Basic Information (read-only - update disabled) */}
         <div className="user-profile-form-section">
           <h3 className="form-section-title">Basic Information</h3>
           <div className="user-profile-form-grid">
@@ -413,6 +465,7 @@ const UserSettings = () => {
                 onChange={handleProfileInputChange}
                 className="enhanced-form-input"
                 placeholder="Enter your full name"
+                disabled
               />
             </div>
 
@@ -425,6 +478,7 @@ const UserSettings = () => {
                 onChange={handleProfileInputChange}
                 className="enhanced-form-input"
                 placeholder="Enter your email address"
+                disabled
               />
             </div>
 
@@ -437,6 +491,7 @@ const UserSettings = () => {
                 onChange={handleProfileInputChange}
                 className="enhanced-form-input"
                 placeholder="Enter your phone number"
+                disabled
               />
             </div>
 
@@ -448,6 +503,7 @@ const UserSettings = () => {
                 value={userProfile.dob}
                 onChange={handleProfileInputChange}
                 className="enhanced-form-input"
+                disabled
               />
             </div>
 
@@ -459,6 +515,7 @@ const UserSettings = () => {
                 value={userProfile.bloodGroup}
                 onChange={handleProfileInputChange}
                 className="enhanced-form-select"
+                disabled
               >
                 <option value="">Select Blood Group</option>
                 <option value="A+">A+</option>
@@ -481,6 +538,7 @@ const UserSettings = () => {
                 onChange={handleProfileInputChange}
                 className="enhanced-form-input"
                 placeholder="Enter your community"
+                disabled
               />
             </div>
           </div>
@@ -499,6 +557,7 @@ const UserSettings = () => {
                 onChange={handleProfileInputChange}
                 className="enhanced-form-input"
                 placeholder="Enter your street address"
+                disabled
               />
             </div>
 
@@ -509,6 +568,7 @@ const UserSettings = () => {
                 value={userProfile.country}
                 onChange={handleProfileInputChange}
                 className="enhanced-form-select"
+                disabled
               >
                 <option value="Ghana">Ghana</option>
                 <option value="India">India</option>
@@ -547,16 +607,8 @@ const UserSettings = () => {
           </div>
         </div>
 
-        <div className="form-action-buttons">
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="enhanced-primary-button"
-          >
-            {isLoading ? 'Updating...' : 'Update Profile'}
-          </button>
-        </div>
-      </form>
+        {/* Update button and submission removed per request */}
+      </div>
     </div>
   );
 
