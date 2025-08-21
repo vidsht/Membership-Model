@@ -203,7 +203,7 @@ const MerchantDetailEdit = () => {
       }
       if (err.response?.status === 404) {
         showNotification('Merchant not found', 'error');
-        navigate('/admin/merchants');
+        navigate('/admin');
         return;
       }
       showNotification('Failed to load merchant data', 'error');
@@ -332,17 +332,22 @@ const MerchantDetailEdit = () => {
         userId: merchantId
       };
 
-      // Update user information
-      const userResponse = await api.put(`/admin/users/${merchantId}`, userData);
-      if (!userResponse.data.success) {
-        throw new Error(userResponse.data.message || 'Failed to update user information');
-      }
+      // // Update user information
+      // const userResponse = await api.put(`/admin/users/${merchantId}`, userData);
+      // if (!userResponse.data.success) {
+      //   throw new Error(userResponse.data.message || 'Failed to update user information');
+      // }
 
-      // Update business information
-      const businessResponse = await api.put(`/admin/businesses/${merchantId}`, businessData);
-      if (!businessResponse.data.success) {
-        throw new Error(businessResponse.data.message || 'Failed to update business information');
-      }
+      // // Update business information
+      // const businessResponse = await api.put(`/admin/partners/${merchantId}`, businessData);
+      // if (!businessResponse.data.success) {
+      //   throw new Error(businessResponse.data.message || 'Failed to update business information');
+      // }
+
+      const response = await api.put(`/admin/partners/${merchantId}`, unifiedPayload);
+        if (!response.data.success) {
+          throw new Error(response.data.message || 'Failed to update merchant');
+        }
 
       setMerchant(prev => ({ ...prev, ...userData }));
       setBusiness(prev => ({ ...prev, ...businessData }));
@@ -444,7 +449,7 @@ const MerchantDetailEdit = () => {
           <i className="fas fa-store-slash"></i>
           <h3>Merchant Not Found</h3>
           <p>The requested merchant could not be found.</p>
-          <button onClick={() => navigate('/admin/merchants')} className="btn btn-primary">
+          <button onClick={() => navigate('/admin')} className="btn btn-primary">
             Back to Merchants
           </button>
         </div>
@@ -459,7 +464,7 @@ const MerchantDetailEdit = () => {
         <div className="header-content">
           <div className="header-left">
             <button
-              onClick={() => navigate('/admin/merchants')}
+              onClick={() => navigate('/admin')}
               className="btn-back"
             >
               <i className="fas fa-arrow-left"></i>
