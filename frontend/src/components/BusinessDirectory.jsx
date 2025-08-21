@@ -129,22 +129,23 @@ const BusinessDirectory = () => {
               <div key={id} className="business-card-directory">
                 <div className="business-card-header">
                   <div className="business-logo-container">
-                    {getMerchantLogoUrl(business) ? (
-                      <SmartImage 
-                        src={getMerchantLogoUrl(business)} 
-                        alt={`${name} logo`} 
-                        className="logo-image"
-                        fallback={
-                          <div className="logo-placeholder">
-                            <span>{name.charAt(0) || "B"}</span>
-                          </div>
-                        }
-                      />
-                    ) : (
+                  <SmartImage
+                    src={business.merchantLogo || business.logoUrl || business.logo || getMerchantLogoUrl(business)}
+                    alt={`${name} Logo`}
+                    placeholder={
                       <div className="logo-placeholder">
                         <span>{name.charAt(0) || "B"}</span>
                       </div>
-                    )}
+                    }
+                    className="logo-image"
+                    maxRetries={3}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      objectPosition: 'center'
+                    }}
+                  />
                   </div>
                   <div className="business-info">
                     <h3 className="business-title">{name}</h3>

@@ -7,6 +7,36 @@ import { useImageUrl } from '../hooks/useImageUrl.jsx';
 import api from '../services/api';
 import '../styles/enhanced-user-settings.css';
 
+// Add these functions after imports and before const UserSettings = () => {
+const getPersistedProfileImage = (userId) => {
+  if (!userId) return null;
+  try {
+    const userData = localStorage.getItem('user_data');
+    if (userData) {
+      const parsed = JSON.parse(userData);
+      return parsed.profilePicture || parsed.profilePhoto || parsed.profilePhotoUrl;
+    }
+  } catch (e) {
+    console.error('Error loading persisted profile image:', e);
+  }
+  return null;
+};
+
+const getPersistedMerchantLogo = (userId) => {
+  if (!userId) return null;
+  try {
+    const userData = localStorage.getItem('user_data');
+    if (userData) {
+      const parsed = JSON.parse(userData);
+      return parsed.business?.logo || parsed.business?.logoUrl;
+    }
+  } catch (e) {
+    console.error('Error loading persisted merchant logo:', e);
+  }
+  return null;
+};
+
+
 const UserSettings = () => {
   const { user, updateUser } = useAuth();
   const { showNotification } = useNotification();
@@ -318,7 +348,6 @@ const fetchRedemptionHistory = useCallback(async () => {
     if (isMerchant) {
       availableTabs.push(
         { id: 'business', label: 'Business Settings', icon: '🏢' },
-        { id: 'profile', label: 'Basic Profile', icon: '👤' },
         { id: 'security', label: 'Security Settings', icon: '🔒' }
         // Note: Removed redemption history for merchants as they should not see user redemptions
       );
@@ -360,10 +389,11 @@ const fetchRedemptionHistory = useCallback(async () => {
         <div className="merchant-logo-upload-section">
           <div className="current-logo-display">
             <img 
-              src={getMerchantLogoUrl(user?.business || {}) || '/logo-placeholder.jpg'} 
+              src={getMerchantLogoUrl(user?.business || {}) || getPersistedMerchantLogo(user?.id) || '/logo-placeholder.jpg'} 
               alt="Current business logo"
               className="business-logo-preview"
             />
+
             <div className="logo-info">
               <h4>Current Business Logo</h4>
               <p>This logo will appear in the business directory</p>
@@ -374,12 +404,13 @@ const fetchRedemptionHistory = useCallback(async () => {
             <ImageUpload
               type="merchant"
               entityId={user?.id}
-              currentImage={getMerchantLogoUrl(user?.business || {})}
+              currentImage={getMerchantLogoUrl(user?.business || {}) || getPersistedMerchantLogo(user?.id)}
               onUploadSuccess={handleMerchantLogoUpload}
               className="merchant-logo-upload"
               label="Upload Business Logo"
               description="Upload your business logo"
             />
+
             <div className="upload-instructions">
               <p>• Upload in PNG, JPG, or SVG format</p>
               <p>• Maximum file size: 3MB</p>
@@ -413,16 +444,17 @@ const fetchRedemptionHistory = useCallback(async () => {
           <div className="user-profile-photo-section">
             <div className="profile-photo-container">
               <img 
-                  src={getProfileImageUrl(userProfile) || '/default-avatar.jpg'} 
-                  alt="Profile"
-                  className="profile-photo-display"
+                src={getProfileImageUrl(userProfile) || getPersistedProfileImage(user?.id) || '/default-avatar.jpg'} 
+                alt="Profile"
+                className="profile-photo-display"
               />
+
 
               <div className="photo-upload-controls">
                   <ImageUpload
                     type="profile"
                     entityId={user?.id}
-                    currentImage={getProfileImageUrl(userProfile)}
+                    currentImage={getProfileImageUrl(userProfile) || getPersistedProfileImage(user?.id)}
                     onUploadSuccess={(uploadResponse) => {
                       if (uploadResponse && uploadResponse.imageUrl) {
                         const updatedUser = { ...user, profilePicture: uploadResponse.imageUrl };

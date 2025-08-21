@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { useImageUrl } from '../hooks/useImageUrl.jsx';
+import { useImageUrl, SmartImage } from '../hooks/useImageUrl.jsx';
 import api from '../services/api';
 import '../styles/global.css';
 import '../styles/home.css';
@@ -22,6 +22,29 @@ const Home = () => {
   const [showAuthNotification, setShowAuthNotification] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [activeFAQ, setActiveFAQ] = useState(null);
+  
+  // Helper to map membershipType to broad plan categories (mirrors MerchantDashboard logic)
+  const getBusinessPlanCategory = (membershipType) => {
+    if (!membershipType) return 'basic';
+    const key = String(membershipType).toLowerCase();
+    // Silver family -> premium
+    if (['silver', 'silver_merchant', 'silver_business'].includes(key)) return 'premium';
+    // Gold and higher families -> featured/Gold
+    if (['gold', 'gold_merchant', 'gold_business'].includes(key)) return 'gold';
+    // Premium plus / platinum_plus -> premium_plus
+    if (['premium_plus', 'premium_plus_business', 'platinum_plus', 'platinum_plus_business'].includes(key)) return 'premium_plus';
+    // Platinum and others -> featured
+    if (['platinum', 'platinum_merchant', 'platinum_business'].includes(key)) return 'featured';
+    return 'basic';
+  };
+
+  // Derive the set of premium partners to show on the home carousel
+  const premiumPartners = (businesses || []).filter(b => {
+    const membershipType = b.membershipLevel || b.membershipType || b.membership || '';
+    const category = getBusinessPlanCategory(membershipType);
+    // Include premium (silver family), gold family and premium_plus/platinum_plus
+    return category === 'premium' || category === 'gold' || category === 'premium_plus';
+  });
   
   // Helper function to parse social media data consistently
   const parseSocialMediaData = (platformData) => {
@@ -399,13 +422,19 @@ const Home = () => {
                   {[...businesses, ...businesses].map((business, index) => (
                     <div key={`${business.id || index}-${index}`} className="business-carousel-card">
                       <div className="business-carousel-logo">
-                        {getMerchantLogoUrl(business) ? (
-                          <img src={getMerchantLogoUrl(business)} alt={business.businessName || business.name} />
-                        ) : (
-                          <div className="business-carousel-placeholder">
-                            <i className="fas fa-store"></i>
-                          </div>
-                        )}
+                        <SmartImage
+                          src={business.merchantLogo || business.logoUrl || business.logo || getMerchantLogoUrl(business)}
+                          alt={`${business.businessName || business.name} Logo`}
+                          placeholder={<i className="fas fa-store" />}
+                          className="business-logo"
+                          maxRetries={3}
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            objectPosition: 'center'
+                          }}
+                        />
                       </div>
                       <div className="business-carousel-info">
                         <h3 className="business-carousel-name">{business.businessName || business.name}</h3>

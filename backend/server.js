@@ -118,12 +118,14 @@ app.get('/api/health', (req, res) => {
 });
 
 // Public businesses endpoint for home page
+// Public businesses endpoint for home page
 app.get('/api/businesses', async (req, res) => {
   try {
     const businesses = await queryAsync(`
       SELECT b.businessId, b.businessName, b.businessDescription, b.businessCategory,
              b.businessAddress, b.businessPhone, b.businessEmail, b.website,
-             b.isVerified, u.fullName as ownerName, u.membershipType as membershipLevel
+             b.isVerified, b.logo, b.logoUrl,
+             u.fullName as ownerName, u.membershipType as membershipLevel, u.business
       FROM businesses b
       LEFT JOIN users u ON b.userId = u.id
       WHERE (b.status = 'active' OR b.status = '') AND u.status = 'approved'
@@ -131,19 +133,51 @@ app.get('/api/businesses', async (req, res) => {
     `);
     
     // Format the data for frontend consumption
-    const formattedBusinesses = businesses.map(business => ({
-      id: business.businessId,
-      name: business.businessName,
-      description: business.businessDescription,
-      sector: business.businessCategory || 'General',  // Map to expected 'sector' field
-      address: business.businessAddress,
-      phone: business.businessPhone,
-      email: business.businessEmail,
-      website: business.website,
-      isVerified: business.isVerified,
-      membershipLevel: business.membershipLevel,
-      ownerName: business.ownerName
-    }));
+    const formattedBusinesses = businesses.map(business => {
+      let merchantLogo = null;
+      
+      // Try multiple sources for merchant logo
+      if (business.logo) {
+        merchantLogo = business.logo;
+      } else if (business.logoUrl) {
+        merchantLogo = business.logoUrl;
+      } else if (business.business) {
+        try {
+          const businessData = typeof business.business === 'string' 
+            ? JSON.parse(business.business) 
+            : business.business;
+          merchantLogo = businessData?.logo || businessData?.logoUrl;
+        } catch (e) {
+          console.error('Error parsing business data for:', business.businessName, e);
+        }
+      }
+      
+      return {
+        id: business.businessId,
+        name: business.businessName,
+        businessName: business.businessName, // Keep both for compatibility
+        description: business.businessDescription,
+        sector: business.businessCategory || 'General',
+        category: business.businessCategory || 'General', // Keep both for compatibility
+        address: business.businessAddress,
+        phone: business.businessPhone,
+        email: business.businessEmail,
+        website: business.website,
+        isVerified: business.isVerified,
+        membershipLevel: business.membershipLevel,
+        ownerName: business.ownerName,
+        merchantLogo: merchantLogo, // Add merchant logo URL
+        logoUrl: merchantLogo,      // Alternative field name
+        logo: merchantLogo          // Another alternative
+      };
+    });
+    
+    // Debug log to see which businesses have logos
+    console.log('📊 Businesses with logos:', formattedBusinesses.map(b => ({
+      name: b.name,
+      hasLogo: !!(b.merchantLogo),
+      logo: b.merchantLogo || 'No logo'
+    })));
     
     res.json(formattedBusinesses);
   } catch (err) {
@@ -151,6 +185,7 @@ app.get('/api/businesses', async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error fetching businesses' });
   }
 });
+
 
 // 404 handler for unknown API routes
 app.use('/api/*', (req, res) => {

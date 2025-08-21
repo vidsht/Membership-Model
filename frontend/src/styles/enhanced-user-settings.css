@@ -1426,6 +1426,455 @@
   transform: scale(1.05);
 }
 
+/* Merchant Logo Upload Section - Enhanced Styling */
+.merchant-logo-upload-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 0;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border-radius: 20px;
+  margin-bottom: 32px;
+  border: 2px solid rgba(59, 130, 246, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.merchant-logo-upload-section::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.current-logo-display {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4rem;
+  position: relative;
+  z-index: 1;
+  margin-bottom: 3rem;
+}
+
+/* Business Logo Preview Display */
+.business-logo-preview {
+  width: 200px;
+  height: 200px;
+  border-radius: 20px;
+  object-fit: cover;
+  object-position: center;
+  border: 4px solid #ffffff;
+  box-shadow: 
+    0 12px 35px rgba(59, 130, 246, 0.15),
+    0 6px 15px rgba(59, 130, 246, 0.1),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.business-logo-preview:hover {
+  transform: scale(1.05) rotate(1deg);
+  box-shadow: 
+    0 20px 45px rgba(59, 130, 246, 0.2),
+    0 10px 20px rgba(59, 130, 246, 0.15),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.3);
+}
+
+/* Animated gradient ring on hover */
+.business-logo-preview::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  right: -6px;
+  bottom: -6px;
+  border: 3px solid transparent;
+  border-radius: 24px;
+  background: linear-gradient(45deg, #3b82f6, #1d4ed8, #06b6d4, #0ea5e9);
+  background-size: 400% 400%;
+  animation: gradientRotate 4s ease infinite;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  z-index: -1;
+}
+
+.business-logo-preview:hover::before {
+  opacity: 0.8;
+}
+
+@keyframes gradientRotate {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Logo Info Section */
+.logo-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  max-width: 300px;
+}
+
+.logo-info h4 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1e40af;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo-info h4::before {
+  content: '🏢';
+  font-size: 1.8rem;
+}
+
+.logo-info p {
+  font-size: 1rem;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.6;
+  font-weight: 500;
+}
+
+/* Logo Upload Controls */
+.logo-upload-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  width: 100%;
+  max-width: 500px;
+  position: relative;
+  z-index: 1;
+}
+
+/* Enhanced Image Upload Component Styling for Merchant Logo */
+.merchant-logo-upload .image-upload-zone {
+  min-height: 140px;
+  border: 3px dashed #93c5fd;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.merchant-logo-upload .image-upload-zone::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.15), transparent);
+  transition: left 0.8s ease;
+}
+
+.merchant-logo-upload .image-upload-zone:hover::before {
+  left: 100%;
+}
+
+.merchant-logo-upload .image-upload-zone:hover {
+  border-color: #3b82f6;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 35px rgba(59, 130, 246, 0.15);
+}
+
+.merchant-logo-upload .image-upload-zone.drag-active {
+  border-color: #10b981;
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  transform: scale(1.03);
+  box-shadow: 0 15px 40px rgba(16, 185, 129, 0.2);
+}
+
+/* Upload Placeholder Styling for Merchant Logo */
+.merchant-logo-upload .upload-placeholder {
+  text-align: center;
+  padding: 32px 20px;
+}
+
+.merchant-logo-upload .upload-placeholder i {
+  font-size: 56px;
+  color: #3b82f6;
+  margin-bottom: 16px;
+  display: block;
+  transition: all 0.4s ease;
+}
+
+.merchant-logo-upload .image-upload-zone:hover .upload-placeholder i {
+  color: #1d4ed8;
+  transform: scale(1.15) rotate(5deg);
+}
+
+.merchant-logo-upload .upload-placeholder h4 {
+  color: #1e293b;
+  margin: 16px 0 10px 0;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.merchant-logo-upload .upload-placeholder p {
+  color: #64748b;
+  margin: 10px 0;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.merchant-logo-upload .upload-placeholder small {
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Image Preview in Upload Component for Merchant Logo */
+.merchant-logo-upload .image-preview {
+  position: relative;
+  width: 100%;
+  min-height: 140px;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.merchant-logo-upload .image-preview img {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  object-position: center;
+  border-radius: 16px;
+  transition: transform 0.4s ease;
+}
+
+.merchant-logo-upload .image-preview:hover img {
+  transform: scale(1.08);
+}
+
+/* Image Overlay Controls for Merchant Logo */
+.merchant-logo-upload .image-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(30, 64, 175, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  border-radius: 16px;
+}
+
+.merchant-logo-upload .image-preview:hover .image-overlay {
+  opacity: 1;
+}
+
+.merchant-logo-upload .image-overlay .btn-change,
+.merchant-logo-upload .image-overlay .btn-remove {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.merchant-logo-upload .image-overlay .btn-change {
+  background: #3b82f6;
+  color: white;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.merchant-logo-upload .image-overlay .btn-change:hover {
+  background: #1d4ed8;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+}
+
+.merchant-logo-upload .image-overlay .btn-remove {
+  background: #ef4444;
+  color: white;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.merchant-logo-upload .image-overlay .btn-remove:hover {
+  background: #dc2626;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+}
+
+/* Upload Progress Styling for Merchant Logo */
+.merchant-logo-upload .upload-progress {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  color: #3b82f6;
+}
+
+.merchant-logo-upload .upload-progress .spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #e5e7eb;
+  border-top: 4px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+.merchant-logo-upload .upload-progress span {
+  font-weight: 700;
+  color: #1e293b;
+  font-size: 16px;
+}
+
+/* Upload Instructions */
+.upload-instructions {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 2px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 24px;
+  margin-top: 20px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.upload-instructions p {
+  margin: 8px 0;
+  color: #475569;
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.upload-instructions p::before {
+  content: '✨';
+  font-size: 16px;
+}
+
+/* Loading State for Business Logo */
+.business-logo-preview.loading {
+  position: relative;
+  overflow: hidden;
+}
+
+.business-logo-preview.loading::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.4), transparent);
+  animation: logoShimmer 2s infinite;
+}
+
+@keyframes logoShimmer {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+/* Success State Animation for Merchant Logo */
+.merchant-logo-upload.upload-success .image-upload-zone {
+  border-color: #10b981;
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  animation: merchantSuccessPulse 0.8s ease;
+}
+
+@keyframes merchantSuccessPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+  100% { transform: scale(1); }
+}
+
+/* Error State for Merchant Logo */
+.merchant-logo-upload.upload-error .image-upload-zone {
+  border-color: #ef4444;
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  animation: merchantErrorShake 0.6s ease;
+}
+
+@keyframes merchantErrorShake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
+}
+
+/* Responsive Design for Merchant Logo */
+@media (max-width: 768px) {
+  .merchant-logo-upload-section {
+    padding: 32px 16px;
+    margin-bottom: 24px;
+  }
+  
+  .current-logo-display {
+    flex-direction: column;
+    gap: 2rem;
+    text-align: center;
+  }
+  
+  .business-logo-preview {
+    width: 160px;
+    height: 160px;
+  }
+  
+  .logo-info {
+    align-items: center;
+    text-align: center;
+  }
+  
+  .merchant-logo-upload .image-upload-zone {
+    min-height: 120px;
+  }
+  
+  .merchant-logo-upload .upload-placeholder {
+    padding: 24px 16px;
+  }
+  
+  .merchant-logo-upload .upload-placeholder i {
+    font-size: 44px;
+  }
+}
+
+@media (max-width: 480px) {
+  .business-logo-preview {
+    width: 140px;
+    height: 140px;
+  }
+  
+  .logo-info h4 {
+    font-size: 1.3rem;
+  }
+  
+  .upload-instructions {
+    padding: 20px;
+  }
+  
+  .upload-instructions p {
+    font-size: 13px;
+  }
+}
+
 /* Responsive Design for Redemption Cards */
 @media (max-width: 768px) {
   .redemption-cards-grid {
