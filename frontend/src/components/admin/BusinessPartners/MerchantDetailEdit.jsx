@@ -499,15 +499,7 @@ const MerchantDetailEdit = () => {
             </div>
           </div>
           <div className="header-actions">
-            {!editMode ? (
-              <button
-                onClick={() => setEditMode(true)}
-                className="btn btn-primary"
-              >
-                <i className="fas fa-edit"></i>
-                Edit Merchant
-              </button>
-            ) : (
+            {editMode && (
               <div className="edit-actions">
                 <button
                   onClick={handleCancelEdit}

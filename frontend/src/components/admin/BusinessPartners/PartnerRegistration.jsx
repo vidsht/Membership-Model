@@ -3,6 +3,7 @@ import { useDynamicFields } from '../../../hooks/useDynamicFields';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useNotification } from '../../../contexts/NotificationContext';
 import adminApi from '../../../services/adminApi';
+import api from '../../../services/api';
 import './PartnerRegistration.css';
 
 /**
@@ -45,14 +46,14 @@ const PartnerRegistration = () => {
     const fetchMerchantPlans = async () => {
       try {
         // Use the same endpoint and logic as UnifiedRegistration.jsx
-        const response = await fetch('/api/plans?type=merchant&isActive=true', { credentials: 'include' });
-        if (response.ok) {
-          const data = await response.json();
-          setMerchantPlans(data.plans || []);
-        } else {
-          setMerchantPlans([]);
-          showNotification('Error loading merchant plans', 'error');
-        }
+        const response = await api.get('/admin/plans?userType=merchant');
+
+      if (response.data && response.data.success) {
+        setMerchantPlans(response.data.plans || []);
+      } else {
+        setMerchantPlans([]);
+        showNotification('Error loading merchant plans', 'error');
+      }
       } catch (error) {
         console.error('Error fetching merchant plans:', error);
         setMerchantPlans([]);
