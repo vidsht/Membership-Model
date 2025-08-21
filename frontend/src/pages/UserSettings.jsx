@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import PlanExpiryBanner from '../components/PlanExpiryBanner';
@@ -57,70 +57,12 @@ const UserSettings = () => {
     }
   }, [user?.role, currentActiveTab]);
 
-  // Fetch comprehensive user data
-  useEffect(() => {
+  const fetchUserProfileData = useCallback(async () => {
+  try {
+    setIsLoading(true);
+    // Prefer the authenticated user available from AuthContext (same as MembershipCard)
     if (user) {
-      fetchUserProfileData();
-    }
-  }, [user]);
-
-  const fetchUserProfileData = async () => {
-    try {
-      setIsLoading(true);
-      // Prefer the authenticated user available from AuthContext (same as MembershipCard)
-      if (user) {
-        const userData = user;
-
-        // Parse address if it's a string
-        let parsedAddress = { street: '', city: '', state: '', zipCode: '' };
-        if (userData.address) {
-          if (typeof userData.address === 'object') {
-            parsedAddress = {
-              street: userData.address.street || userData.address.address || '',
-              city: userData.address.city || '',
-              state: userData.address.state || '',
-              zipCode: userData.address.zipCode || userData.address.zip || ''
-            };
-          } else if (typeof userData.address === 'string') {
-            try {
-              const parsed = JSON.parse(userData.address);
-              parsedAddress = {
-                street: parsed.street || parsed.address || userData.address || '',
-                city: parsed.city || '',
-                state: parsed.state || '',
-                zipCode: parsed.zipCode || parsed.zip || ''
-              };
-            } catch (e) {
-              parsedAddress = { street: userData.address, city: '', state: '', zipCode: '' };
-            }
-          }
-        }
-
-        setUserProfile({
-          fullName: userData.fullName || '',
-          firstName: userData.firstName || '',
-          lastName: userData.lastName || '',
-          email: userData.email || '',
-          phone: userData.phone || '',
-          dob: userData.dob ? userData.dob.split('T')[0] : '',
-          gender: userData.gender || '',
-          bloodGroup: userData.bloodGroup || '',
-          community: userData.community || '',
-          address: parsedAddress,
-          country: userData.country || 'Ghana',
-          profilePicture: userData.profilePicture || userData.profilePhoto || userData.profilePhotoUrl || '',
-          membershipType: userData.membershipType || userData.membership || '',
-          membershipNumber: userData.membershipNumber || '',
-          createdAt: userData.created_at || '',
-          status: userData.status || '',
-          role: userData.role || userData.userType || ''
-        });
-        return;
-      }
-
-      // Fallback: call the protected endpoint only if context user is not available
-      const response = await api.get('/users/profile/complete');
-      const userData = response.data.user || user;
+      const userData = user;
 
       // Parse address if it's a string
       let parsedAddress = { street: '', city: '', state: '', zipCode: '' };
@@ -159,41 +101,99 @@ const UserSettings = () => {
         community: userData.community || '',
         address: parsedAddress,
         country: userData.country || 'Ghana',
-        profilePicture: userData.profilePicture || userData.profilePhoto || '',
+        profilePicture: userData.profilePicture || userData.profilePhoto || userData.profilePhotoUrl || '',
         membershipType: userData.membershipType || userData.membership || '',
         membershipNumber: userData.membershipNumber || '',
         createdAt: userData.created_at || '',
         status: userData.status || '',
-        role: userData.role || ''
+        role: userData.role || userData.userType || ''
       });
-    } catch (error) {
-      console.error('Error fetching user profile:', error);
-      showNotification('Failed to load user profile data', 'error');
-    } finally {
-      setIsLoading(false);
+      return;
     }
-  };
+
+    // Fallback: call the protected endpoint only if context user is not available
+    const response = await api.get('/users/profile/complete');
+    const userData = response.data.user || user;
+
+    // Parse address if it's a string
+    let parsedAddress = { street: '', city: '', state: '', zipCode: '' };
+    if (userData.address) {
+      if (typeof userData.address === 'object') {
+        parsedAddress = {
+          street: userData.address.street || userData.address.address || '',
+          city: userData.address.city || '',
+          state: userData.address.state || '',
+          zipCode: userData.address.zipCode || userData.address.zip || ''
+        };
+      } else if (typeof userData.address === 'string') {
+        try {
+          const parsed = JSON.parse(userData.address);
+          parsedAddress = {
+            street: parsed.street || parsed.address || userData.address || '',
+            city: parsed.city || '',
+            state: parsed.state || '',
+            zipCode: parsed.zipCode || parsed.zip || ''
+          };
+        } catch (e) {
+          parsedAddress = { street: userData.address, city: '', state: '', zipCode: '' };
+        }
+      }
+    }
+
+    setUserProfile({
+      fullName: userData.fullName || '',
+      firstName: userData.firstName || '',
+      lastName: userData.lastName || '',
+      email: userData.email || '',
+      phone: userData.phone || '',
+      dob: userData.dob ? userData.dob.split('T')[0] : '',
+      gender: userData.gender || '',
+      bloodGroup: userData.bloodGroup || '',
+      community: userData.community || '',
+      address: parsedAddress,
+      country: userData.country || 'Ghana',
+      profilePicture: userData.profilePicture || userData.profilePhoto || '',
+      membershipType: userData.membershipType || userData.membership || '',
+      membershipNumber: userData.membershipNumber || '',
+      createdAt: userData.created_at || '',
+      status: userData.status || '',
+      role: userData.role || ''
+    });
+  } catch (error) {
+    console.error('Error fetching user profile:', error);
+    showNotification('Failed to load user profile data', 'error');
+  } finally {
+    setIsLoading(false);
+  }
+}, [user, showNotification]);
+
+useEffect(() => {
+        if (user) {
+          fetchUserProfileData();
+        }
+      }, [user, fetchUserProfileData]);
 
   // Fetch user redemption history
-  const fetchRedemptionHistory = async () => {
-    try {
-      setRedemptionsLoadingState(true);
-      const response = await api.get('/users/redemptions/user-history');
-      setUserRedemptions(response.data.redemptions || []);
-    } catch (error) {
-      console.error('Error fetching redemption history:', error);
-      showNotification('Failed to load redemption history', 'error');
-    } finally {
-      setRedemptionsLoadingState(false);
-    }
-  };
+const fetchRedemptionHistory = useCallback(async () => {
+  try {
+    setRedemptionsLoadingState(true);
+    const response = await api.get('/redemptions/user-history');
+    setUserRedemptions(response.data.redemptions || []);
+  } catch (error) {
+    console.error('Error fetching redemption history:', error);
+    showNotification('Failed to load redemption history', 'error');
+  } finally {
+    setRedemptionsLoadingState(false);
+  }
+}, [showNotification]);
+
 
   // Load redemptions when redemption tab is active
   useEffect(() => {
-    if (currentActiveTab === 'redemptions' && userRedemptions.length === 0) {
-      fetchRedemptionHistory();
-    }
-  }, [currentActiveTab]);
+  if (currentActiveTab === 'redemptions' && userRedemptions.length === 0) {
+    fetchRedemptionHistory();
+  }
+}, [currentActiveTab, userRedemptions.length, fetchRedemptionHistory]);
 
   const handleProfileInputChange = (e) => {
     const { name, value } = e.target;
@@ -215,85 +215,49 @@ const UserSettings = () => {
     }
   };
 
-  const handlePasswordInputChange = (e) => {
+  const handlePasswordInputChange = useCallback((e) => {
     const { name, value } = e.target;
     setPasswordFormData(prev => ({
       ...prev,
       [name]: value
     }));
-  };
+  }, []);
 
-  const updateUserProfile = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setNotificationState({ message: '', type: '' });
 
-    try {
-      const addressData = typeof userProfile.address === 'object' 
-        ? JSON.stringify(userProfile.address) 
-        : userProfile.address;
+  
 
-      const profileUpdateData = {
-        fullName: userProfile.fullName,
-        firstName: userProfile.firstName,
-        lastName: userProfile.lastName,
-        email: userProfile.email,
-        phone: userProfile.phone,
-        dob: userProfile.dob,
-        gender: userProfile.gender,
-        bloodGroup: userProfile.bloodGroup,
-        community: userProfile.community,
-        address: addressData,
-        country: userProfile.country
-      };
+  const updateUserPassword = useCallback(async (e) => {
+  e.preventDefault();
+  
+  if (passwordFormData.newPassword !== passwordFormData.confirmPassword) {
+    setNotificationState({ message: 'New passwords do not match', type: 'error' });
+    return;
+  }
 
-      const response = await api.put('/users/profile', profileUpdateData);
-      
-      if (response.data.user) {
-        await updateUser(response.data.user);
-        setNotificationState({ message: 'Profile updated successfully!', type: 'success' });
-      }
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      const errorMessage = error.response?.data?.message || 'Failed to update profile';
-      setNotificationState({ message: errorMessage, type: 'error' });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  if (passwordFormData.newPassword.length < 6) {
+    setNotificationState({ message: 'Password must be at least 6 characters long', type: 'error' });
+    return;
+  }
 
-  const updateUserPassword = async (e) => {
-    e.preventDefault();
+  setIsLoading(true);
+  setNotificationState({ message: '', type: '' });
+
+  try {
+    await api.put('/users/password', {
+      currentPassword: passwordFormData.currentPassword,
+      newPassword: passwordFormData.newPassword
+    });
     
-    if (passwordFormData.newPassword !== passwordFormData.confirmPassword) {
-      setNotificationState({ message: 'New passwords do not match', type: 'error' });
-      return;
-    }
-
-    if (passwordFormData.newPassword.length < 6) {
-      setNotificationState({ message: 'Password must be at least 6 characters long', type: 'error' });
-      return;
-    }
-
-    setIsLoading(true);
-    setNotificationState({ message: '', type: '' });
-
-    try {
-      await api.put('/users/password', {
-        currentPassword: passwordFormData.currentPassword,
-        newPassword: passwordFormData.newPassword
-      });
-      
-      setPasswordFormData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-      setNotificationState({ message: 'Password updated successfully!', type: 'success' });
-    } catch (error) {
-      console.error('Error updating password:', error);
-      const errorMessage = error.response?.data?.message || 'Failed to update password';
-      setNotificationState({ message: errorMessage, type: 'error' });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    setPasswordFormData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    setNotificationState({ message: 'Password updated successfully!', type: 'success' });
+  } catch (error) {
+    console.error('Error updating password:', error);
+    const errorMessage = error.response?.data?.message || 'Failed to update password';
+    setNotificationState({ message: errorMessage, type: 'error' });
+  } finally {
+    setIsLoading(false);
+  }
+}, [passwordFormData]);
 
   const handleProfilePhotoUpload = async (file) => {
   try {
@@ -322,34 +286,38 @@ const UserSettings = () => {
   }
 };
 
+    const handleMerchantLogoUpload = async (file) => {
+      try {
+        setIsLoading(true);
+        const formData = new FormData();
+        formData.append('merchantLogo', file);
 
+        const response = await api.post(`/upload/merchant-logo/${user.id}`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
 
-  const handleMerchantLogoUpload = async (file) => {
-  try {
-    setIsLoading(true);
-    const formData = new FormData();
-    formData.append('merchantLogo', file); // ✅ Correct field name for merchant logo
-
-    const response = await api.post(`/upload/merchant-logo/${user.id}`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    });
-
-    if (response.data.success && response.data.imageUrl) {
-      showNotification('Business logo updated successfully!', 'success');
-      // Optionally refresh the component to show new logo
-      // You might want to update some state here if needed
-    } else {
-      throw new Error('Upload failed: No image URL returned');
-    }
-  } catch (error) {
-    console.error('Error uploading merchant logo:', error);
-    const errorMessage = error.response?.data?.message || 'Failed to upload business logo';
-    showNotification(errorMessage, 'error');
-  } finally {
-    setIsLoading(false);
-  }
-};
-
+        if (response.data.success && response.data.imageUrl) {
+          // ✅ Update user context with new logo
+          const updatedUser = { 
+            ...user, 
+            business: { 
+              ...user.business, 
+              logoUrl: response.data.imageUrl 
+            }
+          };
+          await updateUser(updatedUser);
+          showNotification('Business logo updated successfully!', 'success');
+        } else {
+          throw new Error('Upload failed: No image URL returned');
+        }
+      } catch (error) {
+        console.error('Error uploading merchant logo:', error);
+        const errorMessage = error.response?.data?.message || 'Failed to upload business logo';
+        showNotification(errorMessage, 'error');
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
   const TabNavigation = () => {
     const availableTabs = [];
@@ -623,178 +591,215 @@ const UserSettings = () => {
     </div>
   );
 
-  const SecuritySettingsTab = () => (
-    <div className="user-settings-tab-content">
-      <form onSubmit={updateUserPassword} className="user-profile-form">
-        <div className="user-profile-header">
-          <h2 className="user-profile-title">Security Settings</h2>
-          <p className="user-profile-section-description">
-            Change your password to keep your account secure
-          </p>
-        </div>
-
-        <div className="user-profile-form-section">
-          <h3 className="form-section-title">Change Password</h3>
-          <div className="user-profile-form-grid">
-            <div className="form-field-group form-field-full-width">
-              <label className="form-field-label">Current Password</label>
-              <input
-                type="password"
-                name="currentPassword"
-                value={passwordFormData.currentPassword}
-                onChange={handlePasswordInputChange}
-                className="enhanced-form-input"
-                placeholder="Enter your current password"
-                required
-              />
-            </div>
-
-            <div className="form-field-group">
-              <label className="form-field-label">New Password</label>
-              <input
-                type="password"
-                name="newPassword"
-                value={passwordFormData.newPassword}
-                onChange={handlePasswordInputChange}
-                className="enhanced-form-input"
-                placeholder="Enter new password"
-                required
-                minLength="6"
-              />
-            </div>
-
-            <div className="form-field-group">
-              <label className="form-field-label">Confirm New Password</label>
-              <input
-                type="password"
-                name="confirmPassword"
-                value={passwordFormData.confirmPassword}
-                onChange={handlePasswordInputChange}
-                className="enhanced-form-input"
-                placeholder="Confirm new password"
-                required
-                minLength="6"
-              />
-            </div>
-          </div>
-
-          <div className="password-requirements">
-            <h4>Password Requirements:</h4>
-            <ul>
-              <li>At least 6 characters long</li>
-              <li>Both passwords must match</li>
-            </ul>
-          </div>
-        </div>
-
-        <div className="form-action-buttons">
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="enhanced-primary-button"
-          >
-            {isLoading ? 'Updating...' : 'Update Password'}
-          </button>
-        </div>
-      </form>
-    </div>
-  );
-
-  const RedemptionHistoryTab = () => (
-    <div className="user-settings-tab-content">
+  const SecuritySettingsTab = useCallback(() => (
+  <div className="user-settings-tab-content">
+    <form onSubmit={updateUserPassword} className="user-profile-form">
       <div className="user-profile-header">
-        <h2 className="user-profile-title">Redemption History</h2>
+        <h2 className="user-profile-title">Security Settings</h2>
         <p className="user-profile-section-description">
-          View your redeemed deals and offers
+          Change your password to keep your account secure
         </p>
       </div>
 
-      <div className="redemption-history-container">
-        {redemptionsLoadingState ? (
-          <div className="loading-state"></div>
-        ) : userRedemptions.length === 0 ? (
-          <div className="empty-state">
-            <div className="empty-state-icon">🎫</div>
-            <h3>No Redemptions Yet</h3>
-            <p>You haven't redeemed any deals yet. Start exploring our deals to save money!</p>
+      <div className="user-profile-form-section">
+        <h3 className="form-section-title">Change Password</h3>
+        <div className="user-profile-form-grid">
+          <div className="form-field-group form-field-full-width">
+            <label className="form-field-label">Current Password</label>
+            <input
+              type="password"
+              name="currentPassword"
+              value={passwordFormData.currentPassword}
+              onChange={handlePasswordInputChange}
+              className="enhanced-form-input"
+              placeholder="Enter your current password"
+              required
+              autoComplete="current-password"
+            />
           </div>
-        ) : (
-          <div className="redemption-cards-grid">
-            {userRedemptions.map((redemption, index) => (
-              <div key={index} className="redemption-card">
-                <div className="redemption-card-header">
-                  <h4 className="deal-title">{redemption.dealTitle || 'Deal'}</h4>
-                  <span className="redemption-date">
-                    {new Date(redemption.redeemedAt).toLocaleDateString()}
+
+          <div className="form-field-group">
+            <label className="form-field-label">New Password</label>
+            <input
+              type="password"
+              name="newPassword"
+              value={passwordFormData.newPassword}
+              onChange={handlePasswordInputChange}
+              className="enhanced-form-input"
+              placeholder="Enter new password"
+              required
+              minLength="6"
+              autoComplete="new-password"
+            />
+          </div>
+
+          <div className="form-field-group">
+            <label className="form-field-label">Confirm New Password</label>
+            <input
+              type="password"
+              name="confirmPassword"
+              value={passwordFormData.confirmPassword}
+              onChange={handlePasswordInputChange}
+              className="enhanced-form-input"
+              placeholder="Confirm new password"
+              required
+              minLength="6"
+              autoComplete="new-password"
+            />
+          </div>
+        </div>
+
+        <div className="password-requirements">
+          <h4>Password Requirements:</h4>
+          <ul>
+            <li>At least 6 characters long</li>
+            <li>Both passwords must match</li>
+          </ul>
+        </div>
+      </div>
+
+      <div className="form-action-buttons">
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="enhanced-primary-button"
+        >
+          {isLoading ? 'Updating...' : 'Update Password'}
+        </button>
+      </div>
+    </form>
+  </div>
+), [passwordFormData, isLoading, handlePasswordInputChange, updateUserPassword]);
+
+
+const RedemptionHistoryTab = () => (
+  <div className="user-settings-tab-content">
+    <div className="user-profile-header">
+      <h2 className="user-profile-title">Redemption History</h2>
+      <p className="user-profile-section-description">
+        View your redeemed deals and offers
+      </p>
+    </div>
+
+    <div className="redemption-history-container">
+      {redemptionsLoadingState ? (
+        <div className="loading-state">
+          <div className="loading-spinner"></div>
+          <p>Loading redemption history...</p>
+        </div>
+      ) : userRedemptions.length === 0 ? (
+        <div className="empty-state">
+          <div className="empty-state-icon">🎫</div>
+          <h3>No Redemptions Yet</h3>
+          <p>You haven't redeemed any deals yet. Start exploring deals to see your redemption history here!</p>
+        </div>
+      ) : (
+        <div className="redemption-cards-grid">
+          {userRedemptions.map((redemption, index) => (
+            <div key={redemption.id || index} className="redemption-card">
+              <div className="redemption-card-header">
+                <h4 className="deal-title">{redemption.dealTitle || redemption.title || 'Deal'}</h4>
+                <span className="redemption-date">
+                  {redemption.redeemedAt ? new Date(redemption.redeemedAt).toLocaleDateString() : 'Date not available'}
+                </span>
+              </div>
+              <div className="redemption-card-body">
+                <p className="business-name">
+                  <i className="fas fa-store"></i>
+                  {redemption.businessName || 'Business Name Not Available'}
+                </p>
+                {redemption.businessAddress && (
+                  <p className="business-address">
+                    <i className="fas fa-map-marker-alt"></i>
+                    {redemption.businessAddress}
+                  </p>
+                )}
+                <p className="redemption-code">
+                  {redemption.discount ? (
+                    <span className="discount-badge">
+                      {redemption.discountType === 'percentage' 
+                        ? `${redemption.discount}% OFF` 
+                        : `$${redemption.discount} OFF`
+                      }
+                    </span>
+                  ) : (
+                    <span>Discount not available</span>
+                  )}
+                </p>
+                <div className="redemption-status">
+                  <span className={`status-badge status-${redemption.status || 'redeemed'}`}>
+                    {redemption.status?.charAt(0).toUpperCase() + redemption.status?.slice(1) || 'Redeemed'}
                   </span>
                 </div>
-                <div className="redemption-card-body">
-                  <p className="business-name">{redemption.businessName}</p>
-                  <p className="redemption-code">Code: {redemption.redemptionCode}</p>
-                  <div className="redemption-status">
-                    <span className="status-badge">Redeemed</span>
+                {redemption.status === 'rejected' && redemption.rejectionReason && (
+                  <div className="rejection-reason">
+                    <small>Reason: {redemption.rejectionReason}</small>
                   </div>
-                </div>
+                )}
               </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-
-  const renderTabContent = () => {
-    switch (currentActiveTab) {
-      case 'business':
-        return <BusinessSettingsTab />;
-      case 'profile':
-        return <ProfileInformationTab />;
-      case 'security':
-        return <SecuritySettingsTab />;
-      case 'redemptions':
-        return <RedemptionHistoryTab />;
-      default:
-        return <ProfileInformationTab />;
-    }
-  };
-
-  return (
-    <div className="enhanced-user-settings-container">
-      <PlanExpiryBanner />
-      
-      <div className="user-settings-content-wrapper">
-        <div className="user-profile-header-section">
-          <h1 className="user-settings-main-title">Account Settings</h1>
-          <p className="user-settings-main-description">
-            Manage your account information, security settings, and preferences
-          </p>
+            </div>
+          ))}
         </div>
-
-        {/* Notification Display */}
-        {notificationState.message && (
-          <div className={`user-settings-notification ${notificationState.type === 'success' ? 'notification-success' : 'notification-error'}`}>
-            <span>{notificationState.message}</span>
-            <button 
-              onClick={() => setNotificationState({ message: '', type: '' })}
-              className="notification-close-button"
-            >
-              ×
-            </button>
-          </div>
-        )}
-
-        <div className="user-settings-layout">
-          <div className="user-settings-sidebar">
-            <TabNavigation />
-          </div>
-
-          <div className="user-settings-main-content">
-            {renderTabContent()}
-          </div>
-        </div>
-      </div>
+      )}
     </div>
-  );
+  </div>
+);
+
+
+const renderTabContent = () => {
+  switch (currentActiveTab) {
+    case 'business':
+      return <BusinessSettingsTab />;
+    case 'profile':
+      return <ProfileInformationTab />;
+    case 'security':
+      return <SecuritySettingsTab />;
+    case 'redemptions':
+      return <RedemptionHistoryTab />;
+    default:
+      return <ProfileInformationTab />;
+  }
 };
+
+
+return (
+  <div className="enhanced-user-settings-container">
+    <PlanExpiryBanner />
+    
+    <div className="user-settings-content-wrapper">
+      <div className="user-profile-header-section">
+        <h1 className="user-settings-main-title">Account Settings</h1>
+        <p className="user-settings-main-description">
+          Manage your account information, security settings, and preferences
+        </p>
+      </div>
+
+      {/* Notification Display */}
+      {notificationState.message && (
+        <div className={`user-settings-notification ${notificationState.type === 'success' ? 'notification-success' : 'notification-error'}`}>
+          <span>{notificationState.message}</span>
+          <button 
+            onClick={() => setNotificationState({ message: '', type: '' })}
+            className="notification-close-button"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
+      <div className="user-settings-layout">
+        <div className="user-settings-sidebar">
+          <TabNavigation />
+        </div>
+
+        <div className="user-settings-main-content">
+          {renderTabContent()}
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+}; 
 
 export default UserSettings;

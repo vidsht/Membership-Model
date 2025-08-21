@@ -126,8 +126,9 @@ const BusinessDirectory = () => {
               const id = business.businessId || business.id || idx;
               // Show badge for all for now (or use business.isVerified if available)
               return (
-                <div key={id} className="business-card">
-                  <div className="business-logo">
+              <div key={id} className="business-card-directory">
+                <div className="business-card-header">
+                  <div className="business-logo-container">
                     {getMerchantLogoUrl(business) ? (
                       <SmartImage 
                         src={getMerchantLogoUrl(business)} 
@@ -144,40 +145,99 @@ const BusinessDirectory = () => {
                         <span>{name.charAt(0) || "B"}</span>
                       </div>
                     )}
+                
                     <div className="business-badge" title="Verified Partner">
                       <i className="fas fa-certificate"></i>
                     </div>
                   </div>
                   <div className="business-info">
-                    <h3>{name}</h3>
-                    <p className="business-category"><i className="fas fa-briefcase"></i> {category}</p>
-                    <p className="business-description">{desc || "No description available."}</p>
-                    <div className="business-contact">
-                      {phone && (
-                        <a href={`tel:${phone}`} className="contact-item" title="Call">
-                          <i className="fas fa-phone"></i>
-                        </a>
-                      )}
-                      {email && (
-                        <a href={`mailto:${email}`} className="contact-item" title="Email">
-                          <i className="fas fa-envelope"></i>
-                        </a>
-                      )}
-                      {address && (
-                        <div className="contact-item" title="Address">
-                          <i className="fas fa-map-marker-alt"></i>
-                        </div>
-                      )}
-                    </div>
-                    <div className="business-actions">
-                      {website && (
-                        <a href={website} target="_blank" rel="noopener noreferrer" className="website-link">
-                          <i className="fas fa-globe"></i> Visit Website
-                        </a>
-                      )}
-                    </div>
+                    <h3 className="business-title">{name}</h3>
+                    <p className="business-category">
+                      <i className="fas fa-briefcase"></i> {category}
+                    </p>
                   </div>
                 </div>
+                
+                <p className="business-description">{desc || "No description available."}</p>
+                
+                <div className="business-contact">
+                  {phone && (
+                    <a href={`tel:${phone}`} className="contact-item" title="Call">
+                      <i className="fas fa-phone"></i>
+                    </a>
+                  )}
+                  {email && (
+                    <a href={`mailto:${email}`} className="contact-item" title="Email">
+                      <i className="fas fa-envelope"></i>
+                    </a>
+                  )}
+                  {address && (
+                    <div className="contact-item" title="Address">
+                      <i className="fas fa-map-marker-alt"></i>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="business-actions">
+                  {website && (
+                    <a href={website} target="_blank" rel="noopener noreferrer" className="business-website">
+                      <i className="fas fa-globe"></i> Visit Website
+                    </a>
+                  )}
+                </div>
+              </div>
+                // <div key={id} className="business-card-directory">
+                //   <div className="business-logo">
+                //     {getMerchantLogoUrl(business) ? (
+                //       <SmartImage 
+                //         src={getMerchantLogoUrl(business)} 
+                //         alt={`${name} logo`} 
+                //         className="logo-image"
+                //         fallback={
+                //           <div className="logo-placeholder">
+                //             <span>{name.charAt(0) || "B"}</span>
+                //           </div>
+                //         }
+                //       />
+                //     ) : (
+                //       <div className="logo-placeholder">
+                //         <span>{name.charAt(0) || "B"}</span>
+                //       </div>
+                //     )}
+                //     <div className="business-badge" title="Verified Partner">
+                //       <i className="fas fa-certificate"></i>
+                //     </div>
+                //   </div>
+                //   <div className="business-info">
+                //     <h3>{name}</h3>
+                //     <p className="business-category"><i className="fas fa-briefcase"></i> {category}</p>
+                //     <p className="business-description">{desc || "No description available."}</p>
+                //     <div className="business-contact">
+                //       {phone && (
+                //         <a href={`tel:${phone}`} className="contact-item" title="Call">
+                //           <i className="fas fa-phone"></i>
+                //         </a>
+                //       )}
+                //       {email && (
+                //         <a href={`mailto:${email}`} className="contact-item" title="Email">
+                //           <i className="fas fa-envelope"></i>
+                //         </a>
+                //       )}
+                //       {address && (
+                //         <div className="contact-item" title="Address">
+                //           <i className="fas fa-map-marker-alt"></i>
+                //         </div>
+                //       )}
+                //     </div>
+                //     <div className="business-actions">
+                //       {website && (
+                //         <a href={website} target="_blank" rel="noopener noreferrer" className="website-link">
+                //           <i className="fas fa-globe"></i> Visit Website
+                //         </a>
+                //       )}
+                //     </div>
+                //   </div>
+                // </div>
               );
             })
           )}
