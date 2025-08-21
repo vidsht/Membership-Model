@@ -252,10 +252,13 @@ router.get('/redemptions/user-history', auth, async (req, res) => {
           dr.rejected_at,
           d.title as dealTitle,
           d.description as dealDescription,
-          b.businessName
+          d.discount,
+          d.discountType,
+          b.businessName,
+          b.businessAddress
         FROM deal_redemptions dr
         LEFT JOIN deals d ON dr.deal_id = d.id
-        LEFT JOIN businesses b ON d.business_id = b.id
+        LEFT JOIN businesses b ON d.businessId = b.businessId
         WHERE dr.user_id = ?
         ORDER BY dr.redeemed_at DESC
         LIMIT 50
@@ -278,5 +281,6 @@ router.get('/redemptions/user-history', auth, async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
+
 
 module.exports = router;

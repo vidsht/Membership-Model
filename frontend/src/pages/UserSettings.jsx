@@ -177,7 +177,7 @@ useEffect(() => {
 const fetchRedemptionHistory = useCallback(async () => {
   try {
     setRedemptionsLoadingState(true);
-    const response = await api.get('/redemptions/user-history');
+    const response = await api.get('/users/redemptions/user-history');
     setUserRedemptions(response.data.redemptions || []);
   } catch (error) {
     console.error('Error fetching redemption history:', error);
@@ -591,87 +591,6 @@ const fetchRedemptionHistory = useCallback(async () => {
     </div>
   );
 
-  const SecuritySettingsTab = useCallback(() => (
-  <div className="user-settings-tab-content">
-    <form onSubmit={updateUserPassword} className="user-profile-form">
-      <div className="user-profile-header">
-        <h2 className="user-profile-title">Security Settings</h2>
-        <p className="user-profile-section-description">
-          Change your password to keep your account secure
-        </p>
-      </div>
-
-      <div className="user-profile-form-section">
-        <h3 className="form-section-title">Change Password</h3>
-        <div className="user-profile-form-grid">
-          <div className="form-field-group form-field-full-width">
-            <label className="form-field-label">Current Password</label>
-            <input
-              type="password"
-              name="currentPassword"
-              value={passwordFormData.currentPassword}
-              onChange={handlePasswordInputChange}
-              className="enhanced-form-input"
-              placeholder="Enter your current password"
-              required
-              autoComplete="current-password"
-            />
-          </div>
-
-          <div className="form-field-group">
-            <label className="form-field-label">New Password</label>
-            <input
-              type="password"
-              name="newPassword"
-              value={passwordFormData.newPassword}
-              onChange={handlePasswordInputChange}
-              className="enhanced-form-input"
-              placeholder="Enter new password"
-              required
-              minLength="6"
-              autoComplete="new-password"
-            />
-          </div>
-
-          <div className="form-field-group">
-            <label className="form-field-label">Confirm New Password</label>
-            <input
-              type="password"
-              name="confirmPassword"
-              value={passwordFormData.confirmPassword}
-              onChange={handlePasswordInputChange}
-              className="enhanced-form-input"
-              placeholder="Confirm new password"
-              required
-              minLength="6"
-              autoComplete="new-password"
-            />
-          </div>
-        </div>
-
-        <div className="password-requirements">
-          <h4>Password Requirements:</h4>
-          <ul>
-            <li>At least 6 characters long</li>
-            <li>Both passwords must match</li>
-          </ul>
-        </div>
-      </div>
-
-      <div className="form-action-buttons">
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="enhanced-primary-button"
-        >
-          {isLoading ? 'Updating...' : 'Update Password'}
-        </button>
-      </div>
-    </form>
-  </div>
-), [passwordFormData, isLoading, handlePasswordInputChange, updateUserPassword]);
-
-
 const RedemptionHistoryTab = () => (
   <div className="user-settings-tab-content">
     <div className="user-profile-header">
@@ -753,13 +672,92 @@ const renderTabContent = () => {
     case 'profile':
       return <ProfileInformationTab />;
     case 'security':
-      return <SecuritySettingsTab />;
+      return (
+        <div className="user-settings-tab-content">
+          <form onSubmit={updateUserPassword} className="user-profile-form">
+            <div className="user-profile-header">
+              <h2 className="user-profile-title">Security Settings</h2>
+              <p className="user-profile-section-description">
+                Change your password to keep your account secure
+              </p>
+            </div>
+
+            <div className="user-profile-form-section">
+              <h3 className="form-section-title">Change Password</h3>
+              <div className="user-profile-form-grid">
+                <div className="form-field-group form-field-full-width">
+                  <label className="form-field-label">Current Password</label>
+                  <input
+                    type="password"
+                    name="currentPassword"
+                    value={passwordFormData.currentPassword}
+                    onChange={handlePasswordInputChange}
+                    className="enhanced-form-input"
+                    placeholder="Enter your current password"
+                    required
+                    autoComplete="current-password"
+                  />
+                </div>
+
+                <div className="form-field-group">
+                  <label className="form-field-label">New Password</label>
+                  <input
+                    type="password"
+                    name="newPassword"
+                    value={passwordFormData.newPassword}
+                    onChange={handlePasswordInputChange}
+                    className="enhanced-form-input"
+                    placeholder="Enter new password"
+                    required
+                    minLength="6"
+                    autoComplete="new-password"
+                  />
+                </div>
+
+                <div className="form-field-group">
+                  <label className="form-field-label">Confirm New Password</label>
+                  <input
+                    type="password"
+                    name="confirmPassword"
+                    value={passwordFormData.confirmPassword}
+                    onChange={handlePasswordInputChange}
+                    className="enhanced-form-input"
+                    placeholder="Confirm new password"
+                    required
+                    minLength="6"
+                    autoComplete="new-password"
+                  />
+                </div>
+              </div>
+
+              <div className="password-requirements">
+                <h4>Password Requirements:</h4>
+                <ul>
+                  <li>At least 6 characters long</li>
+                  <li>Both passwords must match</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="form-action-buttons">
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="enhanced-primary-button"
+              >
+                {isLoading ? 'Updating...' : 'Update Password'}
+              </button>
+            </div>
+          </form>
+        </div>
+      );
     case 'redemptions':
       return <RedemptionHistoryTab />;
     default:
       return <ProfileInformationTab />;
   }
 };
+
 
 
 return (

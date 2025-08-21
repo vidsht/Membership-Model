@@ -145,10 +145,6 @@ const BusinessDirectory = () => {
                         <span>{name.charAt(0) || "B"}</span>
                       </div>
                     )}
-                
-                    <div className="business-badge" title="Verified Partner">
-                      <i className="fas fa-certificate"></i>
-                    </div>
                   </div>
                   <div className="business-info">
                     <h3 className="business-title">{name}</h3>
