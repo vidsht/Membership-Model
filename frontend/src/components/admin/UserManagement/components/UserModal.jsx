@@ -1,5 +1,6 @@
   // UserModal.jsx - COMPLETE FIX for Dropdown and Warning Boxes
   import React, { useState, useEffect, useMemo } from 'react';
+  import './UserModal.css';
 
   const UserModal = ({ 
     type, 
