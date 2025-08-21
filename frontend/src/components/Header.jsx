@@ -46,7 +46,7 @@ const Header = () => {
       <div className="header-content">
         <div className="logo">
           <img 
-            src="/logo.jpeg" 
+            src="/logo1.jpeg" 
             alt="logo" 
             className="logo-img"
           />
@@ -68,7 +68,7 @@ const Header = () => {
             )}
             {/* Business Directory and Merchant options */}
             <li className="dropdown">
-              <div className="dropdown-toggle">
+              <div className="dropdown">
                 <i className="fas fa-store nav-icon"></i> Business <i className="fas fa-chevron-down dropdown-arrow"></i>
               </div>
               <ul className="dropdown-menu">

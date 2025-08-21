@@ -208,7 +208,7 @@ header {
   color: var(--warning-color) !important;
 }
 
-/* Dropdown styles */
+/* Dropdown styles - improved to avoid hover gap */
 .dropdown {
   position: relative;
 }
@@ -230,11 +230,12 @@ header {
   color: white;
 }
 
+/* Position menu directly below the toggle; use translateY for subtle animation */
 .dropdown-menu {
   position: absolute;
-  top: calc(100% + 8px);
+  top: 100%; /* flush under the toggle */
   left: 50%;
-  transform: translateX(-50%) translateY(10px);
+  transform: translateX(-50%) translateY(6px);
   background-color: white;
   min-width: 200px;
   box-shadow: var(--shadow-md);
@@ -242,10 +243,11 @@ header {
   padding: var(--space-sm) 0;
   opacity: 0;
   visibility: hidden;
-  transition: all var(--transition-normal);
+  transition: opacity var(--transition-normal), transform var(--transition-normal);
   z-index: 10;
   list-style: none;
   border: 1px solid rgba(191, 192, 192, 0.2);
+  pointer-events: none; /* ignore pointer while hidden */
 }
 
 .dropdown-menu::before {
@@ -262,10 +264,13 @@ header {
   z-index: -1;
 }
 
-.dropdown:hover .dropdown-menu {
+/* Show menu on hover of parent OR when hovering over the menu itself */
+.dropdown:hover .dropdown-menu,
+.dropdown-menu:hover {
   opacity: 1;
   visibility: visible;
   transform: translateX(-50%) translateY(0);
+  pointer-events: auto; /* allow interaction */
 }
 
 .dropdown-menu li {

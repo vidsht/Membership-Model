@@ -424,6 +424,8 @@
    =================================== */
 
 .warning-box {
+  display: flex;
+  flex-direction: column;
   background: white !important;
   border-radius: 16px !important;
   padding: 2rem !important;
@@ -523,6 +525,7 @@
 }
 
 .warning-actions .btn {
+  background-color: #F6CC86;
   min-width: 140px !important;
   padding: 1rem 2rem !important;
   font-weight: 600 !important;

@@ -1,4 +1,3 @@
-// UserManagement.jsx - UPDATED with Route Navigation
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNotification } from '../../../contexts/NotificationContext';
@@ -10,19 +9,20 @@ import UserModal from './components/UserModal';
 import BulkActions from './components/BulkActions';
 import './UserManagement.css';
 
+
 const UserManagement = () => {
   const navigate = useNavigate();
   const { showNotification } = useNotification();
   const { validateSession, handleSessionExpired } = useAuth();
 
-  // Core State Management
+  // State declarations
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  // Modal State Management - Only for delete and plan assignment
   const [modalState, setModalState] = useState({
     isOpen: false,
     type: null,
@@ -31,7 +31,6 @@ const UserManagement = () => {
     data: null
   });
 
-  // Plan assignment UI state (missing previously) - used by modal to show available plans
   const [planAssignmentState, setPlanAssignmentState] = useState({
     isLoading: false,
     selectedUser: null,
@@ -39,7 +38,6 @@ const UserManagement = () => {
     userType: null
   });
 
-  // Add this after planAssignmentState (around line 40)
   const [warningState, setWarningState] = useState({
     isOpen: false,
     type: null,
@@ -51,7 +49,6 @@ const UserManagement = () => {
     onConfirm: null
   });
 
-  // Filter & Pagination State
   const [filters, setFilters] = useState({
     search: '',
     status: 'all',
@@ -66,7 +63,6 @@ const UserManagement = () => {
     totalPages: 0
   });
 
-  // Reference Data State
   const [referenceData, setReferenceData] = useState({
     communities: [],
     plans: [],
@@ -76,8 +72,7 @@ const UserManagement = () => {
     statuses: ['pending', 'approved', 'rejected', 'suspended']
   });
 
-
-  // Memoized fallback plans
+  // Memoized values (useMemo)
   const fallbackPlans = useMemo(() => [
     {
       id: 1, key: 'community', name: 'Community Plan', type: 'user', price: 0,
@@ -106,7 +101,6 @@ const UserManagement = () => {
     }
   ], []);
 
-  // Memoized stats calculation
   const stats = useMemo(() => {
     const totalUsers = users.length;
     const pendingApprovals = users.filter(user => user.status === 'pending').length;
@@ -115,7 +109,7 @@ const UserManagement = () => {
     return { totalUsers, pendingApprovals, activeUsers, suspendedUsers };
   }, [users]);
 
-  // Calculate plan validity - ONLY use validationDate as source of truth
+  // Utility functions (useCallback)
   const calculatePlanValidity = useCallback((user, planDetails) => {
     // ONLY use validationDate - this is the source of truth for plan expiry
     if (user.validationDate) {
@@ -134,12 +128,9 @@ const UserManagement = () => {
         return 'Invalid date';
       }
     }
-    
-    // If no validationDate set, this indicates an issue that should be resolved
     return 'No validity set';
   }, []);
 
-  // Stable callback functions
   const clearSelections = useCallback(() => {
     setSelectedUsers([]);
   }, []);
@@ -150,83 +141,72 @@ const UserManagement = () => {
   }, [clearSelections]);
 
   const closeModal = useCallback(() => {
-  setModalState({
-    isOpen: false,
-    type: null,
-    user: null,
-    title: '',
-    data: null
-  });
-  setPlanAssignmentState({
-    isLoading: false,
-    selectedUser: null,
-    availablePlans: [],
-    userType: null
-  });
-}, []);
+    setModalState({
+      isOpen: false,
+      type: null,
+      user: null,
+      title: '',
+      data: null
+    });
+    setPlanAssignmentState({
+      isLoading: false,
+      selectedUser: null,
+      availablePlans: [],
+      userType: null
+    });
+  }, []);
 
-// Add these AFTER the closeModal function
-const showWarningDialog = useCallback((warningConfig) => {
-  setWarningState({
-    isOpen: true,
-    type: warningConfig.type,
-    action: warningConfig.action,
-    user: warningConfig.user || null,
-    userIds: warningConfig.userIds || [],
-    message: warningConfig.message,
-    details: warningConfig.details,
-    onConfirm: warningConfig.onConfirm
-  });
-}, []);
+  const showWarningDialog = useCallback((warningConfig) => {
+    setWarningState({
+      isOpen: true,
+      type: warningConfig.type,
+      action: warningConfig.action,
+      user: warningConfig.user || null,
+      userIds: warningConfig.userIds || [],
+      message: warningConfig.message,
+      details: warningConfig.details,
+      onConfirm: warningConfig.onConfirm
+    });
+  }, []);
 
-const closeWarningDialog = useCallback(() => {
-  setWarningState({
-    isOpen: false,
-    type: null,
-    action: null,
-    user: null,
-    userIds: [],
-    message: '',
-    details: '',
-    onConfirm: null
-  });
-}, []);
+  const closeWarningDialog = useCallback(() => {
+    setWarningState({
+      isOpen: false,
+      type: null,
+      action: null,
+      user: null,
+      userIds: [],
+      message: '',
+      details: '',
+      onConfirm: null
+    });
+  }, []);
 
-const handleWarningConfirm = useCallback(async () => {
-  if (warningState.onConfirm) {
-    try {
-      await warningState.onConfirm();
-      closeWarningDialog();
-    } catch (error) {
-      console.error('Warning action failed:', error);
-      // Keep dialog open on error
-    }
-  } else {
-    closeWarningDialog();
-  }
-}, [warningState.onConfirm, closeWarningDialog]);
-
-
-  // Initialize component
-  const initializeComponent = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const sessionValid = await validateSession();
-      if (!sessionValid) {
-        handleSessionExpired();
-        return;
+  const handleWarningConfirm = useCallback(async () => {
+    if (warningState.onConfirm) {
+      try {
+        await warningState.onConfirm();
+        closeWarningDialog();
+      } catch (error) {
+        console.error('Warning action failed:', error);
+        // Keep dialog open on error
       }
-      await fetchReferenceData();
-    } catch (err) {
-      setError('Failed to initialize user management');
-      showNotification('Failed to load user management', 'error');
-    } finally {
-      setLoading(false);
+    } else {
+      closeWarningDialog();
     }
-  }, [validateSession, handleSessionExpired, showNotification, fetchReferenceData]);
+  }, [warningState.onConfirm, closeWarningDialog]);
 
-  // Fetch reference data
+  const getPlansForUserType = useCallback((userType) => {
+    let plans = [];
+    if (userType === 'merchant') {
+      plans = referenceData.merchantPlans.filter(plan => plan.type === 'merchant');
+    } else if (userType === 'user' || userType === 'admin') {
+      plans = referenceData.userPlans.filter(plan => plan.type === 'user');
+    }
+    return plans;
+  }, [referenceData.merchantPlans, referenceData.userPlans]);
+
+  // API functions
   const fetchReferenceData = useCallback(async () => {
     try {
       const [communitiesRes, allPlansRes, userPlansRes, merchantPlansRes] = await Promise.allSettled([
@@ -271,14 +251,20 @@ const handleWarningConfirm = useCallback(async () => {
         merchantPlans = allPlans.filter(plan => plan.type === 'merchant');
       }
 
-      setReferenceData({
+      setReferenceData(prevData => {
+      // Only update if plans actually changed
+      if (JSON.stringify(prevData.plans) === JSON.stringify(allPlans)) {
+        return prevData; // Prevent unnecessary re-render
+      }
+      return {
         communities,
         plans: allPlans,
         userPlans,
         merchantPlans,
         userTypes: ['user', 'merchant', 'admin'],
         statuses: ['pending', 'approved', 'rejected', 'suspended']
-      });
+      };
+    });
 
     } catch (err) {
       setReferenceData({
@@ -290,9 +276,8 @@ const handleWarningConfirm = useCallback(async () => {
         statuses: ['pending', 'approved', 'rejected', 'suspended']
       });
     }
-  }, [fallbackPlans, showNotification]);
+  }, [fallbackPlans]);
 
-  // Fetch users
   const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
@@ -309,7 +294,7 @@ const handleWarningConfirm = useCallback(async () => {
       });
 
       const response = await api.get(`/admin/users?${queryParams}`);
-      
+
       if (response.data.success) {
         const fetchedUsers = response.data.users || [];
         const paginationData = response.data.pagination || {};
@@ -344,172 +329,168 @@ const handleWarningConfirm = useCallback(async () => {
     } finally {
       setLoading(false);
     }
-  }, [filters, pagination.page, pagination.limit, showNotification, handleSessionExpired, referenceData.plans, calculatePlanValidity]);
+  }, [filters, pagination.page, pagination.limit, handleSessionExpired, referenceData.plans, calculatePlanValidity]);
 
-
-
-  // Get plans for specific user type
-  const getPlansForUserType = useCallback((userType) => {
-    let plans = [];
-    if (userType === 'merchant') {
-      plans = referenceData.merchantPlans.filter(plan => plan.type === 'merchant');
-    } else if (userType === 'user' || userType === 'admin') {
-      plans = referenceData.userPlans.filter(plan => plan.type === 'user');
+  const initializeComponent = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const sessionValid = await validateSession();
+      if (!sessionValid) {
+        handleSessionExpired();
+        return;
+      }
+      await fetchReferenceData();
+    } catch (err) {
+      setError('Failed to initialize user management');
+      showNotification('Failed to load user management', 'error');
+    } finally {
+      setLoading(false);
     }
-    return plans;
-  }, [referenceData.merchantPlans, referenceData.userPlans]);
+  }, [validateSession, handleSessionExpired, fetchReferenceData, showNotification]);
 
+  // Event handlers
+  const handleStatusChange = useCallback(async (userId, status) => {
+    const user = users.find(u => u.id === userId);
 
-  // User action handlers
+    // Show warning for suspend action
+    if (status === 'suspended') {
+      showWarningDialog({
+        type: 'suspend',
+        action: 'suspend',
+        user: user,
+        message: `Are you sure you want to suspend ${user?.fullName}?`,
+        details: 'This action will suspend the user\'s account and restrict their access to the platform.',
+        onConfirm: async () => {
+          try {
+            const response = await api.put(`/admin/users/${userId}/status`, { status });
+            if (response.data.success) {
+              showNotification(`User suspended successfully`, 'success');
+              refreshData();
+            } else {
+              throw new Error(response.data.message || 'Failed to suspend user');
+            }
+          } catch (err) {
+            const message = err.response?.data?.message || 'Failed to suspend user';
+            showNotification(message, 'error');
+            throw err; // Re-throw to keep dialog open
+          }
+        }
+      });
+      return;
+    }
 
-const handleStatusChange = useCallback(async (userId, status) => {
-  const user = users.find(u => u.id === userId);
-  
-  // Show warning for suspend action
-  if (status === 'suspended') {
+    // For other status changes, proceed directly
+    try {
+      const response = await api.put(`/admin/users/${userId}/status`, { status });
+      if (response.data.success) {
+        showNotification(`User ${status} successfully`, 'success');
+        refreshData();
+      } else {
+        throw new Error(response.data.message || 'Failed to update status');
+      }
+    } catch (err) {
+      const message = err.response?.data?.message || 'Failed to update status';
+      showNotification(message, 'error');
+    }
+  }, [users, showWarningDialog, showNotification, refreshData]);
+
+  const handleBulkAction = useCallback(async (action, userIds = selectedUsers) => {
+    if (!userIds || userIds.length === 0) {
+      showNotification('No users selected', 'warning');
+      return;
+    }
+
+    const actionMessages = {
+      approve: {
+        message: `Are you sure you want to approve ${userIds.length} selected users?`,
+        details: 'This will grant access to the platform for all selected users.',
+        confirmText: 'approved'
+      },
+      reject: {
+        message: `Are you sure you want to reject ${userIds.length} selected users?`,
+        details: 'This will deny access to the platform for all selected users.',
+        confirmText: 'rejected'
+      },
+      suspend: {
+        message: `Are you sure you want to suspend ${userIds.length} selected users?`,
+        details: 'This will suspend all selected users and restrict their access to the platform.',
+        confirmText: 'suspended'
+      },
+      activate: {
+        message: `Are you sure you want to activate ${userIds.length} selected users?`,
+        details: 'This will restore access to the platform for all selected users.',
+        confirmText: 'activated'
+      },
+      delete: {
+        message: `Are you sure you want to delete ${userIds.length} selected users?`,
+        details: 'This action cannot be undone. All user data will be permanently removed.',
+        confirmText: 'deleted'
+      }
+    };
+
+    const config = actionMessages[action];
+    if (!config) {
+      showNotification('Invalid bulk action', 'error');
+      return;
+    }
+
     showWarningDialog({
-      type: 'suspend',
-      action: 'suspend',
-      user: user,
-      message: `Are you sure you want to suspend ${user?.fullName}?`,
-      details: 'This action will suspend the user\'s account and restrict their access to the platform.',
+      type: 'bulk',
+      action: action,
+      userIds: userIds,
+      message: config.message,
+      details: config.details,
       onConfirm: async () => {
         try {
-          const response = await api.put(`/admin/users/${userId}/status`, { status });
-          
-          if (response.data.success) {
-            showNotification(`User suspended successfully`, 'success');
+          // Validate session first
+          const isSessionValid = await validateSession();
+          if (!isSessionValid) {
+            showNotification('Your session has expired. Please log in again.', 'error');
+            return;
+          }
+
+          // Call both endpoints: users and partners
+          const [usersRes, partnersRes] = await Promise.allSettled([
+            api.post('/admin/users/bulk-action', { action, userIds }),
+            api.post('/admin/partners/bulk-action', { action, merchantIds: userIds })
+          ]);
+
+          const usersSuccess = usersRes.status === 'fulfilled' && usersRes.value?.data?.success;
+          const partnersSuccess = partnersRes.status === 'fulfilled' && partnersRes.value?.data?.success;
+
+          if (usersSuccess || partnersSuccess) {
+            const totalCount = Array.isArray(userIds) ? userIds.length : 0;
+            showNotification(`Successfully ${config.confirmText} ${totalCount} users/partners.`, 'success');
+            setSelectedUsers([]);
+            // Refresh data
+            try {
+              await fetchUsers();
+            } catch (e) {
+              // ignore fetch error, still trigger refresh
+            }
             refreshData();
           } else {
-            throw new Error(response.data.message || 'Failed to suspend user');
+            // Aggregate errors
+            const userErr = usersRes.status === 'rejected' ? usersRes.reason : null;
+            const partnerErr = partnersRes.status === 'rejected' ? partnersRes.reason : null;
+            console.error('Bulk action failures:', { userErr, partnerErr });
+            throw new Error(usersRes.status === 'rejected' ? usersRes.reason?.message || 'Users bulk action failed' : partnerErr?.message || 'Partners bulk action failed');
           }
         } catch (err) {
-          const message = err.response?.data?.message || 'Failed to suspend user';
+          console.error('Bulk action error:', err);
+          if (err.response?.status === 401) {
+            handleSessionExpired();
+            return;
+          }
+          const message = err.response?.data?.message || err.message || 'Bulk action failed';
           showNotification(message, 'error');
           throw err; // Re-throw to keep dialog open
         }
       }
     });
-    return;
-  }
-  
-  // For other status changes, proceed directly
-  try {
-    const response = await api.put(`/admin/users/${userId}/status`, { status });
-    
-    if (response.data.success) {
-      showNotification(`User ${status} successfully`, 'success');
-      refreshData();
-    } else {
-      throw new Error(response.data.message || 'Failed to update status');
-    }
-  } catch (err) {
-    const message = err.response?.data?.message || 'Failed to update status';
-    showNotification(message, 'error');
-  }
-}, [users, showWarningDialog, showNotification, refreshData]);
+  }, [selectedUsers, showWarningDialog, validateSession, handleSessionExpired, refreshData, fetchUsers]);
 
-
-
-const handleBulkAction = useCallback(async (action, userIds = selectedUsers) => {
-  if (!userIds || userIds.length === 0) {
-    showNotification('No users selected', 'warning');
-    return;
-  }
-
-  const actionMessages = {
-    approve: {
-      message: `Are you sure you want to approve ${userIds.length} selected users?`,
-      details: 'This will grant access to the platform for all selected users.',
-      confirmText: 'approved'
-    },
-    reject: {
-      message: `Are you sure you want to reject ${userIds.length} selected users?`,
-      details: 'This will deny access to the platform for all selected users.',
-      confirmText: 'rejected'
-    },
-    suspend: {
-      message: `Are you sure you want to suspend ${userIds.length} selected users?`,
-      details: 'This will suspend all selected users and restrict their access to the platform.',
-      confirmText: 'suspended'
-    },
-    activate: {
-      message: `Are you sure you want to activate ${userIds.length} selected users?`,
-      details: 'This will restore access to the platform for all selected users.',
-      confirmText: 'activated'
-    },
-    delete: {
-      message: `Are you sure you want to delete ${userIds.length} selected users?`,
-      details: 'This action cannot be undone. All user data will be permanently removed.',
-      confirmText: 'deleted'
-    }
-  };
-
-  const config = actionMessages[action];
-  if (!config) {
-    showNotification('Invalid bulk action', 'error');
-    return;
-  }
-
-  showWarningDialog({
-    type: 'bulk',
-    action: action,
-    userIds: userIds,
-    message: config.message,
-    details: config.details,
-    onConfirm: async () => {
-      try {
-        // Validate session first
-        const isSessionValid = await validateSession();
-        if (!isSessionValid) {
-          showNotification('Your session has expired. Please log in again.', 'error');
-          return;
-        }
-
-        // Call both endpoints: users and partners
-        const [usersRes, partnersRes] = await Promise.allSettled([
-          api.post('/admin/users/bulk-action', { action, userIds }),
-          api.post('/admin/partners/bulk-action', { action, merchantIds: userIds })
-        ]);
-
-        const usersSuccess = usersRes.status === 'fulfilled' && usersRes.value?.data?.success;
-        const partnersSuccess = partnersRes.status === 'fulfilled' && partnersRes.value?.data?.success;
-
-        if (usersSuccess || partnersSuccess) {
-          const totalCount = Array.isArray(userIds) ? userIds.length : 0;
-          showNotification(`Successfully ${config.confirmText} ${totalCount} users/partners.`, 'success');
-          setSelectedUsers([]);
-          
-          // Refresh data
-          try {
-            await fetchUsers();
-          } catch (e) {
-            // ignore fetch error, still trigger refresh
-          }
-          refreshData();
-        } else {
-          // Aggregate errors
-          const userErr = usersRes.status === 'rejected' ? usersRes.reason : null;
-          const partnerErr = partnersRes.status === 'rejected' ? partnersRes.reason : null;
-          console.error('Bulk action failures:', { userErr, partnerErr });
-          throw new Error(usersRes.status === 'rejected' ? usersRes.reason?.message || 'Users bulk action failed' : partnerErr?.message || 'Partners bulk action failed');
-        }
-      } catch (err) {
-        console.error('Bulk action error:', err);
-        if (err.response?.status === 401) {
-          handleSessionExpired();
-          return;
-        }
-        const message = err.response?.data?.message || err.message || 'Bulk action failed';
-        showNotification(message, 'error');
-        throw err; // Re-throw to keep dialog open
-      }
-    }
-  });
-}, [selectedUsers, showWarningDialog, showNotification, validateSession, handleSessionExpired, refreshData, fetchUsers]);
-
-
-  // UI handlers
   const handleFilterChange = useCallback((newFilters) => {
     setFilters(prev => ({ ...prev, ...newFilters }));
     setPagination(prev => ({ ...prev, page: 1 }));
@@ -524,8 +505,8 @@ const handleBulkAction = useCallback(async (action, userIds = selectedUsers) => 
   }, []);
 
   const handleUserSelect = useCallback((userId) => {
-    setSelectedUsers(prev => 
-      prev.includes(userId) 
+    setSelectedUsers(prev =>
+      prev.includes(userId)
         ? prev.filter(id => id !== userId)
         : [...prev, userId]
     );
@@ -545,7 +526,6 @@ const handleBulkAction = useCallback(async (action, userIds = selectedUsers) => 
       bulkDelete: `Delete ${selectedUsers.length} Users`,
       assignPlan: `Assign Plan to ${user?.fullName || 'User'}`
     };
-
     setModalState({
       isOpen: true,
       type,
@@ -558,7 +538,6 @@ const handleBulkAction = useCallback(async (action, userIds = selectedUsers) => 
   const handleExportUsers = useCallback(async () => {
     try {
       showNotification('Preparing user export...', 'info');
-      
       // Build query params the same way as fetchUsers to avoid sending empty/'all' values
       const queryParams = new URLSearchParams();
       Object.entries(filters).forEach(([key, value]) => {
@@ -601,7 +580,6 @@ const handleBulkAction = useCallback(async (action, userIds = selectedUsers) => 
       showNotification('Users exported successfully', 'success');
     } catch (err) {
       console.error('Export error:', err);
-
       // If server returned a JSON error as a blob (axios error with blob body), parse it
       try {
         const errData = err.response?.data;
@@ -621,7 +599,6 @@ const handleBulkAction = useCallback(async (action, userIds = selectedUsers) => 
       } catch (e) {
         // ignore parsing errors
       }
-
       const message = err.response?.data?.message || 'Failed to export users';
       showNotification(message, 'error');
     }
@@ -637,18 +614,20 @@ const handleBulkAction = useCallback(async (action, userIds = selectedUsers) => 
     setPagination(prev => ({ ...prev, page: 1 }));
   }, []);
 
-  // Effects
+  // Effects (useEffect)
   useEffect(() => {
-    initializeComponent();
-  }, [validateSession, handleSessionExpired, showNotification]); // eslint-disable-line react-hooks/exhaustive-deps
+  if (!isInitialized) {
+    initializeComponent().then(() => setIsInitialized(true));
+    }
+  }, [isInitialized, initializeComponent]);
 
   useEffect(() => {
     if (referenceData.plans.length > 0) {
       fetchUsers();
     }
-  }, [referenceData.plans.length, filters, pagination.page, refreshTrigger]); // Removed fetchUsers dependency
+  }, [fetchUsers, referenceData.plans.length, filters, pagination.page, refreshTrigger]); // Removed fetchUsers dependency
 
-  // Loading state
+  // Render logic
   if (loading && users.length === 0) {
     return (
       <div className="user-management-container">
@@ -660,7 +639,6 @@ const handleBulkAction = useCallback(async (action, userIds = selectedUsers) => 
     );
   }
 
-  // Error state
   if (error && users.length === 0) {
     return (
       <div className="user-management-container">
@@ -739,7 +717,7 @@ const handleBulkAction = useCallback(async (action, userIds = selectedUsers) => 
         selectedUsers={selectedUsers}
         onUserSelect={handleUserSelect}
         onSelectAll={handleSelectAll}
-  onUserAction={() => {}}
+        onUserAction={() => {}}
         onStatusChange={handleStatusChange}
         referenceData={referenceData}
         loading={loading}
@@ -750,7 +728,7 @@ const handleBulkAction = useCallback(async (action, userIds = selectedUsers) => 
         calculatePlanValidity={calculatePlanValidity}
       />
 
-            {/* Warning Dialog */}
+      {/* Warning Dialog */}
       {warningState.isOpen && (
         <div className="modal-overlay">
           <div className="modal-content">

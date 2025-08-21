@@ -22,6 +22,15 @@ const Home = () => {
   const [showAuthNotification, setShowAuthNotification] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [activeFAQ, setActiveFAQ] = useState(null);
+  // Add state to store processed social media data
+  const [socialMediaData, setSocialMediaData] = useState({
+    links: {},
+    shouldShow: false,
+    whatsappData: {},
+    facebookData: {},
+    instagramData: {},
+    youtubeData: {}
+  });
   
   // Helper to map membershipType to broad plan categories (mirrors MerchantDashboard logic)
   const getBusinessPlanCategory = (membershipType) => {
@@ -69,6 +78,28 @@ const Home = () => {
     
     return null;
   };
+
+  // Add this function after parseSocialMediaData
+const getSocialMediaLinksForHome = () => {
+  const links = {};
+  const requirements = adminSettings.socialMediaRequirements || {};
+  
+  Object.keys(requirements).forEach(platform => {
+    const platformData = requirements[platform];
+    if (platformData && platformData !== false && platformData !== 'false') {
+      let parsedData = parseSocialMediaData(platformData) || {};
+      
+      links[platform] = {
+        url: parsedData.url || `#${platform}`,
+        display: parsedData.display || {},
+        required: parsedData.required || false
+      };
+    }
+  });
+  
+  return links;
+};
+
   
   useEffect(() => {
     // Check if user was redirected from a protected route
@@ -209,6 +240,42 @@ const Home = () => {
     fetchData();
   }, []);
 
+  // Process social media data when adminSettings changes
+useEffect(() => {
+  if (!adminSettings || Object.keys(adminSettings).length === 0) return;
+
+  const socialMediaLinks = getSocialMediaLinksForHome();
+  const whatsappData = socialMediaLinks.whatsapp_channel || socialMediaLinks.whatsappChannel || {};
+  const facebookData = socialMediaLinks.facebook || {};
+  const instagramData = socialMediaLinks.instagram || {};
+  const youtubeData = socialMediaLinks.youtube || {};
+
+  const shouldShowSocialMedia = 
+    (adminSettings.features?.show_social_media_home !== false) && 
+    (Object.keys(adminSettings.socialMediaRequirements || {}).length > 0);
+
+  console.log('🔍 Social Media Debug:', {
+    showSocialHome: adminSettings.features?.show_social_media_home,
+    hasSocialPlatforms: Object.keys(adminSettings.socialMediaRequirements || {}).length > 0,
+    socialMediaLinksCount: Object.keys(socialMediaLinks).length,
+    socialMediaRequirements: adminSettings.socialMediaRequirements,
+    shouldShow: shouldShowSocialMedia,
+    whatsappData,
+    facebookData,
+    instagramData,
+    youtubeData
+  });
+
+  setSocialMediaData({
+    links: socialMediaLinks,
+    shouldShow: shouldShowSocialMedia,
+    whatsappData,
+    facebookData,
+    instagramData,
+    youtubeData
+  });
+}, [adminSettings]);
+
   const groupedBusinesses = businesses.reduce((acc, business) => {
     if (!acc[business.sector]) {
       acc[business.sector] = [];
@@ -248,7 +315,7 @@ const Home = () => {
               <Link to="/unified-registration" className="btn btn-primary">
                 <i className="fas fa-user-plus"></i> Join Now
               </Link>
-              <Link to="/login" className="btn btn-secondary">
+              <Link to="/login" className="btn btn-primary">
                 <i className="fas fa-sign-in-alt"></i> Login
               </Link>
             </div>
@@ -256,113 +323,100 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Social Media Section */}
-      {(() => {
-  const showSocialHome = adminSettings.features?.show_social_media_home === true;
-  const hasSocialPlatforms = Object.keys(adminSettings.socialMediaRequirements || {}).length > 0;
-        console.log('🔍 Social Media Debug:', {
-          showSocialHome,
-          hasSocialPlatforms,
-          features: adminSettings.features,
-          socialMediaRequirements: adminSettings.socialMediaRequirements,
-          shouldShow: showSocialHome && hasSocialPlatforms
-        });
-  return showSocialHome && hasSocialPlatforms;
-      })() && (
-        <section className="social-media-home">
-          <div className="social-container">
-            <div className="social-header">
-              <h2>{adminSettings.socialMediaRequirements?.home_section_title || 'Join Our Community'}</h2>
-              <p>{adminSettings.socialMediaRequirements?.home_section_subtitle || 'Stay connected with the Indians in Ghana community through our social channels'}</p>
+      {socialMediaData.shouldShow && (
+  <section className="social-media-home">
+    <div className="social-container">
+      <div className="social-header">
+        <h2>
+          {adminSettings.socialMediaRequirements?.home_section_title ||
+            "Join Our Community"}
+        </h2>
+        <p>
+          {adminSettings.socialMediaRequirements?.home_section_subtitle ||
+            "Stay connected with the Indians in Ghana community through our social channels"}
+        </p>
+      </div>
+      <div className="social-grid">
+        {/* WhatsApp Channel */}
+        {socialMediaData.whatsappData.url && (
+          <div className="social-card">
+            <div className="social-icon">
+              <i className="fab fa-whatsapp"></i>
             </div>
-            <div className="social-grid">
-              {(() => {
-                const whatsappData = parseSocialMediaData(adminSettings.socialMediaRequirements?.whatsapp_channel);
-                return whatsappData && (
-                  <div className="social-card">
-                    <div className="social-icon">
-                      <i className="fab fa-whatsapp"></i>
-                    </div>
-                    <h3>{whatsappData.display?.name || 'WhatsApp Channel'}</h3>
-                    <p>{whatsappData.display?.description || 'Get official updates and announcements'}</p>
-                    <a 
-                      href={whatsappData.url || '#'} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="btn btn-primary"
-                    >
-                      <i className="fab fa-whatsapp"></i> {whatsappData.display?.button || 'Join Channel'}
-                    </a>
-                  </div>
-                );
-              })()}
-              
-              {(() => {
-                const facebookData = parseSocialMediaData(adminSettings.socialMediaRequirements?.facebook);
-                return facebookData && (
-                  <div className="social-card">
-                    <div className="social-icon">
-                      <i className="fab fa-facebook-f"></i>
-                    </div>
-                    <h3>{facebookData.display?.name || 'Facebook'}</h3>
-                    <p>{facebookData.display?.description || 'Follow us for community updates and events'}</p>
-                    <a 
-                      href={facebookData.url || '#'} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="btn btn-primary"
-                    >
-                      <i className="fab fa-facebook-f"></i> {facebookData.display?.button || 'Like & Follow'}
-                    </a>
-                  </div>
-                );
-              })()}
-              
-              {(() => {
-                const instagramData = parseSocialMediaData(adminSettings.socialMediaRequirements?.instagram);
-                return instagramData && (
-                  <div className="social-card">
-                    <div className="social-icon">
-                      <i className="fab fa-instagram"></i>
-                    </div>
-                    <h3>{instagramData.display?.name || 'Instagram'}</h3>
-                    <p>{instagramData.display?.description || 'See photos and stories from our community'}</p>
-                    <a 
-                      href={instagramData.url || '#'} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="btn btn-primary"
-                    >
-                      <i className="fab fa-instagram"></i> {instagramData.display?.button || 'Follow Us'}
-                    </a>
-                  </div>
-                );
-              })()}
-              
-              {(() => {
-                const youtubeData = parseSocialMediaData(adminSettings.socialMediaRequirements?.youtube);
-                return youtubeData && (
-                  <div className="social-card">
-                    <div className="social-icon">
-                      <i className="fab fa-youtube"></i>
-                    </div>
-                    <h3>{youtubeData.display?.name || 'YouTube'}</h3>
-                    <p>{youtubeData.display?.description || 'Watch our community events and tutorials'}</p>
-                    <a 
-                      href={youtubeData.url || '#'} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="btn btn-primary"
-                    >
-                      <i className="fab fa-youtube"></i> {youtubeData.display?.button || 'Subscribe Now'}
-                    </a>
-                  </div>
-                );
-              })()}
-            </div>
+            <h3>{socialMediaData.whatsappData.display?.name || "WhatsApp Channel"}</h3>
+            <p>{socialMediaData.whatsappData.display?.description || "Get official updates and announcements"}</p>
+            <a
+              href={socialMediaData.whatsappData.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-primary"
+            >
+              <i className="fab fa-whatsapp"></i> {socialMediaData.whatsappData.display?.button || "Join Channel"}
+            </a>
           </div>
-        </section>
-      )}
+        )}
+
+        {/* Facebook */}
+        {socialMediaData.facebookData.url && (
+          <div className="social-card">
+            <div className="social-icon">
+              <i className="fab fa-facebook-f"></i>
+            </div>
+            <h3>{socialMediaData.facebookData.display?.name || "Facebook"}</h3>
+            <p>{socialMediaData.facebookData.display?.description || "Follow us for community updates and events"}</p>
+            <a
+              href={socialMediaData.facebookData.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-primary"
+            >
+              <i className="fab fa-facebook-f"></i> {socialMediaData.facebookData.display?.button || "Like & Follow"}
+            </a>
+          </div>
+        )}
+
+        {/* Instagram */}
+        {socialMediaData.instagramData.url && (
+          <div className="social-card">
+            <div className="social-icon">
+              <i className="fab fa-instagram"></i>
+            </div>
+            <h3>{socialMediaData.instagramData.display?.name || "Instagram"}</h3>
+            <p>{socialMediaData.instagramData.display?.description || "See photos and stories from our community"}</p>
+            <a
+              href={socialMediaData.instagramData.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-primary"
+            >
+              <i className="fab fa-instagram"></i> {socialMediaData.instagramData.display?.button || "Follow Us"}
+            </a>
+          </div>
+        )}
+
+        {/* YouTube */}
+        {socialMediaData.youtubeData.url && (
+          <div className="social-card">
+            <div className="social-icon">
+              <i className="fab fa-youtube"></i>
+            </div>
+            <h3>{socialMediaData.youtubeData.display?.name || "YouTube"}</h3>
+            <p>{socialMediaData.youtubeData.display?.description || "Watch our community events and tutorials"}</p>
+            <a
+              href={socialMediaData.youtubeData.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-primary"
+            >
+              <i className="fab fa-youtube"></i> {socialMediaData.youtubeData.display?.button || "Subscribe Now"}
+            </a>
+          </div>
+        )}
+      </div>
+    </div>
+  </section>
+)}
+
 
       {/* Why Join Our Community section (features) */}
       <section className="features">

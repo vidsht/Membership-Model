@@ -418,7 +418,6 @@ header .header-content {
   justify-content: space-between;
   align-items: center;
   padding: 1rem 2rem;
-  max-width: 1200px;
   margin: 0 auto;
 }
 
@@ -429,7 +428,6 @@ header .logo {
 }
 
 header .logo img {
-  height: 190;
   width: auto;
 }
 
