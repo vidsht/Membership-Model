@@ -1,610 +1,351 @@
-  // UserModal.jsx - COMPLETE FIX for Dropdown and Warning Boxes
-  import React, { useState, useEffect, useMemo } from 'react';
-  import './UserModal.css';
+// UserTable.jsx - Matching Old Version + Merchant Styling
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { useImageUrl, SmartImage, DefaultAvatar } from '../../../../hooks/useImageUrl.jsx';
 
-  const UserModal = ({ 
-    type, 
-    user, 
-    title, 
-    referenceData, 
-    selectedUsers = [], 
-    onClose, 
-    onSubmit, 
-    planAssignmentState,
-    getPlansForUserType 
-  }) => {
-    const [formData, setFormData] = useState({
-      fullName: '',
-      email: '',
-      phone: '',
-      address: '',
-      dob: '',
-      community: '',
-      country: 'Ghana',
-      state: '',
-      city: '',
-      userType: 'user',
-      membershipType: 'community',
-      status: 'approved'
-    });
-
-    const [planFormData, setPlanFormData] = useState({
-      planKey: ''
-    });
-
-    const [errors, setErrors] = useState({});
-    const [loading, setLoading] = useState(false);
-    const [showWarning, setShowWarning] = useState(false);
-
-    // Initialize form data when modal opens
-    useEffect(() => {
-      if (type === 'edit' || type === 'view') {
-        setFormData({
-          fullName: user?.fullName || '',
-          email: user?.email || '',
-          phone: user?.phone || '',
-          address: typeof user?.address === 'string' ? user.address : 
-                  typeof user?.address === 'object' ? JSON.stringify(user.address) : '',
-          dob: user?.dob ? user.dob.split('T')[0] : '',
-          community: user?.community || '',
-          country: user?.country || 'Ghana',
-          state: user?.state || '',
-          city: user?.city || '',
-          userType: user?.userType || 'user',
-          membershipType: user?.membershipType || 'community',
-          status: user?.status || 'approved'
-        });
-      } else if (type === 'add') {
-        setFormData({
-          fullName: '',
-          email: '',
-          phone: '',
-          address: '',
-          dob: '',
-          community: '',
-          country: 'Ghana',
-          state: '',
-          city: '',
-          userType: 'user',
-          membershipType: 'community',
-          status: 'approved'
-        });
-      } else if (type === 'assignPlan') {
-        setPlanFormData({
-          planKey: user?.membershipType || ''
-        });
-      }
-      setErrors({});
-      setShowWarning(false);
-    }, [type, user]);
-
-    const handleInputChange = (field, value) => {
-      setFormData(prev => ({ ...prev, [field]: value }));
-      if (errors[field]) {
-        setErrors(prev => ({ ...prev, [field]: null }));
-      }
-    };
-
-    const handlePlanInputChange = (field, value) => {
-      setPlanFormData(prev => ({ ...prev, [field]: value }));
-      if (errors[field]) {
-        setErrors(prev => ({ ...prev, [field]: null }));
-      }
-    };
-
-    const validateForm = () => {
-      const newErrors = {};
-
-      if (!formData.fullName.trim()) {
-        newErrors.fullName = 'Full name is required';
-      }
-
-      if (!formData.email.trim()) {
-        newErrors.email = 'Email is required';
-      } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-        newErrors.email = 'Email is invalid';
-      }
-
-      if (formData.phone && !/^\+?[\d\s\-\(\)]+$/.test(formData.phone)) {
-        newErrors.phone = 'Phone number is invalid';
-      }
-
-      if (formData.dob) {
-        const birthDate = new Date(formData.dob);
-        const today = new Date();
-        const age = today.getFullYear() - birthDate.getFullYear();
-        if (age < 13) {
-          newErrors.dob = 'User must be at least 13 years old';
-        }
-      }
-
-      setErrors(newErrors);
-      return Object.keys(newErrors).length === 0;
-    };
-
-    const validatePlanForm = () => {
-      const newErrors = {};
-      
-      if (!planFormData.planKey) {
-        newErrors.planKey = 'Please select a plan';
-      }
-      
-      setErrors(newErrors);
-      return Object.keys(newErrors).length === 0;
-    };
-
-    const handleSubmit = async (e) => {
-      e.preventDefault();
-      
-      // FIXED: Show warning for destructive actions
-      if ((type === 'delete' || type === 'bulkDelete' || 
-          (type === 'assignPlan' && planFormData.planKey !== user?.membershipType)) && !showWarning) {
-        setShowWarning(true);
-        return;
-      }
-      
-      if (type === 'assignPlan') {
-        if (!validatePlanForm()) return;
-      } else if (type !== 'delete' && type !== 'bulkDelete') {
-        if (!validateForm()) return;
-      }
-
-      setLoading(true);
-      try {
-        let submitData;
-        
-        if (type === 'assignPlan') {
-          submitData = planFormData;
-        } else if (type === 'delete') {
-          submitData = user.id;
-        } else if (type === 'bulkDelete') {
-          submitData = undefined;
-        } else {
-          submitData = { ...formData };
-          if (type === 'edit') {
-            submitData.id = user.id;
-          }
-        }
-        
-        await onSubmit(submitData);
-        setShowWarning(false);
-      } catch (error) {
-        console.error('Error submitting form:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    const getModalTitle = () => {
-      if (title) return title;
-      switch (type) {
-        case 'add': return 'Add New User';
-        case 'edit': return 'Edit User';
-        case 'view': return 'User Details';
-        case 'delete': return 'Delete User';
-        case 'bulkDelete': return `Delete ${selectedUsers.length} Users`;
-        case 'assignPlan': return `Assign Plan to ${user?.fullName || 'User'}`;
-        default: return 'User';
-      }
-    };
-
-    const isReadOnly = type === 'view';
-
-    // FIXED: Memoized available plans to prevent infinite re-renders
-    const availablePlans = useMemo(() => {
-      if (type !== 'assignPlan' || !user) {
-        return [];
-      }
-
-      console.log('🔍 Getting available plans for modal:', {
-        userType: user.userType,
-        planAssignmentStateLength: planAssignmentState?.availablePlans?.length,
-        planAssignmentUserType: planAssignmentState?.userType,
-        referenceDataPlans: referenceData?.plans?.length
+const UserTable = ({
+  users,
+  selectedUsers,
+  onUserSelect,
+  onSelectAll,
+  onUserAction,
+  onStatusChange,
+  referenceData,
+  loading,
+  pagination,
+  onPageChange,
+  onPageSizeChange,
+  calculatePlanValidity
+}) => {
+  const { getProfileImageUrl } = useImageUrl();
+  
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    try {
+      return new Date(dateString).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
       });
+    } catch (error) {
+      return 'Invalid Date';
+    }
+  };
 
-      // CRITICAL FIX: Use planAssignmentState first - but check userType match
-      if (planAssignmentState?.availablePlans?.length > 0 && 
-          planAssignmentState.userType === user.userType) {
-        console.log('✅ Using planAssignmentState plans:', planAssignmentState.availablePlans);
-        return planAssignmentState.availablePlans;
-      } 
-      
-      // Fallback to getPlansForUserType function
-      if (getPlansForUserType) {
-        const plans = getPlansForUserType(user.userType);
-        console.log('✅ Using getPlansForUserType plans:', plans);
-        return plans;
+  const getStatusBadgeClass = (status) => {
+    switch (status?.toLowerCase()) {
+      case 'approved': return 'status-approved';
+      case 'pending': return 'status-pending';
+      case 'rejected': return 'status-rejected';
+      case 'suspended': return 'status-suspended';
+      default: return 'status-unknown';
+    }
+  };
+
+  // getPlanBadgeClass removed (plan assignment logic)
+
+  const formatValidTill = (user) => {
+    if (!user.planValidTill || user.planValidTill === 'No validity set') {
+      return <span className="validity-none">No validity set</span>;
+    }
+    if (user.planValidTill === 'Expired') {
+      return <span className="validity-expired">Expired</span>;
+    }
+    if (user.planValidTill === 'Lifetime') {
+      return <span className="validity-lifetime">Lifetime</span>;
+    }
+    if (user.planValidTill === 'Invalid date') {
+      return <span className="validity-error">Invalid date</span>;
+    }
+    // Otherwise, show the formatted date
+    return <span className="validity-active">{user.planValidTill}</span>;
+  };
+
+  const handleStatusChange = (userId, newStatus) => {
+    if (onStatusChange) {
+      onStatusChange(userId, newStatus);
+    }
+  };
+
+  // handlePlanChange removed (plan assignment logic)
+
+  const renderPagination = () => {
+    if (!pagination || pagination.totalPages <= 1) return null;
+
+    const pages = [];
+    const { page: currentPage, totalPages } = pagination;
+
+    // Previous button
+    pages.push(
+      <button
+        key="prev"
+        onClick={() => onPageChange(currentPage - 1)}
+        disabled={currentPage <= 1}
+        className="pagination-btn btn btn-sm btn-secondary"
+      >
+        <i className="fas fa-chevron-left"></i>
+      </button>
+    );
+
+    // Page numbers
+    const startPage = Math.max(1, currentPage - 2);
+    const endPage = Math.min(totalPages, currentPage + 2);
+
+    if (startPage > 1) {
+      pages.push(
+        <button
+          key={1}
+          onClick={() => onPageChange(1)}
+          className="pagination-btn btn btn-sm btn-secondary"
+        >
+          1
+        </button>
+      );
+      if (startPage > 2) {
+        pages.push(<span key="dots1" className="pagination-dots">...</span>);
       }
+    }
 
-      // Last fallback - filter from all plans
-      if (referenceData?.plans?.length > 0) {
-        const filtered = referenceData.plans.filter(plan => {
-          if (user.userType === 'merchant') {
-            return plan.type === 'merchant';
-          } else {
-            return plan.type === 'user';
-          }
-        });
-        console.log('✅ Using filtered reference plans:', filtered);
-        return filtered;
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(
+        <button
+          key={i}
+          onClick={() => onPageChange(i)}
+          className={`pagination-btn btn btn-sm ${i === currentPage ? 'btn-primary active' : 'btn-secondary'}`}
+        >
+          {i}
+        </button>
+      );
+    }
+
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) {
+        pages.push(<span key="dots2" className="pagination-dots">...</span>);
       }
+      pages.push(
+        <button
+          key={totalPages}
+          onClick={() => onPageChange(totalPages)}
+          className="pagination-btn btn btn-sm btn-secondary"
+        >
+          {totalPages}
+        </button>
+      );
+    }
 
-      return [];
-    }, [type, user?.userType, planAssignmentState?.availablePlans, planAssignmentState?.userType, getPlansForUserType, referenceData?.plans]);
-
-    // FIXED: Get warning message based on action type
-    const getWarningMessage = () => {
-      switch (type) {
-        case 'delete':
-          return {
-            title: 'Delete User',
-            message: `Are you sure you want to delete ${user?.fullName}?`,
-            details: 'This action will permanently remove the user and all associated data. This cannot be undone.',
-            icon: 'fa-trash',
-            color: 'danger'
-          };
-        case 'bulkDelete':
-          return {
-            title: 'Delete Multiple Users',
-            message: `Are you sure you want to delete ${selectedUsers.length} selected users?`,
-            details: 'This action will permanently remove all selected users and their associated data. This cannot be undone.',
-            icon: 'fa-trash',
-            color: 'danger'
-          };
-        case 'assignPlan':
-          const planName = availablePlans.find(p => p.key === planFormData.planKey)?.name || 'selected plan';
-          return {
-            title: 'Assign Plan',
-            message: `Assign "${planName}" to ${user?.fullName}?`,
-            details: 'This will change the user\'s current plan and may affect their access permissions.',
-            icon: 'fa-crown',
-            color: 'warning'
-          };
-        default:
-          return null;
-      }
-    };
-
-    const warningInfo = getWarningMessage();
-
-    console.log('📋 Modal render - Available plans:', availablePlans.length, 'for user type:', user?.userType);
+    // Next button
+    pages.push(
+      <button
+        key="next"
+        onClick={() => onPageChange(currentPage + 1)}
+        disabled={currentPage >= totalPages}
+        className="pagination-btn btn btn-sm btn-secondary"
+      >
+        <i className="fas fa-chevron-right"></i>
+      </button>
+    );
 
     return (
-      <div className="modal-overlay" onClick={onClose}>
-        <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-          <div className="modal-header">
-            <h2>{getModalTitle()}</h2>
-            <button onClick={onClose} className="modal-close">
-              <i className="fas fa-times"></i>
-            </button>
-          </div>
-
-          <div className="modal-body">
-            {/* FIXED: Boxed Warning for Destructive Actions */}
-            {showWarning && warningInfo && (
-              <div className={`warning-box warning-${warningInfo.color}`}>
-                <div className="warning-icon">
-                  <i className={`fas ${warningInfo.icon}`}></i>
-                </div>
-                <div className="warning-content">
-                  <h3>{warningInfo.title}</h3>
-                  <p className="warning-message">{warningInfo.message}</p>
-                  <p className="warning-details">{warningInfo.details}</p>
-                </div>
-                <div className="warning-actions">
-                  <button 
-                    onClick={() => setShowWarning(false)} 
-                    className="btn btn-secondary"
-                    type="button"
-                  >
-                    Cancel
-                  </button>
-                  <button 
-                    onClick={handleSubmit}
-                    disabled={loading}
-                    className={`btn btn-${warningInfo.color}`}
-                    type="button"
-                  >
-                    {loading ? 'Processing...' : 'Confirm'}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* FIXED: Plan Assignment Form with Enhanced Dropdown */}
-            {type === 'assignPlan' && !showWarning && (
-              <form onSubmit={handleSubmit} className="plan-assignment-form">
-                <div className="user-info">
-                  <h3>Assigning plan to: {user?.fullName}</h3>
-                  <div className="user-details">
-                    <p><strong>User Type:</strong> <span className="user-type-badge">{user?.userType}</span></p>
-                    <p><strong>Current Plan:</strong> <span className="current-plan">{user?.membershipType || 'None'}</span></p>
-                    <p><strong>Email:</strong> {user?.email}</p>
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="planKey">Select New Plan *</label>
-                  <select
-                    id="planKey"
-                    name="planKey"
-                    value={planFormData.planKey}
-                    onChange={(e) => handlePlanInputChange('planKey', e.target.value)}
-                    disabled={loading || planAssignmentState?.isLoading}
-                    required
-                    className="plan-select"
-                  >
-                    <option value="">-- Select a plan --</option>
-                    {availablePlans && availablePlans.length > 0 && availablePlans.map(plan => (
-                      <option key={plan.key || plan.id} value={plan.key}>
-                        {plan.name} - {plan.price && parseFloat(plan.price) > 0 ? `${plan.currency || 'GHS'} ${plan.price}` : 'Free'}
-                        {plan.billingCycle && plan.billingCycle !== 'one-time' && ` (${plan.billingCycle})`}
-                      </option>
-                    ))}
-                  </select>
-                  {errors.planKey && <span className="error-message">{errors.planKey}</span>}
-                  
-                  {/* Enhanced status messages */}
-                  {planAssignmentState?.isLoading && (
-                    <div className="loading-message">
-                      <i className="fas fa-spinner fa-spin"></i>
-                      Loading available plans for {user?.userType} users...
-                    </div>
-                  )}
-                  
-                  {!planAssignmentState?.isLoading && (!availablePlans || availablePlans.length === 0) && (
-                    <div className="no-plans-message">
-                      <i className="fas fa-exclamation-triangle"></i>
-                      No plans available for {user?.userType} users. Please contact administrator.
-                    </div>
-                  )}
-
-                  {availablePlans && availablePlans.length > 0 && (
-                    <div className="plans-info">
-                      <small className="text-muted">
-                        {availablePlans.length} plan(s) available for {user?.userType} users
-                      </small>
-                    </div>
-                  )}
-                </div>
-
-                <div className="action-buttons">
-                  <button type="button" onClick={onClose} className="btn btn-secondary">
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={loading || planAssignmentState?.isLoading || !availablePlans || availablePlans.length === 0 || !planFormData.planKey}
-                    className="btn btn-primary"
-                  >
-                    {loading ? 'Assigning...' : 'Assign Plan'}
-                  </button>
-                </div>
-              </form>
-            )}
-
-            {/* User Form (Add/Edit/View) */}
-            {(type === 'add' || type === 'edit' || type === 'view') && !showWarning && (
-              <form onSubmit={handleSubmit} className="user-form">
-                <div className="form-row">
-                  <div className="form-group">
-                    <label htmlFor="fullName">Full Name *</label>
-                    <input
-                      type="text"
-                      id="fullName"
-                      name="fullName"
-                      value={formData.fullName}
-                      onChange={(e) => handleInputChange('fullName', e.target.value)}
-                      disabled={isReadOnly || loading}
-                      placeholder="Enter full name"
-                      required
-                    />
-                    {errors.fullName && <span className="error-message">{errors.fullName}</span>}
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="email">Email Address *</label>
-                    <input
-                      type="email"
-                      id="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={(e) => handleInputChange('email', e.target.value)}
-                      disabled={isReadOnly || loading}
-                      placeholder="Enter email address"
-                      required
-                    />
-                    {errors.email && <span className="error-message">{errors.email}</span>}
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label htmlFor="phone">Phone Number</label>
-                    <input
-                      type="tel"
-                      id="phone"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={(e) => handleInputChange('phone', e.target.value)}
-                      disabled={isReadOnly || loading}
-                      placeholder="Enter phone number"
-                    />
-                    {errors.phone && <span className="error-message">{errors.phone}</span>}
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="dob">Date of Birth</label>
-                    <input
-                      type="date"
-                      id="dob"
-                      name="dob"
-                      value={formData.dob}
-                      onChange={(e) => handleInputChange('dob', e.target.value)}
-                      disabled={isReadOnly || loading}
-                    />
-                    {errors.dob && <span className="error-message">{errors.dob}</span>}
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label htmlFor="userType">User Type</label>
-                    <select
-                      id="userType"
-                      name="userType"
-                      value={formData.userType}
-                      onChange={(e) => handleInputChange('userType', e.target.value)}
-                      disabled={isReadOnly || loading}
-                    >
-                      <option value="user">User</option>
-                      <option value="merchant">Merchant</option>
-                      <option value="admin">Admin</option>
-                    </select>
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="membershipType">Membership Plan</label>
-                    <select
-                      id="membershipType"
-                      name="membershipType"
-                      value={formData.membershipType}
-                      onChange={(e) => handleInputChange('membershipType', e.target.value)}
-                      disabled={isReadOnly || loading}
-                    >
-                      <option value="community">Community</option>
-                      <option value="silver">Silver</option>
-                      <option value="gold">Gold</option>
-                      <option value="basic_business">Basic Business</option>
-                      <option value="premium_business">Premium Business</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label htmlFor="community">Community</label>
-                    <select
-                      id="community"
-                      name="community"
-                      value={formData.community}
-                      onChange={(e) => handleInputChange('community', e.target.value)}
-                      disabled={isReadOnly || loading}
-                    >
-                      <option value="">-- Select Community --</option>
-                      {referenceData?.communities?.map((community, index) => (
-                        <option key={index} value={community.name || community}>
-                          {community.name || community}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="status">Status</label>
-                    <select
-                      id="status"
-                      name="status"
-                      value={formData.status}
-                      onChange={(e) => handleInputChange('status', e.target.value)}
-                      disabled={isReadOnly || loading}
-                    >
-                      <option value="pending">Pending</option>
-                      <option value="approved">Approved</option>
-                      <option value="rejected">Rejected</option>
-                      <option value="suspended">Suspended</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label htmlFor="country">Country</label>
-                    <input
-                      type="text"
-                      id="country"
-                      name="country"
-                      value={formData.country}
-                      onChange={(e) => handleInputChange('country', e.target.value)}
-                      disabled={isReadOnly || loading}
-                      placeholder="Enter country"
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="state">State/Region</label>
-                    <input
-                      type="text"
-                      id="state"
-                      name="state"
-                      value={formData.state}
-                      onChange={(e) => handleInputChange('state', e.target.value)}
-                      disabled={isReadOnly || loading}
-                      placeholder="Enter state or region"
-                    />
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label htmlFor="city">City</label>
-                    <input
-                      type="text"
-                      id="city"
-                      name="city"
-                      value={formData.city}
-                      onChange={(e) => handleInputChange('city', e.target.value)}
-                      disabled={isReadOnly || loading}
-                      placeholder="Enter city"
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="address">Address</label>
-                    <input
-                      type="text"
-                      id="address"
-                      name="address"
-                      value={formData.address}
-                      onChange={(e) => handleInputChange('address', e.target.value)}
-                      disabled={isReadOnly || loading}
-                      placeholder="Enter address"
-                    />
-                  </div>
-                </div>
-
-                {!isReadOnly && (
-                  <div className="action-buttons">
-                    <button type="button" onClick={onClose} className="btn btn-secondary">
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={loading}
-                      className="btn btn-primary"
-                    >
-                      {loading ? 
-                        (type === 'add' ? 'Creating...' : 'Updating...') : 
-                        (type === 'add' ? 'Create User' : 'Update User')
-                      }
-                    </button>
-                  </div>
-                )}
-
-                {isReadOnly && (
-                  <div className="action-buttons">
-                    <button type="button" onClick={onClose} className="btn btn-secondary">
-                      Close
-                    </button>
-                  </div>
-                )}
-              </form>
-            )}
-          </div>
+      <div className="table-pagination pagination-container">
+        <div className="pagination-info">
+          Showing {((currentPage - 1) * pagination.limit) + 1} to {Math.min(currentPage * pagination.limit, pagination.total)} of {pagination.total} users
+        </div>
+        <div className="pagination-controls">
+          {pages}
+        </div>
+        <div className="page-size-selector">
+          <select 
+            value={pagination.limit} 
+            onChange={(e) => onPageSizeChange(parseInt(e.target.value))}
+          >
+            <option value={10}>10 per page</option>
+            <option value={20}>20 per page</option>
+            <option value={50}>50 per page</option>
+            <option value={100}>100 per page</option>
+          </select>
         </div>
       </div>
     );
   };
 
-  export default UserModal;
+  if (loading) {
+    return (
+      <div className="table-container merchants-table-container">
+        <div className="loading-state merchant-management-loading">
+          <div className="loading-spinner"></div>
+          <p>Please wait while we fetch the user data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div className="table-container merchants-table-container">
+        <div className="table-wrapper">
+          <table className="users-table merchants-table">
+            <thead>
+              <tr>
+                <th className="select-column">
+                  <input
+                    type="checkbox"
+                    checked={selectedUsers.length > 0 && selectedUsers.length === users.length}
+                    onChange={onSelectAll}
+                    disabled={users.length === 0}
+                  />
+                </th>
+                <th>User</th>
+                <th>Contact</th>
+                <th>Type</th>
+                <th>Plan</th>
+                <th>Valid Till</th>
+                <th>Status</th>
+                <th>Registered</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {users.length === 0 ? (
+                <tr>
+                  <td colSpan="9" className="no-data">
+                    <div className="no-data-content no-merchants">
+                      <i className="fas fa-users fa-3x"></i>
+                      <h3>No Users Found</h3>
+                      <p>No users match your current filters</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                users.map((user) => (
+                  <tr key={user.id}>
+                    <td>
+                      <input
+                        type="checkbox"
+                        checked={selectedUsers.includes(user.id)}
+                        onChange={() => onUserSelect(user.id)}
+                      />
+                    </td>
+                    <td>
+                      <div className="user-cell business-info">
+                        <div className="user-avatar">
+                          {user.profilePhoto ? (
+                            <SmartImage 
+                              src={getProfileImageUrl(user)} 
+                              alt={user.fullName}
+                              className="avatar-image user-avatar-image"
+                              fallback={<DefaultAvatar size={40} name={user.fullName} />}
+                            />
+                          ) : (
+                            <DefaultAvatar size={40} name={user.fullName} />
+                          )}
+                        </div>
+                        <div className="user-info user-details">
+                          <span className="user-name business-name">{user.fullName || 'Unknown'}</span>
+                          {user.membershipNumber && (
+                            <span className="membership-number business-desc">#{user.membershipNumber}</span>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="contact-cell contact-info">
+                        <span className="email">{user.email || 'N/A'}</span>
+                        {user.phone && <span className="phone">{user.phone}</span>}
+                      </div>
+                    </td>
+                    <td>
+                      <span className="user-type category-badge">
+                        {user.userType ? user.userType.charAt(0).toUpperCase() + user.userType.slice(1) : 'User'}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="plan-cell">
+                        <span className="plan-badge">
+                          {user.membershipType ? user.membershipType.charAt(0).toUpperCase() + user.membershipType.slice(1) : 'None'}
+                        </span>
+                        {user.isPlanExpired && (
+                          <span className="expired-indicator validity-expired">
+                            <i className="fas fa-exclamation-triangle"></i>
+                            Expired
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td>
+                      <span className="validity-date">
+                        {formatValidTill(user)}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`status-badge ${getStatusBadgeClass(user.status)}`}>
+                        {user.status ? user.status.charAt(0).toUpperCase() + user.status.slice(1) : 'Unknown'}
+                      </span>
+                    </td>
+                    <td>{formatDate(user.createdAt)}</td>
+                    <td>
+                      <div className="action-buttons">
+                        {/* View/Edit Button - Route Link */}
+                        <Link
+                          to={`/admin/users/${user.id}/details`}
+                          className="btn-icon btn-view btn btn-sm btn-info"
+                          title="View/Edit Details"
+                        >
+                          <i className="fas fa-eye"></i>
+                        </Link>
+
+                        {/* Status Actions */}
+                        {user.status === 'pending' && (
+                          <>
+                            <button
+                              onClick={() => handleStatusChange(user.id, 'approved')}
+                              className="btn-icon btn-approve btn btn-sm btn-success"
+                              title="Approve"
+                            >
+                              <i className="fas fa-check"></i>
+                            </button>
+                            <button
+                              onClick={() => handleStatusChange(user.id, 'rejected')}
+                              className="btn-icon btn-reject btn btn-sm btn-danger"
+                              title="Reject"
+                            >
+                              <i className="fas fa-times"></i>
+                            </button>
+                          </>
+                        )}
+
+                        {user.status === 'approved' && (
+                          <button
+                            onClick={() => handleStatusChange(user.id, 'suspended')}
+                            className="btn-icon btn-suspend btn btn-sm"
+                            title="Suspend"
+                          >
+                            <i className="fas fa-ban"></i>
+                          </button>
+                        )}
+
+                        {user.status === 'suspended' && (
+                          <button
+                            onClick={() => handleStatusChange(user.id, 'approved')}
+                            className="btn-icon btn-activate btn btn-sm"
+                            title="Activate"
+                          >
+                            <i className="fas fa-check-circle"></i>
+                          </button>
+                        )}
+
+                        {/* More Actions Dropdown removed (plan assignment logic) */}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+        {renderPagination()}
+      </div>
+    </>
+  );
+};
+
+export default UserTable;
