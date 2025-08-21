@@ -1,4 +1,4 @@
-// UserTable.jsx - Complete with ALL Functionalities + Merchant Styling
+// UserTable.jsx - Matching Old Version + Merchant Styling (Edit/Delete/Plan Buttons Removed)
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useImageUrl, SmartImage, DefaultAvatar } from '../../../../hooks/useImageUrl.jsx';
@@ -42,20 +42,7 @@ const UserTable = ({
     }
   };
 
-  // RESTORED: getPlanBadgeClass (was removed in old version but needed)
-  const getPlanBadgeClass = (membershipType) => {
-    switch (membershipType?.toLowerCase()) {
-      case 'community': return 'community';
-      case 'silver': return 'silver';
-      case 'gold': return 'gold';
-      case 'basic_business': return 'basic_business';
-      case 'premium_business': return 'premium_business';
-      case 'business_basic': return 'business_basic';
-      case 'business_premium': return 'business_premium';
-      case 'enterprise': return 'enterprise';
-      default: return 'community';
-    }
-  };
+  // getPlanBadgeClass removed (plan assignment logic)
 
   const formatValidTill = (user) => {
     if (!user.planValidTill || user.planValidTill === 'No validity set') {
@@ -80,12 +67,7 @@ const UserTable = ({
     }
   };
 
-  // RESTORED: handlePlanChange (was removed in old version but might be needed)
-  const handlePlanChange = (userId, newPlan) => {
-    if (onUserAction) {
-      onUserAction('assignPlan', { id: userId, membershipType: newPlan });
-    }
-  };
+  // handlePlanChange removed (plan assignment logic)
 
   const renderPagination = () => {
     if (!pagination || pagination.totalPages <= 1) return null;
@@ -278,7 +260,7 @@ const UserTable = ({
                     </td>
                     <td>
                       <div className="plan-cell">
-                        <span className={`plan-badge ${getPlanBadgeClass(user.membershipType)}`}>
+                        <span className="plan-badge">
                           {user.membershipType ? user.membershipType.charAt(0).toUpperCase() + user.membershipType.slice(1) : 'None'}
                         </span>
                         {user.isPlanExpired && (
@@ -302,7 +284,7 @@ const UserTable = ({
                     <td>{formatDate(user.createdAt)}</td>
                     <td>
                       <div className="action-buttons">
-                        {/* View/Edit Button - Route Link */}
+                        {/* View/Edit Button - Route Link (ONLY REMAINING ACTION) */}
                         <Link
                           to={`/admin/users/${user.id}/details`}
                           className="btn-icon btn-view btn btn-sm btn-info"
@@ -311,35 +293,7 @@ const UserTable = ({
                           <i className="fas fa-eye"></i>
                         </Link>
 
-                        {/* RESTORED: Edit Button - Modal */}
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            onUserAction && onUserAction('edit', user);
-                          }}
-                          className="btn-icon btn-edit btn btn-sm btn-primary"
-                          title="Edit User"
-                          type="button"
-                        >
-                          <i className="fas fa-edit"></i>
-                        </button>
-
-                        {/* RESTORED: Plan Assignment Button */}
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            onUserAction && onUserAction('assignPlan', user);
-                          }}
-                          className="btn-icon btn-plan btn btn-sm btn-warning"
-                          title="Assign Plan"
-                          type="button"
-                        >
-                          <i className="fas fa-crown"></i>
-                        </button>
-
-                        {/* Status Actions */}
+                        {/* Status Actions (PRESERVED) */}
                         {user.status === 'pending' && (
                           <>
                             <button
@@ -379,21 +333,10 @@ const UserTable = ({
                           </button>
                         )}
 
-                        {/* RESTORED: Delete Button */}
-                        <button
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            onUserAction && onUserAction('delete', user);
-                          }}
-                          className="btn-icon btn-delete btn btn-sm btn-danger"
-                          title="Delete User"
-                          type="button"
-                        >
-                          <i className="fas fa-trash"></i>
-                        </button>
-
-                        {/* RESTORED: More Actions Dropdown (if needed for future functionality) */}
+                        {/* Edit User Button - REMOVED */}
+                        {/* Delete User Button - REMOVED */}
+                        {/* Assign Plan Button - REMOVED */}
+                        {/* More Actions Dropdown removed (plan assignment logic) */}
                       </div>
                     </td>
                   </tr>

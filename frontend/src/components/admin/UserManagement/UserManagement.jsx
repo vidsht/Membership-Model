@@ -39,6 +39,18 @@ const UserManagement = () => {
     userType: null
   });
 
+  // Add this after planAssignmentState (around line 40)
+  const [warningState, setWarningState] = useState({
+    isOpen: false,
+    type: null,
+    action: null,
+    user: null,
+    userIds: [],
+    message: '',
+    details: '',
+    onConfirm: null
+  });
+
   // Filter & Pagination State
   const [filters, setFilters] = useState({
     search: '',
@@ -138,20 +150,62 @@ const UserManagement = () => {
   }, [clearSelections]);
 
   const closeModal = useCallback(() => {
-    setModalState({
-      isOpen: false,
-      type: null,
-      user: null,
-      title: '',
-      data: null
-    });
-    setPlanAssignmentState({
-      isLoading: false,
-      selectedUser: null,
-      availablePlans: [],
-      userType: null
-    });
-  }, []);
+  setModalState({
+    isOpen: false,
+    type: null,
+    user: null,
+    title: '',
+    data: null
+  });
+  setPlanAssignmentState({
+    isLoading: false,
+    selectedUser: null,
+    availablePlans: [],
+    userType: null
+  });
+}, []);
+
+// Add these AFTER the closeModal function
+const showWarningDialog = useCallback((warningConfig) => {
+  setWarningState({
+    isOpen: true,
+    type: warningConfig.type,
+    action: warningConfig.action,
+    user: warningConfig.user || null,
+    userIds: warningConfig.userIds || [],
+    message: warningConfig.message,
+    details: warningConfig.details,
+    onConfirm: warningConfig.onConfirm
+  });
+}, []);
+
+const closeWarningDialog = useCallback(() => {
+  setWarningState({
+    isOpen: false,
+    type: null,
+    action: null,
+    user: null,
+    userIds: [],
+    message: '',
+    details: '',
+    onConfirm: null
+  });
+}, []);
+
+const handleWarningConfirm = useCallback(async () => {
+  if (warningState.onConfirm) {
+    try {
+      await warningState.onConfirm();
+      closeWarningDialog();
+    } catch (error) {
+      console.error('Warning action failed:', error);
+      // Keep dialog open on error
+    }
+  } else {
+    closeWarningDialog();
+  }
+}, [warningState.onConfirm, closeWarningDialog]);
+
 
   // Initialize component
   const initializeComponent = useCallback(async () => {
@@ -170,7 +224,7 @@ const UserManagement = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [validateSession, handleSessionExpired, showNotification, fetchReferenceData]);
 
   // Fetch reference data
   const fetchReferenceData = useCallback(async () => {
@@ -236,7 +290,7 @@ const UserManagement = () => {
         statuses: ['pending', 'approved', 'rejected', 'suspended']
       });
     }
-  }, [fallbackPlans]);
+  }, [fallbackPlans, showNotification]);
 
   // Fetch users
   const fetchUsers = useCallback(async () => {
@@ -308,81 +362,152 @@ const UserManagement = () => {
 
   // User action handlers
 
-  const handleStatusChange = useCallback(async (userId, status) => {
-    try {
-      const response = await api.put(`/admin/users/${userId}/status`, { status });
-      
-      if (response.data.success) {
-        showNotification(`User ${status} successfully`, 'success');
-        refreshData();
-      } else {
-        throw new Error(response.data.message || 'Failed to update status');
-      }
-    } catch (err) {
-      const message = err.response?.data?.message || 'Failed to update status';
-      showNotification(message, 'error');
-    }
-  }, [showNotification, refreshData]);
-
-  const handleBulkAction = useCallback(async (action, userIds = selectedUsers) => {
-    if (!userIds || userIds.length === 0) {
-      showNotification('No users selected', 'warning');
-      return;
-    }
-
-    try {
-      // Validate session first
-      const isSessionValid = await validateSession();
-      if (!isSessionValid) {
-        showNotification('Your session has expired. Please log in again.', 'error');
-        return;
-      }
-
-      // Call both endpoints: users and partners. Each backend endpoint only updates matching userType rows.
-      const [usersRes, partnersRes] = await Promise.allSettled([
-        api.post('/admin/users/bulk-action', { action, userIds }),
-        api.post('/admin/partners/bulk-action', { action, merchantIds: userIds })
-      ]);
-
-      const usersSuccess = usersRes.status === 'fulfilled' && usersRes.value?.data?.success;
-      const partnersSuccess = partnersRes.status === 'fulfilled' && partnersRes.value?.data?.success;
-
-      if (usersSuccess || partnersSuccess) {
-        const actionText = action === 'approve' ? 'approved' : 
-                          action === 'reject' ? 'rejected' : 
-                          action === 'suspend' ? 'suspended' : 
-                          action === 'activate' ? 'activated' : 
-                          action === 'delete' ? 'deleted' : action;
-
-        const totalCount = Array.isArray(userIds) ? userIds.length : 0;
-
-        showNotification(`Successfully ${actionText} ${totalCount} users/partners.`, 'success');
-        setSelectedUsers([]);
-        closeModal();
-        // Refresh both immediately and via refresh trigger to ensure UI updates
+const handleStatusChange = useCallback(async (userId, status) => {
+  const user = users.find(u => u.id === userId);
+  
+  // Show warning for suspend action
+  if (status === 'suspended') {
+    showWarningDialog({
+      type: 'suspend',
+      action: 'suspend',
+      user: user,
+      message: `Are you sure you want to suspend ${user?.fullName}?`,
+      details: 'This action will suspend the user\'s account and restrict their access to the platform.',
+      onConfirm: async () => {
         try {
-          await fetchUsers();
-        } catch (e) {
-          // ignore fetch error, still trigger refresh
+          const response = await api.put(`/admin/users/${userId}/status`, { status });
+          
+          if (response.data.success) {
+            showNotification(`User suspended successfully`, 'success');
+            refreshData();
+          } else {
+            throw new Error(response.data.message || 'Failed to suspend user');
+          }
+        } catch (err) {
+          const message = err.response?.data?.message || 'Failed to suspend user';
+          showNotification(message, 'error');
+          throw err; // Re-throw to keep dialog open
         }
-        refreshData();
-      } else {
-        // Aggregate errors
-        const userErr = usersRes.status === 'rejected' ? usersRes.reason : null;
-        const partnerErr = partnersRes.status === 'rejected' ? partnersRes.reason : null;
-        console.error('Bulk action failures:', { userErr, partnerErr });
-        throw new Error(usersRes.status === 'rejected' ? usersRes.reason?.message || 'Users bulk action failed' : partnerErr?.message || 'Partners bulk action failed');
       }
-    } catch (err) {
-      console.error('Bulk action error:', err);
-      if (err.response?.status === 401) {
-        handleSessionExpired();
-        return;
-      }
-      const message = err.response?.data?.message || err.message || 'Bulk action failed';
-      showNotification(message, 'error');
+    });
+    return;
+  }
+  
+  // For other status changes, proceed directly
+  try {
+    const response = await api.put(`/admin/users/${userId}/status`, { status });
+    
+    if (response.data.success) {
+      showNotification(`User ${status} successfully`, 'success');
+      refreshData();
+    } else {
+      throw new Error(response.data.message || 'Failed to update status');
     }
-  }, [selectedUsers, showNotification, validateSession, handleSessionExpired, closeModal, refreshData]);
+  } catch (err) {
+    const message = err.response?.data?.message || 'Failed to update status';
+    showNotification(message, 'error');
+  }
+}, [users, showWarningDialog, showNotification, refreshData]);
+
+
+
+const handleBulkAction = useCallback(async (action, userIds = selectedUsers) => {
+  if (!userIds || userIds.length === 0) {
+    showNotification('No users selected', 'warning');
+    return;
+  }
+
+  const actionMessages = {
+    approve: {
+      message: `Are you sure you want to approve ${userIds.length} selected users?`,
+      details: 'This will grant access to the platform for all selected users.',
+      confirmText: 'approved'
+    },
+    reject: {
+      message: `Are you sure you want to reject ${userIds.length} selected users?`,
+      details: 'This will deny access to the platform for all selected users.',
+      confirmText: 'rejected'
+    },
+    suspend: {
+      message: `Are you sure you want to suspend ${userIds.length} selected users?`,
+      details: 'This will suspend all selected users and restrict their access to the platform.',
+      confirmText: 'suspended'
+    },
+    activate: {
+      message: `Are you sure you want to activate ${userIds.length} selected users?`,
+      details: 'This will restore access to the platform for all selected users.',
+      confirmText: 'activated'
+    },
+    delete: {
+      message: `Are you sure you want to delete ${userIds.length} selected users?`,
+      details: 'This action cannot be undone. All user data will be permanently removed.',
+      confirmText: 'deleted'
+    }
+  };
+
+  const config = actionMessages[action];
+  if (!config) {
+    showNotification('Invalid bulk action', 'error');
+    return;
+  }
+
+  showWarningDialog({
+    type: 'bulk',
+    action: action,
+    userIds: userIds,
+    message: config.message,
+    details: config.details,
+    onConfirm: async () => {
+      try {
+        // Validate session first
+        const isSessionValid = await validateSession();
+        if (!isSessionValid) {
+          showNotification('Your session has expired. Please log in again.', 'error');
+          return;
+        }
+
+        // Call both endpoints: users and partners
+        const [usersRes, partnersRes] = await Promise.allSettled([
+          api.post('/admin/users/bulk-action', { action, userIds }),
+          api.post('/admin/partners/bulk-action', { action, merchantIds: userIds })
+        ]);
+
+        const usersSuccess = usersRes.status === 'fulfilled' && usersRes.value?.data?.success;
+        const partnersSuccess = partnersRes.status === 'fulfilled' && partnersRes.value?.data?.success;
+
+        if (usersSuccess || partnersSuccess) {
+          const totalCount = Array.isArray(userIds) ? userIds.length : 0;
+          showNotification(`Successfully ${config.confirmText} ${totalCount} users/partners.`, 'success');
+          setSelectedUsers([]);
+          
+          // Refresh data
+          try {
+            await fetchUsers();
+          } catch (e) {
+            // ignore fetch error, still trigger refresh
+          }
+          refreshData();
+        } else {
+          // Aggregate errors
+          const userErr = usersRes.status === 'rejected' ? usersRes.reason : null;
+          const partnerErr = partnersRes.status === 'rejected' ? partnersRes.reason : null;
+          console.error('Bulk action failures:', { userErr, partnerErr });
+          throw new Error(usersRes.status === 'rejected' ? usersRes.reason?.message || 'Users bulk action failed' : partnerErr?.message || 'Partners bulk action failed');
+        }
+      } catch (err) {
+        console.error('Bulk action error:', err);
+        if (err.response?.status === 401) {
+          handleSessionExpired();
+          return;
+        }
+        const message = err.response?.data?.message || err.message || 'Bulk action failed';
+        showNotification(message, 'error');
+        throw err; // Re-throw to keep dialog open
+      }
+    }
+  });
+}, [selectedUsers, showWarningDialog, showNotification, validateSession, handleSessionExpired, refreshData, fetchUsers]);
+
 
   // UI handlers
   const handleFilterChange = useCallback((newFilters) => {
@@ -515,7 +640,7 @@ const UserManagement = () => {
   // Effects
   useEffect(() => {
     initializeComponent();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [validateSession, handleSessionExpired, showNotification]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (referenceData.plans.length > 0) {
@@ -625,6 +750,48 @@ const UserManagement = () => {
         calculatePlanValidity={calculatePlanValidity}
       />
 
+            {/* Warning Dialog */}
+      {warningState.isOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h2>Confirm Action</h2>
+              <button onClick={closeWarningDialog} className="modal-close">
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className={`warning-box warning-${warningState.action === 'delete' ? 'danger' : warningState.action === 'suspend' ? 'warning' : 'info'}`}>
+                <div className="warning-icon">
+                  <i className={`fas ${warningState.action === 'delete' ? 'fa-trash' : warningState.action === 'suspend' ? 'fa-ban' : 'fa-exclamation-triangle'}`}></i>
+                </div>
+                <div className="warning-content">
+                  <h3>{warningState.type === 'bulk' ? 'Bulk Action' : 'User Action'}</h3>
+                  <p className="warning-message">{warningState.message}</p>
+                  <p className="warning-details">{warningState.details}</p>
+                </div>
+                <div className="warning-actions">
+                  <button 
+                    onClick={closeWarningDialog} 
+                    className="btn btn-secondary"
+                    type="button"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={handleWarningConfirm}
+                    className={`btn ${warningState.action === 'delete' ? 'btn-danger' : warningState.action === 'suspend' ? 'btn-warning' : 'btn-primary'}`}
+                    type="button"
+                  >
+                    Confirm
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modal for Delete and Plan Assignment only */}
       {modalState.isOpen && (
         <UserModal
@@ -634,7 +801,7 @@ const UserManagement = () => {
           referenceData={referenceData}
           selectedUsers={selectedUsers}
           onClose={closeModal}
-    onSubmit={null}
+          onSubmit={null}
         />
       )}
     </div>

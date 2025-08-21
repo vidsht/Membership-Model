@@ -480,16 +480,8 @@ const MerchantManagementEnhanced = () => {
     try {
       showNotification('Preparing merchant export...', 'info');
 
-      // Build query params the same way as fetchMerchants to avoid sending empty/'all' values
-      const queryParams = new URLSearchParams();
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value && value !== 'all' && (typeof value !== 'string' || value.trim() !== '')) {
-          queryParams.set(key, value);
-        }
-      });
-
-      const queryString = queryParams.toString();
-      const url = queryString ? `/admin/partners/export?${queryString}` : `/admin/partners/export`;
+      // Request the full export (ignore local filters/pagination so we get all data)
+      const url = `/admin/partners/export`;
 
       const response = await api.get(url, {
         responseType: 'blob'
@@ -545,7 +537,7 @@ const MerchantManagementEnhanced = () => {
       const message = err.response?.data?.message || 'Failed to export merchants';
       showNotification(message, 'error');
     }
-  }, [filters, showNotification]);
+  }, [showNotification]);
 
   // Single useEffect for component mounting (reduced logging)
   useEffect(() => {

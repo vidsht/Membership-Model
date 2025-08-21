@@ -1,5 +1,6 @@
 // BulkActions.jsx - Complete Bulk Actions Component
 import React, { useState } from 'react';
+import './BulkActions.css';
 
 const BulkActions = ({ selectedCount, onBulkAction, onBulkDelete }) => {
   const [isOpen, setIsOpen] = useState(false);
