@@ -43,25 +43,55 @@ const UserSettings = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [notificationState, setNotificationState] = useState({ message: '', type: '' });
   const [currentActiveTab, setCurrentActiveTab] = useState(() => {
-    return user?.role === 'merchant' ? 'business' : 'profile';
+    return (user?.userType === 'merchant' || user?.role === 'merchant') ? 'business' : 'profile';
   });
   const [userRedemptions, setUserRedemptions] = useState([]);
   const [redemptionsLoadingState, setRedemptionsLoadingState] = useState(false);
 
+  // Check if current user is a merchant
+  const isMerchant = user?.userType === 'merchant' || user?.role === 'merchant';
+
   // Update active tab when user role changes
   useEffect(() => {
-    if (user?.role === 'merchant' && currentActiveTab === 'profile') {
+    if (isMerchant && currentActiveTab === 'profile') {
       setCurrentActiveTab('business');
-    } else if (user?.role !== 'merchant' && currentActiveTab === 'business') {
+    } else if (!isMerchant && currentActiveTab === 'business') {
       setCurrentActiveTab('profile');
     }
-  }, [user?.role, currentActiveTab]);
+  }, [isMerchant, currentActiveTab]);
 
   const fetchUserProfileData = useCallback(async () => {
   try {
     setIsLoading(true);
-    // Prefer the authenticated user available from AuthContext (same as MembershipCard)
-    if (user) {
+    // For merchants, only fetch minimal profile data and focus on business data
+    if (user && isMerchant) {
+      const userData = user;
+      // For merchants, set minimal profile data and prioritize business data
+      setUserProfile({
+        fullName: userData.fullName || '',
+        email: userData.email || '',
+        phone: userData.phone || '',
+        profilePicture: userData.profilePicture || userData.profilePhoto || '',
+        membershipType: userData.membershipType || userData.membership || '',
+        membershipNumber: userData.membershipNumber || '',
+        createdAt: userData.created_at || '',
+        status: userData.status || '',
+        role: userData.role || userData.userType || '',
+        // Don't fetch unnecessary personal details for merchants
+        firstName: '',
+        lastName: '',
+        dob: '',
+        gender: '',
+        bloodGroup: '',
+        community: '',
+        address: { street: '', city: '', state: '', zipCode: '' },
+        country: 'Ghana'
+      });
+      return;
+    }
+
+    // For regular users, prefer the authenticated user available from AuthContext
+    if (user && !isMerchant) {
       const userData = user;
 
       // Parse address if it's a string
@@ -165,7 +195,7 @@ const UserSettings = () => {
   } finally {
     setIsLoading(false);
   }
-}, [user, showNotification]);
+}, [user, isMerchant, showNotification]);
 
 useEffect(() => {
         if (user) {
@@ -188,12 +218,12 @@ const fetchRedemptionHistory = useCallback(async () => {
 }, [showNotification]);
 
 
-  // Load redemptions when redemption tab is active
+  // Load redemptions when redemption tab is active (but not for merchants)
   useEffect(() => {
-  if (currentActiveTab === 'redemptions' && userRedemptions.length === 0) {
+  if (currentActiveTab === 'redemptions' && userRedemptions.length === 0 && !isMerchant) {
     fetchRedemptionHistory();
   }
-}, [currentActiveTab, userRedemptions.length, fetchRedemptionHistory]);
+}, [currentActiveTab, userRedemptions.length, fetchRedemptionHistory, isMerchant]);
 
   const handleProfileInputChange = (e) => {
     const { name, value } = e.target;
@@ -259,50 +289,16 @@ const fetchRedemptionHistory = useCallback(async () => {
   }
 }, [passwordFormData]);
 
-  const handleProfilePhotoUpload = async (file) => {
-  try {
-    setIsLoading(true);
-    const formData = new FormData();
-    formData.append('profilePhoto', file);
-
-    const response = await api.post(`/upload/profile-photo/${user.id}`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    });
-
-    if (response.data.success && response.data.imageUrl) {
-      const updatedUser = { ...user, profilePicture: response.data.imageUrl };
-      await updateUser(updatedUser);
-      setUserProfile(prev => ({ ...prev, profilePicture: response.data.imageUrl }));
-      showNotification('Profile photo updated successfully!', 'success');
-    } else {
-      throw new Error('Upload failed: No image URL returned');
-    }
-  } catch (error) {
-    console.error('Error uploading profile photo:', error);
-    const errorMessage = error.response?.data?.message || 'Failed to upload profile photo';
-    showNotification(errorMessage, 'error');
-  } finally {
-    setIsLoading(false);
-  }
-};
-
-    const handleMerchantLogoUpload = async (file) => {
+    const handleMerchantLogoUpload = async (uploadResponse) => {
       try {
-        setIsLoading(true);
-        const formData = new FormData();
-        formData.append('merchantLogo', file);
-
-        const response = await api.post(`/upload/merchant-logo/${user.id}`, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
-
-        if (response.data.success && response.data.imageUrl) {
-          // ✅ Update user context with new logo
+        if (uploadResponse && uploadResponse.imageUrl) {
+          // Update user context with new logo in business object
           const updatedUser = { 
             ...user, 
             business: { 
               ...user.business, 
-              logoUrl: response.data.imageUrl 
+              logo: uploadResponse.imageUrl,
+              logoUrl: uploadResponse.imageUrl 
             }
           };
           await updateUser(updatedUser);
@@ -311,23 +307,20 @@ const fetchRedemptionHistory = useCallback(async () => {
           throw new Error('Upload failed: No image URL returned');
         }
       } catch (error) {
-        console.error('Error uploading merchant logo:', error);
-        const errorMessage = error.response?.data?.message || 'Failed to upload business logo';
-        showNotification(errorMessage, 'error');
-      } finally {
-        setIsLoading(false);
+        console.error('Error updating merchant logo:', error);
+        showNotification('Failed to update business logo', 'error');
       }
     };
 
   const TabNavigation = () => {
     const availableTabs = [];
     
-    if (user?.role === 'merchant') {
+    if (isMerchant) {
       availableTabs.push(
         { id: 'business', label: 'Business Settings', icon: '🏢' },
-        { id: 'profile', label: 'Profile Information', icon: '👤' },
-        { id: 'security', label: 'Security Settings', icon: '🔒' },
-        { id: 'redemptions', label: 'Redemption History', icon: '🎫' }
+        { id: 'profile', label: 'Basic Profile', icon: '👤' },
+        { id: 'security', label: 'Security Settings', icon: '🔒' }
+        // Note: Removed redemption history for merchants as they should not see user redemptions
       );
     } else {
       availableTabs.push(
@@ -379,11 +372,11 @@ const fetchRedemptionHistory = useCallback(async () => {
           
           <div className="logo-upload-controls">
             <ImageUpload
-              onUpload={handleMerchantLogoUpload}
-              currentImage={getMerchantLogoUrl(user?.business || {}) || '/logo-placeholder.jpg'}
+              type="merchant"
+              entityId={user?.id}
+              currentImage={getMerchantLogoUrl(user?.business || {})}
+              onUploadSuccess={handleMerchantLogoUpload}
               className="merchant-logo-upload"
-              accept="image/*"
-              maxSize={3}
               label="Upload Business Logo"
               description="Upload your business logo"
             />
@@ -404,34 +397,48 @@ const fetchRedemptionHistory = useCallback(async () => {
     <div className="user-settings-tab-content">
       <div className="user-profile-form">
         <div className="user-profile-header">
-          <h2 className="user-profile-section-title">Profile Information</h2>
+          <h2 className="user-profile-section-title">
+            {isMerchant ? 'Basic Profile Information' : 'Profile Information'}
+          </h2>
           <p className="user-profile-section-description">
-            Update your personal information and membership details
+            {isMerchant 
+              ? 'View your basic account information and membership details'
+              : 'Update your personal information and membership details'
+            }
           </p>
         </div>
 
-        {/* Profile Photo Section */}
-        <div className="user-profile-photo-section">
-          <div className="profile-photo-container">
-            <img 
-                src={getProfileImageUrl(userProfile) || '/default-avatar.jpg'} 
-                alt="Profile"
-                className="profile-photo-display"
-            />
+        {/* Profile Photo Section - Only for non-merchants */}
+        {!isMerchant && (
+          <div className="user-profile-photo-section">
+            <div className="profile-photo-container">
+              <img 
+                  src={getProfileImageUrl(userProfile) || '/default-avatar.jpg'} 
+                  alt="Profile"
+                  className="profile-photo-display"
+              />
 
-            <div className="photo-upload-controls">
-                <ImageUpload
-                  onUpload={handleProfilePhotoUpload}  // This passes the FILE to your handler
-                  currentImage={getProfileImageUrl(userProfile) || '/default-avatar.jpg'}
-                  className="profile-photo-upload"
-                  accept="image/*"
-                  maxSize={5}
-                />
+              <div className="photo-upload-controls">
+                  <ImageUpload
+                    type="profile"
+                    entityId={user?.id}
+                    currentImage={getProfileImageUrl(userProfile)}
+                    onUploadSuccess={(uploadResponse) => {
+                      if (uploadResponse && uploadResponse.imageUrl) {
+                        const updatedUser = { ...user, profilePicture: uploadResponse.imageUrl };
+                        updateUser(updatedUser);
+                        setUserProfile(prev => ({ ...prev, profilePicture: uploadResponse.imageUrl }));
+                        showNotification('Profile photo updated successfully!', 'success');
+                      }
+                    }}
+                    className="profile-photo-upload"
+                  />
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Basic Information (read-only - update disabled) */}
+        {/* Basic Information (read-only for all, limited for merchants) */}
         <div className="user-profile-form-section">
           <h3 className="form-section-title">Basic Information</h3>
           <div className="user-profile-form-grid">
@@ -474,88 +481,94 @@ const fetchRedemptionHistory = useCallback(async () => {
               />
             </div>
 
-            <div className="form-field-group">
-              <label className="form-field-label">Date of Birth</label>
-              <input
-                type="date"
-                name="dob"
-                value={userProfile.dob}
-                onChange={handleProfileInputChange}
-                className="enhanced-form-input"
-                disabled
-              />
-            </div>
+            {/* Hide personal details for merchants */}
+            {!isMerchant && (
+              <>
+                <div className="form-field-group">
+                  <label className="form-field-label">Date of Birth</label>
+                  <input
+                    type="date"
+                    name="dob"
+                    value={userProfile.dob}
+                    onChange={handleProfileInputChange}
+                    className="enhanced-form-input"
+                    disabled
+                  />
+                </div>
 
+                <div className="form-field-group">
+                  <label className="form-field-label">Blood Group</label>
+                  <select
+                    name="bloodGroup"
+                    value={userProfile.bloodGroup}
+                    onChange={handleProfileInputChange}
+                    className="enhanced-form-select"
+                    disabled
+                  >
+                    <option value="">Select Blood Group</option>
+                    <option value="A+">A+</option>
+                    <option value="A-">A-</option>
+                    <option value="B+">B+</option>
+                    <option value="B-">B-</option>
+                    <option value="AB+">AB+</option>
+                    <option value="AB-">AB-</option>
+                    <option value="O+">O+</option>
+                    <option value="O-">O-</option>
+                  </select>
+                </div>
 
-            <div className="form-field-group">
-              <label className="form-field-label">Blood Group</label>
-              <select
-                name="bloodGroup"
-                value={userProfile.bloodGroup}
-                onChange={handleProfileInputChange}
-                className="enhanced-form-select"
-                disabled
-              >
-                <option value="">Select Blood Group</option>
-                <option value="A+">A+</option>
-                <option value="A-">A-</option>
-                <option value="B+">B+</option>
-                <option value="B-">B-</option>
-                <option value="AB+">AB+</option>
-                <option value="AB-">AB-</option>
-                <option value="O+">O+</option>
-                <option value="O-">O-</option>
-              </select>
-            </div>
-
-            <div className="form-field-group">
-              <label className="form-field-label">Community</label>
-              <input
-                type="text"
-                name="community"
-                value={userProfile.community}
-                onChange={handleProfileInputChange}
-                className="enhanced-form-input"
-                placeholder="Enter your community"
-                disabled
-              />
-            </div>
+                <div className="form-field-group">
+                  <label className="form-field-label">Community</label>
+                  <input
+                    type="text"
+                    name="community"
+                    value={userProfile.community}
+                    onChange={handleProfileInputChange}
+                    className="enhanced-form-input"
+                    placeholder="Enter your community"
+                    disabled
+                  />
+                </div>
+              </>
+            )}
           </div>
         </div>
 
-        {/* Address Information */}
-        <div className="user-profile-form-section">
-          <h3 className="form-section-title">Address Information</h3>
-          <div className="user-profile-form-grid">
-            <div className="form-field-group form-field-full-width">
-              <label className="form-field-label">Address</label>
-              <input
-                type="text"
-                name="address.street"
-                value={userProfile.address.street}
-                onChange={handleProfileInputChange}
-                className="enhanced-form-input"
-                placeholder="Enter your street address"
-                disabled
-              />
-            </div>
+        {/* Address Information - Only for non-merchants */}
+        {!isMerchant && (
+          <div className="user-profile-form-section">
+            <h3 className="form-section-title">Address Information</h3>
+            <div className="user-profile-form-grid">
+              <div className="form-field-group form-field-full-width">
+                <label className="form-field-label">Address</label>
+                <input
+                  type="text"
+                  name="address.street"
+                  value={userProfile.address.street}
+                  onChange={handleProfileInputChange}
+                  className="enhanced-form-input"
+                  placeholder="Enter your street address"
+                  disabled
+                />
+              </div>
 
-            <div className="form-field-group">
-              <label className="form-field-label">Country</label>
-              <select
-                name="country"
-                value={userProfile.country}
-                onChange={handleProfileInputChange}
-                className="enhanced-form-select"
-                disabled
-              >
-                <option value="Ghana">Ghana</option>
-                <option value="India">India</option>
-                <option value="Other">Other</option>
-              </select>
+              <div className="form-field-group">
+                <label className="form-field-label">Country</label>
+                <select
+                  name="country"
+                  value={userProfile.country}
+                  onChange={handleProfileInputChange}
+                  className="enhanced-form-select"
+                  disabled
+                >
+                  <option value="Ghana">Ghana</option>
+                  <option value="India">India</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Membership Information (Read-only) */}
         <div className="user-profile-form-section">

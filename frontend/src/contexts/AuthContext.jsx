@@ -12,12 +12,63 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
-  const updateUser = (user) => setUser(user);
+  // Keys for localStorage
+  const USER_STORAGE_KEY = 'user_data';
+  const AUTH_REMEMBERED_KEY = 'authRemembered';
+  
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [sessionExpired, setSessionExpired] = useState(false);
   
+  // Enhanced updateUser function with persistence
+  const updateUser = (updatedUser) => {
+    setUser(updatedUser);
+    // Persist user data to localStorage (excluding sensitive data)
+    if (updatedUser) {
+      const userDataToPersist = {
+        id: updatedUser.id,
+        fullName: updatedUser.fullName,
+        email: updatedUser.email,
+        phone: updatedUser.phone,
+        profilePicture: updatedUser.profilePicture,
+        profilePhoto: updatedUser.profilePhoto,
+        profilePhotoUrl: updatedUser.profilePhotoUrl,
+        membershipType: updatedUser.membershipType,
+        membershipNumber: updatedUser.membershipNumber,
+        role: updatedUser.role,
+        userType: updatedUser.userType,
+        business: updatedUser.business, // Include business data for merchants
+        // Add other non-sensitive fields as needed
+        dob: updatedUser.dob,
+        bloodGroup: updatedUser.bloodGroup,
+        community: updatedUser.community,
+        address: updatedUser.address,
+        country: updatedUser.country,
+        status: updatedUser.status,
+        created_at: updatedUser.created_at
+      };
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userDataToPersist));
+    } else {
+      localStorage.removeItem(USER_STORAGE_KEY);
+    }
+  };
+
+  // Load persisted user data
+  const loadPersistedUser = () => {
+    try {
+      const storedUser = localStorage.getItem(USER_STORAGE_KEY);
+      if (storedUser) {
+        const parsedUser = JSON.parse(storedUser);
+        return parsedUser;
+      }
+    } catch (error) {
+      console.error('Error loading persisted user data:', error);
+      localStorage.removeItem(USER_STORAGE_KEY);
+    }
+    return null;
+  };
+
   // Setup a default notification function
   const showToast = (message, type) => {
     // Create a toast notification
@@ -70,7 +121,7 @@ export const AuthProvider = ({ children }) => {
   
   // Use ref to prevent multiple simultaneous auth checks
   const authCheckRunning = useRef(false);
-
+  
   // Ref for refresh timer
   const refreshTimerRef = useRef(null);
   
@@ -98,14 +149,14 @@ export const AuthProvider = ({ children }) => {
       }
     }, 15 * 60 * 1000); // 15 minutes
   };
-    // Handle session expiration
+
+  // Handle session expiration
   const handleSessionExpired = () => {
     setSessionExpired(true);
-    setUser(null);
     setIsAuthenticated(false);
     
-    // Clear any remembered authentication state
-    localStorage.removeItem('authRemembered');
+    // Clear auth remembered but keep user data for profile images
+    localStorage.removeItem(AUTH_REMEMBERED_KEY);
     
     // Show session expired notification
     showToast('Your session has expired. Please login again to continue.', 'error');
@@ -116,7 +167,10 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await authApi.me();
       if (response.user) {
-        setUser(response.user);
+        // Merge server data with persisted data
+        const persistedUser = loadPersistedUser();
+        const mergedUser = { ...persistedUser, ...response.user };
+        updateUser(mergedUser);
         setIsAuthenticated(true);
         return true;
       }
@@ -139,15 +193,32 @@ export const AuthProvider = ({ children }) => {
       authCheckRunning.current = true;
       setIsLoading(true);
       
+      // Load persisted user data first
+      const persistedUser = loadPersistedUser();
+      if (persistedUser) {
+        setUser(persistedUser);
+      }
+      
+      // Then validate with server
       const response = await authApi.me();
-      setUser(response.user);
+      
+      // Merge server response with persisted data
+      const mergedUser = { ...persistedUser, ...response.user };
+      updateUser(mergedUser);
       setIsAuthenticated(true);
       
       // Setup refresh timer if authenticated
       setupRefreshTimer();
     } catch (error) {
-      setUser(null);
+      // If server validation fails but we have persisted data, keep it for profile images
+      const persistedUser = loadPersistedUser();
+      if (persistedUser) {
+        setUser(persistedUser);
+      } else {
+        setUser(null);
+      }
       setIsAuthenticated(false);
+      
       // Only log non-401 errors as 401 is expected when not logged in
       if (error.response?.status !== 401) {
         console.error('Auth check error:', error.response?.data?.message || error.message);
@@ -178,12 +249,15 @@ export const AuthProvider = ({ children }) => {
       
       // Store additional info if rememberMe is true
       if (credentials.rememberMe) {
-        localStorage.setItem('authRemembered', 'true');
+        localStorage.setItem(AUTH_REMEMBERED_KEY, 'true');
       } else {
-        localStorage.removeItem('authRemembered');
+        localStorage.removeItem(AUTH_REMEMBERED_KEY);
       }
       
-      setUser(response.user);
+      // Merge with any existing persisted data
+      const persistedUser = loadPersistedUser();
+      const mergedUser = { ...persistedUser, ...response.user };
+      updateUser(mergedUser);
       setIsAuthenticated(true);
       
       // Setup refresh timer when authenticated
@@ -202,7 +276,11 @@ export const AuthProvider = ({ children }) => {
     try {
       setIsLoading(true);
       const response = await authApi.merchantLogin(credentials);
-      setUser(response.user);
+      
+      // Merge with any existing persisted data
+      const persistedUser = loadPersistedUser();
+      const mergedUser = { ...persistedUser, ...response.user };
+      updateUser(mergedUser);
       setIsAuthenticated(true);
       
       // Setup refresh timer when merchant is authenticated
@@ -221,7 +299,7 @@ export const AuthProvider = ({ children }) => {
     try {
       setIsLoading(true);
       const response = await authApi.merchantRegister(userData);
-      setUser(response.user);
+      updateUser(response.user);
       setIsAuthenticated(true);
       
       // Setup refresh timer when merchant is registered and authenticated
@@ -240,7 +318,7 @@ export const AuthProvider = ({ children }) => {
     try {
       setIsLoading(true);
       const response = await authApi.register(userData);
-      setUser(response.user);
+      updateUser(response.user);
       setIsAuthenticated(true);
       
       // Setup refresh timer when user is registered and authenticated
@@ -265,13 +343,13 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await authApi.logout();
 
-      // Clear user state on successful logout
+      // Clear auth state but keep user data for profile images
       setUser(null);
       setIsAuthenticated(false);
       setSessionExpired(false);
 
-      // Clear any remembered credentials
-      localStorage.removeItem('authRemembered');
+      // Clear only the auth remembered flag, keep user data
+      localStorage.removeItem(AUTH_REMEMBERED_KEY);
 
       // Show success notification
       showToast('You have been logged out successfully', 'success');
@@ -281,11 +359,11 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Logout error:', error);
 
-      // Ensure local state is cleared even if server logout failed
+      // Ensure local auth state is cleared even if server logout failed
       setUser(null);
       setIsAuthenticated(false);
       setSessionExpired(false);
-      localStorage.removeItem('authRemembered');
+      localStorage.removeItem(AUTH_REMEMBERED_KEY);
 
       // Informational notification (only when an actual error occurred)
       showToast('There was an issue logging out, but you have been logged out of this device', 'info');

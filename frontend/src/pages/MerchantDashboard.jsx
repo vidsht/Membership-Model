@@ -1373,7 +1373,6 @@ const MerchantDashboard = () => {
           {showRedemptionRequests && (
             <div className="requests-container">
               {(() => {
-                console.log('[DEBUG] Rendering redemptionRequests:', redemptionRequests);
                 return redemptionRequests.length === 0 ? (
                   <div className="no-requests">
                     <div className="empty-state">
@@ -1413,7 +1412,7 @@ const MerchantDashboard = () => {
                               {request.membershipNumber && (
                                 <div className="membership-number">
                                   <i className="fas fa-id-card"></i>
-                                  <span>Member #{request.membershipNumber}</span>
+                                  <span>Membership # {request.membershipNumber}</span>
                                 </div>
                               )}
                             </div>
