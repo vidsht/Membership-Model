@@ -1129,6 +1129,49 @@ router.get('/communities', auth, admin, async (req, res) => {
   }
 });
 
+// ===== BUSINESS CATEGORIES MANAGEMENT =====
+router.get('/business-categories', auth, admin, async (req, res) => {
+  try {
+    // First try to get from dynamic settings
+    const settingsQuery = 'SELECT value FROM settings WHERE `key` = "dynamicFields.businessCategories"';
+    
+    if (await tableExists('settings')) {
+      const settingsResults = await queryAsync(settingsQuery);
+      if (settingsResults.length > 0) {
+        try {
+          const businessCategories = JSON.parse(settingsResults[0].value);
+          const activeCategories = businessCategories.filter(bc => bc.isActive !== false);
+          return res.json({
+            success: true,
+            categories: activeCategories
+          });
+        } catch (parseError) {
+          console.warn('Error parsing business categories from settings:', parseError);
+        }
+      }
+    }
+
+    // Fallback to defaults
+    const defaultCategories = [
+      { name: 'restaurant', label: 'Restaurant & Food', description: 'Restaurants, food services, catering', isActive: true },
+      { name: 'retail', label: 'Retail & Shopping', description: 'Retail stores, shopping centers', isActive: true },
+      { name: 'services', label: 'Professional Services', description: 'Consulting, legal, accounting, etc.', isActive: true },
+      { name: 'healthcare', label: 'Healthcare', description: 'Medical, dental, wellness services', isActive: true },
+      { name: 'technology', label: 'Technology', description: 'IT services, software, tech products', isActive: true },
+      { name: 'other', label: 'Other', description: 'Other business types', isActive: true }
+    ];
+
+    res.json({
+      success: true,
+      categories: defaultCategories
+    });
+  } catch (err) {
+    console.error('Error fetching business categories:', err);
+    res.status(500).json({ success: false, message: 'Server error fetching business categories' });
+  }
+});
+
+
 // ===== PLANS MANAGEMENT ===== 
 // UPDATED: Enhanced Plans Endpoint with User Type Filtering
 router.get('/plans', auth, admin, async (req, res) => {
@@ -1456,7 +1499,12 @@ router.get('/partners/:id', auth, admin, async (req, res) => {
       return res.status(404).json({ success: false, message: 'Partner not found' });
     }
 
-    res.json({ success: true, partner: result[0] });
+    const partner = results[0];
+    
+    res.json({ 
+      success: true, 
+      partner: partner
+    });
   } catch (err) {
     console.error('Error fetching partner:', err);
     res.status(500).json({ success: false, message: 'Server error fetching partner' });
@@ -1500,6 +1548,38 @@ router.get('/businesses', auth, admin, async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error fetching businesses' });
   }
 });
+
+router.get('/businesses/:id', auth, admin, async (req, res) => {
+  try {
+    const businessId = req.params.id;
+    
+    if (!(await tableExists('businesses'))) {
+      return res.status(404).json({ success: false, message: 'Businesses table not found' });
+    }
+
+    const businessQuery = `
+      SELECT b.*, u.fullName, u.email as userEmail, u.phone as userPhone
+      FROM businesses b
+      LEFT JOIN users u ON b.userId = u.id
+      WHERE b.businessId = ? OR b.userId = ?
+    `;
+
+    const businesses = await queryAsync(businessQuery, [businessId, businessId]);
+
+    if (!businesses.length) {
+      return res.status(404).json({ success: false, message: 'Business not found' });
+    }
+
+    res.json({
+      success: true,
+      business: businesses[0]
+    });
+  } catch (err) {
+    console.error('Error fetching business:', err);
+    res.status(500).json({ success: false, message: 'Server error fetching business' });
+  }
+});
+
 
 // Create partner (alias for merchant)
 router.post('/partners', auth, admin, async (req, res) => {

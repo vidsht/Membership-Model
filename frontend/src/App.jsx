@@ -40,6 +40,8 @@ import PartnerRegistration from './components/admin/BusinessPartners/PartnerRegi
 import PartnerDetail from './components/admin/BusinessPartners/PartnerDetail';
 import QuickEditDealLimit from './components/admin/BusinessPartners/QuickEditDealLimit';
 import MerchantDetailEdit from './components/admin/BusinessPartners/MerchantDetailEdit';
+import MerchantManagementEnhanced from './components/admin/BusinessPartners/MerchantManagementEnhanced';
+
 
 function AppContent() {
   const location = useLocation();
@@ -127,7 +129,7 @@ function AppContent() {
           {/* Business Partner Routes */}
           <Route path="/admin/partners" element={
             <AdminRoute>
-              <AdminDashboard />
+              <MerchantManagementEnhanced />
             </AdminRoute>
           } />
           

@@ -35,13 +35,13 @@ const PartnerDetail = () => {
         // Fetch partner details dynamically based on partnerId
         const res = await adminApi.getPartner(partnerId);
         console.log('PartnerDetail: Full API response:', res);
-        // Check if response has merchant property directly (not nested in data)
-        if (res && res.merchant) {
-          console.log('PartnerDetail: Setting partner data:', res.merchant);
-          setPartner(res.merchant);
-        } else if (res && res.success && res.merchant) {
-          console.log('PartnerDetail: Setting partner data from success response:', res.merchant);
-          setPartner(res.merchant);
+        // Check if response has partner property directly (not nested in data)
+        if (res && res.partner) {
+          console.log('PartnerDetail: Setting partner data:', res.partner);
+          setPartner(res.partner);
+        } else if (res && res.success && res.partner) {
+          console.log('PartnerDetail: Setting partner data from success response:', res.partner);
+          setPartner(res.partner);
         } else {
           console.error('PartnerDetail: Invalid response structure:', res);
           setError('Unable to load partner details.');
@@ -55,7 +55,9 @@ const PartnerDetail = () => {
     if (partnerId) {
       fetchPartner();
     }
-  }, [partnerId]);  const handleClose = () => {
+  }, [partnerId]); 
+  
+    const handleClose = () => {
     navigate('/admin', { state: { activeTab: 'merchants' } });
   };
 

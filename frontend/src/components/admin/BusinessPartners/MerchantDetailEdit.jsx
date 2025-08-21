@@ -9,7 +9,7 @@ import api from '../../../services/api';
 import './MerchantDetailEdit.css';
 
 const MerchantDetailEdit = () => {
-  const { merchantId } = useParams();
+  const { id: merchantId } = useParams();
   const navigate = useNavigate();
   const { validateSession, handleSessionExpired } = useAuth();
   const { showNotification } = useNotification();

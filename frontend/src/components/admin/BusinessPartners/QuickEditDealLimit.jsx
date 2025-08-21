@@ -26,10 +26,10 @@ const QuickEditDealLimit = () => {
       console.log('🔍 QuickEdit: Fetching partner for quick edit deal limit, ID:', partnerId);
       const res = await adminApi.getPartner(partnerId);
       console.log('📄 QuickEdit: Full API response:', res);
-      // Accept both {merchant: {...}} and {success: true, merchant: {...}}
-      if (res && res.merchant) {
-        setPartner(res.merchant);
-        setCustomDealLimit(res.merchant.customDealLimit || '');
+      // Accept both {partner: {...}} and {success: true, partner: {...}}
+      if (res && res.partner) {
+        setPartner(res.partner);
+        setCustomDealLimit(res.partner.customDealLimit || '');
       } else {
         console.error('QuickEdit: Invalid response structure:', res);
         showNotification('Partner not found', 'error');
