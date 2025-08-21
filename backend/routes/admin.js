@@ -1499,7 +1499,7 @@ router.get('/partners/:id', auth, admin, async (req, res) => {
       return res.status(404).json({ success: false, message: 'Partner not found' });
     }
 
-    const partner = results[0];
+    const partner = result[0];
     
     res.json({ 
       success: true, 

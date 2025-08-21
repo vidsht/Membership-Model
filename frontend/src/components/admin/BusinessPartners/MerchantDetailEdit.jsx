@@ -295,7 +295,7 @@ const MerchantDetailEdit = () => {
       setSaving(true);
       
       // Prepare user data
-      const userData = {
+      const unifiedPayload = {
         fullName: formData.fullName,
         email: formData.email,
         phone: formData.phone,
@@ -310,27 +310,45 @@ const MerchantDetailEdit = () => {
         status: formData.status,
         bloodGroup: formData.bloodGroup,
         userCategory: formData.userCategory,
-        profilePhoto: formData.profilePhoto
+        profilePhoto: formData.profilePhoto,
+
+        businessInfo: {
+          businessName: formData.businessName,
+          businessDescription: formData.businessDescription,
+          businessCategory: formData.businessCategory,
+          businessAddress: formData.businessAddress,
+          businessPhone: formData.businessPhone,
+          businessEmail: formData.businessEmail,
+          website: formData.website,
+          customDealLimit: formData.customDealLimit,
+          logo: formData.logo,
+          establishedYear: formData.establishedYear,
+          businessRegistrationNumber: formData.businessRegistrationNumber,
+          taxId: formData.taxId,
+          operatingHours: formData.operatingHours,
+          socialMediaLinks: formData.socialMediaLinks ? JSON.parse(formData.socialMediaLinks) : null,
+          userId: merchantId
+         }
       };
 
       // Prepare business data
-      const businessData = {
-        businessName: formData.businessName,
-        businessDescription: formData.businessDescription,
-        businessCategory: formData.businessCategory,
-        businessAddress: formData.businessAddress,
-        businessPhone: formData.businessPhone,
-        businessEmail: formData.businessEmail,
-        website: formData.website,
-        customDealLimit: formData.customDealLimit,
-        logo: formData.logo,
-        establishedYear: formData.establishedYear,
-        businessRegistrationNumber: formData.businessRegistrationNumber,
-        taxId: formData.taxId,
-        operatingHours: formData.operatingHours,
-        socialMediaLinks: formData.socialMediaLinks ? JSON.parse(formData.socialMediaLinks) : null,
-        userId: merchantId
-      };
+      // const businessData = {
+      //   businessName: formData.businessName,
+      //   businessDescription: formData.businessDescription,
+      //   businessCategory: formData.businessCategory,
+      //   businessAddress: formData.businessAddress,
+      //   businessPhone: formData.businessPhone,
+      //   businessEmail: formData.businessEmail,
+      //   website: formData.website,
+      //   customDealLimit: formData.customDealLimit,
+      //   logo: formData.logo,
+      //   establishedYear: formData.establishedYear,
+      //   businessRegistrationNumber: formData.businessRegistrationNumber,
+      //   taxId: formData.taxId,
+      //   operatingHours: formData.operatingHours,
+      //   socialMediaLinks: formData.socialMediaLinks ? JSON.parse(formData.socialMediaLinks) : null,
+      //   userId: merchantId
+      // };
 
       // // Update user information
       // const userResponse = await api.put(`/admin/users/${merchantId}`, userData);
@@ -344,24 +362,27 @@ const MerchantDetailEdit = () => {
       //   throw new Error(businessResponse.data.message || 'Failed to update business information');
       // }
 
-      const response = await api.put(`/admin/partners/${merchantId}`, unifiedPayload);
-        if (!response.data.success) {
-          throw new Error(response.data.message || 'Failed to update merchant');
-        }
+      // Single API call to unified partner endpoint
+    const response = await api.put(`/admin/partners/${merchantId}`, unifiedPayload);
+    
+    if (!response.data.success) {
+      throw new Error(response.data.message || 'Failed to update merchant');
+    }
 
-      setMerchant(prev => ({ ...prev, ...userData }));
-      setBusiness(prev => ({ ...prev, ...businessData }));
-      setEditMode(false);
-      showNotification('Merchant updated successfully', 'success');
+    // Update local state with the unified payload data
+    setMerchant(prev => ({ ...prev, ...unifiedPayload }));
+    setBusiness(prev => ({ ...prev, ...unifiedPayload.businessInfo }));
+    setEditMode(false);
+    showNotification('Merchant updated successfully', 'success');
       
       // Refresh merchant data to get latest info
       await fetchMerchantData();
-    } catch (err) {
-      console.error('Error updating merchant:', err);
-      showNotification(err.response?.data?.message || 'Failed to update merchant', 'error');
-    } finally {
-      setSaving(false);
-    }
+      } catch (err) {
+        console.error('Error updating merchant:', err);
+        showNotification(err.response?.data?.message || 'Failed to update merchant', 'error');
+      } finally {
+        setSaving(false);
+      }
   };
 
   // Handle cancel edit
