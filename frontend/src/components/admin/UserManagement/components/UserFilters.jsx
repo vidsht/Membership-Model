@@ -1,6 +1,7 @@
 // UserFilters.jsx - COMPLETE FIXED Component
 import React, { useState } from 'react';
 import { useDynamicFields } from '../../../../hooks/useDynamicFields';
+import './UserFilter.jsx';
 
 const UserFilters = ({ 
   filters, 
