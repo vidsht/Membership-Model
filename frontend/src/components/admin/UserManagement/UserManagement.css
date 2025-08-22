@@ -284,7 +284,6 @@
   max-width: 600px !important;
   width: 90% !important;
   max-height: 90vh !important;
-  overflow: hidden !important;
   position: relative !important;
   z-index: 10001 !important;
   animation: modalSlide 0.3s ease-out !important;
