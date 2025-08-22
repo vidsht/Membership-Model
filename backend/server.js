@@ -139,38 +139,34 @@ app.get('/api/health', (req, res) => {
 });
 
 // Public businesses endpoint for home page
+// Public businesses endpoint for home page
 app.get('/api/businesses', async (req, res) => {
   try {
-    // Use db.execute() directly - mysql2 supports promises
-    const [businesses] = await db.execute(`
+    console.log('🔍 Attempting to fetch businesses...');
+    
+    // CORRECTED: Removed u.business since it doesn't exist in users table
+    const [businesses] = await db.promise().execute(`
       SELECT b.businessId, b.businessName, b.businessDescription, b.businessCategory,
       b.businessAddress, b.businessPhone, b.businessEmail, b.website,
       b.isVerified, b.logo, b.logoUrl,
-      u.fullName as ownerName, u.membershipType as membershipLevel, u.business
+      u.fullName as ownerName, u.membershipType as membershipLevel
       FROM businesses b
       LEFT JOIN users u ON b.userId = u.id
       WHERE (b.status = 'active' OR b.status = '') AND u.status = 'approved'
       ORDER BY b.businessName ASC
     `);
 
+    console.log('✅ Businesses fetched successfully:', businesses.length);
+
     // Format the data for frontend consumption
     const formattedBusinesses = businesses.map(business => {
       let merchantLogo = null;
       
-      // Try multiple sources for merchant logo
+      // Try multiple sources for merchant logo - both columns exist in businesses table
       if (business.logo) {
         merchantLogo = business.logo;
       } else if (business.logoUrl) {
         merchantLogo = business.logoUrl;
-      } else if (business.business) {
-        try {
-          const businessData = typeof business.business === 'string'
-            ? JSON.parse(business.business)
-            : business.business;
-          merchantLogo = businessData?.logo || businessData?.logoUrl;
-        } catch (e) {
-          console.error('Error parsing business data for:', business.businessName, e);
-        }
       }
 
       return {
@@ -193,16 +189,14 @@ app.get('/api/businesses', async (req, res) => {
       };
     });
 
-    console.log('📊 Businesses with logos:', formattedBusinesses.map(b => ({
-      name: b.name,
-      hasLogo: !!(b.merchantLogo),
-      logo: b.merchantLogo || 'No logo'
-    })));
-
     res.json(formattedBusinesses);
   } catch (err) {
-    console.error('Error fetching public businesses:', err);
-    res.status(500).json({ success: false, message: 'Server error fetching businesses' });
+    console.error('❌ Error fetching public businesses:', err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error fetching businesses',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
   }
 });
 
