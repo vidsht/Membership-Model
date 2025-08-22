@@ -33,7 +33,7 @@ app.use(express.urlencoded({ extended: true }));
 // **IMPORTANT: Serve static files BEFORE other routes - MOVE THIS UP**
 const uploadsPath = process.env.UPLOADS_PATH || path.join(__dirname, 'uploads');
 app.use('/uploads', express.static(uploadsPath, {
-  maxAge: '1d', // ADD THESE OPTIONS
+  maxAge: '1d', 
   etag: true,
   setHeaders: (res, filePath) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -107,8 +107,8 @@ require('./db');
 
 // Import database connection for public routes
 const db = require('./db');
-// const { promisify } = require('util');
-// const queryAsync = promisify(db.query).bind(db);
+const { promisify } = require('util');
+const queryAsync = promisify(db.query).bind(db);
 
 // Basic routes
 app.use('/api/auth', require('./routes/auth'));
@@ -124,6 +124,9 @@ app.use('/api/plans', require('./routes/plans'));
 // Admin routes
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/admin', require('./routes/roles'));
+
+// Public admin endpoints that don't require authentication
+app.use('/api/admin', require('./routes/admin')); // This ensures public routes work
 
 // Upload routes
 app.use('/api/upload', require('./routes/upload'));
@@ -142,40 +145,44 @@ app.get('/api/health', (req, res) => {
 // Public businesses endpoint for home page
 app.get('/api/businesses', async (req, res) => {
   try {
-    console.log('🔍 Attempting to fetch businesses...');
-    
-    // CORRECTED: Removed u.business since it doesn't exist in users table
-    const [businesses] = await db.promise().execute(`
+    const businesses = await queryAsync(`
       SELECT b.businessId, b.businessName, b.businessDescription, b.businessCategory,
-      b.businessAddress, b.businessPhone, b.businessEmail, b.website,
-      b.isVerified, b.logo, b.logoUrl,
-      u.fullName as ownerName, u.membershipType as membershipLevel
+             b.businessAddress, b.businessPhone, b.businessEmail, b.website,
+             b.isVerified, b.logo, b.logoUrl,
+             u.fullName as ownerName, u.membershipType as membershipLevel, u.business
       FROM businesses b
       LEFT JOIN users u ON b.userId = u.id
       WHERE (b.status = 'active' OR b.status = '') AND u.status = 'approved'
       ORDER BY b.businessName ASC
     `);
-
-    console.log('✅ Businesses fetched successfully:', businesses.length);
-
+    
     // Format the data for frontend consumption
     const formattedBusinesses = businesses.map(business => {
       let merchantLogo = null;
       
-      // Try multiple sources for merchant logo - both columns exist in businesses table
+      // Try multiple sources for merchant logo
       if (business.logo) {
         merchantLogo = business.logo;
       } else if (business.logoUrl) {
         merchantLogo = business.logoUrl;
+      } else if (business.business) {
+        try {
+          const businessData = typeof business.business === 'string' 
+            ? JSON.parse(business.business) 
+            : business.business;
+          merchantLogo = businessData?.logo || businessData?.logoUrl;
+        } catch (e) {
+          console.error('Error parsing business data for:', business.businessName, e);
+        }
       }
-
+      
       return {
         id: business.businessId,
         name: business.businessName,
-        businessName: business.businessName,
+        businessName: business.businessName, // Keep both for compatibility
         description: business.businessDescription,
         sector: business.businessCategory || 'General',
-        category: business.businessCategory || 'General',
+        category: business.businessCategory || 'General', // Keep both for compatibility
         address: business.businessAddress,
         phone: business.businessPhone,
         email: business.businessEmail,
@@ -183,22 +190,26 @@ app.get('/api/businesses', async (req, res) => {
         isVerified: business.isVerified,
         membershipLevel: business.membershipLevel,
         ownerName: business.ownerName,
-        merchantLogo: merchantLogo,
-        logoUrl: merchantLogo,
-        logo: merchantLogo
+        merchantLogo: merchantLogo, // Add merchant logo URL
+        logoUrl: merchantLogo,      // Alternative field name
+        logo: merchantLogo          // Another alternative
       };
     });
-
+    
+    // Debug log to see which businesses have logos
+    console.log('📊 Businesses with logos:', formattedBusinesses.map(b => ({
+      name: b.name,
+      hasLogo: !!(b.merchantLogo),
+      logo: b.merchantLogo || 'No logo'
+    })));
+    
     res.json(formattedBusinesses);
   } catch (err) {
-    console.error('❌ Error fetching public businesses:', err);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Server error fetching businesses',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined
-    });
+    console.error('Error fetching public businesses:', err);
+    res.status(500).json({ success: false, message: 'Server error fetching businesses' });
   }
 });
+
 
 // 404 handler for unknown API routes
 app.use('/api/*', (req, res) => {
