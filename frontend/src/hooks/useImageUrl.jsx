@@ -118,7 +118,7 @@ export const useImageUrl = () => {
             return logoField;
             }
             
-            const finalUrl = logoField ? getImageUrl(logoField, 'profile') : null; // Use 'profile' since it's stored as profilePhoto
+            const finalUrl = logoField ? getImageUrl(logoField, 'merchant') : null; // Use 'merchant' since it's stored as profilePhoto
             console.log('🎯 Final constructed URL:', finalUrl);
             return finalUrl;
         };

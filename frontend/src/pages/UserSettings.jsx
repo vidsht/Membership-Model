@@ -419,7 +419,7 @@ const handleMerchantLogoUpload = async (uploadResponse) => {
             <ImageUpload
               type="merchant"
               entityId={user?.id}
-              currentImage={getMerchantLogoUrl(user?.business || {})}
+              currentImage={getMerchantLogoUrl(user)}
               onUploadSuccess={handleMerchantLogoUpload}
               onUploadError={(error) => showNotification('Upload failed', 'error')}
               className="merchant-logo-upload"

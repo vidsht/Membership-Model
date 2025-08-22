@@ -240,7 +240,7 @@ async function handleImageUpload(req, res, uploadType, idField, tableField, tabl
     const domain = process.env.DOMAIN_URL || process.env.VITE_DOMAIN_URL || 'https://membership.indiansinghana.com';
     const subDir = config.directory.replace(/^\/public_html\/uploads\//, '').replace(/^\/uploads\//, '').replace(/^\//, '').replace(/\/$/, '');
     const imageUrl = `${domain}/uploads/${subDir}/${filename}`;
-      
+
     res.json({
       success: true,
       message: 'Image uploaded successfully',
@@ -271,7 +271,7 @@ router.post('/profile-photo/:id', auth, createUploadMiddleware('profile').single
 
 // Merchant Logo Upload
 router.post('/merchant-logo/:id', auth, createUploadMiddleware('merchant').single('merchantLogo'), async (req, res) => {
-  await handleImageUpload(req, res, 'merchant', 'id', 'logo', 'businesses');
+  await handleImageUpload(req, res, 'merchant', 'id', 'profilePhoto', 'users');
 });
 
 // Deal Banner Upload
@@ -316,8 +316,8 @@ router.delete('/image/:type/:id', auth, async (req, res) => {
         idField = 'id';
         break;
       case 'merchant':
-        tableName = 'businesses';
-        tableField = 'logo';
+        tableName = 'users';
+        tableField = 'profilePhoto';
         idField = 'id';
         break;
       case 'deal':
