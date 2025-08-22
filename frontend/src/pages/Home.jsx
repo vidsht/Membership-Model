@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { useImageUrl, SmartImage } from '../hooks/useImageUrl.jsx';
+import { useImageUrl, SmartImage, DefaultAvatar } from '../hooks/useImageUrl.jsx';
 import api from '../services/api';
 import '../styles/global.css';
 import '../styles/home.css';
@@ -132,6 +132,14 @@ const Home = () => {
         // Fetch businesses (public data)
         const businessResponse = await api.get('/businesses');
         setBusinesses(businessResponse.data);        // Fetch public admin settings
+        console.log('🏢 Fetched businesses:', businessResponse.data);
+        console.log('🔍 Business logos:', businessResponse.data.map(b => ({
+          name: b.businessName || b.name,
+          logo: b.logo,
+          logoUrl: b.logoUrl,
+          merchantLogo: b.merchantLogo
+        })));
+
         try {
           const settingsResponse = await api.get('/admin/settings/public');
           if (settingsResponse.data.success) {
@@ -423,18 +431,18 @@ const Home = () => {
                     <div key={`${business.id || index}-${index}`} className="business-carousel-card">
                       <div className="business-carousel-logo">
                         <SmartImage
-                          src={getMerchantLogoUrl(business) || business.merchantLogo || business.logoUrl || business.logo}
-                           alt={`${business.businessName || business.name} Logo`}
-                           placeholder={<i className="fas fa-store" />}
-                           className="business-logo"
-                           maxRetries={3}
-                           style={{
-                             width: '100%',
-                             height: '100%',
-                             objectFit: 'cover',
-                             objectPosition: 'center'
-                           }}
-                         />
+                          src={getMerchantLogoUrl(business)}
+                          alt={`${business.businessName || business.name} logo`}
+                          fallback={<DefaultAvatar name={business.businessName || business.name} />}
+                          className="business-logo"
+                          maxRetries={3}
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            objectPosition: 'center'
+                          }}
+                        />
                       </div>
                       <div className="business-carousel-info">
                         <h3 className="business-carousel-name">{business.businessName || business.name}</h3>

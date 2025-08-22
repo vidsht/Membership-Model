@@ -576,7 +576,7 @@ router.get('/me', auth, (req, res) => {
 
     // If user is a merchant, fetch their business row and attach it
     if (user.userType === 'merchant') {
-        db.query('SELECT businessId, businessName, businessDescription, businessCategory, businessAddress, businessPhone, businessEmail, website, businessLicense, taxId, isVerified, verificationDate, status as businessStatus, created_at as businessCreatedAt FROM businesses WHERE userId = ? LIMIT 1', [userId], (bizErr, bizResults) => {
+        db.query('SELECT businessId, businessName, businessDescription, businessCategory, businessAddress, businessPhone, businessEmail, website, businessLicense, taxId, logo, isVerified, verificationDate, status as businessStatus, created_at as businessCreatedAt FROM businesses WHERE userId = ? LIMIT 1', [userId], (bizErr, bizResults) => {
           if (bizErr) {
             console.error('Error fetching business for /me:', bizErr);
             // Return user without business on error

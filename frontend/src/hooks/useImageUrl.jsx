@@ -45,8 +45,8 @@ export const useImageUrl = () => {
             // If first param is a user object, extract the image field
             if (typeof userOrImageField === 'object' && userOrImageField !== null) {
             const user = userOrImageField;
-            const imageField = user?.profilePhoto || user?.profilePicture || user?.profilePhotoUrl;
-            
+            const imageField = user?.profilePhoto || user?.profilePicture;
+
             // Return full URL if available
             if (imageField && (imageField.startsWith('http://') || imageField.startsWith('https://'))) {
                 return imageField;
