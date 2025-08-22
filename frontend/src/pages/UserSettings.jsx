@@ -226,6 +226,15 @@ const fetchRedemptionHistory = useCallback(async () => {
   }
 }, [currentActiveTab, userRedemptions.length, fetchRedemptionHistory, isMerchant]);
 
+useEffect(() => {
+  if (user && isMerchant) {
+    setUserProfile(prev => ({
+      ...prev,
+      profilePicture: user.profilePhoto || user.profilePicture || null
+    }));
+  }
+}, [user?.profilePhoto, user?.profilePicture, isMerchant]);
+
   const handleProfileInputChange = (e) => {
     const { name, value } = e.target;
     
@@ -292,13 +301,24 @@ const fetchRedemptionHistory = useCallback(async () => {
 
 const handleMerchantLogoUpload = async (uploadResponse) => {
   try {
-    console.log('Logo upload response:', uploadResponse);
+    console.log('Logo response received:', uploadResponse, typeof uploadResponse);
+    
+    // Handle removal case (when uploadResponse is null/undefined)
+    if (!uploadResponse || uploadResponse === null || 
+        (uploadResponse && uploadResponse.imageUrl === null) ||
+        (uploadResponse && Object.keys(uploadResponse).length === 0)) {
+      
+      console.log('Handling logo removal...');
+      return await handleMerchantLogoRemoval();
+    }
+    
+    // Handle successful upload
     if (uploadResponse && uploadResponse.imageUrl) {
       // For merchants, the logo is stored as profilePhoto in users table
       const updatedUser = { 
         ...user, 
-        profilePhoto: uploadResponse.filename,  // ✅ Store in user.profilePhoto
-        profilePicture: uploadResponse.filename  // ✅ Also store in profilePicture for compatibility
+        profilePhoto: uploadResponse.filename,
+        profilePicture: uploadResponse.filename
       };
       
       await updateUser(updatedUser);
@@ -316,13 +336,46 @@ const handleMerchantLogoUpload = async (uploadResponse) => {
       
       showNotification('Business logo updated successfully!', 'success');
     } else {
-      throw new Error('Upload failed: No image URL returned');
+      throw new Error('Invalid upload response format');
     }
   } catch (error) {
     console.error('Error updating merchant logo:', error);
     showNotification('Failed to update business logo', 'error');
   }
-};  
+};
+  
+const handleMerchantLogoRemoval = async () => {
+  try {
+    console.log('Removing merchant logo...');
+    
+    // Clear the profilePhoto in users table via AuthContext
+    const updatedUser = { 
+      ...user, 
+      profilePhoto: null,
+      profilePicture: null
+    };
+    
+    await updateUser(updatedUser);
+    
+    // Update local component state
+    setUserProfile(prev => ({
+      ...prev,
+      profilePicture: null
+    }));
+
+    // Clear from localStorage 
+    const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
+    userData.profilePhoto = null;
+    userData.profilePicture = null;
+    localStorage.setItem('user_data', JSON.stringify(userData));
+    
+    showNotification('Business logo removed successfully!', 'success');
+  } catch (error) {
+    console.error('Error removing merchant logo:', error);
+    showNotification('Failed to remove business logo', 'error');
+  }
+};
+
 
   const handleProfilePhotoUpload = async (uploadResponse) => {
     try {
@@ -413,7 +466,6 @@ const handleMerchantLogoUpload = async (uploadResponse) => {
               className="business-logo-preview"
             />
 
-
             <div className="logo-info">
               <h4>Current Business Logo</h4>
               <p>This logo will appear in the business directory</p>
@@ -424,7 +476,7 @@ const handleMerchantLogoUpload = async (uploadResponse) => {
             <ImageUpload
               type="merchant"
               entityId={user?.id}
-              currentImage={getMerchantLogoUrl(user)}
+              currentImage={getProfileImageUrl(user)}
               onUploadSuccess={handleMerchantLogoUpload}
               onUploadError={(error) => showNotification('Upload failed', 'error')}
               className="merchant-logo-upload"

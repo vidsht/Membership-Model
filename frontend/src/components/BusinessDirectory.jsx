@@ -3,6 +3,7 @@ import { useImageUrl, SmartImage, DefaultAvatar } from '../hooks/useImageUrl.jsx
 import api from '../services/api';
 import './BusinessDirectory.css';
 
+
 const BusinessDirectory = () => {
   const [businesses, setBusinesses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -15,6 +16,7 @@ const BusinessDirectory = () => {
   const categories = businesses.length > 0
     ? [...new Set(businesses.map(business => business.category || business.sector || business.businessCategory).filter(Boolean))]
     : [];
+
 
   useEffect(() => {
     const fetchBusinesses = async () => {
@@ -35,6 +37,7 @@ const BusinessDirectory = () => {
     fetchBusinesses();
   }, []);
 
+
   // Filter businesses based on search and category (match Home page fields)
   const filteredBusinesses = businesses.filter(business => {
     const name = business.businessName || business.name || '';
@@ -48,6 +51,7 @@ const BusinessDirectory = () => {
     const matchesCategory = selectedCategory === '' || category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
+
 
   return (
     <div className="business-directory-container">
@@ -69,6 +73,7 @@ const BusinessDirectory = () => {
         </div>
       </div>
 
+
       {/* Filters Section */}
       <div className="directory-filters-container">
         <div className="directory-filters">
@@ -81,20 +86,9 @@ const BusinessDirectory = () => {
               onChange={(e) => setFilter(e.target.value)}
             />
           </div>
-
-          <div className="category-filter">
-            <select 
-              value={selectedCategory} 
-              onChange={(e) => setSelectedCategory(e.target.value)}
-            >
-              <option value="">All Categories</option>
-              {categories.map(category => (
-                <option key={category} value={category}>{category}</option>
-              ))}
-            </select>
-          </div>
         </div>
       </div>
+
 
       {loading ? (
         <div className="loading-container">
@@ -129,23 +123,23 @@ const BusinessDirectory = () => {
               <div key={id} className="business-card-directory">
                 <div className="business-card-header">
                   <div className="business-logo-container">
-                  <SmartImage
-                    src={business.merchantLogo || business.logoUrl || business.logo || getMerchantLogoUrl(business)}
-                    alt={`${name} Logo`}
-                    placeholder={
-                      <div className="logo-placeholder">
-                        <span>{name.charAt(0) || "B"}</span>
-                      </div>
-                    }
-                    className="logo-image"
-                    maxRetries={3}
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover',
-                      objectPosition: 'center'
-                    }}
-                  />
+                    <SmartImage
+                      src={getMerchantLogoUrl(business)}
+                      alt={`${name} Logo`}
+                      placeholder={
+                        <div className="logo-placeholder">
+                          <span>{name.charAt(0) || "B"}</span>
+                        </div>
+                      }
+                      className="logo-image"
+                      maxRetries={3}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        objectPosition: 'center'
+                      }}
+                    />
                   </div>
                   <div className="business-info">
                     <h3 className="business-title">{name}</h3>
@@ -183,58 +177,6 @@ const BusinessDirectory = () => {
                   )}
                 </div>
               </div>
-                // <div key={id} className="business-card-directory">
-                //   <div className="business-logo">
-                //     {getMerchantLogoUrl(business) ? (
-                //       <SmartImage 
-                //         src={getMerchantLogoUrl(business)} 
-                //         alt={`${name} logo`} 
-                //         className="logo-image"
-                //         fallback={
-                //           <div className="logo-placeholder">
-                //             <span>{name.charAt(0) || "B"}</span>
-                //           </div>
-                //         }
-                //       />
-                //     ) : (
-                //       <div className="logo-placeholder">
-                //         <span>{name.charAt(0) || "B"}</span>
-                //       </div>
-                //     )}
-                //     <div className="business-badge" title="Verified Partner">
-                //       <i className="fas fa-certificate"></i>
-                //     </div>
-                //   </div>
-                //   <div className="business-info">
-                //     <h3>{name}</h3>
-                //     <p className="business-category"><i className="fas fa-briefcase"></i> {category}</p>
-                //     <p className="business-description">{desc || "No description available."}</p>
-                //     <div className="business-contact">
-                //       {phone && (
-                //         <a href={`tel:${phone}`} className="contact-item" title="Call">
-                //           <i className="fas fa-phone"></i>
-                //         </a>
-                //       )}
-                //       {email && (
-                //         <a href={`mailto:${email}`} className="contact-item" title="Email">
-                //           <i className="fas fa-envelope"></i>
-                //         </a>
-                //       )}
-                //       {address && (
-                //         <div className="contact-item" title="Address">
-                //           <i className="fas fa-map-marker-alt"></i>
-                //         </div>
-                //       )}
-                //     </div>
-                //     <div className="business-actions">
-                //       {website && (
-                //         <a href={website} target="_blank" rel="noopener noreferrer" className="website-link">
-                //           <i className="fas fa-globe"></i> Visit Website
-                //         </a>
-                //       )}
-                //     </div>
-                //   </div>
-                // </div>
               );
             })
           )}
