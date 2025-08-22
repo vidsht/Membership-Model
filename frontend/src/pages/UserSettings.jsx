@@ -290,38 +290,34 @@ const fetchRedemptionHistory = useCallback(async () => {
   }
 }, [passwordFormData]);
 
-    const handleMerchantLogoUpload = async (uploadResponse) => {
-      try {
-        console.log('Logo upload response:', uploadResponse);
-        if (uploadResponse && uploadResponse.imageUrl) {
-          // Update user context with new logo in business object
-    const updatedUser = {
-      ...user,
-      business: {
-        ...user.business,
-        logo: uploadResponse.filename // Database field only
-        // Remove logoUrl from context
-      }
-    };
-    await updateUser(updatedUser);
-
-    // Update localStorage with database field only
-    const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
-    if (!userData.business) userData.business = {};
-    userData.business.logo = uploadResponse.filename;
-    // Remove logoUrl from localStorage
-    localStorage.setItem('user_data', JSON.stringify(userData));
-          
-          showNotification('Business logo updated successfully!', 'success');
-        } else {
-          throw new Error('Upload failed: No image URL returned');
-        }
-      } catch (error) {
-        console.error('Error updating merchant logo:', error);
-        showNotification('Failed to update business logo', 'error');
-      }
-    };
-
+const handleMerchantLogoUpload = async (uploadResponse) => {
+  try {
+    console.log('Logo upload response:', uploadResponse);
+    if (uploadResponse && uploadResponse.imageUrl) {
+      // For merchants, the logo is stored as profilePhoto in users table
+      const updatedUser = { 
+        ...user, 
+        profilePhoto: uploadResponse.filename,  // ✅ Store in user.profilePhoto
+        profilePicture: uploadResponse.filename  // ✅ Also store in profilePicture for compatibility
+      };
+      
+      await updateUser(updatedUser);
+      
+      // Update localStorage 
+      const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
+      userData.profilePhoto = uploadResponse.filename;
+      userData.profilePicture = uploadResponse.filename;
+      localStorage.setItem('user_data', JSON.stringify(userData));
+      
+      showNotification('Business logo updated successfully!', 'success');
+    } else {
+      throw new Error('Upload failed: No image URL returned');
+    }
+  } catch (error) {
+    console.error('Error updating merchant logo:', error);
+    showNotification('Failed to update business logo', 'error');
+  }
+};  
 
   const handleProfilePhotoUpload = async (uploadResponse) => {
     try {

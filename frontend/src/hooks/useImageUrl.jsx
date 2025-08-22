@@ -88,51 +88,41 @@ export const useImageUrl = () => {
         };
         }, [getImageUrl]);
 
-    const getMerchantLogoUrl = useMemo(() => {
-    return (merchantOrBusiness) => {
-        if (!merchantOrBusiness) return null;
-        
-        let logoField = null;
-        
-        if (typeof merchantOrBusiness === 'object') {
-        // Check for full URL first (from upload response)
-            logoField = merchantOrBusiness.logo || merchantOrBusiness.logoUrl || merchantOrBusiness.merchantLogo;
-        
-        // If full URL exists, return it directly
-        if (logoField && (logoField.startsWith('http://') || logoField.startsWith('https://'))) {
-            return logoField;
-        }
-        
-        // Handle nested business object
-        if (!logoField && merchantOrBusiness.business) {
-            try {
-                const businessData = typeof merchantOrBusiness.business === 'string' 
-                ? JSON.parse(merchantOrBusiness.business) 
-                : merchantOrBusiness.business;
-                // Prioritize database field first
-                logoField = businessData?.logo || businessData?.logoUrl;
-                // Return full URL if available
-                if (logoField && (logoField.startsWith('http://') || logoField.startsWith('https://'))) {
-                return logoField;
-                }
-            } catch (e) {
-                console.error('Error parsing business data:', e);
+        const getMerchantLogoUrl = useMemo(() => {
+        return (merchantOrBusiness) => {
+            if (!merchantOrBusiness) return null;
+            
+            // Debug logging
+            console.log('🔍 getMerchantLogoUrl input:', merchantOrBusiness);
+            
+            let logoField = null;
+            
+            // For merchants, check user.profilePhoto first (since that's where merchant logos are stored)
+            if (merchantOrBusiness.userType === 'merchant' || merchantOrBusiness.business) {
+            // If it's a merchant user object with profilePhoto
+            logoField = merchantOrBusiness.profilePhoto || merchantOrBusiness.profilePicture;
+            
+            // If it has business data nested, check business logo
+            if (!logoField && merchantOrBusiness.business) {
+                logoField = merchantOrBusiness.business.logo || merchantOrBusiness.business.logoUrl;
             }
-        }
-        }
-        
-        if (typeof merchantOrBusiness === 'string') {
-        logoField = merchantOrBusiness;
-        // Return full URL if it's a complete URL
-        if (logoField && (logoField.startsWith('http://') || logoField.startsWith('https://'))) {
+            } else {
+            // For business objects from /businesses API, check logo fields (which now map to profilePhoto)
+            logoField = merchantOrBusiness.logo || merchantOrBusiness.logoUrl || merchantOrBusiness.merchantLogo;
+            }
+            
+            console.log('🖼️ Found logo field:', logoField);
+            
+            if (logoField && (logoField.startsWith('http://') || logoField.startsWith('https://'))) {
+            console.log('✅ Returning full URL:', logoField);
             return logoField;
-        }
-        }
-        
-        // Only construct URL if we have a filename (not a full URL)
-        return logoField ? getImageUrl(logoField, 'merchant') : null;
-    };
-    }, [getImageUrl]);
+            }
+            
+            const finalUrl = logoField ? getImageUrl(logoField, 'profile') : null; // Use 'profile' since it's stored as profilePhoto
+            console.log('🎯 Final constructed URL:', finalUrl);
+            return finalUrl;
+        };
+        }, [getImageUrl]);
 
 
     const getDealBannerUrl = useMemo(() => {

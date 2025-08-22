@@ -145,35 +145,38 @@ app.get('/api/health', (req, res) => {
 app.get('/api/businesses', async (req, res) => {
   try {
     const businesses = await queryAsync(`
-      SELECT b.businessId, b.businessName, b.businessDescription, b.businessCategory,
-             b.businessAddress, b.businessPhone, b.businessEmail, b.website,
-             b.isVerified, b.logo, b.logoUrl,
-             u.fullName as ownerName, u.membershipType as membershipLevel
+      SELECT
+        b.businessId,
+        b.businessName,
+        b.businessDescription,
+        b.businessCategory,
+        b.businessAddress,
+        b.businessPhone,
+        b.businessEmail,
+        b.website,
+        b.isVerified,
+        u.profilePhoto as logo,           -- Use user.profilePhoto as logo
+        u.profilePicture as logoUrl,      -- Use user.profilePicture as alternative
+        u.fullName as ownerName,
+        u.membershipType as membershipLevel
       FROM businesses b
       LEFT JOIN users u ON b.userId = u.id
-      WHERE (b.status = 'active' OR b.status = '') AND u.status = 'approved'
+      WHERE (b.status = 'active' OR b.status = 'approved' OR b.status = '')
+        AND u.status = 'approved'
       ORDER BY b.businessName ASC
     `);
 
-    
-    // Format the data for frontend consumption
-      const formattedBusinesses = businesses.map(business => {
-      let merchantLogo = null;
+    // Map fields for frontend compatiblity
+    const formattedBusinesses = businesses.map(business => {
+      let merchantLogo = business.logo || business.logoUrl || null;
 
-      // Try multiple sources for merchant logo from businesses table
-      if (business.logo) {
-        merchantLogo = business.logo;
-      } else if (business.logoUrl) {
-        merchantLogo = business.logoUrl;
-      }
-      
       return {
         id: business.businessId,
         name: business.businessName,
-        businessName: business.businessName, // Keep both for compatibility
+        businessName: business.businessName,
         description: business.businessDescription,
         sector: business.businessCategory || 'General',
-        category: business.businessCategory || 'General', // Keep both for compatibility
+        category: business.businessCategory || 'General',
         address: business.businessAddress,
         phone: business.businessPhone,
         email: business.businessEmail,
@@ -181,19 +184,18 @@ app.get('/api/businesses', async (req, res) => {
         isVerified: business.isVerified,
         membershipLevel: business.membershipLevel,
         ownerName: business.ownerName,
-        merchantLogo: merchantLogo, // Add merchant logo URL
-        logoUrl: merchantLogo,      // Alternative field name
-        logo: merchantLogo          // Another alternative
+        merchantLogo: merchantLogo,
+        logoUrl: merchantLogo,
+        logo: merchantLogo
       };
     });
-    
-    // Debug log to see which businesses have logos
+
     console.log('📊 Businesses with logos:', formattedBusinesses.map(b => ({
       name: b.name,
-      hasLogo: !!(b.merchantLogo),
+      hasLogo: !!b.merchantLogo,
       logo: b.merchantLogo || 'No logo'
     })));
-    
+
     res.json(formattedBusinesses);
   } catch (err) {
     console.error('Error fetching public businesses:', err);
