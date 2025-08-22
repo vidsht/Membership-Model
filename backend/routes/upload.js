@@ -240,7 +240,7 @@ async function handleImageUpload(req, res, uploadType, idField, tableField, tabl
     const domain = process.env.DOMAIN_URL || process.env.VITE_DOMAIN_URL || 'https://membership.indiansinghana.com';
     const subDir = config.directory.replace(/^\/public_html\/uploads\//, '').replace(/^\/uploads\//, '').replace(/^\//, '').replace(/\/$/, '');
     const imageUrl = `${domain}/uploads/${subDir}/${filename}`;
-    
+      
     res.json({
       success: true,
       message: 'Image uploaded successfully',

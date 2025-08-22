@@ -423,18 +423,18 @@ const Home = () => {
                     <div key={`${business.id || index}-${index}`} className="business-carousel-card">
                       <div className="business-carousel-logo">
                         <SmartImage
-                          src={business.merchantLogo || business.logoUrl || business.logo || getMerchantLogoUrl(business)}
-                          alt={`${business.businessName || business.name} Logo`}
-                          placeholder={<i className="fas fa-store" />}
-                          className="business-logo"
-                          maxRetries={3}
-                          style={{
-                            width: '100%',
-                            height: '100%',
-                            objectFit: 'cover',
-                            objectPosition: 'center'
-                          }}
-                        />
+                          src={getMerchantLogoUrl(business) || business.merchantLogo || business.logoUrl || business.logo}
+                           alt={`${business.businessName || business.name} Logo`}
+                           placeholder={<i className="fas fa-store" />}
+                           className="business-logo"
+                           maxRetries={3}
+                           style={{
+                             width: '100%',
+                             height: '100%',
+                             objectFit: 'cover',
+                             objectPosition: 'center'
+                           }}
+                         />
                       </div>
                       <div className="business-carousel-info">
                         <h3 className="business-carousel-name">{business.businessName || business.name}</h3>

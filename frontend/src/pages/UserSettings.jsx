@@ -72,7 +72,7 @@ const UserSettings = () => {
         fullName: userData.fullName || '',
         email: userData.email || '',
         phone: userData.phone || '',
-        profilePicture: userData.profilePicture || userData.profilePhoto || '',
+        profilePicture: userData.profilePhoto || userData.profilePicture || '',
         membershipType: userData.membershipType || userData.membership || '',
         membershipNumber: userData.membershipNumber || '',
         createdAt: userData.created_at || '',
@@ -132,7 +132,7 @@ const UserSettings = () => {
         community: userData.community || '',
         address: parsedAddress,
         country: userData.country || 'Ghana',
-        profilePicture: userData.profilePicture || userData.profilePhoto || userData.profilePhotoUrl || '',
+        profilePicture: userData.profilePhoto || userData.profilePicture || '',
         membershipType: userData.membershipType || userData.membership || '',
         membershipNumber: userData.membershipNumber || '',
         createdAt: userData.created_at || '',
@@ -295,24 +295,22 @@ const fetchRedemptionHistory = useCallback(async () => {
         console.log('Logo upload response:', uploadResponse);
         if (uploadResponse && uploadResponse.imageUrl) {
           // Update user context with new logo in business object
-          const updatedUser = {
-            ...user,
-            business: {
-              ...user.business,
-              logo: uploadResponse.filename, // Store filename for DB
-              logoUrl: uploadResponse.imageUrl // Store full URL for immediate use
-            }
-          };
-          
-          // Update context
-          await updateUser(updatedUser);
-          
-          // Update localStorage for persistence
-          const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
-          if (!userData.business) userData.business = {};
-          userData.business.logo = uploadResponse.filename;
-          userData.business.logoUrl = uploadResponse.imageUrl;
-          localStorage.setItem('user_data', JSON.stringify(userData));
+    const updatedUser = {
+      ...user,
+      business: {
+        ...user.business,
+        logo: uploadResponse.filename // Database field only
+        // Remove logoUrl from context
+      }
+    };
+    await updateUser(updatedUser);
+
+    // Update localStorage with database field only
+    const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
+    if (!userData.business) userData.business = {};
+    userData.business.logo = uploadResponse.filename;
+    // Remove logoUrl from localStorage
+    localStorage.setItem('user_data', JSON.stringify(userData));
           
           showNotification('Business logo updated successfully!', 'success');
         } else {
@@ -331,28 +329,24 @@ const fetchRedemptionHistory = useCallback(async () => {
       
       if (uploadResponse && uploadResponse.imageUrl) {
         // Update user context with new profile photo
-        const updatedUser = {
-          ...user,
-          profilePicture: uploadResponse.filename,    // For DB storage
-          profilePhoto: uploadResponse.filename,      // Alternative field name
-          profilePhotoUrl: uploadResponse.imageUrl    // Full URL for immediate use
-        };
-        
-        // Update context
-        await updateUser(updatedUser);
-        
-        // Update localStorage for persistence
-        const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
-        userData.profilePicture = uploadResponse.filename;
-        userData.profilePhoto = uploadResponse.filename;
-        userData.profilePhotoUrl = uploadResponse.imageUrl;
-        localStorage.setItem('user_data', JSON.stringify(userData));
-        
-        // Update local state with full URL for immediate preview
-        setUserProfile(prev => ({
-          ...prev,
-          profilePicture: uploadResponse.imageUrl  // ✅ This is correct - full URL
-        }));
+    const updatedUser = {
+      ...user,
+      profilePhoto: uploadResponse.filename, // Database field only
+      // Remove profilePhotoUrl from context - let useImageUrl construct URLs
+    };
+    await updateUser(updatedUser);
+
+    // Update localStorage with database field only
+    const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
+    userData.profilePhoto = uploadResponse.filename;
+    // Remove profilePhotoUrl from localStorage
+    localStorage.setItem('user_data', JSON.stringify(userData));
+
+    // Update local state with filename only - let useImageUrl construct URL
+    setUserProfile(prev => ({
+      ...prev,
+      profilePicture: uploadResponse.filename // Store filename only
+    }));
 
         showNotification('Profile photo updated successfully!', 'success');
       } else {

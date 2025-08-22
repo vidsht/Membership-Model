@@ -1,9 +1,13 @@
 import React, { useMemo } from 'react';
 
 // Base URL for images - fallback to current origin if env var not set
-const IMAGE_BASE_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 
-                      import.meta.env.VITE_DOMAIN_URL || 
-                      'https://membership-model.onrender.com';
+// const IMAGE_BASE_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 
+//                       import.meta.env.VITE_DOMAIN_URL || 
+//                       'https://membership-model.onrender.com';
+
+const IMAGE_BASE_URL = import.meta.env.VITE_DOMAIN_URL || 
+                       process.env.VITE_DOMAIN_URL || 
+                       'https://membership.indiansinghana.com'; 
 
 // Helper hook for handling image URLs
 export const useImageUrl = () => {
@@ -41,7 +45,7 @@ export const useImageUrl = () => {
             // If first param is a user object, extract the image field
             if (typeof userOrImageField === 'object' && userOrImageField !== null) {
             const user = userOrImageField;
-            const imageField = user?.profilePhotoUrl || user?.profilePhoto || user?.profilePicture;
+            const imageField = user?.profilePhoto || user?.profilePicture || user?.profilePhotoUrl;
             
             // Return full URL if available
             if (imageField && (imageField.startsWith('http://') || imageField.startsWith('https://'))) {
@@ -92,9 +96,7 @@ export const useImageUrl = () => {
         
         if (typeof merchantOrBusiness === 'object') {
         // Check for full URL first (from upload response)
-        logoField = merchantOrBusiness.logoUrl || 
-                    merchantOrBusiness.merchantLogo || 
-                    merchantOrBusiness.logo;
+            logoField = merchantOrBusiness.logo || merchantOrBusiness.logoUrl || merchantOrBusiness.merchantLogo;
         
         // If full URL exists, return it directly
         if (logoField && (logoField.startsWith('http://') || logoField.startsWith('https://'))) {
@@ -104,19 +106,17 @@ export const useImageUrl = () => {
         // Handle nested business object
         if (!logoField && merchantOrBusiness.business) {
             try {
-            const businessData = typeof merchantOrBusiness.business === 'string' 
+                const businessData = typeof merchantOrBusiness.business === 'string' 
                 ? JSON.parse(merchantOrBusiness.business) 
                 : merchantOrBusiness.business;
-            
-            // Check for full URL in business object
-            logoField = businessData?.logoUrl || businessData?.logo;
-            
-            // Return full URL if available
-            if (logoField && (logoField.startsWith('http://') || logoField.startsWith('https://'))) {
+                // Prioritize database field first
+                logoField = businessData?.logo || businessData?.logoUrl;
+                // Return full URL if available
+                if (logoField && (logoField.startsWith('http://') || logoField.startsWith('https://'))) {
                 return logoField;
-            }
+                }
             } catch (e) {
-            console.error('Error parsing business data:', e);
+                console.error('Error parsing business data:', e);
             }
         }
         }
