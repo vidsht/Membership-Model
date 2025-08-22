@@ -2100,14 +2100,22 @@
   filter: grayscale(0%);
 }
 
+.carousel-track {
+  display: flex;
+  gap: 2rem;
+  animation: scroll-left 36s linear infinite;
+  width: fit-content;
+}
+
 @keyframes scroll-left {
-  0% {
+  from {
     transform: translateX(0);
   }
-  100% {
-    transform: translateX(-50%);
+  to {
+    transform: translateX(-3996px); /* Approximate: 18 items × (200px width + 32px gap) */
   }
 }
+
 
 /* Pause animation on hover */
 .carousel-wrapper:hover .carousel-track {

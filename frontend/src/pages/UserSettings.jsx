@@ -3,38 +3,9 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import PlanExpiryBanner from '../components/PlanExpiryBanner';
 import ImageUpload from '../components/common/ImageUpload';
-import { useImageUrl } from '../hooks/useImageUrl.jsx';
+import { useImageUrl,  SmartImage, DefaultAvatar } from '../hooks/useImageUrl.jsx';
 import api from '../services/api';
 import '../styles/enhanced-user-settings.css';
-
-// Add these functions after imports and before const UserSettings = () => {
-const getPersistedProfileImage = (userId) => {
-  if (!userId) return null;
-  try {
-    const userData = localStorage.getItem('user_data');
-    if (userData) {
-      const parsed = JSON.parse(userData);
-      return parsed.profilePicture || parsed.profilePhoto || parsed.profilePhotoUrl;
-    }
-  } catch (e) {
-    console.error('Error loading persisted profile image:', e);
-  }
-  return null;
-};
-
-const getPersistedMerchantLogo = (userId) => {
-  if (!userId) return null;
-  try {
-    const userData = localStorage.getItem('user_data');
-    if (userData) {
-      const parsed = JSON.parse(userData);
-      return parsed.business?.logo || parsed.business?.logoUrl;
-    }
-  } catch (e) {
-    console.error('Error loading persisted merchant logo:', e);
-  }
-  return null;
-};
 
 
 const UserSettings = () => {
@@ -320,77 +291,84 @@ const fetchRedemptionHistory = useCallback(async () => {
 }, [passwordFormData]);
 
     const handleMerchantLogoUpload = async (uploadResponse) => {
-      try {
-        console.log('Logo upload response:', uploadResponse);
-        if (uploadResponse && uploadResponse.imageUrl) {
-          // Update user context with new logo in business object
-          const updatedUser = {
-            ...user,
-            business: {
-              ...user.business,
-              logo: uploadResponse.filename, // Store filename for DB
-              logoUrl: uploadResponse.imageUrl // Store full URL for immediate use
-            }
-          };
-          
-          // Update context
-          await updateUser(updatedUser);
-          
-          // Update localStorage for persistence
-          const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
-          if (!userData.business) userData.business = {};
-          userData.business.logo = uploadResponse.filename;
-          userData.business.logoUrl = uploadResponse.imageUrl;
-          localStorage.setItem('user_data', JSON.stringify(userData));
-          
-          showNotification('Business logo updated successfully!', 'success');
-        } else {
-          throw new Error('Upload failed: No image URL returned');
-        }
-      } catch (error) {
-        console.error('Error updating merchant logo:', error);
-        showNotification('Failed to update business logo', 'error');
-      }
-    };
-
-
-  const handleProfilePhotoUpload = async (uploadResponse) => {
   try {
-    console.log('Profile upload response:', uploadResponse);
+    console.log('Logo upload response:', uploadResponse);
     if (uploadResponse && uploadResponse.imageUrl) {
-      // Update user context with new profile photo
+      // Ensure consistent URL format
+      const logoUrl = uploadResponse.imageUrl.startsWith('http') 
+        ? uploadResponse.imageUrl 
+        : `${window.location.origin}${uploadResponse.imageUrl}`;
+
+      // Update user context with new logo in business object
       const updatedUser = {
         ...user,
-        profilePicture: uploadResponse.filename,
-        profilePhoto: uploadResponse.filename,
-        profilePhotoUrl: uploadResponse.imageUrl
+        business: {
+          ...user.business,
+          logo: uploadResponse.filename, // Store filename for DB
+          logoUrl: logoUrl // Store full URL for immediate use
+        }
       };
-      
+
       // Update context
       await updateUser(updatedUser);
-      
+
       // Update localStorage for persistence
       const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
-      userData.profilePicture = uploadResponse.filename;
-      userData.profilePhoto = uploadResponse.filename;
-      userData.profilePhotoUrl = uploadResponse.imageUrl;
+      if (!userData.business) userData.business = {};
+      userData.business.logo = uploadResponse.filename;
+      userData.business.logoUrl = logoUrl;
       localStorage.setItem('user_data', JSON.stringify(userData));
-      
-      // Update local state
-      setUserProfile(prev => ({
-        ...prev,
-        profilePicture: uploadResponse.filename
-      }));
-      
-      showNotification('Profile photo updated successfully!', 'success');
+
+      showNotification('Business logo updated successfully!', 'success');
     } else {
       throw new Error('Upload failed: No image URL returned');
     }
   } catch (error) {
-    console.error('Error updating profile photo:', error);
-    showNotification('Failed to update profile photo', 'error');
+    console.error('Error updating merchant logo:', error);
+    showNotification('Failed to update business logo', 'error');
   }
 };
+
+
+  const handleProfilePhotoUpload = async (uploadResponse) => {
+    try {
+      console.log('Profile upload response:', uploadResponse);
+      
+      if (uploadResponse && uploadResponse.imageUrl) {
+        // Update user context with new profile photo
+        const updatedUser = {
+          ...user,
+          profilePicture: uploadResponse.filename,    // For DB storage
+          profilePhoto: uploadResponse.filename,      // Alternative field name
+          profilePhotoUrl: uploadResponse.imageUrl    // Full URL for immediate use
+        };
+        
+        // Update context
+        await updateUser(updatedUser);
+        
+        // Update localStorage for persistence
+        const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
+        userData.profilePicture = uploadResponse.filename;
+        userData.profilePhoto = uploadResponse.filename;
+        userData.profilePhotoUrl = uploadResponse.imageUrl;
+        localStorage.setItem('user_data', JSON.stringify(userData));
+        
+        // Update local state with full URL for immediate preview
+        setUserProfile(prev => ({
+          ...prev,
+          profilePicture: uploadResponse.imageUrl  // ✅ This is correct - full URL
+        }));
+
+        showNotification('Profile photo updated successfully!', 'success');
+      } else {
+        throw new Error('Upload response missing image URL');
+      }
+    } catch (error) {
+      console.error('Error updating profile photo:', error);
+      showNotification('Failed to update profile photo', 'error');
+    }
+  };
+
 
   const TabNavigation = () => {
     const availableTabs = [];
@@ -438,11 +416,13 @@ const fetchRedemptionHistory = useCallback(async () => {
       <div className="merchant-business-logo-container">
         <div className="merchant-logo-upload-section">
           <div className="current-logo-display">
-            <img 
-              src={getMerchantLogoUrl(user?.business || {}) || getPersistedMerchantLogo(user?.id) || '/logo-placeholder.jpg'} 
+            <SmartImage
+              src={getMerchantLogoUrl(user?.business || {})}
+              fallback={<DefaultAvatar name={user?.fullName || ''} size={120} />}
               alt="Current business logo"
               className="business-logo-preview"
             />
+
 
             <div className="logo-info">
               <h4>Current Business Logo</h4>
@@ -454,7 +434,7 @@ const fetchRedemptionHistory = useCallback(async () => {
             <ImageUpload
               type="merchant"
               entityId={user?.id}
-              currentImage={getMerchantLogoUrl(user?.business || {}) || getPersistedMerchantLogo(user?.id)}
+              currentImage={getMerchantLogoUrl(user?.business || {})}
               onUploadSuccess={handleMerchantLogoUpload}
               onUploadError={(error) => showNotification('Upload failed', 'error')}
               className="merchant-logo-upload"
@@ -496,18 +476,17 @@ const fetchRedemptionHistory = useCallback(async () => {
         {!isMerchant && (
           <div className="user-profile-photo-section">
             <div className="profile-photo-container">
-              <img 
-                src={getProfileImageUrl(userProfile) || getPersistedProfileImage(user?.id) || '/default-avatar.jpg'} 
-                alt="Profile"
-                className="profile-photo-display"
-              />
-
-
+            <SmartImage
+              src={getProfileImageUrl(user)}
+              fallback={<DefaultAvatar name={user?.fullName || ''} size={120} />}
+              alt="Profile"
+              className="profile-photo-display"
+            />
               <div className="photo-upload-controls">
                   <ImageUpload
                   type="profile"
                   entityId={user?.id}
-                  currentImage={getProfileImageUrl(userProfile) || getPersistedProfileImage(user?.id)}
+                  currentImage={getProfileImageUrl(user)}
                   onUploadSuccess={handleProfilePhotoUpload}
                   onUploadError={(error) => showNotification('Upload failed', 'error')}
                   className="profile-photo-upload"
