@@ -303,6 +303,11 @@ const handleMerchantLogoUpload = async (uploadResponse) => {
       
       await updateUser(updatedUser);
       
+      setUserProfile(prev => ({
+        ...prev,
+        profilePicture: uploadResponse.filename
+      }));
+
       // Update localStorage 
       const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
       userData.profilePhoto = uploadResponse.filename;
@@ -402,7 +407,7 @@ const handleMerchantLogoUpload = async (uploadResponse) => {
         <div className="merchant-logo-upload-section">
           <div className="current-logo-display">
             <SmartImage
-              src={getMerchantLogoUrl(user?.business || {})}
+              src={getProfileImageUrl(user)}
               fallback={<DefaultAvatar name={user?.fullName || ''} size={120} />}
               alt="Current business logo"
               className="business-logo-preview"

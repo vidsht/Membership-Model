@@ -40,7 +40,7 @@ router.get('/profile/complete', auth, (req, res) => {
         id, fullName, email, phone, dob, bloodGroup, 
         community, address, country, state, city, profilePicture, profilePhoto,
         membership, membershipType, membershipNumber, preferences, created_at, 
-        lastLogin, updated_at, validationDate
+        lastLogin, updated_at, validationDate, userType
       FROM users 
       WHERE id = ?
     `;
