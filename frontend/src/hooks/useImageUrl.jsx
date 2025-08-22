@@ -27,69 +27,104 @@ export const useImageUrl = () => {
         };
     }, []);
 
-    const getProfileImageUrl = useMemo(() => {
+        const getProfileImageUrl = useMemo(() => {
         return (userOrImageField, userId) => {
             // If first param is a user object, extract the image field
             if (typeof userOrImageField === 'object' && userOrImageField !== null) {
-                const user = userOrImageField;
-                const imageField = user?.profilePhoto || user?.profilePicture || user?.profilePhotoUrl;
-                if (imageField) return getImageUrl(imageField, 'profile');
+            const user = userOrImageField;
+            const imageField = user?.profilePhotoUrl || user?.profilePhoto || user?.profilePicture;
+            
+            // Return full URL if available
+            if (imageField && (imageField.startsWith('http://') || imageField.startsWith('https://'))) {
+                return imageField;
             }
+            
+            if (imageField) return getImageUrl(imageField, 'profile');
+            }
+            
             // If it's a string (image field directly), use it
             if (typeof userOrImageField === 'string' && userOrImageField) {
-                return getImageUrl(userOrImageField, 'profile');
+            // Return full URL if it's a complete URL
+            if (userOrImageField.startsWith('http://') || userOrImageField.startsWith('https://')) {
+                return userOrImageField;
             }
+            return getImageUrl(userOrImageField, 'profile');
+            }
+            
             // Fallback to localStorage for persistent images
             if (userId) {
-                try {
-                    const userData = localStorage.getItem('user_data');
-                    if (userData) {
-                        const parsed = JSON.parse(userData);
-                        const imageField = parsed.profilePicture || parsed.profilePhoto || parsed.profilePhotoUrl;
-                        if (imageField) return getImageUrl(imageField, 'profile');
-                    }
-                } catch (e) {
-                    console.error('Error loading persisted profile image:', e);
+            try {
+                const userData = localStorage.getItem('user_data');
+                if (userData) {
+                const parsed = JSON.parse(userData);
+                const imageField = parsed.profilePhotoUrl || parsed.profilePicture || parsed.profilePhoto;
+                
+                // Return full URL if available
+                if (imageField && (imageField.startsWith('http://') || imageField.startsWith('https://'))) {
+                    return imageField;
                 }
+                
+                if (imageField) return getImageUrl(imageField, 'profile');
+                }
+            } catch (e) {
+                console.error('Error loading persisted profile image:', e);
             }
+            }
+            
             return null;
         };
-    }, [getImageUrl]);
+        }, [getImageUrl]);
 
     const getMerchantLogoUrl = useMemo(() => {
-        return (merchantOrBusiness) => {
-            if (!merchantOrBusiness) return null;
+    return (merchantOrBusiness) => {
+        if (!merchantOrBusiness) return null;
+        
+        let logoField = null;
+        
+        if (typeof merchantOrBusiness === 'object') {
+        // Check for full URL first (from upload response)
+        logoField = merchantOrBusiness.logoUrl || 
+                    merchantOrBusiness.merchantLogo || 
+                    merchantOrBusiness.logo;
+        
+        // If full URL exists, return it directly
+        if (logoField && (logoField.startsWith('http://') || logoField.startsWith('https://'))) {
+            return logoField;
+        }
+        
+        // Handle nested business object
+        if (!logoField && merchantOrBusiness.business) {
+            try {
+            const businessData = typeof merchantOrBusiness.business === 'string' 
+                ? JSON.parse(merchantOrBusiness.business) 
+                : merchantOrBusiness.business;
             
-            let logoField = null;
+            // Check for full URL in business object
+            logoField = businessData?.logoUrl || businessData?.logo;
             
-            // Handle different data structures
-            if (typeof merchantOrBusiness === 'object') {
-                // Try direct logo fields first (from your updated API)
-                logoField = merchantOrBusiness.merchantLogo || 
-                           merchantOrBusiness.logoUrl || 
-                           merchantOrBusiness.logo;
-                
-                // If no direct logo, check nested business object
-                if (!logoField && merchantOrBusiness.business) {
-                    try {
-                        const businessData = typeof merchantOrBusiness.business === 'string' 
-                            ? JSON.parse(merchantOrBusiness.business) 
-                            : merchantOrBusiness.business;
-                        logoField = businessData?.logo || businessData?.logoUrl;
-                    } catch (e) {
-                        console.error('Error parsing business data in getMerchantLogoUrl:', e);
-                    }
-                }
+            // Return full URL if available
+            if (logoField && (logoField.startsWith('http://') || logoField.startsWith('https://'))) {
+                return logoField;
             }
-            
-            // If string is provided, treat as direct logo URL
-            if (typeof merchantOrBusiness === 'string') {
-                logoField = merchantOrBusiness;
+            } catch (e) {
+            console.error('Error parsing business data:', e);
             }
-            
-            return logoField ? getImageUrl(logoField, 'merchant') : null;
-        };
+        }
+        }
+        
+        if (typeof merchantOrBusiness === 'string') {
+        logoField = merchantOrBusiness;
+        // Return full URL if it's a complete URL
+        if (logoField && (logoField.startsWith('http://') || logoField.startsWith('https://'))) {
+            return logoField;
+        }
+        }
+        
+        // Only construct URL if we have a filename (not a full URL)
+        return logoField ? getImageUrl(logoField, 'merchant') : null;
+    };
     }, [getImageUrl]);
+
 
     const getDealBannerUrl = useMemo(() => {
         return (deal) => {

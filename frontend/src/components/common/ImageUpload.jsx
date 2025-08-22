@@ -144,21 +144,30 @@ const ImageUpload = ({
 
       if (response.data.success) {
         showNotification('Image uploaded successfully!', 'success');
+        // Set preview to the actual uploaded URL, not local preview
         setPreview(response.data.imageUrl);
-        // Call modern callback with upload response
-        onUploadSuccess && onUploadSuccess(response.data);
+        
+        // Call callback with complete response including both filename and URL
+        if (onUploadSuccess) {
+          onUploadSuccess({
+            ...response.data,
+            filename: response.data.filename,
+            imageUrl: response.data.imageUrl
+          });
+        }
       } else {
         throw new Error(response.data.message || 'Upload failed');
       }
-    } catch (error) {
-      console.error('Upload error:', error);
-      showNotification(error.message || 'Failed to upload image', 'error');
-      onUploadError && onUploadError(error);
-      setPreview(currentImage); // Reset to current image
-    } finally {
-      setUploading(false);
-    }
-  }, [config, entityId, currentImage, onUpload, onUploadSuccess, onUploadError, showNotification]);
+
+      } catch (error) {
+        console.error('Upload error:', error);
+        showNotification(error.message || 'Failed to upload image', 'error');
+        onUploadError && onUploadError(error);
+        setPreview(currentImage); // Reset to current image
+      } finally {
+        setUploading(false);
+      }
+    }, [config, entityId, currentImage, onUpload, onUploadSuccess, onUploadError, showNotification]);
 
   const handleInputChange = (e) => {
     const file = e.target.files[0];

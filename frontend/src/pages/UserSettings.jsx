@@ -321,17 +321,28 @@ const fetchRedemptionHistory = useCallback(async () => {
 
     const handleMerchantLogoUpload = async (uploadResponse) => {
       try {
+        console.log('Logo upload response:', uploadResponse);
         if (uploadResponse && uploadResponse.imageUrl) {
           // Update user context with new logo in business object
-          const updatedUser = { 
-            ...user, 
-            business: { 
-              ...user.business, 
-              logo: uploadResponse.imageUrl,
-              logoUrl: uploadResponse.imageUrl 
+          const updatedUser = {
+            ...user,
+            business: {
+              ...user.business,
+              logo: uploadResponse.filename, // Store filename for DB
+              logoUrl: uploadResponse.imageUrl // Store full URL for immediate use
             }
           };
+          
+          // Update context
           await updateUser(updatedUser);
+          
+          // Update localStorage for persistence
+          const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
+          if (!userData.business) userData.business = {};
+          userData.business.logo = uploadResponse.filename;
+          userData.business.logoUrl = uploadResponse.imageUrl;
+          localStorage.setItem('user_data', JSON.stringify(userData));
+          
           showNotification('Business logo updated successfully!', 'success');
         } else {
           throw new Error('Upload failed: No image URL returned');
@@ -341,6 +352,45 @@ const fetchRedemptionHistory = useCallback(async () => {
         showNotification('Failed to update business logo', 'error');
       }
     };
+
+
+  const handleProfilePhotoUpload = async (uploadResponse) => {
+  try {
+    console.log('Profile upload response:', uploadResponse);
+    if (uploadResponse && uploadResponse.imageUrl) {
+      // Update user context with new profile photo
+      const updatedUser = {
+        ...user,
+        profilePicture: uploadResponse.filename,
+        profilePhoto: uploadResponse.filename,
+        profilePhotoUrl: uploadResponse.imageUrl
+      };
+      
+      // Update context
+      await updateUser(updatedUser);
+      
+      // Update localStorage for persistence
+      const userData = JSON.parse(localStorage.getItem('user_data') || '{}');
+      userData.profilePicture = uploadResponse.filename;
+      userData.profilePhoto = uploadResponse.filename;
+      userData.profilePhotoUrl = uploadResponse.imageUrl;
+      localStorage.setItem('user_data', JSON.stringify(userData));
+      
+      // Update local state
+      setUserProfile(prev => ({
+        ...prev,
+        profilePicture: uploadResponse.filename
+      }));
+      
+      showNotification('Profile photo updated successfully!', 'success');
+    } else {
+      throw new Error('Upload failed: No image URL returned');
+    }
+  } catch (error) {
+    console.error('Error updating profile photo:', error);
+    showNotification('Failed to update profile photo', 'error');
+  }
+};
 
   const TabNavigation = () => {
     const availableTabs = [];
@@ -406,10 +456,13 @@ const fetchRedemptionHistory = useCallback(async () => {
               entityId={user?.id}
               currentImage={getMerchantLogoUrl(user?.business || {}) || getPersistedMerchantLogo(user?.id)}
               onUploadSuccess={handleMerchantLogoUpload}
+              onUploadError={(error) => showNotification('Upload failed', 'error')}
               className="merchant-logo-upload"
               label="Upload Business Logo"
               description="Upload your business logo"
+              aspectRatio="1:1"
             />
+
 
             <div className="upload-instructions">
               <p>• Upload in PNG, JPG, or SVG format</p>
@@ -452,19 +505,16 @@ const fetchRedemptionHistory = useCallback(async () => {
 
               <div className="photo-upload-controls">
                   <ImageUpload
-                    type="profile"
-                    entityId={user?.id}
-                    currentImage={getProfileImageUrl(userProfile) || getPersistedProfileImage(user?.id)}
-                    onUploadSuccess={(uploadResponse) => {
-                      if (uploadResponse && uploadResponse.imageUrl) {
-                        const updatedUser = { ...user, profilePicture: uploadResponse.imageUrl };
-                        updateUser(updatedUser);
-                        setUserProfile(prev => ({ ...prev, profilePicture: uploadResponse.imageUrl }));
-                        showNotification('Profile photo updated successfully!', 'success');
-                      }
-                    }}
-                    className="profile-photo-upload"
-                  />
+                  type="profile"
+                  entityId={user?.id}
+                  currentImage={getProfileImageUrl(userProfile) || getPersistedProfileImage(user?.id)}
+                  onUploadSuccess={handleProfilePhotoUpload}
+                  onUploadError={(error) => showNotification('Upload failed', 'error')}
+                  className="profile-photo-upload"
+                  label="Upload Profile Photo"
+                  description="Upload your profile photo"
+                  aspectRatio="1:1"
+                />
               </div>
             </div>
           </div>

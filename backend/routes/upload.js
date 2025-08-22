@@ -236,8 +236,8 @@ async function handleImageUpload(req, res, uploadType, idField, tableField, tabl
     fs.unlinkSync(processedPath);
     
     // Return success response
-    // Build public URL - always use the same pattern for consistency
-    const domain = process.env.DOMAIN_URL || 'https://yourdomain.com';
+    // Build public URL - ensure it matches frontend expectations
+    const domain = process.env.DOMAIN_URL || process.env.VITE_DOMAIN_URL || 'https://membership-model.onrender.com';
     const subDir = config.directory.replace(/^\/public_html\/uploads\//, '').replace(/^\/uploads\//, '').replace(/^\//, '').replace(/\/$/, '');
     const imageUrl = `${domain}/uploads/${subDir}/${filename}`;
     

@@ -171,7 +171,7 @@ const UnifiedRegistration = () => {
     const fetchOptions = async () => {
       try {
         setLoadingOptions(true);
-        
+
         // The dynamic fields hook already loads communities, userTypes, businessCategories
         // We just need to sync them to our local state for backward compatibility
         if (!fieldsLoading && dynamicFields) {
@@ -179,45 +179,67 @@ const UnifiedRegistration = () => {
           setUserTypes(dynamicFields.userTypes || []);
         }
 
+        // FIXED: Use absolute URLs pointing to your backend
+        const API_BASE = 'https://membership-model.onrender.com/api'; // Replace with your actual backend URL
+
         // Load other data that isn't dynamic yet
         const [userPlansResponse, merchantPlansResponse, publicSettingsResponse] = await Promise.all([
-          fetch('/api/plans?type=user&isActive=true', { credentials: 'include' }),
-          fetch('/api/plans?type=merchant&isActive=true', { credentials: 'include' }),
-          fetch('/api/admin/settings/public', { credentials: 'include' })
+          fetch(`${API_BASE}/plans?type=user&isActive=true`, { 
+            credentials: 'include',
+            headers: { 'Accept': 'application/json' }
+          }),
+          fetch(`${API_BASE}/plans?type=merchant&isActive=true`, { 
+            credentials: 'include',
+            headers: { 'Accept': 'application/json' }
+          }),
+          fetch(`${API_BASE}/admin/settings/public`, { 
+            credentials: 'include',
+            headers: { 'Accept': 'application/json' }
+          })
         ]);
-          if (userPlansResponse.ok) {
-          const userPlansData = await userPlansResponse.json();
-          setUserPlans(userPlansData.plans || []);
-          // Set default plan to the first available plan or community plan
-          if (userPlansData.plans && userPlansData.plans.length > 0) {
-            const defaultPlan = userPlansData.plans.find(p => p.key === 'community') || userPlansData.plans[0];
-            setUserForm(prev => ({ ...prev, plan: defaultPlan.key }));
+
+        if (userPlansResponse.ok) {
+          const contentType = userPlansResponse.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const userPlansData = await userPlansResponse.json();
+            setUserPlans(userPlansData.plans || []);
+            // Set default plan to the first available plan or community plan
+            if (userPlansData.plans && userPlansData.plans.length > 0) {
+              const defaultPlan = userPlansData.plans.find(p => p.key === 'community') || userPlansData.plans[0];
+              setUserForm(prev => ({ ...prev, plan: defaultPlan.key }));
+            }
           }
         }
-        
+
         if (merchantPlansResponse.ok) {
-          const merchantPlansData = await merchantPlansResponse.json();
-          setMerchantPlans(merchantPlansData.plans || []);
-          // Set default plan to the first available merchant plan
-          if (merchantPlansData.plans && merchantPlansData.plans.length > 0) {
-            setMerchantForm(prev => ({ ...prev, plan: merchantPlansData.plans[0].key }));
+          const contentType = merchantPlansResponse.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const merchantPlansData = await merchantPlansResponse.json();
+            setMerchantPlans(merchantPlansData.plans || []);
+            // Set default plan to the first available merchant plan
+            if (merchantPlansData.plans && merchantPlansData.plans.length > 0) {
+              setMerchantForm(prev => ({ ...prev, plan: merchantPlansData.plans[0].key }));
+            }
           }
         }
 
         if (publicSettingsResponse.ok) {
-          const settingsData = await publicSettingsResponse.json();
-          setAdminSettings(settingsData.settings || {});
+          const contentType = publicSettingsResponse.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const settingsData = await publicSettingsResponse.json();
+            setAdminSettings(settingsData.settings || {});
+          }
         }
+
       } catch (error) {
-        console.error('Error fetching dropdown options:', error);
         showNotification('Failed to load form options', 'error');
       } finally {
         setLoadingOptions(false);
       }
     };
-    
+
     fetchOptions();
-  }, [showNotification, fieldsLoading, dynamicFields]); // Re-run when dynamic fields finish loading
+    }, [showNotification, fieldsLoading, dynamicFields]); // 
 
   const handleMerchantSocialChange = (platform) => {
     setMerchantForm(prev => ({
