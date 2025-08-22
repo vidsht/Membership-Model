@@ -142,38 +142,29 @@ app.get('/api/health', (req, res) => {
 });
 
 // Public businesses endpoint for home page
-// Public businesses endpoint for home page
 app.get('/api/businesses', async (req, res) => {
   try {
     const businesses = await queryAsync(`
       SELECT b.businessId, b.businessName, b.businessDescription, b.businessCategory,
              b.businessAddress, b.businessPhone, b.businessEmail, b.website,
              b.isVerified, b.logo, b.logoUrl,
-             u.fullName as ownerName, u.membershipType as membershipLevel, u.business
+             u.fullName as ownerName, u.membershipType as membershipLevel
       FROM businesses b
       LEFT JOIN users u ON b.userId = u.id
       WHERE (b.status = 'active' OR b.status = '') AND u.status = 'approved'
       ORDER BY b.businessName ASC
     `);
+
     
     // Format the data for frontend consumption
-    const formattedBusinesses = businesses.map(business => {
+      const formattedBusinesses = businesses.map(business => {
       let merchantLogo = null;
-      
-      // Try multiple sources for merchant logo
+
+      // Try multiple sources for merchant logo from businesses table
       if (business.logo) {
         merchantLogo = business.logo;
       } else if (business.logoUrl) {
         merchantLogo = business.logoUrl;
-      } else if (business.business) {
-        try {
-          const businessData = typeof business.business === 'string' 
-            ? JSON.parse(business.business) 
-            : business.business;
-          merchantLogo = businessData?.logo || businessData?.logoUrl;
-        } catch (e) {
-          console.error('Error parsing business data for:', business.businessName, e);
-        }
       }
       
       return {
