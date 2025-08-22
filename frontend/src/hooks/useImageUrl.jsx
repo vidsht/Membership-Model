@@ -6,25 +6,32 @@ const IMAGE_BASE_URL = import.meta.env.VITE_DOMAIN_URL || import.meta.env.VITE_I
 // Helper hook for handling image URLs
 export const useImageUrl = () => {
     const getImageUrl = useMemo(() => {
-        return (filename, type = 'profile') => {
-            if (!filename) return null;
-            // If filename is already a full URL, return as is
-            if (filename.startsWith('http://') || filename.startsWith('https://')) {
-                return filename;
-            }
-            // Auto-prepend https:// if it looks like a domain but missing protocol
-            if (filename.includes('.') && !filename.startsWith('/')) {
-                return `https://${filename}`;
-            }
-            // Map types to their respective directories
-            const typeDirectories = {
-                profile: '/uploads/profile_photos/',
-                merchant: '/uploads/merchant_logos/',
-                deal: '/uploads/deal_banners/'
-            };
-            const directory = typeDirectories[type] || '/uploads/';
-            return `${IMAGE_BASE_URL}${directory}${filename}`;
+    return (filename, type = 'profile') => {
+        if (!filename) return null;
+        
+        // If filename is already a full URL, return as is
+        if (filename.startsWith('http://') || filename.startsWith('https://')) {
+        return filename;
+        }
+        
+        // Auto-prepend https:// only if it looks like a proper domain (not a filename)
+        const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'];
+        const isImageFile = imageExtensions.some(ext => filename.toLowerCase().endsWith(ext));
+        
+        if (filename.includes('.') && !filename.startsWith('/') && !isImageFile) {
+        return `https://${filename}`;
+        }
+        
+        // Map types to their respective directories
+        const typeDirectories = {
+        profile: '/uploads/profile_photos/',
+        merchant: '/uploads/merchant_logos/',
+        deal: '/uploads/deal_banners/'
         };
+        
+        const directory = typeDirectories[type] || '/uploads/';
+        return `${IMAGE_BASE_URL}${directory}${filename}`;
+    };
     }, []);
 
         const getProfileImageUrl = useMemo(() => {

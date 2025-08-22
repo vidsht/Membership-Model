@@ -4,6 +4,7 @@ const cors = require('cors');
 const session = require('express-session');
 const path = require('path');
 require('dotenv').config();
+const uploadRouter = require('./routes/upload');
 
 const app = express();
 
@@ -19,6 +20,8 @@ const corsOptions = {
     // Add your deployed frontend URL here
   ],
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], 
+  allowedHeaders: ['Content-Type', 'Authorization'] 
 };
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
@@ -26,6 +29,25 @@ app.options('*', cors(corsOptions));
 // Basic middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// **IMPORTANT: Serve static files BEFORE other routes - MOVE THIS UP**
+const uploadsPath = process.env.UPLOADS_PATH || path.join(__dirname, 'uploads');
+app.use('/uploads', express.static(uploadsPath, {
+  maxAge: '1d', // ADD THESE OPTIONS
+  etag: true,
+  setHeaders: (res, filePath) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET');
+  }
+}));
+
+app.use('/uploads/*', (req, res, next) => {
+  console.log(`🖼️  Static file request: ${req.path}`);
+  const fullPath = path.join(uploadsPath, req.path.replace('/uploads/', ''));
+  console.log(`📁 Looking for file at: ${fullPath}`);
+  console.log(`📋 File exists: ${require('fs').existsSync(fullPath)}`);
+  next();
+});
 
 // Trust first proxy (Render / Cloudflare) so secure cookies are set correctly when behind a proxy
 app.set('trust proxy', 1);
@@ -106,15 +128,14 @@ app.use('/api/admin', require('./routes/roles'));
 // Upload routes
 app.use('/api/upload', require('./routes/upload'));
 
-// Serve uploaded files
-// For Hostinger: ensure uploads are accessible from public_html
-const uploadsPath = process.env.UPLOADS_PATH || path.join(__dirname, 'uploads');
-app.use('/uploads', express.static(uploadsPath));
-
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+  res.json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    uploadsPath: uploadsPath 
+  });
 });
 
 // Public businesses endpoint for home page
@@ -205,5 +226,7 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📁 Static files served from: ${uploadsPath}`); // ADD THIS
+  console.log(`🌐 CORS enabled for: https://membership.indiansinghana.com`);
   console.log(`📱 Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:3001'}`);
 });
