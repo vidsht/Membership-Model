@@ -872,6 +872,25 @@ router.post('/users/:id/assign-plan', auth, admin, async (req, res) => {
       console.log('✅ Plan validation successful for user type:', userType, 'Plan details:', planDetails);
     }
 
+    // After successful plan validation, compute the access level based on plan priority
+    let computedAccessLevel = 1;
+    if (planDetails && planDetails.priority) {
+      switch(planDetails.priority.toLowerCase()){
+        case 'platinum':
+          computedAccessLevel = 3;
+          break;
+        case 'gold':
+          computedAccessLevel = 2;
+          break;
+        case 'silver':
+          computedAccessLevel = 1;
+          break;
+        default:
+          computedAccessLevel = 1;
+      }
+    }
+    console.log('🔢 Computed accessLevel:', computedAccessLevel);
+
     const adminUserId = getAdminUserId(req);
 
     // STEP 3: Update user with validated plan
@@ -909,6 +928,7 @@ router.post('/users/:id/assign-plan', auth, admin, async (req, res) => {
           planAssignedAt = NOW(), 
           planAssignedBy = ?,
           validationDate = ?,
+          accessLevel = ?,
           updated_at = NOW()
         WHERE id = ?
       `;
@@ -916,6 +936,7 @@ router.post('/users/:id/assign-plan', auth, admin, async (req, res) => {
         finalPlanKey,
         adminUserId,
         validationDate.toISOString().slice(0, 19).replace('T', ' '),
+        computedAccessLevel,
         userId
       ];
     } else {
@@ -925,12 +946,14 @@ router.post('/users/:id/assign-plan', auth, admin, async (req, res) => {
           planAssignedAt = NOW(), 
           planAssignedBy = ?,
           validationDate = NULL,
+          accessLevel = ?,
           updated_at = NOW()
         WHERE id = ?
       `;
       updateParams = [
         finalPlanKey,
         adminUserId,
+        computedAccessLevel,
         userId
       ];
     }
@@ -2035,6 +2058,7 @@ router.get('/deals', auth, admin, async (req, res) => {
       dateFrom,
       dateTo,
       sortBy = 'created_at',
+
       sortOrder = 'desc',
       limit = 20,
       offset = 0
@@ -4012,9 +4036,7 @@ router.post('/test/restore-plan/:userId', admin, async (req, res) => {
 
     if (result.affectedRows === 0) {
       return res.status(404).json({
-        success: false,
-        message: 'User not found'
-      });
+ success: false, message: 'User not found' });
     }
 
     // Get updated user info
