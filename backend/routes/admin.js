@@ -3780,8 +3780,7 @@ router.patch('/deals/:id/approve', auth, admin, async (req, res) => {
       }
     }
     
-    // Allow approval of deals that may still have legacy status 'pending'
-    updateQuery += ' WHERE id = ? AND status IN ("pending_approval", "pending")';
+    updateQuery += ' WHERE id = ? AND status = "pending_approval"';
     updateParams.push(dealId);
 
     console.log('Executing deal approval query:', updateQuery);
@@ -4043,4 +4042,6 @@ router.post('/test/restore-plan/:userId', admin, async (req, res) => {
     });
   }
 });
+
+module.exports = router;
 
