@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import ImageUpload from '../common/ImageUpload';
 import './DealForm.css';
+import { useImageUrl, SmartImage } from '../hooks/useImageUrl.jsx';
 
 const DealForm = ({ 
   deal = null, 
@@ -24,6 +25,7 @@ const DealForm = ({
 
   const [errors, setErrors] = useState({});
   const [bannerPreview, setBannerPreview] = useState(null);
+  const { getDealBannerUrl } = useImageUrl();
 
   // Initialize form data when editing
   useEffect(() => {
@@ -42,10 +44,10 @@ const DealForm = ({
       
       // Set banner preview if deal has existing banner
       if (deal.bannerImage) {
-        setBannerPreview(deal.bannerImage);
+      setBannerPreview(getDealBannerUrl(deal));
       }
     }
-  }, [deal, mode]);
+  }, [deal, mode, getDealBannerUrl]);
 
   // Auto-calculate discount percentage
   useEffect(() => {
@@ -194,7 +196,7 @@ const DealForm = ({
           <div className="form-group">
             <label htmlFor="title" className="form-label">
               <i className="fas fa-heading"></i>
-              Deal Title *
+              Deal Title 
             </label>
             <input
               type="text"
@@ -354,14 +356,27 @@ const DealForm = ({
             </label>
             <ImageUpload
               type="deal"
-              entityId={deal?.id}
+              entityId={deal?.id || 'new'}
+              currentImage={bannerPreview}
               onUploadSuccess={handleImageUpload}
-               currentImage={bannerPreview}
-               placeholder="Upload deal banner image"
-             />
+              onUpload={handleImageUpload}
+              className="deal-banner-upload"
+              label="Upload Deal Banner"
+              aspectRatio="16:9"
+            />
             <small className="form-help">
               Recommended: 1200x600px, max 5MB. Supports JPG, PNG, GIF
             </small>
+              {bannerPreview && (
+              <div className="banner-preview">
+                <SmartImage 
+                  src={bannerPreview} 
+                  alt="Deal banner preview" 
+                  className="deal-banner-preview-image"
+                  fallbackClass="deal-banner-placeholder"
+                />
+              </div>
+              )}
           </div>
         </div>
 

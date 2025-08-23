@@ -159,7 +159,6 @@
 /* Dropdown Menu */
 .dropdown-menu {
   position: absolute;
-  top: calc(100% + 0.75rem);
   left: 0;
   min-width: 280px;
   background: white;

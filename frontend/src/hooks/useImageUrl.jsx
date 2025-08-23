@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, {useState, useMemo } from 'react';
 
 // Base URL for images - fallback to current origin if env var not set
 // const IMAGE_BASE_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 
@@ -125,13 +125,21 @@ export const useImageUrl = () => {
         }, [getImageUrl]);
 
 
-    const getDealBannerUrl = useMemo(() => {
+        const getDealBannerUrl = useMemo(() => {
         return (deal) => {
-            // Check both bannerImage and imageUrl for backward compatibility
-            const bannerField = deal?.bannerImage || deal?.imageUrl;
+            if (!deal) return null;
+            
+            // Check multiple possible field names for backward compatibility
+            const bannerField = deal?.bannerImage || deal?.banner || deal?.imageUrl;
+            
+            // Return full URL if already absolute
+            if (bannerField && (bannerField.startsWith('http://') || bannerField.startsWith('https://'))) {
+            return bannerField;
+            }
+            
             return getImageUrl(bannerField, 'deal');
         };
-    }, [getImageUrl]);
+        }, [getImageUrl]);
 
     return {
         getImageUrl,

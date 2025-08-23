@@ -5,12 +5,13 @@ import { merchantApi, getNotifications, markNotificationAsRead, markAllNotificat
 import MerchantDealForm from '../components/MerchantDealForm';
 import PlanExpiryBanner from '../components/PlanExpiryBanner';
 import axios from 'axios';
+import { useImageUrl, SmartImage } from '../hooks/useImageUrl.jsx';
 import '../styles/MerchantDashboard.css';
 
 const MerchantDashboard = () => {
   const { user } = useAuth();
   const { showNotification } = useNotification();
-  
+  const { getDealBannerUrl } = useImageUrl(); 
   const [deals, setDeals] = useState([]);
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -1219,6 +1220,16 @@ const MerchantDashboard = () => {
                 
                 return (
                   <div key={deal.id} className={`deal-card ${isExpired ? 'expired-deal' : ''}`}>
+                      {deal.bannerImage && (
+                      <div className="deal-banner-container">
+                        <SmartImage 
+                          src={getDealBannerUrl(deal)} 
+                          alt={deal.title} 
+                          className="deal-table-banner"
+                          fallbackClass="deal-banner-placeholder"
+                        />
+                      </div>
+                    )}
                     <div className="deal-header">
                       <h3>{deal.title}</h3>
                       <span className={`status-badge ${isExpired ? 'expired' : deal.status}`}>

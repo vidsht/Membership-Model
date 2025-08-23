@@ -222,7 +222,7 @@ router.get('/public', async (req, res) => {
     // Simple query to get all active and non-expired deals for public viewing
     const dealsQuery = `
       SELECT d.id, d.businessId, d.title, d.description, d.category, d.discount, 
-             d.discountType, d.originalPrice, d.discountedPrice, d.imageUrl,
+             d.discountType, d.originalPrice, d.discountedPrice, d.bannerImage,
              d.validFrom, d.validUntil, d.expiration_date, d.status, d.created_at,
              d.termsConditions, d.views, d.redemptions, d.minPlanPriority,
              b.businessName, b.businessCategory, b.businessAddress, b.businessPhone,
@@ -367,7 +367,7 @@ router.get('/:id', checkDealAccess, async (req, res) => {
       discountType: d.discountType || '',
       discountedPrice: d.discountedPrice || '',
       originalPrice: d.originalPrice || '',
-      imageUrl: d.imageUrl || '',
+      bannerImage: d.bannerImage || '',
       validFrom: d.validFrom || '',
       validUntil: d.validUntil || '',
       expiration_date: d.expiration_date || '',

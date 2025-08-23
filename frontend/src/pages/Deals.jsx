@@ -5,8 +5,8 @@ import { getAllDeals, redeemDeal, getAllPlans } from '../services/api';
 import DealFilters from '../components/deals/DealFilters';
 import PlanExpiryBanner from '../components/PlanExpiryBanner';
 import usePlanAccess from '../hooks/usePlanAccess.jsx';
-import { useImageUrl } from '../hooks/useImageUrl.jsx';
 import '../styles/deals.css';
+import { useImageUrl, SmartImage } from '../hooks/useImageUrl.jsx';
 
 /**
  * Determines if a user can redeem a deal based on plan priority.
@@ -285,10 +285,11 @@ const Deals = () => {
               {/* Deal Banner Image */}
               <div className="deal-banner">
                 {getDealBannerUrl(deal) ? (
-                  <img 
+                  <SmartImage 
                     src={getDealBannerUrl(deal)} 
-                    alt={deal.title}
-                    className="deal-banner-image"
+                    alt={deal.title} 
+                    className="deal-banner-image" 
+                    fallbackClass="deal-banner-placeholder" 
                   />
                 ) : (
                   <div className="deal-banner-placeholder">
@@ -303,11 +304,23 @@ const Deals = () => {
                 <div className="business-logo-name">
                   <div className="business-logo">
                     {getMerchantLogoUrl({ logo: deal.businessLogo }) ? (
-                      <img 
-                        src={getMerchantLogoUrl({ logo: deal.businessLogo })} 
-                        alt={deal.businessName}
-                        className="business-logo-image"
-                      />
+                    <SmartImage
+                      src={getMerchantLogoUrl(business)}
+                      alt={`${name} Logo`}
+                      placeholder={
+                        <div className="logo-placeholder">
+                          <span>{name.charAt(0) || "B"}</span>
+                        </div>
+                      }
+                      className="logo-image"
+                      maxRetries={3}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        objectPosition: 'center'
+                      }}
+                    />
                     ) : (
                       <div className="business-logo-placeholder">
                         <span>{deal.businessName?.charAt(0) || 'B'}</span>

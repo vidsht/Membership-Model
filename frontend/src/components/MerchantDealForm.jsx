@@ -4,7 +4,7 @@ import { useDynamicFields } from '../hooks/useDynamicFields';
 import { merchantApi } from '../services/api';
 import api from '../services/api';
 import ImageUpload from './common/ImageUpload';
-import { useImageUrl } from '../hooks/useImageUrl.jsx';
+import { useImageUrl, SmartImage } from '../hooks/useImageUrl.jsx';
 import './MerchantDealForm.css';
 
 const MerchantDealForm = ({ deal, onDealCreated, onClose, isEditing = false }) => {
@@ -14,6 +14,7 @@ const MerchantDealForm = ({ deal, onDealCreated, onClose, isEditing = false }) =
   const [isSaving, setIsSaving] = useState(false);
   const [userPlans, setUserPlans] = useState([]);
   const [bannerImageFile, setBannerImageFile] = useState(null);
+  const [bannerPreview, setBannerPreview] = useState(null); // ADD THIS LINE
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -68,25 +69,30 @@ const MerchantDealForm = ({ deal, onDealCreated, onClose, isEditing = false }) =
   }, []);
 
   // Populate form when editing
-  React.useEffect(() => {
-    if (isEditing && deal) {
-      setFormData({
-        title: deal.title || '',
-        description: deal.description || '',
-        discount: deal.discount || '',
-        discountType: deal.discountType || 'percentage',
-        originalPrice: deal.originalPrice || '',
-        discountedPrice: deal.discountedPrice || '',
-        category: deal.category || '',
-        validFrom: deal.validFrom ? formatDateForInput(new Date(deal.validFrom)) : '',
-        validUntil: deal.validUntil ? formatDateForInput(new Date(deal.validUntil)) : '',
-        requiredPlanPriority: deal.requiredPlanPriority || 1,
-        termsConditions: deal.termsConditions || '',
-        couponCode: deal.couponCode || '',
-        featuredImage: null // Don't populate image for editing
-      });
+React.useEffect(() => {
+  if (isEditing && deal) {
+    setFormData({
+      title: deal.title || '',
+      description: deal.description || '',
+      discount: deal.discount || '',
+      discountType: deal.discountType || 'percentage',
+      originalPrice: deal.originalPrice || '',
+      discountedPrice: deal.discountedPrice || '',
+      category: deal.category || '',
+      validFrom: deal.validFrom ? formatDateForInput(new Date(deal.validFrom)) : '',
+      validUntil: deal.validUntil ? formatDateForInput(new Date(deal.validUntil)) : '',
+      requiredPlanPriority: deal.requiredPlanPriority || 1,
+      termsConditions: deal.termsConditions || '',
+      couponCode: deal.couponCode || '',
+      featuredImage: null // Don't populate image for editing
+    });
+    
+    // Set banner preview if deal has existing banner
+    if (deal.bannerImage) {
+      setBannerPreview(getDealBannerUrl(deal));
     }
-  }, [isEditing, deal]);
+  }
+}, [isEditing, deal, getDealBannerUrl]); // Add getDealBannerUrl to dependencies
   
   const formatDateForInput = (date) => {
     return date.toISOString().split('T')[0];
@@ -202,9 +208,40 @@ const MerchantDealForm = ({ deal, onDealCreated, onClose, isEditing = false }) =
     }
   };
 
-  const handleBannerImageUpload = (file) => {
-    setBannerImageFile(file);
-  };
+const handleBannerImageUpload = (fileOrResponse) => {
+  // Handle both File objects and upload responses
+  if (!fileOrResponse) {
+    setBannerImageFile(null);
+    setBannerPreview(deal?.bannerImage ? getDealBannerUrl(deal) : null);
+    return;
+  }
+
+  // If it's a File object (from file selection)
+  if (fileOrResponse instanceof File) {
+    setBannerImageFile(fileOrResponse);
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = (e) => setBannerPreview(e.target.result);
+    reader.readAsDataURL(fileOrResponse);
+    return;
+  }
+
+  // If it's an upload response from ImageUpload component
+  const resp = fileOrResponse;
+  const imageUrl = resp.imageUrl || resp.url || null;
+  const filename = resp.filename || resp.fileName || null;
+  
+  // Update form data with filename for database storage
+  setFormData(prev => ({ 
+    ...prev, 
+    bannerImage: filename || imageUrl 
+  }));
+  
+  // Set preview to the uploaded URL
+  setBannerPreview(imageUrl || filename);
+  
+  console.log('✅ Banner upload response received:', { imageUrl, filename });
+};
   
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -228,7 +265,8 @@ const MerchantDealForm = ({ deal, onDealCreated, onClose, isEditing = false }) =
         termsConditions: formData.termsConditions,
         expiration_date: formData.validUntil,
         couponCode: formData.couponCode,
-        requiredPlanPriority: parseInt(formData.requiredPlanPriority)
+        requiredPlanPriority: parseInt(formData.requiredPlanPriority),
+        ...(formData.bannerImage && { bannerImage: formData.bannerImage })
       };
 
       let dealId;
@@ -249,19 +287,20 @@ const MerchantDealForm = ({ deal, onDealCreated, onClose, isEditing = false }) =
       }
 
       // Upload banner image if one was selected
+      // Upload banner image if one was selected but not yet uploaded
       if (bannerImageFile && dealId) {
         try {
-          const formData = new FormData();
-          formData.append('dealBanner', bannerImageFile);
+          const uploadFormData = new FormData(); // Rename to avoid conflict
+          uploadFormData.append('dealBanner', bannerImageFile);
           
-          const uploadResponse = await api.post(`/upload/deal-banner/${dealId}`, formData, {
-            headers: {
-              'Content-Type': 'multipart/form-data'
-            }
+          const uploadResponse = await api.post(`/upload/deal-banner/${dealId}`, uploadFormData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
           });
-          
+
           if (uploadResponse.data.success) {
             console.log('✅ Banner image uploaded successfully:', uploadResponse.data.filename);
+            // Update the created deal object with the banner info
+            createdDeal.bannerImage = uploadResponse.data.filename;
           }
         } catch (uploadError) {
           console.error('❌ Banner image upload failed:', uploadError);
@@ -498,31 +537,69 @@ const MerchantDealForm = ({ deal, onDealCreated, onClose, isEditing = false }) =
           />
         </div>
         
-        <div className="form-group">
-          <label htmlFor="bannerImage">
-            <i className="fas fa-image"></i>
-            Deal Banner Image
-          </label>
-          <input
-            type="file"
-            id="bannerImage"
-            name="bannerImage"
-            onChange={(e) => handleBannerImageUpload(e.target.files[0])}
-            accept="image/*"
-          />
-          <small className="form-hint">Upload a banner image for your deal (recommended: 800x400px, max 8MB)</small>
-          {bannerImageFile && (
-            <div className="image-preview">
-              <p><i className="fas fa-check-circle text-success"></i> Selected: {bannerImageFile.name}</p>
-            </div>
-          )}
-          {isEditing && deal?.bannerImage && !bannerImageFile && (
-            <div className="current-image-info">
-              <p><i className="fas fa-info-circle text-info"></i> Current banner: {deal.bannerImage}</p>
-              <small>Select a new file to replace it</small>
-            </div>
-          )}
-        </div>
+<div className="form-group">
+  <label htmlFor="bannerImage">
+    <i className="fas fa-image"></i>
+    Deal Banner Image
+  </label>
+  
+  <ImageUpload
+    type="deal"
+    entityId={deal?.id || 'temp'} // Use temp for new deals
+    currentImage={bannerPreview}
+    onUploadSuccess={handleBannerImageUpload}
+    onUpload={handleBannerImageUpload} // Legacy support
+    className="deal-banner-upload"
+    label="Upload Deal Banner"
+    description="Recommended: 800x400px (16:9 aspect ratio)"
+    aspectRatio="16:9"
+  />
+  
+  {/* Alternative file input for direct selection (fallback) */}
+  <div className="file-input-alternative" style={{ marginTop: '10px' }}>
+    <input
+      type="file"
+      id="bannerImage"
+      name="bannerImage"
+      onChange={(e) => handleBannerImageUpload(e.target.files[0])}
+      accept="image/*"
+      style={{ display: 'none' }}
+    />
+    <label htmlFor="bannerImage" className="file-input-label">
+      <i className="fas fa-upload"></i>
+      Or select file directly
+    </label>
+  </div>
+  
+  <small className="form-hint">Upload a banner image for your deal (recommended: 800x400px, max 8MB)</small>
+  
+  {/* Preview Section */}
+  {bannerPreview && (
+    <div className="banner-preview">
+      <SmartImage 
+        src={bannerPreview} 
+        alt="Deal banner preview" 
+        className="deal-banner-preview-image"
+        fallbackClass="deal-banner-placeholder"
+      />
+    </div>
+  )}
+  
+  {/* File Selection Status */}
+  {bannerImageFile && (
+    <div className="image-preview">
+      <p><i className="fas fa-check-circle text-success"></i> Selected: {bannerImageFile.name}</p>
+    </div>
+  )}
+  
+  {/* Current Image Info for Editing */}
+  {isEditing && deal?.bannerImage && !bannerImageFile && !bannerPreview && (
+    <div className="current-image-info">
+      <p><i className="fas fa-info-circle text-info"></i> Current banner: {deal.bannerImage}</p>
+      <small>Select a new file to replace it</small>
+    </div>
+  )}
+  </div>
         
         <div className="form-actions">
           {onClose && (
