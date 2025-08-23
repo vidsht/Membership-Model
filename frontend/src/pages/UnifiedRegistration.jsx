@@ -357,7 +357,31 @@ const UnifiedRegistration = () => {
 
   // Merchant Registration Handlers
   const handleMerchantInputChange = (e) => {
-    setMerchantForm({ ...merchantForm, [e.target.id]: e.target.value });
+    const { id, value } = e.target;
+    
+    // Handle website field with special validation
+    if (id === 'website') {
+      let processedValue = value;
+      
+      // Remove https:// if user enters it
+      if (processedValue.startsWith('https://')) {
+        processedValue = processedValue.replace('https://', '');
+      }
+      
+      // Remove http:// if user enters it
+      if (processedValue.startsWith('http://')) {
+        processedValue = processedValue.replace('http://', '');
+      }
+      
+      // Ensure it starts with www. if not empty and doesn't already start with www.
+      if (processedValue && !processedValue.startsWith('www.')) {
+        processedValue = 'www.' + processedValue;
+      }
+      
+      setMerchantForm({ ...merchantForm, [id]: processedValue });
+    } else {
+      setMerchantForm({ ...merchantForm, [id]: value });
+    }
   };
   const validateMerchantForm = () => {
     if (!merchantForm.fullName || !merchantForm.email || !merchantForm.password) {
@@ -648,7 +672,7 @@ const UnifiedRegistration = () => {
 
                 {/* Email */}
                 <div className="form-group">
-                  <label htmlFor="email">User Email <span className="required">*</span></label>
+                  <label htmlFor="email">User Email ID<span className="required">*</span></label>
                   <input
                     type="email"
                     id="email"
@@ -662,7 +686,7 @@ const UnifiedRegistration = () => {
 
                 {/* Country */}
                 <div className="form-group">
-                  <label htmlFor="country">Country <span className="required">*</span></label>
+                  <label htmlFor="country">Home Country Name<span className="required">*</span></label>
                   <select
                     id="country"
                     name="country"
@@ -725,14 +749,14 @@ const UnifiedRegistration = () => {
 
                 {/* Blood Group */}
                 <div className="form-group">
-                  <label htmlFor="bloodGroup">Blood Group</label>
+                  <label htmlFor="bloodGroup">Blood Group<span className="required">*</span></label>
                   <select
                     id="bloodGroup"
                     name="bloodGroup"
                     value={userForm.bloodGroup}
                     onChange={handleUserInputChange}
                   >
-                    <option value="">Select blood group (optional)</option>
+                    <option value="">Select blood group</option>
                     <option value="A+">A+</option>
                     <option value="A-">A-</option>
                     <option value="B+">B+</option>
@@ -910,7 +934,7 @@ const UnifiedRegistration = () => {
                 </div>
                 <div className="form-row">
                   <div className="form-group">
-                    <label htmlFor="email">Email Address *</label>
+                    <label htmlFor="email">User Email ID*</label>
                     <input
                       type="email"
                       id="email"
@@ -933,14 +957,14 @@ const UnifiedRegistration = () => {
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="bloodGroup">Blood Group</label>
+                  <label htmlFor="bloodGroup">Blood Group<span className="required">*</span></label>
                   <select
                     id="bloodGroup"
                     name="bloodGroup"
                     value={merchantForm.bloodGroup}
                     onChange={handleMerchantInputChange}
                   >
-                    <option value="">Select blood group (optional)</option>
+                    <option value="">Select blood group</option>
                     <option value="A+">A+</option>
                     <option value="A-">A-</option>
                     <option value="B+">B+</option>
@@ -1111,7 +1135,7 @@ const UnifiedRegistration = () => {
                 </div>
                 <div className="form-row">
                   <div className="form-group">
-                    <label htmlFor="businessEmail">Business Email</label>
+                    <label htmlFor="businessEmail">Business Email ID</label>
                     <input
                       type="email"
                       id="businessEmail"
@@ -1123,11 +1147,11 @@ const UnifiedRegistration = () => {
                   <div className="form-group">
                     <label htmlFor="website">Website (Optional)</label>
                     <input
-                      type="url"
+                      type="text"
                       id="website"
                       value={merchantForm.website}
                       onChange={handleMerchantInputChange}
-                      placeholder="https://yourwebsite.com"
+                      placeholder="www.yourwebsite.com"
                     />
                   </div>
                 </div>

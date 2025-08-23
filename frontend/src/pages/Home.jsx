@@ -38,12 +38,12 @@ const Home = () => {
     return 'basic';
   };
 
-  // Derive the set of premium partners to show on the home carousel
+  // Derive the set of premium partners to show on the home carousel (only platinum and platinum_plus)
   const premiumPartners = (businesses || []).filter(b => {
     const membershipType = b.membershipLevel || b.membershipType || b.membership || '';
     const category = getBusinessPlanCategory(membershipType);
-    // Include premium (silver family), gold family and premium_plus/platinum_plus
-    return category === 'premium' || category === 'gold' || category === 'premium_plus';
+    // Only include platinum (featured) and premium_plus/platinum_plus plans
+    return category === 'featured' || category === 'premium_plus';
   });
   
   // Helper function to parse social media data consistently
@@ -81,14 +81,14 @@ const Home = () => {
 
   // Carousel functionality
   const nextSlide = () => {
-    if (businesses.length > 0) {
-      setCurrentSlide((prev) => (prev + 1) % businesses.length);
+    if (premiumPartners.length > 0) {
+      setCurrentSlide((prev) => (prev + 1) % premiumPartners.length);
     }
   };
 
   const prevSlide = () => {
-    if (businesses.length > 0) {
-      setCurrentSlide((prev) => (prev - 1 + businesses.length) % businesses.length);
+    if (premiumPartners.length > 0) {
+      setCurrentSlide((prev) => (prev - 1 + premiumPartners.length) % premiumPartners.length);
     }
   };
 
@@ -99,11 +99,11 @@ const Home = () => {
 
   // Auto-scroll carousel
   useEffect(() => {
-    if (businesses.length > 0) {
+    if (premiumPartners.length > 0) {
       const interval = setInterval(nextSlide, 5000);
       return () => clearInterval(interval);
     }
-  }, [businesses.length]);
+  }, [premiumPartners.length]);
 
   // Add click handlers to carousel buttons
   useEffect(() => {
@@ -124,7 +124,7 @@ const Home = () => {
 
     const cleanup = addCarouselListeners();
     return cleanup;
-  }, [businesses.length]);
+  }, [premiumPartners.length]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -411,7 +411,7 @@ const Home = () => {
       {/* Move the CTA (Why Join Our Community) section here, right after hero */}
 
 
-      {adminSettings.features?.business_directory && businesses.length > 0 && (
+      {adminSettings.features?.business_directory && premiumPartners.length > 0 && (
         <section className="business-partners">
           <div className="business-partners-container">
             <div className="business-partners-header">
@@ -427,7 +427,7 @@ const Home = () => {
                     transition: 'transform 0.5s ease-in-out'
                   }}
                 >
-                  {[...businesses, ...businesses].map((business, index) => (
+                  {[...premiumPartners, ...premiumPartners].map((business, index) => (
                     <div key={`${business.id || index}-${index}`} className="business-carousel-card">
                       <div className="business-carousel-logo">
                         <SmartImage
@@ -905,29 +905,7 @@ const Home = () => {
           </div>
         </div>
       </section>       
-      
-      {/* Terms and Conditions Section */}
-      <section className="terms-preview">
-        <div className="terms-container">
-          <div className="terms-header">
-            <h2> Terms and Conditions</h2>
-            <p>Important information about membership and community guidelines</p>
-          </div>
-          <div className="terms-content">
-            <div className="terms-text">
-              <p>{adminSettings.content?.terms_conditions || 'By using this service, you agree to abide by all rules and regulations set forth by the Indians in Ghana community. Membership benefits are subject to change without prior notice.'}</p>
-            </div>
-            <div className="terms-actions">
-              <Link to="/about" className="btn btn-outline">
-                <i className="fas fa-file-contract"></i> Read Full Terms
-              </Link>
-              <Link to="/unified-registration" className="btn btn-primary">
-                <i className="fas fa-check"></i> I Agree & Join
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
+
 
       <section className="stats">
         <div className="stats-container">

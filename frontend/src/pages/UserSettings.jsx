@@ -44,10 +44,31 @@ const UserSettings = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [notificationState, setNotificationState] = useState({ message: '', type: '' });
   const [currentActiveTab, setCurrentActiveTab] = useState(() => {
-    return (user?.userType === 'merchant' || user?.role === 'merchant') ? 'business' : 'profile';
+    return 'profile'; // Always start with profile tab for all users
   });
   const [userRedemptions, setUserRedemptions] = useState([]);
   const [redemptionsLoadingState, setRedemptionsLoadingState] = useState(false);
+
+  // Edit modal state
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    fullName: '',
+    firstName: '',
+    lastName: '',
+    phone: '',
+    dob: '',
+    gender: '',
+    bloodGroup: '',
+    community: '',
+    address: {
+      street: '',
+      city: '',
+      state: '',
+      zipCode: ''
+    },
+    country: 'Ghana'
+  });
+  const [isUpdating, setIsUpdating] = useState(false);
 
   // Check if current user is a merchant
   const isMerchant = user?.userType === 'merchant' || user?.role === 'merchant';
@@ -64,35 +85,9 @@ const UserSettings = () => {
   const fetchUserProfileData = useCallback(async () => {
   try {
     setIsLoading(true);
-    // For merchants, only fetch minimal profile data and focus on business data
-    if (user && isMerchant) {
-      const userData = user;
-      // For merchants, set minimal profile data and prioritize business data
-      setUserProfile({
-        fullName: userData.fullName || '',
-        email: userData.email || '',
-        phone: userData.phone || '',
-        profilePicture: userData.profilePhoto || userData.profilePicture || '',
-        membershipType: userData.membershipType || userData.membership || '',
-        membershipNumber: userData.membershipNumber || '',
-        createdAt: userData.created_at || '',
-        status: userData.status || '',
-        role: userData.role || userData.userType || '',
-        // Don't fetch unnecessary personal details for merchants
-        firstName: '',
-        lastName: '',
-        dob: '',
-        gender: '',
-        bloodGroup: '',
-        community: '',
-        address: { street: '', city: '', state: '', zipCode: '' },
-        country: 'Ghana'
-      });
-      return;
-    }
-
-    // For regular users, prefer the authenticated user available from AuthContext
-    if (user && !isMerchant) {
+    
+    // For all users, prefer the authenticated user available from AuthContext
+    if (user) {
       const userData = user;
 
       // Parse address if it's a string
@@ -196,7 +191,7 @@ const UserSettings = () => {
   } finally {
     setIsLoading(false);
   }
-}, [user, isMerchant, showNotification]);
+}, [user, showNotification]);
 
 useEffect(() => {
         if (user) {
@@ -252,6 +247,103 @@ useEffect(() => {
         ...prev,
         [name]: value
       }));
+    }
+  };
+
+  // Edit modal functions
+  const openEditModal = () => {
+    setEditFormData({
+      fullName: userProfile.fullName || '',
+      firstName: userProfile.firstName || '',
+      lastName: userProfile.lastName || '',
+      phone: userProfile.phone || '',
+      dob: userProfile.dob || '',
+      gender: userProfile.gender || '',
+      bloodGroup: userProfile.bloodGroup || '',
+      community: userProfile.community || '',
+      address: {
+        street: userProfile.address?.street || '',
+        city: userProfile.address?.city || '',
+        state: userProfile.address?.state || '',
+        zipCode: userProfile.address?.zipCode || ''
+      },
+      country: userProfile.country || 'Ghana'
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const closeEditModal = () => {
+    setIsEditModalOpen(false);
+    setEditFormData({
+      fullName: '',
+      firstName: '',
+      lastName: '',
+      phone: '',
+      dob: '',
+      gender: '',
+      bloodGroup: '',
+      community: '',
+      address: {
+        street: '',
+        city: '',
+        state: '',
+        zipCode: ''
+      },
+      country: 'Ghana'
+    });
+  };
+
+  const handleEditFormChange = (e) => {
+    const { name, value } = e.target;
+    
+    if (name.startsWith('address.')) {
+      const addressField = name.split('.')[1];
+      setEditFormData(prev => ({
+        ...prev,
+        address: {
+          ...prev.address,
+          [addressField]: value
+        }
+      }));
+    } else {
+      setEditFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
+  };
+
+  const handleSaveChanges = async () => {
+    setIsUpdating(true);
+    try {
+      const response = await api.put('/users/profile', editFormData);
+      
+      if (response.data.success) {
+        // Update the local user profile
+        setUserProfile(prev => ({
+          ...prev,
+          ...editFormData
+        }));
+        
+        // Update the auth context user
+        updateUser({
+          ...user,
+          ...editFormData
+        });
+        
+        showNotification('Profile updated successfully!', 'success');
+        closeEditModal();
+      } else {
+        showNotification(response.data.message || 'Failed to update profile', 'error');
+      }
+    } catch (error) {
+      console.error('Profile update error:', error);
+      showNotification(
+        error.response?.data?.message || 'Failed to update profile. Please try again.',
+        'error'
+      );
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -418,6 +510,7 @@ const handleMerchantLogoRemoval = async () => {
     
     if (isMerchant) {
       availableTabs.push(
+        { id: 'profile', label: 'Profile Information', icon: '👤' },
         { id: 'business', label: 'Business Settings', icon: '🏢' },
         { id: 'security', label: 'Security Settings', icon: '🔒' }
         // Note: Removed redemption history for merchants as they should not see user redemptions
@@ -503,15 +596,39 @@ const handleMerchantLogoRemoval = async () => {
     <div className="user-settings-tab-content">
       <div className="user-profile-form">
         <div className="user-profile-header">
-          <h2 className="user-profile-section-title">
-            {isMerchant ? 'Basic Profile Information' : 'Profile Information'}
-          </h2>
-          <p className="user-profile-section-description">
-            {isMerchant 
-              ? 'View your basic account information and membership details'
-              : 'Update your personal information and membership details'
-            }
-          </p>
+          <div className="profile-header-content">
+            <div className="profile-header-text">
+              <h2 className="user-profile-section-title">
+                {isMerchant ? 'Basic Profile Information' : 'Profile Information'}
+              </h2>
+              <p className="user-profile-section-description">
+                Update your personal information and membership details
+              </p>
+            </div>
+            <div className="profile-header-actions">
+              {console.log('About to render edit button')}
+              <button 
+                className="edit-profile-btn"
+                onClick={openEditModal}
+                type="button"
+                 style={{
+                  display: 'block !important',
+                  visibility: 'visible !important',
+                  opacity: '1 !important',
+                  position: 'relative !important',
+                  width: 'auto !important',
+                  height: 'auto !important',
+                  backgroundColor: 'red !important',  // Make it obvious
+                  color: 'white !important',
+                  padding: '10px !important',
+                  border: '2px solid black !important'
+                }}
+                >
+                <i className="fas fa-edit"></i>
+                Edit Profile
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Profile Photo Section - Only for non-merchants */}
@@ -584,7 +701,7 @@ const handleMerchantLogoRemoval = async () => {
               />
             </div>
 
-            {/* Hide personal details for merchants */}
+            {/* Hide personal details for merchants in read-only view but show in edit modal */}
             {!isMerchant && (
               <>
                 <div className="form-field-group">
@@ -637,7 +754,7 @@ const handleMerchantLogoRemoval = async () => {
           </div>
         </div>
 
-        {/* Address Information - Only for non-merchants */}
+        {/* Address Information - Only for non-merchants in read-only view but show in edit modal */}
         {!isMerchant && (
           <div className="user-profile-form-section">
             <h3 className="form-section-title">Address Information</h3>
@@ -910,6 +1027,259 @@ return (
           {renderTabContent()}
         </div>
       </div>
+
+      {/* Edit Profile Modal */}
+      {isEditModalOpen && (
+        <div className="modal-overlay">
+          <div className="edit-profile-modal">
+            <div className="modal-header">
+              <h3>
+                <i className="fas fa-user-edit"></i>
+                Edit Profile Information
+              </h3>
+              <button 
+                className="close-btn" 
+                onClick={closeEditModal}
+                type="button"
+              >
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            
+            <div className="modal-body">
+              <form onSubmit={(e) => { e.preventDefault(); handleSaveChanges(); }}>
+                <div className="edit-form-grid">
+                  <div className="form-section">
+                    <h4>Personal Information</h4>
+                    
+                    <div className="form-group">
+                      <label htmlFor="edit-fullName">Full Name <span className="required">*</span></label>
+                      <input
+                        type="text"
+                        id="edit-fullName"
+                        name="fullName"
+                        value={editFormData.fullName}
+                        onChange={handleEditFormChange}
+                        className="form-input"
+                        required
+                      />
+                    </div>
+
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label htmlFor="edit-firstName">First Name</label>
+                        <input
+                          type="text"
+                          id="edit-firstName"
+                          name="firstName"
+                          value={editFormData.firstName}
+                          onChange={handleEditFormChange}
+                          className="form-input"
+                        />
+                      </div>
+                      
+                      <div className="form-group">
+                        <label htmlFor="edit-lastName">Last Name</label>
+                        <input
+                          type="text"
+                          id="edit-lastName"
+                          name="lastName"
+                          value={editFormData.lastName}
+                          onChange={handleEditFormChange}
+                          className="form-input"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="edit-phone">Phone Number</label>
+                      <input
+                        type="tel"
+                        id="edit-phone"
+                        name="phone"
+                        value={editFormData.phone}
+                        onChange={handleEditFormChange}
+                        className="form-input"
+                        placeholder="+233 XX XXX XXXX"
+                      />
+                    </div>
+
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label htmlFor="edit-dob">Date of Birth</label>
+                        <input
+                          type="date"
+                          id="edit-dob"
+                          name="dob"
+                          value={editFormData.dob}
+                          onChange={handleEditFormChange}
+                          className="form-input"
+                        />
+                      </div>
+                      
+                      <div className="form-group">
+                        <label htmlFor="edit-gender">Gender</label>
+                        <select
+                          id="edit-gender"
+                          name="gender"
+                          value={editFormData.gender}
+                          onChange={handleEditFormChange}
+                          className="form-input"
+                        >
+                          <option value="">Select Gender</option>
+                          <option value="male">Male</option>
+                          <option value="female">Female</option>
+                          <option value="other">Other</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label htmlFor="edit-bloodGroup">Blood Group</label>
+                        <select
+                          id="edit-bloodGroup"
+                          name="bloodGroup"
+                          value={editFormData.bloodGroup}
+                          onChange={handleEditFormChange}
+                          className="form-input"
+                        >
+                          <option value="">Select Blood Group</option>
+                          <option value="A+">A+</option>
+                          <option value="A-">A-</option>
+                          <option value="B+">B+</option>
+                          <option value="B-">B-</option>
+                          <option value="AB+">AB+</option>
+                          <option value="AB-">AB-</option>
+                          <option value="O+">O+</option>
+                          <option value="O-">O-</option>
+                        </select>
+                      </div>
+                      
+                      <div className="form-group">
+                        <label htmlFor="edit-community">Community</label>
+                        <input
+                          type="text"
+                          id="edit-community"
+                          name="community"
+                          value={editFormData.community}
+                          onChange={handleEditFormChange}
+                          className="form-input"
+                          placeholder="Enter your community"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="form-section">
+                    <h4>Address Information</h4>
+                    
+                    <div className="form-group">
+                      <label htmlFor="edit-address-street">Street Address</label>
+                      <input
+                        type="text"
+                        id="edit-address-street"
+                        name="address.street"
+                        value={editFormData.address.street}
+                        onChange={handleEditFormChange}
+                        className="form-input"
+                        placeholder="Enter your street address"
+                      />
+                    </div>
+
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label htmlFor="edit-address-city">City</label>
+                        <input
+                          type="text"
+                          id="edit-address-city"
+                          name="address.city"
+                          value={editFormData.address.city}
+                          onChange={handleEditFormChange}
+                          className="form-input"
+                          placeholder="City"
+                        />
+                      </div>
+                      
+                      <div className="form-group">
+                        <label htmlFor="edit-address-state">State/Region</label>
+                        <input
+                          type="text"
+                          id="edit-address-state"
+                          name="address.state"
+                          value={editFormData.address.state}
+                          onChange={handleEditFormChange}
+                          className="form-input"
+                          placeholder="State or Region"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label htmlFor="edit-address-zipCode">Zip/Postal Code</label>
+                        <input
+                          type="text"
+                          id="edit-address-zipCode"
+                          name="address.zipCode"
+                          value={editFormData.address.zipCode}
+                          onChange={handleEditFormChange}
+                          className="form-input"
+                          placeholder="Zip/Postal Code"
+                        />
+                      </div>
+                      
+                      <div className="form-group">
+                        <label htmlFor="edit-country">Country</label>
+                        <select
+                          id="edit-country"
+                          name="country"
+                          value={editFormData.country}
+                          onChange={handleEditFormChange}
+                          className="form-input"
+                        >
+                          <option value="Ghana">Ghana</option>
+                          <option value="India">India</option>
+                          <option value="Other">Other</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </form>
+            </div>
+            
+            <div className="modal-footer">
+              <button 
+                type="button" 
+                className="btn btn-secondary" 
+                onClick={closeEditModal}
+                disabled={isUpdating}
+              >
+                Cancel
+              </button>
+              <button 
+                type="button" 
+                className="btn btn-primary" 
+                onClick={handleSaveChanges}
+                disabled={isUpdating}
+              >
+                {isUpdating ? (
+                  <>
+                    <i className="fas fa-spinner fa-spin"></i>
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <i className="fas fa-save"></i>
+                    Save Changes
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   </div>
 );

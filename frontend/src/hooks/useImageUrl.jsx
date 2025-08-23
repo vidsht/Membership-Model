@@ -130,13 +130,41 @@ export const useImageUrl = () => {
             if (!deal) return null;
             
             // Check multiple possible field names for backward compatibility
-            const bannerField = deal?.bannerImage || deal?.banner || deal?.imageUrl;
-            
-            // Return full URL if already absolute
-            if (bannerField && (bannerField.startsWith('http://') || bannerField.startsWith('https://'))) {
-            return bannerField;
+            let bannerField = deal?.bannerImage || deal?.banner || deal?.imageUrl || '';
+            if (!bannerField) return null;
+
+            // If it's already a full URL, return as is
+            if (bannerField.startsWith('http://') || bannerField.startsWith('https://')) {
+                return bannerField;
+            }
+
+            // Handle cases where backend stored a path (e.g., '/uploads/deal_banners/filename' or '/public_html/uploads/deal_banners/filename')
+            try {
+                // Normalize and extract filename if necessary
+                const normalized = bannerField.replace(/\\\\/g, '/');
+                const uploadsIndex = normalized.indexOf('/uploads/');
+                if (uploadsIndex !== -1) {
+                    // Get the portion after the last slash
+                    const parts = normalized.split('/');
+                    const basename = parts[parts.length - 1];
+                    if (basename) {
+                        return getImageUrl(basename, 'deal');
+                    }
+                }
+
+                // If it contains 'deal_banners' directory anywhere, extract basename
+                if (normalized.includes('deal_banners')) {
+                    const parts = normalized.split('/');
+                    const basename = parts[parts.length - 1];
+                    if (basename) {
+                        return getImageUrl(basename, 'deal');
+                    }
+                }
+            } catch (e) {
+                console.warn('Error normalizing bannerField:', e);
             }
             
+            // Fallback to default behavior
             return getImageUrl(bannerField, 'deal');
         };
         }, [getImageUrl]);

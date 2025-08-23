@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useNotification } from '../../../contexts/NotificationContext';
 import { useDynamicFields } from '../../../hooks/useDynamicFields';
-import { useImageUrl } from '../../../hooks/useImageUrl.jsx';
+import { useImageUrl, SmartImage } from '../../../hooks/useImageUrl.jsx';
 import api from '../../../services/api';
+import ImageUpload from '../../common/ImageUpload';
 import './DealForm.css';
 
 const DealForm = () => {
@@ -18,6 +19,7 @@ const DealForm = () => {
   const [businesses, setBusinesses] = useState([]);
   const [userPlans, setUserPlans] = useState([]);
   const [bannerImageFile, setBannerImageFile] = useState(null);
+  const [bannerPreview, setBannerPreview] = useState(null);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -228,9 +230,42 @@ const DealForm = () => {
     }
   };
 
-  const handleBannerImageUpload = (file) => {
-    setBannerImageFile(file);
-  };const handleSubmit = async (e) => {
+  const handleBannerImageUpload = (fileOrResponse) => {
+    // Handle both File objects and upload responses
+    if (!fileOrResponse) {
+      setBannerImageFile(null);
+      setBannerPreview(formData.bannerImage ? getDealBannerUrl(formData) : null);
+      return;
+    }
+
+    // If it's a File object (from file selection)
+    if (fileOrResponse instanceof File) {
+      setBannerImageFile(fileOrResponse);
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => setBannerPreview(e.target.result);
+      reader.readAsDataURL(fileOrResponse);
+      return;
+    }
+
+    // If it's an upload response from ImageUpload component
+    const resp = fileOrResponse;
+    const imageUrl = resp.imageUrl || resp.url || null;
+    const filename = resp.filename || resp.fileName || null;
+    
+    // Update form data with filename for database storage
+    setFormData(prev => ({ 
+      ...prev, 
+      bannerImage: filename || imageUrl 
+    }));
+    
+    // Set preview to the uploaded URL
+    setBannerPreview(imageUrl || filename);
+    
+    console.log('✅ Admin banner upload response received:', { imageUrl, filename });
+  };
+  
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!validateForm()) {
@@ -555,24 +590,58 @@ const DealForm = () => {
                 <i className="fas fa-image"></i>
                 Deal Banner Image
               </label>
-              <input
-                type="file"
-                id="bannerImage"
-                name="bannerImage"
-                onChange={(e) => handleBannerImageUpload(e.target.files[0])}
-                accept="image/*"
+
+              <ImageUpload
+                type="deal"
+                entityId={formData.id || 'temp'}
+                currentImage={bannerPreview}
+                onUploadSuccess={handleBannerImageUpload}
+                onUpload={handleBannerImageUpload} // Legacy support
+                className="deal-banner-upload"
+                label="Upload Deal Banner"
+                description="Recommended: 800x400px (16:9 aspect ratio)"
+                aspectRatio="16:9"
               />
-              <span className="help-text">
-                Upload a banner image for your deal (recommended: 800x400px, max 8MB)
-              </span>
-              
+
+              {/* Alternative file input for direct selection (fallback) */}
+              <div className="file-input-alternative" style={{ marginTop: '10px' }}>
+                <input
+                  type="file"
+                  id="bannerImage"
+                  name="bannerImage"
+                  onChange={(e) => handleBannerImageUpload(e.target.files[0])}
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                />
+                <label htmlFor="bannerImage" className="file-input-label">
+                  <i className="fas fa-upload"></i>
+                  Or select file directly
+                </label>
+              </div>
+
+              <small className="form-hint">Upload a banner image for your deal (recommended: 800x400px, max 8MB)</small>
+
+              {/* Preview Section */}
+              {bannerPreview && (
+                <div className="banner-preview">
+                  <SmartImage 
+                    src={bannerPreview} 
+                    alt="Deal banner preview" 
+                    className="deal-banner-preview-image"
+                    fallbackClass="deal-banner-placeholder"
+                  />
+                </div>
+              )}
+
+              {/* File Selection Status */}
               {bannerImageFile && (
                 <div className="image-preview">
                   <p><i className="fas fa-check-circle text-success"></i> Selected: {bannerImageFile.name}</p>
                 </div>
               )}
-              
-              {isEditMode && formData.bannerImage && !bannerImageFile && (
+
+              {/* Current Image Info for Editing */}
+              {isEditMode && formData.bannerImage && !bannerImageFile && !bannerPreview && (
                 <div className="current-image-info">
                   <p><i className="fas fa-info-circle text-info"></i> Current banner: {formData.bannerImage}</p>
                   <small>Select a new file to replace it</small>

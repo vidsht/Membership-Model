@@ -216,7 +216,7 @@
 /* Pagination */
 .pagination-controls {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   margin-top: 1rem;
   background: white;
   border-radius: 0.5rem;

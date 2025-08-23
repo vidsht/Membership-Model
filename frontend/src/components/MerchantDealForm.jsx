@@ -269,44 +269,80 @@ const handleBannerImageUpload = (fileOrResponse) => {
         ...(formData.bannerImage && { bannerImage: formData.bannerImage })
       };
 
-      let dealId;
-      let createdDeal;
+let dealId;
+let createdDeal;
 
-      if (isEditing && deal) {
-        // Update existing deal
-        const response = await merchantApi.updateDeal(deal.id, dealData);
-        dealId = deal.id;
-        createdDeal = { ...deal, ...dealData };
-        showNotification('Deal updated successfully! It will be reviewed by admin before going live.', 'success');
-      } else {
-        // Create new deal
-        const response = await merchantApi.createDeal(dealData);
-        dealId = response.data?.deal?.id || response.data?.id;
-        createdDeal = response.data?.deal || response.data;
-        showNotification('Deal submitted successfully! It will be reviewed by admin before going live.', 'success');
-      }
+if (isEditing && deal) {
+  const response = await merchantApi.updateDeal(deal.id, dealData);
+  dealId = deal.id;
+  createdDeal = { ...deal, ...dealData };
+  console.log('🔧 DEBUG: Update response:', response.data);
+  showNotification('Deal updated successfully! It will be reviewed by admin before going live.', 'success');
+} else {
+  const response = await merchantApi.createDeal(dealData);
+  console.log('🔧 DEBUG: Create response:', response);
+  
+  // Backend returns dealId directly in response
+  dealId = response.dealId || response.data?.dealId;
+           
+  createdDeal = response.data?.deal || response.data || response;
+  
+  console.log('🔧 DEBUG: Extracted dealId:', dealId);
+  console.log('🔧 DEBUG: Created deal object:', createdDeal);
+  showNotification('Deal submitted successfully! It will be reviewed by admin before going live.', 'success');
+}
+
+if (!dealId) {
+  console.error('❌ No dealId found in response');
+  showNotification('Deal created but unable to upload banner - missing deal ID', 'warning');
+  return;
+}
+
 
       // Upload banner image if one was selected
-      // Upload banner image if one was selected but not yet uploaded
-      if (bannerImageFile && dealId) {
-        try {
-          const uploadFormData = new FormData(); // Rename to avoid conflict
-          uploadFormData.append('dealBanner', bannerImageFile);
-          
-          const uploadResponse = await api.post(`/upload/deal-banner/${dealId}`, uploadFormData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-          });
-
-          if (uploadResponse.data.success) {
-            console.log('✅ Banner image uploaded successfully:', uploadResponse.data.filename);
-            // Update the created deal object with the banner info
-            createdDeal.bannerImage = uploadResponse.data.filename;
-          }
-        } catch (uploadError) {
-          console.error('❌ Banner image upload failed:', uploadError);
-          showNotification('Deal created but banner image upload failed. You can add it later.', 'warning');
+  
+    if (bannerImageFile && dealId) {
+      try {
+        console.log('🔧 DEBUG: About to upload banner:', { 
+          dealId, 
+          filename: bannerImageFile.name,
+          size: bannerImageFile.size 
+        });
+        
+        const uploadFormData = new FormData();
+        uploadFormData.append('dealBanner', bannerImageFile);
+        
+        console.log('🔧 DEBUG: Upload URL:', `/upload/deal-banner/${dealId}`);
+        
+        const uploadResponse = await api.post(`/upload/deal-banner/${dealId}`, uploadFormData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        
+        console.log('🔧 DEBUG: Upload response:', uploadResponse.data);
+        
+        if (uploadResponse.data.success) {
+          console.log('✅ Banner image uploaded successfully:', uploadResponse.data.filename);
+          createdDeal.bannerImage = uploadResponse.data.filename;
+          showNotification('Deal and banner image uploaded successfully!', 'success');
+        } else {
+          throw new Error(uploadResponse.data.message || 'Upload failed');
         }
+      } catch (uploadError) {
+        console.error('❌ Banner image upload failed:', uploadError);
+        console.error('❌ Error details:', {
+          status: uploadError.response?.status,
+          data: uploadError.response?.data,
+          message: uploadError.message
+        });
+        showNotification('Deal created but banner image upload failed. You can add it later.', 'warning');
       }
+    } else {
+      console.log('🔧 DEBUG: Skipping banner upload:', { 
+        hasFile: !!bannerImageFile, 
+        dealId 
+      });
+    }
+
       
       if (onDealCreated) {
         onDealCreated(createdDeal);

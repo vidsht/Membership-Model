@@ -161,8 +161,7 @@ app.get('/api/businesses', async (req, res) => {
         u.membershipType as membershipLevel
       FROM businesses b
       LEFT JOIN users u ON b.userId = u.id
-      WHERE (b.status = 'active' OR b.status = 'approved' OR b.status = '')
-        AND u.status = 'approved'
+      WHERE u.status = 'approved'
       ORDER BY b.businessName ASC
     `);
 

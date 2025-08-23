@@ -305,11 +305,11 @@ const Deals = () => {
                   <div className="business-logo">
                     {getMerchantLogoUrl({ logo: deal.businessLogo }) ? (
                     <SmartImage
-                      src={getMerchantLogoUrl(business)}
-                      alt={`${name} Logo`}
+                      src={getMerchantLogoUrl({ logo: deal.businessLogo })}
+                      alt={`${deal.businessName} Logo`}
                       placeholder={
                         <div className="logo-placeholder">
-                          <span>{name.charAt(0) || "B"}</span>
+                          <span>{deal.businessName?.charAt(0) || "B"}</span>
                         </div>
                       }
                       className="logo-image"

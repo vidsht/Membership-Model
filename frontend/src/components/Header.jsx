@@ -56,16 +56,6 @@ const Header = () => {
           <ul>
             <li><Link to="/" className={isActive('/')}>Home</Link></li>
             <li><Link to="/deals" className={isActive('/deals')}><i className="fas fa-tags nav-icon"></i> Deals</Link></li>
-            {isAuthenticated && (
-              <>
-                <li><Link to="/dashboard" className={isActive('/dashboard')}>
-                  <i className="fas fa-columns nav-icon"></i> Dashboard
-                </Link></li>
-                <li><Link to="/settings" className={isActive('/settings')}>
-                  <i className="fas fa-user-cog nav-icon"></i> Settings
-                </Link></li>
-              </>
-            )}
             {/* Business Directory and Merchant options */}
             <li className="dropdown">
               <div className="dropdown">
@@ -81,9 +71,19 @@ const Header = () => {
                 )}
               </ul>
             </li>
+            {isAuthenticated && (
+              <>
+                <li><Link to="/dashboard" className={isActive('/dashboard')}>
+                  <i className="fas fa-columns nav-icon"></i> Dashboard
+                </Link></li>
+                <li><Link to="/settings" className={isActive('/settings')}>
+                  <i className="fas fa-user-cog nav-icon"></i> Settings
+                </Link></li>
+              </>
+            )}
 
-            <li><Link to="/about" className={isActive('/about')}>About Us</Link></li>
-            <li><Link to="/contact" className={isActive('/contact')}>Contact</Link></li>
+            {/* <li><Link to="/about" className={isActive('/about')}>About Us</Link></li>
+            <li><Link to="/contact" className={isActive('/contact')}>Contact</Link></li> */}
             
             {/* Admin/Merchant specific links */}
             {isAuthenticated && user?.userType === 'merchant' && (

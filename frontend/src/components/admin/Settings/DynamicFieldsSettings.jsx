@@ -14,6 +14,7 @@ const DynamicFieldsSettings = ({ settings, onSettingChange }) => {
   const [editingField, setEditingField] = useState(null);
   const [newOption, setNewOption] = useState({ name: '', label: '', description: '', isActive: true });
   const [isLoading, setIsLoading] = useState(true);
+  const [editModal, setEditModal] = useState({ isOpen: false, fieldType: '', optionIndex: -1, optionData: {} });
 
   useEffect(() => {
     fetchDynamicFields();
@@ -71,6 +72,71 @@ const DynamicFieldsSettings = ({ settings, onSettingChange }) => {
     const currentOptions = [...(dynamicFields[fieldType] || [])];
     currentOptions[index] = updatedOption;
     updateFieldOptions(fieldType, currentOptions);
+  };
+
+  const openEditModal = (fieldType, index, option) => {
+    setEditModal({
+      isOpen: true,
+      fieldType,
+      optionIndex: index,
+      optionData: { ...option }
+    });
+  };
+
+  const closeEditModal = () => {
+    setEditModal({ isOpen: false, fieldType: '', optionIndex: -1, optionData: {} });
+  };
+
+  const handleEditModalSave = async () => {
+    const { fieldType, optionIndex, optionData } = editModal;
+    
+    if (!optionData.name.trim()) {
+      showNotification('Option name is required', 'error');
+      return;
+    }
+
+    // Check for duplicates (excluding current option)
+    const currentOptions = dynamicFields[fieldType] || [];
+    const exists = currentOptions.some((option, index) => 
+      index !== optionIndex && option.name.toLowerCase() === optionData.name.toLowerCase()
+    );
+    
+    if (exists) {
+      showNotification('An option with this name already exists', 'error');
+      return;
+    }
+
+    const updatedOptions = [...currentOptions];
+    updatedOptions[optionIndex] = {
+      ...optionData,
+      name: optionData.name.trim(),
+      label: optionData.label || optionData.name
+    };
+
+    try {
+      const response = await api.put(`/admin/dynamic-fields/${fieldType}`, { options: updatedOptions });
+      if (response.data.success) {
+        setDynamicFields(prev => ({
+          ...prev,
+          [fieldType]: updatedOptions
+        }));
+        showNotification(`${getFieldDisplayName(fieldType)} option updated successfully`, 'success');
+        closeEditModal();
+      }
+    } catch (error) {
+      console.error('Error updating dynamic field option:', error);
+      showNotification('Error updating field option', 'error');
+    }
+  };
+
+  const handleEditModalChange = (field, value) => {
+    setEditModal(prev => ({
+      ...prev,
+      optionData: {
+        ...prev.optionData,
+        [field]: value
+      }
+    }));
   };
 
   const handleDeleteOption = (fieldType, index) => {
@@ -178,6 +244,12 @@ const DynamicFieldsSettings = ({ settings, onSettingChange }) => {
                 </div>
                 <div className="option-actions">
                   <button
+                    className="btn btn-info btn-sm"
+                    onClick={() => openEditModal(fieldType, index, option)}
+                  >
+                    Edit
+                  </button>
+                  <button
                     className={`btn btn-sm ${option.isActive ? 'btn-warning' : 'btn-success'}`}
                     onClick={() => handleUpdateOption(fieldType, index, { ...option, isActive: !option.isActive })}
                   >
@@ -242,6 +314,100 @@ const DynamicFieldsSettings = ({ settings, onSettingChange }) => {
           </p>
         </div>
       </div>
+
+      {/* Edit Option Modal */}
+      {editModal.isOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h3>
+                <i className="fas fa-edit"></i>
+                Edit {getFieldDisplayName(editModal.fieldType)} Option
+              </h3>
+              <button 
+                className="close-btn" 
+                onClick={closeEditModal}
+                type="button"
+              >
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            
+            <div className="modal-body">
+              <div className="form-group">
+                <label>Name *</label>
+                <input
+                  type="text"
+                  value={editModal.optionData.name || ''}
+                  onChange={(e) => handleEditModalChange('name', e.target.value)}
+                  placeholder="Option name"
+                  className="form-input"
+                />
+              </div>
+
+              {(editModal.fieldType === 'businessCategories' || editModal.fieldType === 'dealCategories') && (
+                <div className="form-group">
+                  <label>Display Label</label>
+                  <input
+                    type="text"
+                    value={editModal.optionData.label || ''}
+                    onChange={(e) => handleEditModalChange('label', e.target.value)}
+                    placeholder="Display label (optional)"
+                    className="form-input"
+                  />
+                </div>
+              )}
+
+              <div className="form-group">
+                <label>Description</label>
+                <input
+                  type="text"
+                  value={editModal.optionData.description || ''}
+                  onChange={(e) => handleEditModalChange('description', e.target.value)}
+                  placeholder="Option description (optional)"
+                  className="form-input"
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={editModal.optionData.isActive}
+                    onChange={(e) => handleEditModalChange('isActive', e.target.checked)}
+                  />
+                  <span className="checkmark"></span>
+                  Active
+                </label>
+                <p className="field-description">
+                  {editModal.optionData.isActive 
+                    ? 'This option will be available in dropdown menus' 
+                    : 'This option will be hidden from dropdown menus but existing data will be preserved'
+                  }
+                </p>
+              </div>
+            </div>
+            
+            <div className="modal-footer">
+              <button 
+                type="button" 
+                className="btn btn-secondary" 
+                onClick={closeEditModal}
+              >
+                Cancel
+              </button>
+              <button 
+                type="button" 
+                className="btn btn-primary" 
+                onClick={handleEditModalSave}
+              >
+                <i className="fas fa-save"></i>
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

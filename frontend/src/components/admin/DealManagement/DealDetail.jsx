@@ -97,7 +97,7 @@ const DealDetail = () => {
       <div className="deal-detail-header">
         <button 
           className="back-button"
-          onClick={() => navigate('/admin/deals')}
+          onClick={() => navigate('/admin')}
         >
           ← Back to Deals
         </button>
