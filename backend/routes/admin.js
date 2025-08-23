@@ -2232,6 +2232,7 @@ router.get('/deals/:id', auth, admin, async (req, res) => {
 });
 
 // Create new deal
+// Create new deal
 router.post('/deals', auth, admin, [
   body('title').trim().isLength({ min: 1, max: 255 }).withMessage('Title is required and must be less than 255 characters'),
   body('description').trim().isLength({ min: 1, max: 1000 }).withMessage('Description is required and must be less than 1000 characters'),
@@ -2273,7 +2274,8 @@ router.post('/deals', auth, admin, [
       requiredPlanPriority = 1,
       termsConditions,
       couponCode,
-      status = 'active'
+      status = 'active',
+      bannerImage  // Add this field
     } = req.body;
 
     // Validate dates
@@ -2290,15 +2292,15 @@ router.post('/deals', auth, admin, [
       INSERT INTO deals (
         title, description, businessId, discount, discountType, originalPrice, 
         discountedPrice, category, validFrom, validUntil, requiredPlanPriority,
-        minPlanPriority, termsConditions, couponCode, status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        minPlanPriority, termsConditions, couponCode, bannerImage, status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     const params = [
       title, description, businessId, discount, discountType, originalPrice,
       discountedPrice, category, validFrom, validUntil, requiredPlanPriority,
       requiredPlanPriority, // Set minPlanPriority to same value for consistency
-      termsConditions, couponCode, status
+      termsConditions, couponCode, bannerImage || null, status
     ];
 
     const result = await queryAsync(query, params);
@@ -2363,7 +2365,8 @@ router.put('/deals/:id', auth, admin, [
       requiredPlanPriority = 1,
       termsConditions,
       couponCode,
-      status = 'active'
+      status = 'active',
+      bannerImage  // Add this field
     } = req.body;
 
     // Validate dates
@@ -2387,7 +2390,7 @@ router.put('/deals/:id', auth, admin, [
         title = ?, description = ?, businessId = ?, discount = ?, discountType = ?, 
         originalPrice = ?, discountedPrice = ?, category = ?, validFrom = ?, 
         validUntil = ?, requiredPlanPriority = ?, minPlanPriority = ?, termsConditions = ?, 
-        couponCode = ?, status = ?
+        couponCode = ?, bannerImage = ?, status = ?
       WHERE id = ?
     `;
 
@@ -2395,7 +2398,7 @@ router.put('/deals/:id', auth, admin, [
       title, description, businessId, discount, discountType, originalPrice,
       discountedPrice, category, validFrom, validUntil, requiredPlanPriority,
       requiredPlanPriority, // Set minPlanPriority to same value for consistency
-      termsConditions, couponCode, status, dealId
+      termsConditions, couponCode, bannerImage || null, status, dealId
     ];
 
     await queryAsync(query, params);
@@ -3804,7 +3807,7 @@ router.patch('/deals/:id/approve', auth, admin, async (req, res) => {
       }
     }
     
-    updateQuery += ' WHERE id = ? AND status = "pending_approval"';
+    updateQuery += ' WHERE id = ? AND (status = "pending_approval" OR status = "pending")';
     updateParams.push(dealId);
 
     console.log('Executing deal approval query:', updateQuery);
@@ -3813,7 +3816,7 @@ router.patch('/deals/:id/approve', auth, admin, async (req, res) => {
     const result = await queryAsync(updateQuery, updateParams);
 
     if (result.affectedRows === 0) {
-      return res.status(404).json({ success: false, message: 'Pending deal not found' });
+      return res.status(404).json({ success: false, message: 'Pending deal not found or already processed' });
     }
 
     // Verify the update by fetching the updated deal

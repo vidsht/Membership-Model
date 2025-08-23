@@ -560,7 +560,9 @@ router.post('/deals', checkMerchantAccess, checkDealPostingLimit, [
     expiration_date,
     imageUrl,
     couponCode,
-    requiredPlanPriority  } = req.body;
+    requiredPlanPriority,
+    bannerImage  // Add this field
+  } = req.body;
 
   // Get plan information for accessLevel field (for display purposes)
   let planName = null;
@@ -583,8 +585,8 @@ router.post('/deals', checkMerchantAccess, checkDealPostingLimit, [
 
   const insertQuery = `
     INSERT INTO deals 
-    (businessId, title, description, category, discount, discountType, originalPrice, discountedPrice, termsConditions, validFrom, validUntil, couponCode, requiredPlanPriority, status)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending_approval')
+    (businessId, title, description, category, discount, discountType, originalPrice, discountedPrice, termsConditions, validFrom, validUntil, couponCode, requiredPlanPriority, bannerImage, status)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending_approval')
   `;
 
   const values = [
@@ -600,7 +602,8 @@ router.post('/deals', checkMerchantAccess, checkDealPostingLimit, [
     expiration_date, // validFrom
     expiration_date, // validUntil  
     couponCode || null,
-    requiredPlanPriority || 1
+    requiredPlanPriority || 1,
+    bannerImage || null  // Add bannerImage value
   ];
 
   db.query(insertQuery, values, (err, result) => {
@@ -652,7 +655,8 @@ router.put('/deals/:dealId', checkMerchantAccess, [
       termsConditions,
       expiration_date,
       couponCode,
-      requiredPlanPriority
+      requiredPlanPriority,
+      bannerImage  // Add this field
     } = req.body;
 
     if (!dealId || isNaN(dealId)) {
@@ -691,6 +695,7 @@ router.put('/deals/:dealId', checkMerchantAccess, [
         expiration_date = ?, 
         couponCode = ?,
         minPlanPriority = ?,
+        bannerImage = ?,
         status = 'pending_approval',
         updated_at = NOW()
       WHERE id = ? AND businessId = ?
@@ -708,11 +713,29 @@ router.put('/deals/:dealId', checkMerchantAccess, [
       expiration_date || null, 
       couponCode || null,
       minPlanPriority,
+      bannerImage || null,  // Add bannerImage value
       dealId,
       merchant.businessId
     ];
 
-    const result = await queryAsync(updateQuery, values);
+    const updateValues = [
+      title, 
+      description, 
+      category, 
+      discount, 
+      discountType,
+      originalPrice || null, 
+      discountedPrice || null, 
+      termsConditions || null, 
+      expiration_date || null, 
+      couponCode || null,
+      minPlanPriority,
+      bannerImage || null,  // Add bannerImage value
+      dealId,
+      merchant.businessId
+    ];
+
+    const result = await queryAsync(updateQuery, updateValues);
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ success: false, message: 'Deal not found or no changes made' });
