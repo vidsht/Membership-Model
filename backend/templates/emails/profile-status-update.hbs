@@ -328,12 +328,6 @@
                     {{/if}}
                 </p>
                 
-                {{#if reason}}
-                <div class="reason-section">
-                    <h4>Reason Provided:</h4>
-                    <p>{{reason}}</p>
-                </div>
-                {{/if}}
             </div>
             
             <div class="next-steps {{newStatus}}">
@@ -354,7 +348,6 @@
                     {{/if}}
                     
                     {{#if (eq newStatus 'rejected')}}
-                    <li>Review the reason provided above carefully</li>
                     <li>Update your profile with correct information</li>
                     <li>Ensure all required documents are provided</li>
                     <li>Resubmit your profile for review</li>

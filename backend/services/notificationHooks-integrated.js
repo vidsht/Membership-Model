@@ -144,11 +144,14 @@ class NotificationHooks {
     try {
       console.log(`📧 Processing redemption request notifications for ${redemptionId}`);
       
-      // This would notify the merchant of a new redemption request
-      // For now, we'll just log it since we need to implement merchant notification templates
-      console.log('Redemption request notification would be sent to merchant');
-      
-      return { success: true, message: 'Redemption request processed' };
+      // Send notification to merchant
+      return await notificationService.sendRedemptionRequestAlert(redemptionData.merchantId, {
+        requestId: redemptionId,
+        customerName: redemptionData.customerName || redemptionData.fullName,
+        dealTitle: redemptionData.dealTitle,
+        membershipNumber: redemptionData.membershipNumber,
+        customerEmail: redemptionData.customerEmail
+      });
     } catch (error) {
       console.error('Error in redemption request hook:', error);
       return { success: false, error: error.message };

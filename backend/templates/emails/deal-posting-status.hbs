@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deal Posting Status Update</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            line-height: 1.6; 
+            margin: 0; 
+            padding: 0; 
+            background-color: #f5f7fa; 
+        }
+        .container { 
+            max-width: 600px; 
+            margin: 20px auto; 
+            padding: 0; 
+            background-color: #ffffff; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1); 
+            overflow: hidden;
+        }
+        .header { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            color: white; 
+            padding: 30px; 
+            text-align: center; 
+        }
+        .header h1 { 
+            margin: 0; 
+            font-size: 28px; 
+            font-weight: 300; 
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 10px;
+        }
+        .status-approved {
+            background-color: #28a745;
+            color: white;
+        }
+        .status-rejected {
+            background-color: #dc3545;
+            color: white;
+        }
+        .status-pending {
+            background-color: #ffc107;
+            color: #212529;
+        }
+        .content { 
+            padding: 40px 30px; 
+        }
+        .greeting { 
+            font-size: 18px; 
+            margin-bottom: 20px; 
+            color: #2c3e50; 
+        }
+        .deal-info {
+            background-color: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        .deal-info h3 {
+            margin: 0 0 15px 0;
+            color: #495057;
+            font-size: 20px;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 10px 20px;
+            margin-top: 15px;
+        }
+        .info-label {
+            font-weight: 600;
+            color: #6c757d;
+        }
+        .info-value {
+            color: #495057;
+        }
+        .message-box {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 25px 0;
+        }
+        .message-box.success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+        .message-box.error {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+        }
+        .action-buttons {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            margin: 0 10px;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: 600;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .footer { 
+            background-color: #f8f9fa; 
+            padding: 30px; 
+            text-align: center; 
+            border-top: 1px solid #e9ecef; 
+            color: #6c757d; 
+        }
+        .footer a { 
+            color: #667eea; 
+            text-decoration: none; 
+        }
+        .next-steps {
+            background-color: #e3f2fd;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 25px 0;
+        }
+        .next-steps h4 {
+            color: #1976d2;
+            margin: 0 0 15px 0;
+        }
+        .next-steps ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .next-steps li {
+            margin-bottom: 8px;
+            color: #424242;
+        }
+        @media (max-width: 600px) {
+            .container { margin: 10px; }
+            .header, .content, .footer { padding: 20px; }
+            .info-grid { grid-template-columns: 1fr; gap: 5px; }
+            .btn { display: block; margin: 10px 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Deal Posting Status Update</h1>
+            <div class="status-badge status-{{status}}">{{status}}</div>
+        </div>
+
+        <div class="content">
+            <div class="greeting">
+                Hello {{merchantName}},
+            </div>
+
+            <p>We have an update regarding your deal posting request.</p>
+
+            <div class="deal-info">
+                <h3>{{dealTitle}}</h3>
+                <div class="info-grid">
+                    <span class="info-label">Category:</span>
+                    <span class="info-value">{{dealCategory}}</span>
+                    <span class="info-label">Original Price:</span>
+                    <span class="info-value">${{originalPrice}}</span>
+                    <span class="info-label">Discounted Price:</span>
+                    <span class="info-value">${{discountedPrice}}</span>
+                    <span class="info-label">Submitted Date:</span>
+                    <span class="info-value">{{submittedDate}}</span>
+                    <span class="info-label">Status Updated:</span>
+                    <span class="info-value">{{statusUpdateDate}}</span>
+                </div>
+            </div>
+
+            {{#if approved}}
+            <div class="message-box success">
+                <h4>🎉 Congratulations! Your deal has been approved!</h4>
+                <p>Your deal is now live and visible to all members. Customers can start redeeming this deal immediately.</p>
+                {{#if adminMessage}}
+                <p><strong>Admin Message:</strong> {{adminMessage}}</p>
+                {{/if}}
+            </div>
+
+            <div class="next-steps">
+                <h4>What happens next?</h4>
+                <ul>
+                    <li>Your deal is now active and available to customers</li>
+                    <li>You'll receive notifications when customers request redemptions</li>
+                    <li>Track your deal performance in the merchant dashboard</li>
+                    <li>You can edit or update your deal anytime</li>
+                </ul>
+            </div>
+
+            <div class="action-buttons">
+                <a href="{{dealUrl}}" class="btn btn-primary">View Live Deal</a>
+                <a href="{{dashboardUrl}}" class="btn btn-secondary">Merchant Dashboard</a>
+            </div>
+            {{/if}}
+
+            {{#if rejected}}
+            <div class="message-box error">
+                <h4>❌ Your deal posting request has been rejected</h4>
+                <p>Unfortunately, your deal did not meet our current posting requirements.</p>
+                {{#if rejectionReason}}
+                <p><strong>Reason:</strong> {{rejectionReason}}</p>
+                {{/if}}
+                {{#if adminMessage}}
+                <p><strong>Admin Message:</strong> {{adminMessage}}</p>
+                {{/if}}
+            </div>
+
+            <div class="next-steps">
+                <h4>What can you do?</h4>
+                <ul>
+                    <li>Review the feedback provided above</li>
+                    <li>Modify your deal to address the concerns</li>
+                    <li>Submit a new deal posting request</li>
+                    <li>Contact support if you need clarification</li>
+                </ul>
+            </div>
+
+            <div class="action-buttons">
+                <a href="{{createDealUrl}}" class="btn btn-primary">Create New Deal</a>
+                <a href="{{supportUrl}}" class="btn btn-secondary">Contact Support</a>
+            </div>
+            {{/if}}
+
+            {{#if pending}}
+            <div class="message-box">
+                <h4>⏳ Your deal is still under review</h4>
+                <p>Our team is currently reviewing your deal posting request. This process typically takes 1-2 business days.</p>
+                {{#if adminMessage}}
+                <p><strong>Admin Message:</strong> {{adminMessage}}</p>
+                {{/if}}
+            </div>
+
+            <div class="next-steps">
+                <h4>While you wait:</h4>
+                <ul>
+                    <li>Ensure your business profile is complete</li>
+                    <li>Prepare additional deals for submission</li>
+                    <li>Check out our deal posting best practices</li>
+                </ul>
+            </div>
+            {{/if}}
+
+            <p>If you have any questions or concerns, please don't hesitate to contact our support team.</p>
+            
+            <p>Thank you for being a valued merchant partner!</p>
+            
+            <p>Best regards,<br>
+            The Platform Team</p>
+        </div>
+
+        <div class="footer">
+            <p>Need help? Contact us at <a href="mailto:{{supportEmail}}">{{supportEmail}}</a></p>
+            <p>Visit your <a href="{{dashboardUrl}}">Merchant Dashboard</a> | <a href="{{helpUrl}}">Help Center</a></p>
+            <p>&copy; 2024 Membership Platform. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

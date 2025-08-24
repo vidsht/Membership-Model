@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Deal Limit Assignment</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            line-height: 1.6; 
+            margin: 0; 
+            padding: 0; 
+            background-color: #f5f7fa; 
+        }
+        .container { 
+            max-width: 600px; 
+            margin: 20px auto; 
+            padding: 0; 
+            background-color: #ffffff; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1); 
+            overflow: hidden;
+        }
+        .header { 
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%); 
+            color: white; 
+            padding: 30px; 
+            text-align: center; 
+        }
+        .header h1 { 
+            margin: 0; 
+            font-size: 28px; 
+            font-weight: 300; 
+        }
+        .deal-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+        .content { 
+            padding: 40px 30px; 
+        }
+        .greeting { 
+            font-size: 18px; 
+            margin-bottom: 20px; 
+            color: #2c3e50; 
+        }
+        .highlight-box {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-left: 5px solid #28a745;
+            padding: 25px;
+            margin: 25px 0;
+            border-radius: 0 8px 8px 0;
+            text-align: center;
+        }
+        .deal-limit {
+            font-size: 48px;
+            font-weight: bold;
+            color: #28a745;
+            margin: 10px 0;
+        }
+        .limit-label {
+            font-size: 18px;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .assignment-details {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 25px 0;
+        }
+        .detail-grid {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 10px 20px;
+            margin-top: 15px;
+        }
+        .detail-label {
+            font-weight: 600;
+            color: #495057;
+        }
+        .detail-value {
+            color: #212529;
+        }
+        .increase {
+            color: #28a745;
+            font-weight: 600;
+        }
+        .decrease {
+            color: #dc3545;
+            font-weight: 600;
+        }
+        .same {
+            color: #6c757d;
+            font-weight: 600;
+        }
+        .benefits-section {
+            background-color: #e8f5e8;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 25px 0;
+        }
+        .benefits-section h4 {
+            color: #155724;
+            margin: 0 0 15px 0;
+        }
+        .benefits-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .benefits-list li {
+            padding: 8px 0 8px 30px;
+            position: relative;
+            color: #155724;
+        }
+        .benefits-list li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #28a745;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .usage-stats {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 25px 0;
+        }
+        .usage-stats h4 {
+            color: #856404;
+            margin: 0 0 15px 0;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            text-align: center;
+        }
+        .stat-item {
+            background-color: white;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #f0f0f0;
+        }
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #495057;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .action-buttons {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            margin: 0 10px;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: 600;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .message-box {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 25px 0;
+        }
+        .message-box h4 {
+            color: #0c5460;
+            margin: 0 0 10px 0;
+        }
+        .footer { 
+            background-color: #f8f9fa; 
+            padding: 30px; 
+            text-align: center; 
+            border-top: 1px solid #e9ecef; 
+            color: #6c757d; 
+        }
+        .footer a { 
+            color: #28a745; 
+            text-decoration: none; 
+        }
+        @media (max-width: 600px) {
+            .container { margin: 10px; }
+            .header, .content, .footer { padding: 20px; }
+            .detail-grid { grid-template-columns: 1fr; gap: 5px; }
+            .stats-grid { grid-template-columns: 1fr; }
+            .btn { display: block; margin: 10px 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="deal-icon">🎯</div>
+            <h1>Custom Deal Limit Assignment</h1>
+        </div>
+
+        <div class="content">
+            <div class="greeting">
+                Hello {{merchantName}},
+            </div>
+
+            <p>Great news! Your deal posting limit has been updated by our admin team.</p>
+
+            <div class="highlight-box">
+                <div class="limit-label">Your New Monthly Deal Limit</div>
+                <div class="deal-limit">{{newDealLimit}}</div>
+                <div class="limit-label">Deals Per Month</div>
+            </div>
+
+            <div class="assignment-details">
+                <h4>📋 Assignment Details</h4>
+                <div class="detail-grid">
+                    <span class="detail-label">Previous Limit:</span>
+                    <span class="detail-value">{{previousLimit}} deals/month</span>
+                    
+                    <span class="detail-label">New Limit:</span>
+                    <span class="detail-value">{{newDealLimit}} deals/month</span>
+                    
+                    <span class="detail-label">Change:</span>
+                    <span class="detail-value {{changeClass}}">
+                        {{#if isIncrease}}+{{/if}}{{change}} deals/month 
+                        {{#if isIncrease}}(Increase){{else if isDecrease}}(Decrease){{else}}(No change){{/if}}
+                    </span>
+                    
+                    <span class="detail-label">Effective Date:</span>
+                    <span class="detail-value">{{effectiveDate}}</span>
+                    
+                    <span class="detail-label">Assigned By:</span>
+                    <span class="detail-value">{{assignedBy}}</span>
+                    
+                    {{#if validUntil}}
+                    <span class="detail-label">Valid Until:</span>
+                    <span class="detail-value">{{validUntil}}</span>
+                    {{/if}}
+                </div>
+            </div>
+
+            {{#if adminMessage}}
+            <div class="message-box">
+                <h4>💬 Message from Admin</h4>
+                <p>{{adminMessage}}</p>
+            </div>
+            {{/if}}
+
+            {{#if isIncrease}}
+            <div class="benefits-section">
+                <h4>🚀 What this means for you:</h4>
+                <ul class="benefits-list">
+                    <li>Post more deals to reach more customers</li>
+                    <li>Increase your business visibility</li>
+                    <li>Boost sales with additional promotional opportunities</li>
+                    <li>Better compete in your category</li>
+                    {{#if isPremiumLimit}}
+                    <li>Access to premium merchant features</li>
+                    <li>Priority listing in deal categories</li>
+                    {{/if}}
+                </ul>
+            </div>
+            {{/if}}
+
+            <div class="usage-stats">
+                <h4>📊 Current Month Usage</h4>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-number">{{dealsUsedThisMonth}}</div>
+                        <div class="stat-label">Deals Posted</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">{{remainingDeals}}</div>
+                        <div class="stat-label">Remaining</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">{{totalRedemptions}}</div>
+                        <div class="stat-label">Total Redemptions</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">{{activeDeals}}</div>
+                        <div class="stat-label">Active Deals</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <a href="{{createDealUrl}}" class="btn btn-primary">Create New Deal</a>
+                <a href="{{dashboardUrl}}" class="btn btn-secondary">View Dashboard</a>
+            </div>
+
+            {{#if tips}}
+            <div class="benefits-section">
+                <h4>💡 Tips to Maximize Your Deal Limit:</h4>
+                <ul class="benefits-list">
+                    <li>Create deals with clear, attractive descriptions</li>
+                    <li>Use high-quality images to showcase your offers</li>
+                    <li>Set competitive pricing to attract more customers</li>
+                    <li>Monitor deal performance and adjust as needed</li>
+                    <li>Respond quickly to customer redemption requests</li>
+                </ul>
+            </div>
+            {{/if}}
+
+            <p>This change takes effect immediately. You can start posting deals up to your new limit right away.</p>
+
+            <p>If you have any questions about your new deal limit or need assistance with posting deals, our support team is here to help.</p>
+            
+            <p>Thank you for being a valued merchant partner!</p>
+            
+            <p>Best regards,<br>
+            The Platform Team</p>
+        </div>
+
+        <div class="footer">
+            <p>Need help? Contact us at <a href="mailto:{{supportEmail}}">{{supportEmail}}</a></p>
+            <p>Visit your <a href="{{dashboardUrl}}">Merchant Dashboard</a> | <a href="{{helpUrl}}">Help Center</a></p>
+            <p>&copy; 2024 Membership Platform. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

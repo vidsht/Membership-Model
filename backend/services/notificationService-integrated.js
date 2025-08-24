@@ -257,6 +257,47 @@ class NotificationService {
     }
   }
 
+  async sendRedemptionRequestAlert(merchantId, redemptionData) {
+    try {
+      // Get merchant email - check business email first, then user email
+      const merchantResult = await this.queryAsync(`
+        SELECT u.email as userEmail, u.fullName, b.businessEmail, b.businessName
+        FROM users u
+        LEFT JOIN businesses b ON u.id = b.userId
+        WHERE u.id = ?
+      `, [merchantId]);
+      
+      if (merchantResult.length === 0) return { success: false, error: 'Merchant not found' };
+
+      const merchant = merchantResult[0];
+      const merchantEmail = merchant.businessEmail || merchant.userEmail;
+      
+      if (!merchantEmail) return { success: false, error: 'No email found for merchant' };
+
+      const data = {
+        businessName: merchant.businessName || 'Your Business',
+        merchantEmail: merchantEmail,
+        customerName: redemptionData.customerName || redemptionData.fullName,
+        dealTitle: redemptionData.dealTitle,
+        requestDate: new Date().toLocaleDateString(),
+        membershipNumber: redemptionData.membershipNumber || 'N/A',
+        requestId: redemptionData.requestId || redemptionData.id,
+        customerEmail: redemptionData.customerEmail,
+        approveUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/merchant/redemptions?action=approve&id=${redemptionData.requestId}`,
+        rejectUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/merchant/redemptions?action=reject&id=${redemptionData.requestId}`
+      };
+
+      return await emailService.sendEmail({
+        to: merchantEmail,
+        templateType: 'redemption_request_alert',
+        data: data
+      });
+    } catch (error) {
+      console.error('Error sending redemption request alert:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
   // Utility Methods
   getStatusMessage(status, reason) {
     const messages = {
@@ -309,6 +350,204 @@ class NotificationService {
       };
     } catch (error) {
       console.error('Error sending bulk notifications:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Send plan assignment notification to user or merchant
+  async sendPlanAssignmentNotification(userId, planId, planType = 'user') {
+    try {
+      console.log(`📧 Sending plan assignment notification for plan ${planId} to user ${userId}`);
+      
+      // Get user details
+      const userResult = await this.queryAsync(`
+        SELECT u.email, u.fullName, b.businessName, b.businessEmail
+        FROM users u 
+        LEFT JOIN businesses b ON u.id = b.userId 
+        WHERE u.id = ?
+      `, [userId]);
+
+      if (userResult.length === 0) {
+        throw new Error('User not found');
+      }
+
+      const user = userResult[0];
+      const userEmail = planType === 'merchant' ? (user.businessEmail || user.email) : user.email;
+
+      // Get plan details
+      const planResult = await this.queryAsync('SELECT * FROM plans WHERE id = ?', [planId]);
+
+      if (planResult.length === 0) {
+        throw new Error('Plan not found');
+      }
+
+      const plan = planResult[0];
+
+      const data = {
+        userName: planType === 'merchant' ? user.businessName : (user.fullName || user.email),
+        planName: plan.name,
+        planType: planType,
+        planDescription: plan.description,
+        planPrice: plan.price,
+        planDuration: plan.duration_months,
+        features: plan.features ? plan.features.split(',') : [],
+        dealsPerMonth: plan.deals_per_month || 'Unlimited',
+        redemptionsPerMonth: plan.redemptions_per_month || 'Unlimited',
+        activationDate: new Date().toLocaleDateString(),
+        expiryDate: new Date(Date.now() + (plan.duration_months * 30 * 24 * 60 * 60 * 1000)).toLocaleDateString(),
+        dashboardUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/${planType === 'merchant' ? 'merchant' : 'user'}/dashboard`,
+        supportEmail: process.env.SUPPORT_EMAIL || 'support@example.com'
+      };
+
+      return await emailService.sendEmail({
+        to: userEmail,
+        templateType: 'plan_assignment',
+        data: data
+      });
+      
+    } catch (error) {
+      console.error('❌ Error sending plan assignment notification:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Send deal posting status notification to merchant
+  async sendDealPostingStatusNotification(dealId, merchantId, status, options = {}) {
+    try {
+      console.log(`📧 Sending deal posting status notification for deal ${dealId} to merchant ${merchantId} - Status: ${status}`);
+      
+      // Get merchant details
+      const merchantResult = await this.queryAsync(`
+        SELECT u.email, u.fullName, b.businessName, b.businessEmail
+        FROM users u 
+        LEFT JOIN businesses b ON u.id = b.userId 
+        WHERE u.id = ?
+      `, [merchantId]);
+
+      if (merchantResult.length === 0) {
+        throw new Error('Merchant not found');
+      }
+
+      const merchant = merchantResult[0];
+      const merchantEmail = merchant.businessEmail || merchant.email;
+
+      // Get deal details
+      const dealResult = await this.queryAsync('SELECT * FROM deals WHERE id = ?', [dealId]);
+
+      if (dealResult.length === 0) {
+        throw new Error('Deal not found');
+      }
+
+      const deal = dealResult[0];
+
+      const data = {
+        merchantName: merchant.businessName || merchant.fullName || 'Merchant',
+        dealTitle: deal.title,
+        dealCategory: deal.category,
+        originalPrice: deal.original_price || deal.originalPrice,
+        discountedPrice: deal.discounted_price || deal.discountedPrice,
+        submittedDate: deal.created_at ? new Date(deal.created_at).toLocaleDateString() : '',
+        statusUpdateDate: new Date().toLocaleDateString(),
+        status: status.toLowerCase(),
+        approved: status.toLowerCase() === 'approved',
+        rejected: status.toLowerCase() === 'rejected',
+        pending: status.toLowerCase() === 'pending',
+        rejectionReason: options.rejectionReason || '',
+        adminMessage: options.adminMessage || '',
+        dealUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/deals/${dealId}`,
+        dashboardUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/merchant/dashboard`,
+        createDealUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/merchant/deals/create`,
+        supportUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/support`,
+        supportEmail: process.env.SUPPORT_EMAIL || 'support@example.com',
+        helpUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/help`
+      };
+
+      return await emailService.sendEmail({
+        to: merchantEmail,
+        templateType: 'deal_posting_status',
+        data: data
+      });
+      
+    } catch (error) {
+      console.error('❌ Error sending deal posting status notification:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Send custom deals assignment notification to merchant
+  async sendCustomDealsAssignmentNotification(merchantId, newLimit, options = {}) {
+    try {
+      console.log(`📧 Sending custom deals assignment notification to merchant ${merchantId} - New limit: ${newLimit}`);
+      
+      // Get merchant details
+      const merchantResult = await this.queryAsync(`
+        SELECT u.email, u.fullName, b.businessName, b.businessEmail, b.maxDealsPerMonth, b.dealsUsedThisMonth
+        FROM users u 
+        LEFT JOIN businesses b ON u.id = b.userId 
+        WHERE u.id = ?
+      `, [merchantId]);
+
+      if (merchantResult.length === 0) {
+        throw new Error('Merchant not found');
+      }
+
+      const merchant = merchantResult[0];
+      const merchantEmail = merchant.businessEmail || merchant.email;
+      const previousLimit = merchant.maxDealsPerMonth || 5; // Default if not set
+      const dealsUsedThisMonth = merchant.dealsUsedThisMonth || 0;
+
+      // Calculate change
+      const change = newLimit - previousLimit;
+      const isIncrease = change > 0;
+      const isDecrease = change < 0;
+
+      // Get active deals count
+      const activeDealsResult = await this.queryAsync(
+        'SELECT COUNT(*) as count FROM deals WHERE businessId IN (SELECT businessId FROM businesses WHERE userId = ?) AND isActive = 1',
+        [merchantId]
+      );
+      const activeDeals = activeDealsResult[0]?.count || 0;
+
+      // Get total redemptions for this merchant
+      const redemptionsResult = await this.queryAsync(`
+        SELECT COUNT(*) as count FROM deal_redemptions dr 
+        JOIN deals d ON dr.deal_id = d.id 
+        WHERE d.businessId IN (SELECT businessId FROM businesses WHERE userId = ?)
+      `, [merchantId]);
+      const totalRedemptions = redemptionsResult[0]?.count || 0;
+
+      const data = {
+        merchantName: merchant.businessName || merchant.fullName || 'Merchant',
+        newDealLimit: newLimit,
+        previousLimit: previousLimit,
+        change: Math.abs(change),
+        isIncrease: isIncrease,
+        isDecrease: isDecrease,
+        changeClass: isIncrease ? 'increase' : (isDecrease ? 'decrease' : 'same'),
+        effectiveDate: new Date().toLocaleDateString(),
+        assignedBy: options.assignedBy || 'Admin Team',
+        validUntil: options.validUntil || '',
+        adminMessage: options.adminMessage || '',
+        dealsUsedThisMonth: dealsUsedThisMonth,
+        remainingDeals: Math.max(0, newLimit - dealsUsedThisMonth),
+        totalRedemptions: totalRedemptions,
+        activeDeals: activeDeals,
+        isPremiumLimit: newLimit >= 20,
+        tips: newLimit > previousLimit, // Show tips if it's an increase
+        createDealUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/merchant/deals/create`,
+        dashboardUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/merchant/dashboard`,
+        supportEmail: process.env.SUPPORT_EMAIL || 'support@example.com',
+        helpUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/help`
+      };
+
+      return await emailService.sendEmail({
+        to: merchantEmail,
+        templateType: 'custom_deals_assignment',
+        data: data
+      });
+      
+    } catch (error) {
+      console.error('❌ Error sending custom deals assignment notification:', error);
       return { success: false, error: error.message };
     }
   }

@@ -5,6 +5,8 @@
 
 const nodemailer = require('nodemailer');
 const handlebars = require('handlebars');
+const fs = require('fs');
+const path = require('path');
 const db = require('../db');
 const { promisify } = require('util');
 
@@ -53,6 +55,32 @@ class EmailService {
     }
 
     try {
+      // First, try to load from local template files
+      const templatePath = path.join(__dirname, '..', 'templates', 'emails', `${templateType.replace(/_/g, '-')}.hbs`);
+      
+      if (fs.existsSync(templatePath)) {
+        console.log(`📄 Loading template from file: ${templateType}`);
+        const htmlContent = fs.readFileSync(templatePath, 'utf8');
+        
+        // Get subject from database for consistency
+        const dbResults = await this.queryAsync(
+          'SELECT subject FROM email_templates WHERE type = ? AND is_active = 1',
+          [templateType]
+        );
+        
+        const template = {
+          subject: dbResults.length > 0 ? dbResults[0].subject : `{{subject}} - Indians in Ghana`,
+          html: htmlContent,
+          text: this.htmlToText(htmlContent)
+        };
+
+        // Cache the template
+        this.templatesCache.set(templateType, template);
+        return template;
+      }
+
+      // Fallback to database templates
+      console.log(`📄 Loading template from database: ${templateType}`);
       const results = await this.queryAsync(
         'SELECT * FROM email_templates WHERE type = ? AND is_active = 1',
         [templateType]
@@ -85,6 +113,14 @@ class EmailService {
       console.error('Error rendering template:', error);
       return templateString; // Return original if compilation fails
     }
+  }
+
+  htmlToText(html) {
+    // Simple HTML to text conversion
+    return html
+      .replace(/<[^>]*>/g, '') // Remove HTML tags
+      .replace(/\s+/g, ' ') // Replace multiple spaces with single space
+      .trim();
   }
 
   async sendEmail({ to, templateType, data, priority = 'normal', scheduledFor = null }) {
