@@ -76,7 +76,7 @@ const PlanExpiryBanner = ({ showOnlyIfExpired = false }) => {
   };
 
   const handleContactAdmin = () => {
-    showNotification('Please contact admin at admin@indiansinghana.com to renew your plan.', 'info');
+    showNotification('Please contact admin at info@indiansinghana.com  to renew your plan.', 'info');
   };
 
   const handleUpgradePlan = () => {

@@ -59,7 +59,7 @@ class NotificationHooks {
       const queryAsync = promisify(db.query).bind(db);
       
       const usersResult = await queryAsync(`
-        SELECT u.id, u.email, u.firstName, u.fullName
+        SELECT u.id, u.email, u.fullName
         FROM users u
         LEFT JOIN user_email_preferences uep ON u.id = uep.user_id AND uep.notification_type = 'deals'
         WHERE u.status = 'approved' 
@@ -75,7 +75,7 @@ class NotificationHooks {
       const recipients = usersResult.map(user => ({
         email: user.email,
         data: {
-          firstName: user.firstName || user.fullName?.split(' ')[0] || 'Member'
+          firstName: user.fullName?.split(' ')[0] || 'Member'
         }
       }));
 
@@ -208,7 +208,7 @@ class NotificationHooks {
       
       // Find deals expiring in the next 3 days
       const expiringDeals = await queryAsync(`
-        SELECT d.*, u.email, u.firstName, u.fullName
+        SELECT d.*, u.email, u.fullName
         FROM deals d
         JOIN users u ON d.userId = u.id
         WHERE d.expiryDate BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 3 DAY)
@@ -243,7 +243,7 @@ class NotificationHooks {
       
       // Find memberships expiring in the next 30 days
       const expiringUsers = await queryAsync(`
-        SELECT id, email, firstName, fullName, validationDate
+        SELECT id, email, fullName, validationDate
         FROM users 
         WHERE validationDate BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 30 DAY)
         AND status = 'approved'

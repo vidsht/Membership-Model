@@ -37,12 +37,12 @@ class NotificationService {
   async sendDealNotification(userId, dealData) {
     try {
       // Get user email
-      const userResult = await this.queryAsync('SELECT email, firstName, fullName FROM users WHERE id = ?', [userId]);
+      const userResult = await this.queryAsync('SELECT email, fullName FROM users WHERE id = ?', [userId]);
       if (userResult.length === 0) return { success: false, error: 'User not found' };
 
       const user = userResult[0];
       const data = {
-        firstName: user.firstName || user.fullName?.split(' ')[0] || 'Member',
+        firstName: user.fullName?.split(' ')[0] || 'Member',
         dealTitle: dealData.title || dealData.dealTitle,
         dealDescription: dealData.description || dealData.dealDescription,
         businessName: dealData.businessName || 'Business',
@@ -64,12 +64,12 @@ class NotificationService {
 
   async sendProfileStatusUpdate(userId, statusData) {
     try {
-      const userResult = await this.queryAsync('SELECT email, firstName, fullName FROM users WHERE id = ?', [userId]);
+      const userResult = await this.queryAsync('SELECT email, fullName FROM users WHERE id = ?', [userId]);
       if (userResult.length === 0) return { success: false, error: 'User not found' };
 
       const user = userResult[0];
       const data = {
-        firstName: user.firstName || user.fullName?.split(' ')[0] || 'Member',
+        firstName: user.fullName?.split(' ')[0] || 'Member',
         fullName: user.fullName || user.email,
         newStatus: statusData.status || statusData.newStatus,
         reason: statusData.reason || '',
@@ -90,12 +90,12 @@ class NotificationService {
 
   async sendRedemptionApproved(userId, redemptionData) {
     try {
-      const userResult = await this.queryAsync('SELECT email, firstName, fullName FROM users WHERE id = ?', [userId]);
+      const userResult = await this.queryAsync('SELECT email, fullName FROM users WHERE id = ?', [userId]);
       if (userResult.length === 0) return { success: false, error: 'User not found' };
 
       const user = userResult[0];
       const data = {
-        firstName: user.firstName || user.fullName?.split(' ')[0] || 'Member',
+        firstName: user.fullName?.split(' ')[0] || 'Member',
         dealTitle: redemptionData.dealTitle || 'Deal',
         businessName: redemptionData.businessName || 'Business',
         status: 'approved',
@@ -116,12 +116,12 @@ class NotificationService {
 
   async sendRedemptionRejected(userId, redemptionData) {
     try {
-      const userResult = await this.queryAsync('SELECT email, firstName, fullName FROM users WHERE id = ?', [userId]);
+      const userResult = await this.queryAsync('SELECT email, fullName FROM users WHERE id = ?', [userId]);
       if (userResult.length === 0) return { success: false, error: 'User not found' };
 
       const user = userResult[0];
       const data = {
-        firstName: user.firstName || user.fullName?.split(' ')[0] || 'Member',
+        firstName: user.fullName?.split(' ')[0] || 'Member',
         dealTitle: redemptionData.dealTitle || 'Deal',
         businessName: redemptionData.businessName || 'Business',
         status: 'rejected',
@@ -216,12 +216,24 @@ class NotificationService {
   // Admin Notifications
   async sendAdminNotification(type, data) {
     try {
-      // Get admin emails
+      // Get admin emails - using adminRole column instead of role
       const adminResult = await this.queryAsync(
-        'SELECT email FROM users WHERE role = "admin" OR role = "super_admin"'
+        'SELECT email FROM users WHERE adminRole IS NOT NULL AND adminRole != "" AND status = "approved"'
       );
       
-      if (adminResult.length === 0) return { success: false, error: 'No admin users found' };
+      if (adminResult.length === 0) {
+        console.log('No admin users found, checking for any user with admin in userType');
+        // Fallback: check for admin in userType 
+        const fallbackAdmins = await this.queryAsync(
+          'SELECT email FROM users WHERE userType LIKE "%admin%" AND status = "approved"'
+        );
+        
+        if (fallbackAdmins.length === 0) {
+          return { success: false, error: 'No admin users found' };
+        }
+        
+        adminResult.push(...fallbackAdmins);
+      }
 
       const results = [];
       

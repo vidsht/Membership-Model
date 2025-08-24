@@ -23,24 +23,26 @@ class EmailService {
       port: process.env.SMTP_PORT || 587,
       secure: false, // true for 465, false for other ports
       auth: {
-        user: process.env.SMTP_USER || 'support@indiansinghana.com',
-        pass: process.env.SMTP_PASS || process.env.EMAIL_PASSWORD
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS
       },
       tls: {
         rejectUnauthorized: false
       }
     });
 
-    // Verify connection (optional in development)
+    // Verify connection in production
     try {
-      if (process.env.SMTP_USER && process.env.SMTP_PASS && process.env.SMTP_USER !== 'support@indiansinghana.com') {
+      if (process.env.NODE_ENV === 'production' && process.env.SMTP_USER && process.env.SMTP_PASS) {
+        console.log('🔍 Verifying SMTP connection...');
         await this.transporter.verify();
         console.log('✅ Email service initialized successfully');
       } else {
         console.log('⚠️ Email service initialized without SMTP verification (development mode)');
       }
     } catch (error) {
-      console.error('❌ Email service initialization failed:', error);
+      console.error('❌ Email service initialization failed:', error.message);
+      console.log('📧 Emails will be logged only (SMTP connection failed)');
     }
   }
 
@@ -97,7 +99,7 @@ class EmailService {
 
       // Prepare email options
       const mailOptions = {
-        from: `${process.env.SMTP_FROM_NAME || 'Indians in Ghana'} <${process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER || 'support@indiansinghana.com'}>`,
+        from: `${process.env.SMTP_FROM_NAME || 'Indians in Ghana'} <${process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER || 'tvidushi1234@gmail.com'}>`,
         to: to,
         subject: subject,
         html: htmlContent,
@@ -120,50 +122,71 @@ class EmailService {
         });
       } else {
         // Send immediately
-        if (process.env.NODE_ENV === 'production' && process.env.SMTP_USER && process.env.SMTP_PASS) {
-          const info = await this.transporter.sendMail(mailOptions);
+        try {
+          if (process.env.SMTP_USER && process.env.SMTP_PASS && this.transporter) {
+            console.log(`📧 Attempting to send email to ${to} with subject: ${subject}`);
+            
+            // First verify the connection
+            await this.transporter.verify();
+            
+            const info = await this.transporter.sendMail(mailOptions);
+            result = {
+              success: true,
+              messageId: info.messageId,
+              sent: true
+            };
+            console.log(`✅ Email sent successfully to ${to}`);
+          } else {
+            // Development/fallback mode - log to console
+            console.log('📧 Email would be sent (no SMTP configured):');
+            console.log(`To: ${to}`);
+            console.log(`Subject: ${subject}`);
+            console.log('Template Type:', templateType);
+            console.log('---');
+            result = {
+              success: true,
+              messageId: 'fallback-' + Date.now(),
+              sent: false,
+              mode: 'fallback'
+            };
+          }
+        } catch (emailError) {
+          console.error(`❌ Failed to send email to ${to}:`, emailError.message);
+          
+          // Fallback - still consider it successful for application flow
+          console.log('📧 Email logged instead of sent due to SMTP error');
           result = {
-            success: true,
-            messageId: info.messageId,
-            sent: true
-          };
-        } else {
-          // Development mode - just log
-          console.log('📧 Email would be sent (development mode):');
-          console.log(`To: ${to}`);
-          console.log(`Subject: ${subject}`);
-          console.log('Template Type:', templateType);
-          result = {
-            success: true,
-            messageId: 'dev-' + Date.now(),
+            success: true, // Don't break application flow
+            error: emailError.message,
             sent: false,
-            development: true
+            mode: 'logged_only'
           };
         }
       }
 
-      // Log the email
+      // Log the email attempt (whether successful or not)
       await this.logEmail({
-        template_name: templateType,
-        recipient_email: to,
+        recipient: to,
+        type: templateType,
         subject: subject,
-        status: result.success ? 'sent' : 'failed',
+        status: result.sent ? 'sent' : 'logged',
         message_id: result.messageId,
+        error: result.error || null,
         data: JSON.stringify(data)
       });
 
       return result;
 
     } catch (error) {
-      console.error('Error sending email:', error);
+      console.error('Error in email service:', error);
       
       // Log failed email
       await this.logEmail({
-        template_name: templateType,
-        recipient_email: to,
+        recipient: to,
+        type: templateType,
         subject: 'Failed to render',
         status: 'failed',
-        error_message: error.message,
+        error: error.message,
         data: JSON.stringify(data)
       });
 
@@ -208,12 +231,12 @@ class EmailService {
         `INSERT INTO email_notifications (recipient, type, subject, status, message_id, error, data) 
          VALUES (?, ?, ?, ?, ?, ?, ?)`,
         [
-          emailData.recipient_email || emailData.recipient,
-          emailData.template_name || emailData.type,
+          emailData.recipient || emailData.recipient_email,
+          emailData.type || emailData.template_name,
           emailData.subject,
           emailData.status,
           emailData.message_id || null,
-          emailData.error_message || null,
+          emailData.error || emailData.error_message || null,
           emailData.data
         ]
       );
@@ -249,7 +272,7 @@ class EmailService {
             text: email.text_content
           };
 
-          if (process.env.NODE_ENV === 'production' && process.env.SMTP_USER && process.env.SMTP_PASS) {
+          if (process.env.SMTP_USER && process.env.SMTP_PASS) {
             const info = await this.transporter.sendMail(mailOptions);
             
             // Update status to sent
@@ -257,6 +280,7 @@ class EmailService {
               'UPDATE email_queue SET status = "sent", message_id = ?, sent_at = NOW() WHERE id = ?',
               [info.messageId, email.id]
             );
+            console.log(`✅ Queue email sent to ${email.recipient}: ${email.subject}`);
           } else {
             // Development mode
             console.log(`📧 Queue email sent (dev): ${email.subject} to ${email.recipient}`);
