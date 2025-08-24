@@ -128,7 +128,7 @@ router.put('/profile', auth, (req, res) => {
             db.query(
               `SELECT id, fullName, email, phone, dob, 
                bloodGroup, community, address, country, profilePicture, membership, 
-               membershipType, membershipNumber, status, role, created_at 
+               membershipType, membershipNumber, status, created_at 
                FROM users WHERE id = ?`, 
               [userId], 
               (err3, results2) => {
@@ -171,7 +171,7 @@ router.put('/profile', auth, (req, res) => {
           db.query(
             `SELECT id, fullName, email, phone, dob, 
              bloodGroup, community, address, country, profilePicture, membership, 
-             membershipType, membershipNumber, status, role, created_at 
+             membershipType, membershipNumber, status, created_at 
              FROM users WHERE id = ?`, 
             [userId], 
             (err3, results2) => {
