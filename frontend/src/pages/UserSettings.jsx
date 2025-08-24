@@ -55,7 +55,6 @@ const UserSettings = () => {
     fullName: '',
     phone: '',
     dob: '',
-    gender: '',
     bloodGroup: '',
     community: '',
     address: {
@@ -254,7 +253,6 @@ useEffect(() => {
       fullName: userProfile.fullName || '',
       phone: userProfile.phone || '',
       dob: userProfile.dob || '',
-      gender: userProfile.gender || '',
       bloodGroup: userProfile.bloodGroup || '',
       community: userProfile.community || '',
       address: {
@@ -274,7 +272,6 @@ useEffect(() => {
       fullName: '',
       phone: '',
       dob: '',
-      gender: '',
       bloodGroup: '',
       community: '',
       address: {
@@ -315,7 +312,6 @@ useEffect(() => {
         fullName: editFormData.fullName !== undefined && editFormData.fullName !== null && String(editFormData.fullName).trim() !== '' ? editFormData.fullName : (userProfile.fullName || ''),
         phone: editFormData.phone !== undefined && editFormData.phone !== null && String(editFormData.phone).trim() !== '' ? editFormData.phone : (userProfile.phone || ''),
         dob: editFormData.dob !== undefined && editFormData.dob !== null && String(editFormData.dob).trim() !== '' ? editFormData.dob : (userProfile.dob || null),
-        gender: editFormData.gender !== undefined && editFormData.gender !== null && String(editFormData.gender).trim() !== '' ? editFormData.gender : (userProfile.gender || ''),
         bloodGroup: editFormData.bloodGroup !== undefined && editFormData.bloodGroup !== null && String(editFormData.bloodGroup).trim() !== '' ? editFormData.bloodGroup : (userProfile.bloodGroup || ''),
         community: editFormData.community !== undefined && editFormData.community !== null && String(editFormData.community).trim() !== '' ? editFormData.community : (userProfile.community || ''),
         country: editFormData.country !== undefined && editFormData.country !== null && String(editFormData.country).trim() !== '' ? editFormData.country : (userProfile.country || 'Ghana')
@@ -1127,22 +1123,6 @@ return (
                           onChange={handleEditFormChange}
                           className="form-input"
                         />
-                      </div>
-                      
-                      <div className="form-group">
-                        <label htmlFor="edit-gender">Gender</label>
-                        <select
-                          id="edit-gender"
-                          name="gender"
-                          value={editFormData.gender}
-                          onChange={handleEditFormChange}
-                          className="form-input"
-                        >
-                          <option value="">Select Gender</option>
-                          <option value="male">Male</option>
-                          <option value="female">Female</option>
-                          <option value="other">Other</option>
-                        </select>
                       </div>
                     </div>
 
