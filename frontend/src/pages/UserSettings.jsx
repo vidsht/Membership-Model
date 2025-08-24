@@ -6,12 +6,14 @@ import ImageUpload from '../components/common/ImageUpload';
 import { useImageUrl,  SmartImage, DefaultAvatar } from '../hooks/useImageUrl.jsx';
 import api from '../services/api';
 import '../styles/enhanced-user-settings.css';
+import { useDynamicFields } from '../hooks/useDynamicFields';
 
 
 const UserSettings = () => {
   const { user, updateUser } = useAuth();
   const { showNotification } = useNotification();
   const { getProfileImageUrl, getMerchantLogoUrl } = useImageUrl();
+  const { dynamicFields, isLoading: fieldsLoading, getCommunityOptions } = useDynamicFields();
   const [userProfile, setUserProfile] = useState({
     fullName: '',
     firstName: '',
@@ -53,15 +55,13 @@ const UserSettings = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editFormData, setEditFormData] = useState({
     fullName: '',
+    email: '',
     phone: '',
     dob: '',
     bloodGroup: '',
     community: '',
     address: {
-      street: '',
-      city: '',
-      state: '',
-      zipCode: ''
+      street: ''
     },
     country: 'Ghana'
   });
@@ -251,15 +251,13 @@ useEffect(() => {
   const openEditModal = () => {
     setEditFormData({
       fullName: userProfile.fullName || '',
+      email: userProfile.email || '',
       phone: userProfile.phone || '',
       dob: userProfile.dob || '',
       bloodGroup: userProfile.bloodGroup || '',
       community: userProfile.community || '',
       address: {
-        street: userProfile.address?.street || '',
-        city: userProfile.address?.city || '',
-        state: userProfile.address?.state || '',
-        zipCode: userProfile.address?.zipCode || ''
+        street: userProfile.address?.street || ''
       },
       country: userProfile.country || 'Ghana'
     });
@@ -270,15 +268,13 @@ useEffect(() => {
     setIsEditModalOpen(false);
     setEditFormData({
       fullName: '',
+      email: '',
       phone: '',
       dob: '',
       bloodGroup: '',
       community: '',
       address: {
-        street: '',
-        city: '',
-        state: '',
-        zipCode: ''
+        street: ''
       },
       country: 'Ghana'
     });
@@ -321,10 +317,7 @@ useEffect(() => {
       const existingAddr = userProfile.address || {};
       const editAddr = editFormData.address || {};
       const mergedAddress = {
-        street: (editAddr.street !== undefined && editAddr.street !== null && String(editAddr.street).trim() !== '') ? editAddr.street : (existingAddr.street || ''),
-        city: (editAddr.city !== undefined && editAddr.city !== null && String(editAddr.city).trim() !== '') ? editAddr.city : (existingAddr.city || ''),
-        state: (editAddr.state !== undefined && editAddr.state !== null && String(editAddr.state).trim() !== '') ? editAddr.state : (existingAddr.state || ''),
-        zipCode: (editAddr.zipCode !== undefined && editAddr.zipCode !== null && String(editAddr.zipCode).trim() !== '') ? editAddr.zipCode : (existingAddr.zipCode || '')
+        street: (editAddr.street !== undefined && editAddr.street !== null && String(editAddr.street).trim() !== '') ? editAddr.street : (existingAddr.street || '')
       };
 
       // Decide whether to send email: include only if user changed it and it's non-empty
@@ -1112,6 +1105,19 @@ return (
                       />
                     </div>
 
+                    <div className="form-group">
+                      <label htmlFor="edit-email">Email Address</label>
+                      <input
+                        type="email"
+                        id="edit-email"
+                        name="email"
+                        value={editFormData.email}
+                        onChange={handleEditFormChange}
+                        className="form-input"
+                        placeholder="Enter your email address"
+                      />
+                    </div>
+
                     <div className="form-row">
                       <div className="form-group">
                         <label htmlFor="edit-dob">Date of Birth</label>
@@ -1150,15 +1156,28 @@ return (
                       
                       <div className="form-group">
                         <label htmlFor="edit-community">Community</label>
-                        <input
-                          type="text"
+                        <div className="select-with-icon" style={{ position: 'relative' }}>
+                        <select
                           id="edit-community"
                           name="community"
                           value={editFormData.community}
                           onChange={handleEditFormChange}
                           className="form-input"
-                          placeholder="Enter your community"
-                        />
+                          style={{ paddingRight: '36px' }}
+                        >
+                          <option value="">Select your community</option>
+                          {fieldsLoading ? (
+                            <option disabled>Loading communities...</option>
+                          ) : (
+                            getCommunityOptions().map(option => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))
+                          )}
+                        </select>
+                        <i className="fas fa-chevron-down dropdown-arrow" style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}></i>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1180,47 +1199,6 @@ return (
                     </div>
 
                     <div className="form-row">
-                      <div className="form-group">
-                        <label htmlFor="edit-address-city">City</label>
-                        <input
-                          type="text"
-                          id="edit-address-city"
-                          name="address.city"
-                          value={editFormData.address.city}
-                          onChange={handleEditFormChange}
-                          className="form-input"
-                          placeholder="City"
-                        />
-                      </div>
-                      
-                      <div className="form-group">
-                        <label htmlFor="edit-address-state">State/Region</label>
-                        <input
-                          type="text"
-                          id="edit-address-state"
-                          name="address.state"
-                          value={editFormData.address.state}
-                          onChange={handleEditFormChange}
-                          className="form-input"
-                          placeholder="State or Region"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="form-row">
-                      <div className="form-group">
-                        <label htmlFor="edit-address-zipCode">Zip/Postal Code</label>
-                        <input
-                          type="text"
-                          id="edit-address-zipCode"
-                          name="address.zipCode"
-                          value={editFormData.address.zipCode}
-                          onChange={handleEditFormChange}
-                          className="form-input"
-                          placeholder="Zip/Postal Code"
-                        />
-                      </div>
-                      
                       <div className="form-group">
                         <label htmlFor="edit-country">Country</label>
                         <select
