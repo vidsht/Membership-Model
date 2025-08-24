@@ -90,32 +90,81 @@ router.get('/profile/complete', auth, (req, res) => {
 // @desc    Update user profile
 // @access  Private
 router.put('/profile', auth, (req, res) => {
-  const userId = req.user.id;
-  const { 
-    fullName, email, phone, dob, 
-    bloodGroup, community, address, country 
-  } = req.body;
-  
-  // Serialize address if it's an object
-  const addressStr = address && typeof address === 'object' ? JSON.stringify(address) : address || null;
-  
-  // Check if email is already taken by another user
-  if (email) {
-    db.query('SELECT id FROM users WHERE email = ? AND id != ?', [email, userId], (err, results) => {
-      if (err) return res.status(500).json({ message: 'Server error' });
-      if (results.length) return res.status(400).json({ message: 'Email is already taken' });
-      
-      // Update user with email
+  try {
+    const userId = req.user.id;
+    console.log('PUT /api/users/profile called for userId=', userId, 'payload=', req.body);
+
+    const { 
+      fullName, email, phone, dob, 
+      bloodGroup, community, address, country 
+    } = req.body;
+
+    // Serialize address if it's an object
+    const addressStr = address && typeof address === 'object' ? JSON.stringify(address) : address || null;
+
+    // Check if email is already taken by another user
+    if (email) {
+      db.query('SELECT id FROM users WHERE email = ? AND id != ?', [email, userId], (err, results) => {
+        if (err) {
+          console.error('Error checking email uniqueness:', err);
+          return res.status(500).json({ message: 'Server error', error: err.message });
+        }
+        if (results.length) return res.status(400).json({ message: 'Email is already taken' });
+        
+        // Update user with email
+        db.query(
+          `UPDATE users SET 
+           fullName=?, email=?, phone=?, dob=?, 
+           bloodGroup=?, community=?, address=?, country=?, updated_at=NOW() 
+           WHERE id=?`,
+          [fullName, email, phone, dob, bloodGroup, community, addressStr, country, userId],
+          (err2) => {
+            if (err2) {
+              console.error('Profile update error (email branch):', err2);
+              return res.status(500).json({ message: 'Server error', error: err2.message });
+            }
+            
+            // Fetch updated user data
+            db.query(
+              `SELECT id, fullName, email, phone, dob, 
+               bloodGroup, community, address, country, profilePicture, membership, 
+               membershipType, membershipNumber, status, role, created_at 
+               FROM users WHERE id = ?`, 
+              [userId], 
+              (err3, results2) => {
+                if (err3) {
+                  console.error('Error fetching updated user (email branch):', err3);
+                  return res.status(500).json({ message: 'Server error', error: err3.message });
+                }
+                const user = results2[0];
+                
+                // Parse address if it's JSON string
+                if (user.address && typeof user.address === 'string') {
+                  try { 
+                    user.address = JSON.parse(user.address); 
+                  } catch (e) { 
+                    // Keep as string if not valid JSON
+                  }
+                }
+                
+                res.json({ user });
+              }
+            );
+          }
+        );
+      });
+    } else {
+      // Update user without email change
       db.query(
         `UPDATE users SET 
-         fullName=?, email=?, phone=?, dob=?, 
+         fullName=?, phone=?, dob=?, 
          bloodGroup=?, community=?, address=?, country=?, updated_at=NOW() 
          WHERE id=?`,
-        [fullName, email, phone, dob, bloodGroup, community, addressStr, country, userId],
+        [fullName, phone, dob, bloodGroup, community, addressStr, country, userId],
         (err2) => {
           if (err2) {
-            console.error('Profile update error:', err2);
-            return res.status(500).json({ message: 'Server error' });
+            console.error('Profile update error (no-email branch):', err2);
+            return res.status(500).json({ message: 'Server error', error: err2.message });
           }
           
           // Fetch updated user data
@@ -126,7 +175,10 @@ router.put('/profile', auth, (req, res) => {
              FROM users WHERE id = ?`, 
             [userId], 
             (err3, results2) => {
-              if (err3) return res.status(500).json({ message: 'Server error' });
+              if (err3) {
+                console.error('Error fetching updated user (no-email branch):', err3);
+                return res.status(500).json({ message: 'Server error', error: err3.message });
+              }
               const user = results2[0];
               
               // Parse address if it's JSON string
@@ -143,46 +195,10 @@ router.put('/profile', auth, (req, res) => {
           );
         }
       );
-    });
-  } else {
-    // Update user without email change
-    db.query(
-      `UPDATE users SET 
-       fullName=?, phone=?, dob=?, 
-       bloodGroup=?, community=?, address=?, country=?, updated_at=NOW() 
-       WHERE id=?`,
-      [fullName, phone, dob, bloodGroup, community, addressStr, country, userId],
-      (err2) => {
-        if (err2) {
-          console.error('Profile update error:', err2);
-          return res.status(500).json({ message: 'Server error' });
-        }
-        
-        // Fetch updated user data
-        db.query(
-          `SELECT id, fullName, email, phone, dob, 
-           bloodGroup, community, address, country, profilePicture, membership, 
-           membershipType, membershipNumber, status, role, created_at 
-           FROM users WHERE id = ?`, 
-          [userId], 
-          (err3, results2) => {
-            if (err3) return res.status(500).json({ message: 'Server error' });
-            const user = results2[0];
-            
-            // Parse address if it's JSON string
-            if (user.address && typeof user.address === 'string') {
-              try { 
-                user.address = JSON.parse(user.address); 
-              } catch (e) { 
-                // Keep as string if not valid JSON
-              }
-            }
-            
-            res.json({ user });
-          }
-        );
-      }
-    );
+    }
+  } catch (ex) {
+    console.error('Unexpected error in PUT /api/users/profile:', ex);
+    res.status(500).json({ message: 'Server error', error: ex.message });
   }
 });
 
