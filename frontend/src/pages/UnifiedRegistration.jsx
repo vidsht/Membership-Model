@@ -571,25 +571,29 @@ const UnifiedRegistration = () => {
                 {/* I'm a * field */}
                 <div className="form-group">
                   <label htmlFor="userCategory">I'm a <span className="required">*</span></label>
-                  <select
-                    id="userCategory"
-                    name="userCategory"
-                    value={userForm.userCategory}
-                    onChange={handleUserInputChange}
-                    required
-                  >
-                    <option value="">Select an option</option>
-                    {loadingOptions ? (
-                      <option disabled>Loading...</option>
-                    ) : (
-                      userTypes.map((type) => (
-                        <option key={type.name} value={type.name}>
-                          {type.name}
-                        </option>
-                      ))
-                    )
-                  }
-                  </select>
+                  <div className="select-with-icon" style={{ position: 'relative' }}>
+                    <select
+                      id="userCategory"
+                      name="userCategory"
+                      value={userForm.userCategory}
+                      onChange={handleUserInputChange}
+                      required
+                      style={{ paddingRight: '36px' }}
+                    >
+                      <option value="">Select an option</option>
+                      {loadingOptions ? (
+                        <option disabled>Loading...</option>
+                      ) : (
+                        userTypes.map((type) => (
+                          <option key={type.name} value={type.name}>
+                            {type.name}
+                          </option>
+                        ))
+                      )
+                    }
+                    </select>
+                    <i className="fas fa-chevron-down dropdown-arrow" style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}></i>
+                  </div>
                 </div>
 
                 {/* First Name */}
@@ -623,24 +627,28 @@ const UnifiedRegistration = () => {
                 {/* Community Selection */}
                 <div className="form-group">
                   <label htmlFor="community">Select Your Community (I belong from) <span className="required">*</span></label>
-                  <select
-                    id="community"
-                    name="community"
-                    value={userForm.community}
-                    onChange={handleUserInputChange}
-                    required
-                  >
-                    <option value="">Select your community</option>
-                    {fieldsLoading ? (
-                      <option disabled>Loading communities...</option>
-                    ) : (
-                      getCommunityOptions().map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))
-                    )}
-                  </select>
+                  <div className="select-with-icon" style={{ position: 'relative' }}>
+                    <select
+                      id="community"
+                      name="community"
+                      value={userForm.community}
+                      onChange={handleUserInputChange}
+                      required
+                      style={{ paddingRight: '36px' }}
+                    >
+                      <option value="">Select your community</option>
+                      {fieldsLoading ? (
+                        <option disabled>Loading communities...</option>
+                      ) : (
+                        getCommunityOptions().map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))
+                      )}
+                    </select>
+                    <i className="fas fa-chevron-down dropdown-arrow" style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}></i>
+                  </div>
                 </div>
 
                 {/* Date of Birth */}
@@ -687,22 +695,26 @@ const UnifiedRegistration = () => {
                 {/* Country */}
                 <div className="form-group">
                   <label htmlFor="country">Home Country Name<span className="required">*</span></label>
-                  <select
-                    id="country"
-                    name="country"
-                    value={userForm.country}
-                    onChange={handleUserInputChange}
-                    required
-                  >
-                    <option value="">Select a country</option>
-                    <option value="Ghana">Ghana</option>
-                    <option value="India">India</option>
-                    <option value="United States">United States</option>
-                    <option value="United Kingdom">United Kingdom</option>
-                    <option value="Canada">Canada</option>
-                    <option value="Australia">Australia</option>
-                    <option value="Others">Others</option>
-                  </select>
+                  <div className="select-with-icon" style={{ position: 'relative' }}>
+                    <select
+                      id="country"
+                      name="country"
+                      value={userForm.country}
+                      onChange={handleUserInputChange}
+                      required
+                      style={{ paddingRight: '36px' }}
+                    >
+                      <option value="">Select a country </option>
+                      <option value="Ghana">Ghana</option>
+                      <option value="India">India</option>
+                      <option value="United States">United States</option>
+                      <option value="United Kingdom">United Kingdom</option>
+                      <option value="Canada">Canada</option>
+                      <option value="Australia">Australia</option>
+                      <option value="Others">Others</option>
+                    </select>
+                    <i className="fas fa-chevron-down dropdown-arrow" style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}></i>
+                  </div>
                 </div>
 
                 {/* State (India) */}
@@ -750,22 +762,26 @@ const UnifiedRegistration = () => {
                 {/* Blood Group */}
                 <div className="form-group">
                   <label htmlFor="bloodGroup">Blood Group<span className="required">*</span></label>
-                  <select
-                    id="bloodGroup"
-                    name="bloodGroup"
-                    value={userForm.bloodGroup}
-                    onChange={handleUserInputChange}
-                  >
-                    <option value="">Select blood group</option>
-                    <option value="A+">A+</option>
-                    <option value="A-">A-</option>
-                    <option value="B+">B+</option>
-                    <option value="B-">B-</option>
-                    <option value="AB+">AB+</option>
-                    <option value="AB-">AB-</option>
-                    <option value="O+">O+</option>
-                    <option value="O-">O-</option>
-                  </select>
+                  <div className="select-with-icon" style={{ position: 'relative' }}>
+                    <select
+                      id="bloodGroup"
+                      name="bloodGroup"
+                      value={userForm.bloodGroup}
+                      onChange={handleUserInputChange}
+                      style={{ paddingRight: '36px' }}
+                    >
+                      <option value="">Select blood group</option>
+                      <option value="A+">A+</option>
+                      <option value="A-">A-</option>
+                      <option value="B+">B+</option>
+                      <option value="B-">B-</option>
+                      <option value="AB+">AB+</option>
+                      <option value="AB-">AB-</option>
+                      <option value="O+">O+</option>
+                      <option value="O-">O-</option>
+                    </select>
+                    <i className="fas fa-chevron-down dropdown-arrow" style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}></i>
+                  </div>
                 </div>
 
                 {/* Password */}
@@ -805,19 +821,23 @@ const UnifiedRegistration = () => {
                     {adminSettings.membershipPlanRequirements?.section_subtitle && (
                       <p className="field-description">{adminSettings.membershipPlanRequirements.section_subtitle}</p>
                     )}
-                    <select
-                      id="plan"
-                      name="plan"
-                      value={userForm.plan}
-                      onChange={handleUserInputChange}
-                    >
-                      <option value="">Select a Plan</option>
-                      {userPlans.map(plan => (
-                        <option key={plan.id} value={plan.key}>
-                          {plan.name} ({plan.price === 0 ? 'Free' : `${plan.currency} ${plan.price}`})
-                        </option>
-                      ))}
-                    </select>
+                    <div className="select-with-icon" style={{ position: 'relative' }}>
+                      <select
+                        id="plan"
+                        name="plan"
+                        value={userForm.plan}
+                        onChange={handleUserInputChange}
+                        style={{ paddingRight: '36px' }}
+                      >
+                        <option value="">Select a Plan</option>
+                        {userPlans.map(plan => (
+                          <option key={plan.id} value={plan.key}>
+                            {plan.name} ({plan.price === 0 ? 'Free' : `${plan.currency} ${plan.price}`})
+                          </option>
+                        ))}
+                      </select>
+                      <i className="fas fa-chevron-down dropdown-arrow" style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}></i>
+                    </div>
                   </div>
                 )}
               </div>              {/* Social Media Section */}
@@ -958,22 +978,26 @@ const UnifiedRegistration = () => {
 
                 <div className="form-group">
                   <label htmlFor="bloodGroup">Blood Group<span className="required">*</span></label>
-                  <select
-                    id="bloodGroup"
-                    name="bloodGroup"
-                    value={merchantForm.bloodGroup}
-                    onChange={handleMerchantInputChange}
-                  >
-                    <option value="">Select blood group</option>
-                    <option value="A+">A+</option>
-                    <option value="A-">A-</option>
-                    <option value="B+">B+</option>
-                    <option value="B-">B-</option>
-                    <option value="AB+">AB+</option>
-                    <option value="AB-">AB-</option>
-                    <option value="O+">O+</option>
-                    <option value="O-">O-</option>
-                  </select>
+                  <div className="select-with-icon" style={{ position: 'relative' }}>
+                    <select
+                      id="bloodGroup"
+                      name="bloodGroup"
+                      value={merchantForm.bloodGroup}
+                      onChange={handleMerchantInputChange}
+                      style={{ paddingRight: '36px' }}
+                    >
+                      <option value="">Select blood group</option>
+                      <option value="A+">A+</option>
+                      <option value="A-">A-</option>
+                      <option value="B+">B+</option>
+                      <option value="B-">B-</option>
+                      <option value="AB+">AB+</option>
+                      <option value="AB-">AB-</option>
+                      <option value="O+">O+</option>
+                      <option value="O-">O-</option>
+                    </select>
+                    <i className="fas fa-chevron-down dropdown-arrow" style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}></i>
+                  </div>
                 </div>
 
                 <div className="form-row">
@@ -1009,19 +1033,23 @@ const UnifiedRegistration = () => {
                     {adminSettings.membershipPlanRequirements?.section_subtitle && (
                       <p className="field-description">{adminSettings.membershipPlanRequirements.section_subtitle}</p>
                     )}
-                    <select
-                      id="plan"
-                      name="plan"
-                      value={merchantForm.plan}
-                      onChange={handleMerchantInputChange}
-                    >
-                      <option value="">Select a Plan</option>
-                      {merchantPlans.map(plan => (
-                        <option key={plan.id} value={plan.key}>
-                          {plan.name} ({plan.price === 0 ? 'Free' : `${plan.currency} ${plan.price}`})
-                        </option>
-                      ))}
-                    </select>
+                    <div className="select-with-icon" style={{ position: 'relative' }}>
+                      <select
+                        id="plan"
+                        name="plan"
+                        value={merchantForm.plan}
+                        onChange={handleMerchantInputChange}
+                        style={{ paddingRight: '36px' }}
+                      >
+                        <option value="">Select a Plan</option>
+                        {merchantPlans.map(plan => (
+                          <option key={plan.id} value={plan.key}>
+                            {plan.name} ({plan.price === 0 ? 'Free' : `${plan.currency} ${plan.price}`})
+                          </option>
+                        ))}
+                      </select>
+                      <i className="fas fa-chevron-down dropdown-arrow" style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}></i>
+                    </div>
                   </div>
                 )}
               </div>              {/* Social Media Section */}
@@ -1108,19 +1136,23 @@ const UnifiedRegistration = () => {
                 <div className="form-row">
                   <div className="form-group">
                     <label htmlFor="businessCategory">Business Category *</label>
-                    <select
-                      id="businessCategory"
-                      value={merchantForm.businessCategory}
-                      onChange={handleMerchantInputChange}
-                      required
-                    >
-                      <option value="">Select Category</option>
-                      {getBusinessCategoryOptions().map((category) => (
-                        <option key={category.value} value={category.value}>
-                          {category.label}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="select-with-icon" style={{ position: 'relative' }}>
+                      <select
+                        id="businessCategory"
+                        value={merchantForm.businessCategory}
+                        onChange={handleMerchantInputChange}
+                        required
+                        style={{ paddingRight: '36px' }}
+                      >
+                        <option value="">Select Category</option>
+                        {getBusinessCategoryOptions().map((category) => (
+                          <option key={category.value} value={category.value}>
+                            {category.label}
+                          </option>
+                        ))}
+                      </select>
+                      <i className="fas fa-chevron-down dropdown-arrow" style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}></i>
+                    </div>
                   </div>
                   <div className="form-group">
                     <label htmlFor="businessPhone">Business Phone</label>

@@ -92,7 +92,7 @@ router.get('/profile/complete', auth, (req, res) => {
 router.put('/profile', auth, (req, res) => {
   const userId = req.user.id;
   const { 
-    fullName, firstName, lastName, email, phone, dob, gender, 
+    fullName, email, phone, dob, gender, 
     bloodGroup, community, address, country 
   } = req.body;
   
@@ -108,10 +108,10 @@ router.put('/profile', auth, (req, res) => {
       // Update user with email
       db.query(
         `UPDATE users SET 
-         fullName=?, firstName=?, lastName=?, email=?, phone=?, dob=?, 
+         fullName=?, email=?, phone=?, dob=?, 
          gender=?, bloodGroup=?, community=?, address=?, country=?, updated_at=NOW() 
          WHERE id=?`,
-        [fullName, firstName, lastName, email, phone, dob, gender, bloodGroup, community, addressStr, country, userId],
+        [fullName, email, phone, dob, gender, bloodGroup, community, addressStr, country, userId],
         (err2) => {
           if (err2) {
             console.error('Profile update error:', err2);
@@ -120,7 +120,7 @@ router.put('/profile', auth, (req, res) => {
           
           // Fetch updated user data
           db.query(
-            `SELECT id, fullName, firstName, lastName, email, phone, dob, gender, 
+            `SELECT id, fullName, email, phone, dob, gender, 
              bloodGroup, community, address, country, profilePicture, membership, 
              membershipType, membershipNumber, status, role, created_at 
              FROM users WHERE id = ?`, 
@@ -148,10 +148,10 @@ router.put('/profile', auth, (req, res) => {
     // Update user without email change
     db.query(
       `UPDATE users SET 
-       fullName=?, firstName=?, lastName=?, phone=?, dob=?, 
+       fullName=?, phone=?, dob=?, 
        gender=?, bloodGroup=?, community=?, address=?, country=?, updated_at=NOW() 
        WHERE id=?`,
-      [fullName, firstName, lastName, phone, dob, gender, bloodGroup, community, addressStr, country, userId],
+      [fullName, phone, dob, gender, bloodGroup, community, addressStr, country, userId],
       (err2) => {
         if (err2) {
           console.error('Profile update error:', err2);
@@ -160,7 +160,7 @@ router.put('/profile', auth, (req, res) => {
         
         // Fetch updated user data
         db.query(
-          `SELECT id, fullName, firstName, lastName, email, phone, dob, gender, 
+          `SELECT id, fullName, email, phone, dob, gender, 
            bloodGroup, community, address, country, profilePicture, membership, 
            membershipType, membershipNumber, status, role, created_at 
            FROM users WHERE id = ?`, 

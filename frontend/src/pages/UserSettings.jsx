@@ -53,8 +53,6 @@ const UserSettings = () => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editFormData, setEditFormData] = useState({
     fullName: '',
-    firstName: '',
-    lastName: '',
     phone: '',
     dob: '',
     gender: '',
@@ -254,8 +252,6 @@ useEffect(() => {
   const openEditModal = () => {
     setEditFormData({
       fullName: userProfile.fullName || '',
-      firstName: userProfile.firstName || '',
-      lastName: userProfile.lastName || '',
       phone: userProfile.phone || '',
       dob: userProfile.dob || '',
       gender: userProfile.gender || '',
@@ -276,8 +272,6 @@ useEffect(() => {
     setIsEditModalOpen(false);
     setEditFormData({
       fullName: '',
-      firstName: '',
-      lastName: '',
       phone: '',
       dob: '',
       gender: '',
@@ -316,28 +310,68 @@ useEffect(() => {
   const handleSaveChanges = async () => {
     setIsUpdating(true);
     try {
-      const response = await api.put('/users/profile', editFormData);
-      
-      if (response.data.success) {
-        // Update the local user profile
+      // Merge edited values onto existing profile so backend receives sensible defaults
+      const merged = {
+        fullName: editFormData.fullName !== undefined && editFormData.fullName !== null && String(editFormData.fullName).trim() !== '' ? editFormData.fullName : (userProfile.fullName || ''),
+        phone: editFormData.phone !== undefined && editFormData.phone !== null && String(editFormData.phone).trim() !== '' ? editFormData.phone : (userProfile.phone || ''),
+        dob: editFormData.dob !== undefined && editFormData.dob !== null && String(editFormData.dob).trim() !== '' ? editFormData.dob : (userProfile.dob || null),
+        gender: editFormData.gender !== undefined && editFormData.gender !== null && String(editFormData.gender).trim() !== '' ? editFormData.gender : (userProfile.gender || ''),
+        bloodGroup: editFormData.bloodGroup !== undefined && editFormData.bloodGroup !== null && String(editFormData.bloodGroup).trim() !== '' ? editFormData.bloodGroup : (userProfile.bloodGroup || ''),
+        community: editFormData.community !== undefined && editFormData.community !== null && String(editFormData.community).trim() !== '' ? editFormData.community : (userProfile.community || ''),
+        country: editFormData.country !== undefined && editFormData.country !== null && String(editFormData.country).trim() !== '' ? editFormData.country : (userProfile.country || 'Ghana')
+      };
+
+      // Address: merge fields and only include if any non-empty value exists
+      const existingAddr = userProfile.address || {};
+      const editAddr = editFormData.address || {};
+      const mergedAddress = {
+        street: (editAddr.street !== undefined && editAddr.street !== null && String(editAddr.street).trim() !== '') ? editAddr.street : (existingAddr.street || ''),
+        city: (editAddr.city !== undefined && editAddr.city !== null && String(editAddr.city).trim() !== '') ? editAddr.city : (existingAddr.city || ''),
+        state: (editAddr.state !== undefined && editAddr.state !== null && String(editAddr.state).trim() !== '') ? editAddr.state : (existingAddr.state || ''),
+        zipCode: (editAddr.zipCode !== undefined && editAddr.zipCode !== null && String(editAddr.zipCode).trim() !== '') ? editAddr.zipCode : (existingAddr.zipCode || '')
+      };
+
+      // Decide whether to send email: include only if user changed it and it's non-empty
+      const payload = { ...merged };
+      if (editFormData.email && editFormData.email !== userProfile.email) payload.email = editFormData.email;
+
+      // Only include address if any meaningful value exists, send as object (backend will stringify)
+      const hasAddressValues = Object.values(mergedAddress).some(v => v && String(v).trim() !== '');
+      if (hasAddressValues) payload.address = mergedAddress;
+
+      // Send request
+      const response = await api.put('/users/profile', payload);
+
+      if (response.data && response.data.user) {
+        const returnedUser = response.data.user;
+        // Normalize address
+        let parsedAddress = returnedUser.address;
+        if (parsedAddress && typeof parsedAddress === 'string') {
+          try { parsedAddress = JSON.parse(parsedAddress); } catch (e) { parsedAddress = { street: parsedAddress }; }
+        }
+
         setUserProfile(prev => ({
           ...prev,
-          ...editFormData
+          ...returnedUser,
+          address: parsedAddress
         }));
-        
-        // Update the auth context user
+
         updateUser({
           ...user,
-          ...editFormData
+          ...returnedUser
         });
-        
+
         showNotification('Profile updated successfully!', 'success');
         closeEditModal();
-      } else {
+      } else if (response.data && response.data.message) {
         showNotification(response.data.message || 'Failed to update profile', 'error');
+      } else {
+        showNotification('Profile updated (unexpected response format)', 'success');
+        closeEditModal();
       }
     } catch (error) {
       console.error('Profile update error:', error);
+      if (error.response) console.error('API Error Details:', error.response);
       showNotification(
         error.response?.data?.message || 'Failed to update profile. Please try again.',
         'error'
@@ -1066,29 +1100,7 @@ return (
                     </div>
 
                     <div className="form-row">
-                      <div className="form-group">
-                        <label htmlFor="edit-firstName">First Name</label>
-                        <input
-                          type="text"
-                          id="edit-firstName"
-                          name="firstName"
-                          value={editFormData.firstName}
-                          onChange={handleEditFormChange}
-                          className="form-input"
-                        />
-                      </div>
-                      
-                      <div className="form-group">
-                        <label htmlFor="edit-lastName">Last Name</label>
-                        <input
-                          type="text"
-                          id="edit-lastName"
-                          name="lastName"
-                          value={editFormData.lastName}
-                          onChange={handleEditFormChange}
-                          className="form-input"
-                        />
-                      </div>
+                      {/* Removed firstName/lastName fields to match backend schema */}
                     </div>
 
                     <div className="form-group">
