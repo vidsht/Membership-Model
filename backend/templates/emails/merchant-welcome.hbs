@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to Indians in Ghana Business Directory</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f4f4f4;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #FF9933 0%, #138808 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 40px 30px;
+        }
+        
+        .welcome-message {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .welcome-message h2 {
+            color: #FF9933;
+            font-size: 28px;
+            margin-bottom: 15px;
+        }
+        
+        .welcome-message p {
+            font-size: 18px;
+            color: #666;
+            margin-bottom: 20px;
+        }
+        
+        .business-card {
+            background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+            border: 2px solid #138808;
+            border-radius: 10px;
+            padding: 25px;
+            margin: 30px 0;
+            text-align: center;
+        }
+        
+        .business-card h3 {
+            color: #138808;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+        
+        .business-details {
+            display: flex;
+            justify-content: space-between;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .detail-item {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .detail-label {
+            font-weight: bold;
+            color: #FF9933;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .detail-value {
+            font-size: 16px;
+            color: #333;
+            margin-top: 5px;
+        }
+        
+        .merchant-benefits {
+            margin: 30px 0;
+        }
+        
+        .merchant-benefits h3 {
+            color: #138808;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .benefits-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .benefit-card {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #FF9933;
+        }
+        
+        .benefit-card h4 {
+            color: #138808;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        
+        .benefit-card p {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .cta-section {
+            text-align: center;
+            margin: 40px 0;
+        }
+        
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #FF9933 0%, #138808 100%);
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 16px;
+            transition: transform 0.3s ease;
+            margin: 10px;
+        }
+        
+        .cta-button:hover {
+            transform: translateY(-2px);
+        }
+        
+        .cta-button.secondary {
+            background: linear-gradient(135deg, #138808 0%, #FF9933 100%);
+        }
+        
+        .quick-start {
+            background-color: #e8f5e8;
+            padding: 25px;
+            border-radius: 10px;
+            margin: 30px 0;
+        }
+        
+        .quick-start h3 {
+            color: #138808;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .steps-list {
+            list-style: none;
+            padding: 0;
+            counter-reset: step-counter;
+        }
+        
+        .steps-list li {
+            counter-increment: step-counter;
+            padding: 15px 0;
+            border-bottom: 1px solid #d4edda;
+            position: relative;
+            padding-left: 50px;
+        }
+        
+        .steps-list li:before {
+            content: counter(step-counter);
+            position: absolute;
+            left: 0;
+            top: 15px;
+            background: #138808;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .steps-list li:last-child {
+            border-bottom: none;
+        }
+        
+        .footer {
+            background-color: #f8f9fa;
+            padding: 30px;
+            text-align: center;
+            border-top: 1px solid #eee;
+        }
+        
+        .footer p {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        
+        .contact-info {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #999;
+        }
+        
+        @media (max-width: 600px) {
+            .container {
+                margin: 0;
+                box-shadow: none;
+            }
+            
+            .content {
+                padding: 20px 15px;
+            }
+            
+            .business-details {
+                flex-direction: column;
+            }
+            
+            .detail-item {
+                min-width: auto;
+                text-align: center;
+            }
+            
+            .benefits-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .welcome-message h2 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Indians in Ghana</h1>
+            <p>Business Directory & Community Platform</p>
+        </div>
+        
+        <div class="content">
+            <div class="welcome-message">
+                <h2>Welcome, {{businessName}}! 🏪</h2>
+                <p>Your business is now part of Ghana's premier Indian business directory!</p>
+            </div>
+            
+            <div class="business-card">
+                <h3>Your Business Profile</h3>
+                <div class="business-details">
+                    <div class="detail-item">
+                        <div class="detail-label">Business Name</div>
+                        <div class="detail-value">{{businessName}}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Owner/Manager</div>
+                        <div class="detail-value">{{ownerName}}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Business Type</div>
+                        <div class="detail-value">{{businessType}}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Valid Until</div>
+                        <div class="detail-value">{{validationDate}}</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="merchant-benefits">
+                <h3>Platform Benefits for Your Business:</h3>
+                <div class="benefits-grid">
+                    <div class="benefit-card">
+                        <h4>🎯 Targeted Audience</h4>
+                        <p>Reach thousands of Indian community members who actively seek Indian products and services</p>
+                    </div>
+                    <div class="benefit-card">
+                        <h4>📢 Deal Promotions</h4>
+                        <p>Create and post exclusive deals to attract more customers and increase sales</p>
+                    </div>
+                    <div class="benefit-card">
+                        <h4>📱 Digital Presence</h4>
+                        <p>Professional business listing with contact details, location, and service descriptions</p>
+                    </div>
+                    <div class="benefit-card">
+                        <h4>💬 Customer Engagement</h4>
+                        <p>Direct communication with customers through our integrated messaging system</p>
+                    </div>
+                    <div class="benefit-card">
+                        <h4>📊 Business Analytics</h4>
+                        <p>Track deal performance, customer engagement, and business growth metrics</p>
+                    </div>
+                    <div class="benefit-card">
+                        <h4>🤝 Community Support</h4>
+                        <p>Be part of a supportive business network that promotes Indian entrepreneurship</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="quick-start">
+                <h3>Quick Start Guide</h3>
+                <ol class="steps-list">
+                    <li><strong>Complete Your Profile:</strong> Add business description, contact details, and high-quality photos</li>
+                    <li><strong>Create Your First Deal:</strong> Post an attractive offer to draw in customers</li>
+                    <li><strong>Set Business Hours:</strong> Let customers know when you're open</li>
+                    <li><strong>Add Location Details:</strong> Make it easy for customers to find you</li>
+                    <li><strong>Engage with Community:</strong> Respond to customer inquiries promptly</li>
+                </ol>
+            </div>
+            
+            <div class="cta-section">
+                <a href="{{dashboardUrl}}" class="cta-button">Access Business Dashboard</a>
+                <a href="{{dashboardUrl}}/deals/create" class="cta-button secondary">Create First Deal</a>
+            </div>
+            
+            <div style="background-color: #fff3e0; padding: 20px; border-radius: 8px; margin: 30px 0; border-left: 4px solid #FF9933;">
+                <h4 style="color: #FF9933; margin-bottom: 15px;">💡 Pro Tips for Success:</h4>
+                <ul style="color: #666; padding-left: 20px;">
+                    <li>Post deals regularly to keep customers engaged</li>
+                    <li>Use high-quality images for your business and deals</li>
+                    <li>Respond quickly to customer redemption requests</li>
+                    <li>Keep your business information updated</li>
+                    <li>Participate in community events and festivals</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p><strong>Welcome to the Indians in Ghana Business Community!</strong></p>
+            <p>We're here to help your business thrive. Contact us anytime for support.</p>
+            
+            <div class="contact-info">
+                <p>Indians in Ghana Business Directory</p>
+                <p>Email: support@indiansinghana.com</p>
+                <p>Business Support: business@indiansinghana.com</p>
+                <p>This email was sent to {{email}}</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

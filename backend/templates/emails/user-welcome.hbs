@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to Indians in Ghana</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f4f4f4;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #FF9933 0%, #138808 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 40px 30px;
+        }
+        
+        .welcome-message {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .welcome-message h2 {
+            color: #FF9933;
+            font-size: 28px;
+            margin-bottom: 15px;
+        }
+        
+        .welcome-message p {
+            font-size: 18px;
+            color: #666;
+            margin-bottom: 20px;
+        }
+        
+        .membership-card {
+            background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+            border: 2px solid #FF9933;
+            border-radius: 10px;
+            padding: 25px;
+            margin: 30px 0;
+            text-align: center;
+        }
+        
+        .membership-card h3 {
+            color: #138808;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+        
+        .membership-details {
+            display: flex;
+            justify-content: space-between;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .detail-item {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .detail-label {
+            font-weight: bold;
+            color: #FF9933;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .detail-value {
+            font-size: 16px;
+            color: #333;
+            margin-top: 5px;
+        }
+        
+        .benefits {
+            margin: 30px 0;
+        }
+        
+        .benefits h3 {
+            color: #138808;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .benefits-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .benefits-list li {
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+            position: relative;
+            padding-left: 30px;
+        }
+        
+        .benefits-list li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #138808;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        .benefits-list li:last-child {
+            border-bottom: none;
+        }
+        
+        .cta-section {
+            text-align: center;
+            margin: 40px 0;
+        }
+        
+        .cta-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #FF9933 0%, #138808 100%);
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 16px;
+            transition: transform 0.3s ease;
+        }
+        
+        .cta-button:hover {
+            transform: translateY(-2px);
+        }
+        
+        .footer {
+            background-color: #f8f9fa;
+            padding: 30px;
+            text-align: center;
+            border-top: 1px solid #eee;
+        }
+        
+        .footer p {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        
+        .social-links {
+            margin: 20px 0;
+        }
+        
+        .social-links a {
+            display: inline-block;
+            margin: 0 10px;
+            color: #FF9933;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        
+        .contact-info {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #999;
+        }
+        
+        @media (max-width: 600px) {
+            .container {
+                margin: 0;
+                box-shadow: none;
+            }
+            
+            .content {
+                padding: 20px 15px;
+            }
+            
+            .membership-details {
+                flex-direction: column;
+            }
+            
+            .detail-item {
+                min-width: auto;
+                text-align: center;
+            }
+            
+            .welcome-message h2 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Indians in Ghana</h1>
+            <p>Connecting the Indian Community</p>
+        </div>
+        
+        <div class="content">
+            <div class="welcome-message">
+                <h2>Welcome, {{firstName}}! 🎉</h2>
+                <p>We're thrilled to have you join our vibrant Indian community in Ghana!</p>
+            </div>
+            
+            <div class="membership-card">
+                <h3>Your Membership Details</h3>
+                <div class="membership-details">
+                    <div class="detail-item">
+                        <div class="detail-label">Member Name</div>
+                        <div class="detail-value">{{fullName}}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Membership Number</div>
+                        <div class="detail-value">#{{membershipNumber}}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Valid Until</div>
+                        <div class="detail-value">{{validationDate}}</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="benefits">
+                <h3>What You Can Enjoy:</h3>
+                <ul class="benefits-list">
+                    <li>Access to exclusive deals and discounts from Indian businesses</li>
+                    <li>Digital membership card with QR code for easy verification</li>
+                    <li>Connect with other Indian community members</li>
+                    <li>Stay updated on community events and festivals</li>
+                    <li>Support local Indian businesses and entrepreneurs</li>
+                    <li>Access to cultural programs and networking events</li>
+                </ul>
+            </div>
+            
+            <div class="cta-section">
+                <a href="{{loginUrl}}" class="cta-button">Access Your Dashboard</a>
+            </div>
+            
+            <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 30px 0;">
+                <p style="color: #666; margin-bottom: 15px;"><strong>Next Steps:</strong></p>
+                <ol style="color: #666; padding-left: 20px;">
+                    <li>Log into your account using your registered email</li>
+                    <li>Complete your profile if you haven't already</li>
+                    <li>Browse available deals and start saving</li>
+                    <li>Connect with the community</li>
+                </ol>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p><strong>Welcome to the Indians in Ghana family!</strong></p>
+            <p>If you have any questions, please don't hesitate to reach out to us.</p>
+            
+            <div class="social-links">
+                <a href="#">Facebook</a>
+                <a href="#">WhatsApp</a>
+                <a href="#">Instagram</a>
+            </div>
+            
+            <div class="contact-info">
+                <p>Indians in Ghana Community</p>
+                <p>Email: support@indiansinghana.com</p>
+                <p>This email was sent to {{email}}</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

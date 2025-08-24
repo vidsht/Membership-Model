@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redemption Request Approved</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f4f4f4;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #138808 0%, #27ae60 100%);
+            color: white;
+            padding: 25px 20px;
+            text-align: center;
+        }
+        
+        .success-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+        
+        .content {
+            padding: 40px 30px;
+        }
+        
+        .success-box {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            border: 2px solid #138808;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 25px 0;
+            text-align: center;
+            position: relative;
+        }
+        
+        .success-box::before {
+            content: "✅";
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #138808;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+        
+        .deal-summary {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 25px;
+            margin: 25px 0;
+        }
+        
+        .deal-title {
+            color: #138808;
+            font-size: 22px;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        
+        .business-name {
+            color: #FF9933;
+            font-size: 18px;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .detail-item {
+            text-align: center;
+            padding: 15px;
+            background: rgba(19, 136, 8, 0.1);
+            border-radius: 8px;
+        }
+        
+        .detail-label {
+            font-size: 12px;
+            color: #138808;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+        }
+        
+        .detail-value {
+            font-size: 16px;
+            color: #333;
+            font-weight: bold;
+        }
+        
+        .qr-section {
+            background: #f8f9fa;
+            border: 2px dashed #138808;
+            border-radius: 10px;
+            padding: 25px;
+            text-align: center;
+            margin: 30px 0;
+        }
+        
+        .qr-code {
+            font-size: 64px;
+            margin: 20px 0;
+            color: #138808;
+        }
+        
+        .instructions {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .instructions h4 {
+            color: #1976d2;
+            margin-bottom: 15px;
+        }
+        
+        .instructions ol {
+            color: #666;
+            padding-left: 20px;
+        }
+        
+        .instructions li {
+            margin-bottom: 8px;
+        }
+        
+        .footer {
+            background-color: #f8f9fa;
+            padding: 25px;
+            text-align: center;
+            border-top: 1px solid #eee;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        @media (max-width: 600px) {
+            .container {
+                margin: 0;
+                box-shadow: none;
+            }
+            
+            .content {
+                padding: 20px 15px;
+            }
+            
+            .detail-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="success-icon">🎉</div>
+            <h1>Redemption Approved!</h1>
+            <p>Your request has been accepted</p>
+        </div>
+        
+        <div class="content">
+            <p style="font-size: 18px; margin-bottom: 25px;">
+                Hi {{firstName}},
+            </p>
+            
+            <div class="success-box">
+                <h2 style="color: #138808; margin-bottom: 15px;">Great News!</h2>
+                <p style="color: #666; font-size: 16px;">
+                    Your redemption request has been approved and is ready to use!
+                </p>
+            </div>
+            
+            <div class="deal-summary">
+                <h3 class="deal-title">{{dealTitle}}</h3>
+                <p class="business-name">📍 {{businessName}}</p>
+                
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <div class="detail-label">Status</div>
+                        <div class="detail-value" style="color: #138808;">Approved</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Redemption Date</div>
+                        <div class="detail-value">{{redemptionDate}}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Business</div>
+                        <div class="detail-value">{{businessName}}</div>
+                    </div>
+                </div>
+            </div>
+            
+            {{#if qrCode}}
+            <div class="qr-section">
+                <h3 style="color: #138808; margin-bottom: 15px;">Your Redemption QR Code</h3>
+                <div class="qr-code">📱</div>
+                <p style="color: #666; margin-bottom: 15px;">
+                    Show this QR code to the merchant to claim your deal
+                </p>
+                <div style="background: white; padding: 15px; border-radius: 8px; margin: 15px 0;">
+                    <code style="font-family: monospace; color: #333; font-size: 14px;">{{qrCode}}</code>
+                </div>
+            </div>
+            {{/if}}
+            
+            <div class="instructions">
+                <h4>📋 How to Use Your Approved Redemption:</h4>
+                <ol>
+                    <li>Visit {{businessName}} during their business hours</li>
+                    <li>Show your QR code to the staff/cashier</li>
+                    <li>They will scan or verify your redemption code</li>
+                    <li>Enjoy your savings and discount!</li>
+                    <li>Don't forget to rate your experience</li>
+                </ol>
+            </div>
+            
+            <div style="background: #fff3e0; padding: 20px; border-radius: 8px; margin: 25px 0; border-left: 4px solid #FF9933;">
+                <h4 style="color: #FF9933; margin-bottom: 15px;">💡 Important Notes:</h4>
+                <ul style="color: #666; padding-left: 20px;">
+                    <li>This redemption is valid for one-time use only</li>
+                    <li>Please check the deal's terms and conditions</li>
+                    <li>Contact the business directly if you have any issues</li>
+                    <li>Save this email as proof of your approved redemption</li>
+                </ul>
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+                <p style="color: #666; margin-bottom: 15px;">Need help or have questions?</p>
+                <p style="color: #138808; font-weight: bold;">
+                    📧 support@indiansinghana.com<br>
+                    📱 WhatsApp: +233 XXX XXX XXX
+                </p>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p><strong>Indians in Ghana</strong> - Connecting Community, Creating Value</p>
+            <p>Thank you for supporting local Indian businesses!</p>
+            <p>Email: support@indiansinghana.com</p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Registration Alert</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f4f4f4;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+            color: white;
+            padding: 25px 20px;
+            text-align: center;
+        }
+        
+        .alert-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+        
+        .content {
+            padding: 40px 30px;
+        }
+        
+        .alert-box {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border: 2px solid #2196f3;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 25px 0;
+            text-align: center;
+            position: relative;
+        }
+        
+        .alert-box::before {
+            content: "🔔";
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2196f3;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+        
+        .user-profile {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 25px;
+            margin: 25px 0;
+        }
+        
+        .user-type-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 15px;
+        }
+        
+        .user-type-user {
+            background: #e8f5e8;
+            color: #138808;
+        }
+        
+        .user-type-merchant {
+            background: #fff3e0;
+            color: #FF9933;
+        }
+        
+        .user-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .detail-item {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #2196f3;
+        }
+        
+        .detail-label {
+            font-size: 12px;
+            color: #2196f3;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+        }
+        
+        .detail-value {
+            font-size: 16px;
+            color: #333;
+            font-weight: 600;
+        }
+        
+        .action-required {
+            background: #ffebee;
+            border: 2px solid #f44336;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 25px 0;
+            text-align: center;
+        }
+        
+        .action-required h4 {
+            color: #d32f2f;
+            margin-bottom: 15px;
+        }
+        
+        .action-required p {
+            color: #666;
+            margin-bottom: 20px;
+        }
+        
+        .cta-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 25px 0;
+        }
+        
+        .cta-button {
+            display: inline-block;
+            padding: 12px 25px;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .cta-button.primary {
+            background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+            color: white;
+        }
+        
+        .cta-button.secondary {
+            background: white;
+            color: #2196f3;
+            border: 2px solid #2196f3;
+        }
+        
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
+        }
+        
+        .registration-summary {
+            background: #f0f8f0;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 25px 0;
+            border-left: 4px solid #138808;
+        }
+        
+        .registration-summary h4 {
+            color: #138808;
+            margin-bottom: 15px;
+        }
+        
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 10px;
+            background: white;
+            border-radius: 6px;
+        }
+        
+        .stat-number {
+            font-size: 20px;
+            font-weight: bold;
+            color: #138808;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+        }
+        
+        .footer {
+            background-color: #f8f9fa;
+            padding: 25px;
+            text-align: center;
+            border-top: 1px solid #eee;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        @media (max-width: 600px) {
+            .container {
+                margin: 0;
+                box-shadow: none;
+            }
+            
+            .content {
+                padding: 20px 15px;
+            }
+            
+            .user-details {
+                grid-template-columns: 1fr;
+            }
+            
+            .cta-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .cta-button {
+                width: 100%;
+                max-width: 250px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="alert-icon">👤</div>
+            <h1>New Registration Alert</h1>
+            <p>Action Required - User Approval</p>
+        </div>
+        
+        <div class="content">
+            <p style="font-size: 18px; margin-bottom: 25px;">
+                Hi {{adminName}},
+            </p>
+            
+            <div class="alert-box">
+                <h2 style="color: #2196f3; margin-bottom: 15px;">New {{userType}} Registration</h2>
+                <p style="color: #666; font-size: 16px;">
+                    A new {{userType}} has registered and requires your review for approval.
+                </p>
+            </div>
+            
+            <div class="user-profile">
+                <div class="user-type-badge user-type-{{userType}}">{{userType}}</div>
+                
+                <div class="user-details">
+                    <div class="detail-item">
+                        <div class="detail-label">Full Name</div>
+                        <div class="detail-value">{{fullName}}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Email Address</div>
+                        <div class="detail-value">{{email}}</div>
+                    </div>
+                    {{#if businessName}}
+                    <div class="detail-item">
+                        <div class="detail-label">Business Name</div>
+                        <div class="detail-value">{{businessName}}</div>
+                    </div>
+                    {{/if}}
+                    <div class="detail-item">
+                        <div class="detail-label">Registration Date</div>
+                        <div class="detail-value">{{registrationDate}}</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="action-required">
+                <h4>⚡ Immediate Action Required</h4>
+                <p>
+                    Please review this {{userType}}'s profile and decide whether to approve or reject their application. 
+                    They are waiting for your decision to access the platform.
+                </p>
+                
+                <div class="cta-buttons">
+                    <a href="{{reviewUrl}}" class="cta-button primary">Review Profile</a>
+                    <a href="{{reviewUrl}}" class="cta-button secondary">View Details</a>
+                </div>
+            </div>
+            
+            <div class="registration-summary">
+                <h4>📊 Registration Summary</h4>
+                <p style="color: #666; margin-bottom: 15px;">
+                    {{#if (eq userType 'merchant')}}
+                    New business registration requires verification of business details and approval process.
+                    {{else}}
+                    New user registration requires profile review and membership approval.
+                    {{/if}}
+                </p>
+                
+                <div style="background: #fff3e0; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #FF9933;">
+                    <h5 style="color: #FF9933; margin-bottom: 10px;">📋 Review Checklist:</h5>
+                    <ul style="color: #666; padding-left: 20px; margin: 0;">
+                        <li>Verify email address and contact information</li>
+                        {{#if (eq userType 'merchant')}}
+                        <li>Check business legitimacy and documentation</li>
+                        <li>Validate business address and contact details</li>
+                        <li>Ensure business aligns with community guidelines</li>
+                        {{else}}
+                        <li>Check profile completeness and authenticity</li>
+                        <li>Verify community connection and eligibility</li>
+                        {{/if}}
+                        <li>Review terms and conditions acceptance</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div style="background: #e3f2fd; padding: 20px; border-radius: 8px; margin: 25px 0; text-align: center;">
+                <h4 style="color: #1976d2; margin-bottom: 15px;">⏰ Response Time Goal</h4>
+                <p style="color: #666; margin-bottom: 10px;">
+                    Please review and respond within <strong>24-48 hours</strong> to maintain good user experience.
+                </p>
+                <p style="color: #666; font-size: 14px;">
+                    Quick responses help build trust and engagement in our community.
+                </p>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p><strong>Indians in Ghana - Admin Dashboard</strong></p>
+            <p>You're receiving this notification because you're an admin.</p>
+            <p>📧 Admin Support: admin@indiansinghana.com</p>
+        </div>
+    </div>
+</body>
+</html>

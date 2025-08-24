@@ -875,7 +875,7 @@ const RedemptionHistoryTab = () => (
               <div className="redemption-card-header">
                 <h4 className="deal-title">{redemption.dealTitle || redemption.title || 'Deal'}</h4>
                 <span className="redemption-date">
-                  {redemption.redeemedAt ? new Date(redemption.redeemedAt).toLocaleDateString() : 'Date not available'}
+                  {redemption.redeemed_at ? new Date(redemption.redeemed_at).toLocaleDateString() : 'Date not available'}
                 </span>
               </div>
               <div className="redemption-card-body">
@@ -906,9 +906,13 @@ const RedemptionHistoryTab = () => (
                     {redemption.status?.charAt(0).toUpperCase() + redemption.status?.slice(1) || 'Redeemed'}
                   </span>
                 </div>
-                {redemption.status === 'rejected' && redemption.rejectionReason && (
+
+                {/* Robust rejection reason display: handle snake_case/camelCase and variant status values */}
+                {(['rejected','declined','rejected_by_admin','rejected_by_merchant'].includes((redemption.status || '').toLowerCase())) && (
                   <div className="rejection-reason">
-                    <small>Reason: {redemption.rejectionReason}</small>
+                    <small>
+                      Reason: {redemption.rejectionReason || redemption.rejection_reason || redemption.rejection || 'Not provided'}
+                    </small>
                   </div>
                 )}
               </div>
@@ -1174,7 +1178,7 @@ return (
                           {fieldsLoading ? (
                             <option disabled>Loading communities...</option>
                           ) : (
-                            getCommunityOptions().map(option => (
+                            (getCommunityOptions() || []).map(option => (
                               <option key={option.value} value={option.value}>
                                 {option.label}
                               </option>

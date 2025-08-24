@@ -5,7 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const { auth, merchant } = require('../middleware/auth');
 const db = require('../db');
-
+const NotificationHooks = require('../services/notificationHooks-integrated');
 
 const router = express.Router();
 
@@ -619,6 +619,20 @@ router.post('/deals', checkMerchantAccess, checkDealPostingLimit, [
 
     // TODO: Send notification to admin about new deal pending approval
 
+    // Send notifications about new deal creation
+    NotificationHooks.onDealCreated(result.insertId, {
+      title: title,
+      description: description,
+      businessName: merchant.businessName || 'Business',
+      discount: discount,
+      discountType: discountType,
+      expiryDate: expiration_date
+    }).then(emailResult => {
+      console.log('📧 Deal creation emails sent to users:', emailResult);
+    }).catch(emailError => {
+      console.error('📧 Failed to send deal creation emails:', emailError);
+    });
+
     res.status(201).json({ 
       success: true,
       message: 'Deal created successfully and is pending admin approval',
@@ -1213,6 +1227,19 @@ router.patch('/redemption-requests/:requestId/approve', checkMerchantAccess, asy
       return res.status(500).json({ success: false, message: 'Failed to update deal redemption count' });
     }
 
+    // Send redemption approval notification
+    const redemptionData = checkResults[0];
+    NotificationHooks.onRedemptionResponse(requestId, 'approved', {
+      userId: redemptionData.user_id,
+      dealTitle: redemptionData.title,
+      businessName: merchant.businessName || 'Business',
+      redemptionDate: new Date().toLocaleDateString()
+    }).then(emailResult => {
+      console.log('📧 Redemption approval email sent:', emailResult);
+    }).catch(emailError => {
+      console.error('📧 Failed to send redemption approval email:', emailError);
+    });
+
     res.json({
       success: true,
       message: 'Redemption request approved successfully!'
@@ -1267,6 +1294,20 @@ router.patch('/redemption-requests/:requestId/reject', checkMerchantAccess, asyn
     }
 
     await queryAsync(updateQuery, params);
+
+    // Send redemption rejection notification
+    const redemptionData = checkResults[0];
+    NotificationHooks.onRedemptionResponse(requestId, 'rejected', {
+      userId: redemptionData.user_id,
+      dealTitle: redemptionData.title,
+      businessName: merchant.businessName || 'Business',
+      reason: reason?.trim() || 'No reason provided',
+      redemptionDate: new Date().toLocaleDateString()
+    }).then(emailResult => {
+      console.log('📧 Redemption rejection email sent:', emailResult);
+    }).catch(emailError => {
+      console.error('📧 Failed to send redemption rejection email:', emailError);
+    });
 
     res.json({
       success: true,

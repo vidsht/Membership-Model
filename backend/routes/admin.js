@@ -5,6 +5,7 @@ const { body, validationResult } = require('express-validator');
 const { auth, admin } = require('../middleware/auth');
 const db = require('../db');
 const { generateMembershipNumber } = require('../utils/membershipGenerator');
+const NotificationHooks = require('../services/notificationHooks-integrated');
 const router = express.Router();
 
 // Utility function to promisify db.query
@@ -793,6 +794,13 @@ router.put('/users/:id/status', auth, admin, async (req, res) => {
         console.warn('Error logging activity:', activityError);
       }
     }
+
+    // Send profile status update notification
+    NotificationHooks.onProfileStatusChange(userId, status, req.body.reason || '').then(emailResult => {
+      console.log('📧 Profile status update email sent:', emailResult);
+    }).catch(emailError => {
+      console.error('📧 Failed to send profile status update email:', emailError);
+    });
 
     res.json({ success: true, message: `User ${status} successfully` });
   } catch (err) {
@@ -2602,6 +2610,13 @@ router.patch('/deals/:id/approve', auth, admin, async (req, res) => {
       }
     }
 
+    // Send email notification to merchant
+    NotificationHooks.onDealStatusChange(dealId, 'approved').then(emailResult => {
+      console.log('📧 Deal approval email sent:', emailResult);
+    }).catch(emailError => {
+      console.error('📧 Failed to send deal approval email:', emailError);
+    });
+
     res.json({
       success: true,
       message: 'Deal approved successfully'
@@ -2656,6 +2671,13 @@ router.patch('/deals/:id/reject', auth, admin, async (req, res) => {
         console.warn('Failed to create notification:', notificationError);
       }
     }
+
+    // Send email notification to merchant
+    NotificationHooks.onDealStatusChange(dealId, 'rejected', reason).then(emailResult => {
+      console.log('📧 Deal rejection email sent:', emailResult);
+    }).catch(emailError => {
+      console.error('📧 Failed to send deal rejection email:', emailError);
+    });
 
     res.json({
       success: true,

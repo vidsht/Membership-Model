@@ -105,6 +105,13 @@ app.use(session({
 // MySQL connection (handled in db.js)
 require('./db');
 
+// Initialize Email System
+console.log('📧 Initializing email notification system...');
+const ScheduledTasks = require('./services/scheduledTasks-integrated');
+ScheduledTasks.initialize();
+ScheduledTasks.startAllTasks();
+console.log('✅ Email system initialized and scheduled tasks started');
+
 // Import database connection for public routes
 const db = require('./db');
 const { promisify } = require('util');
@@ -124,6 +131,10 @@ app.use('/api/plans', require('./routes/plans'));
 // Admin routes
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/admin', require('./routes/roles'));
+
+// Email admin routes
+const emailAdminRoutes = require('./routes/emailAdmin');
+app.use('/api/admin/email', emailAdminRoutes);
 
 // Public admin endpoints that don't require authentication
 app.use('/api/admin', require('./routes/admin')); // This ensures public routes work

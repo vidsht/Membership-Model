@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const db = require('../db');
 const { auth } = require('../middleware/auth');
 const { generateMembershipNumber } = require('../utils/membershipGenerator');
+const NotificationHooks = require('../services/notificationHooks-integrated');
 
 const router = express.Router();
 
@@ -209,6 +210,21 @@ router.post('/register', async (req, res) => {
               if (errAct) {
                 console.error('Failed to log registration activity:', errAct);
               }
+              
+              // Send welcome email and admin notification
+              NotificationHooks.onUserRegistration(user.id, {
+                fullName: user.fullName,
+                firstName: user.firstName,
+                email: user.email,
+                membershipNumber: user.membershipNumber,
+                membershipType: user.plan || 'Standard',
+                validationDate: user.validationDate
+              }).then(emailResult => {
+                console.log('📧 Registration emails sent:', emailResult);
+              }).catch(emailError => {
+                console.error('📧 Failed to send registration emails:', emailError);
+              });
+              
               res.status(201).json({ 
                 success: true, 
                 message: 'Registration successful! Your account is pending approval. Welcome to Indians in Ghana community.', 
@@ -559,6 +575,21 @@ router.post('/merchant/register', async (req, res) => {
                 if (err2) {
                   return res.status(500).json({ success: false, message: 'Session error after registration' });
                 }
+                
+                // Send merchant welcome email and admin notification
+                NotificationHooks.onMerchantRegistration({
+                  userId: user.id,
+                  fullName: user.fullName,
+                  email: user.email,
+                  businessName: user.businessName,
+                  businessEmail: user.businessEmail,
+                  ownerName: user.fullName
+                }).then(emailResult => {
+                  console.log('📧 Merchant registration emails sent:', emailResult);
+                }).catch(emailError => {
+                  console.error('📧 Failed to send merchant registration emails:', emailError);
+                });
+                
                 res.status(201).json({ 
                   success: true, 
                   message: 'Merchant account created successfully! Your account is pending approval.', 
