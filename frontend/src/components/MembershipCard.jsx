@@ -168,25 +168,50 @@ const MembershipCard = () => {
       return;
     }
 
+    let tempObjectUrl = null;
+    let imgEl = null;
+    let originalSrc = null;
+
     try {
-      // Import html2canvas dynamically
+      // If there's an uploaded profile image, fetch it and set a same-origin object URL
+      const profileUrl = getProfileImageUrl(user);
+      if (profileUrl) {
+        try {
+          const resp = await fetch(profileUrl, { mode: 'cors' });
+          if (resp && resp.ok) {
+            const blob = await resp.blob();
+            tempObjectUrl = URL.createObjectURL(blob);
+
+            // Find the profile image in the card (SmartImage uses className "profile-image")
+            imgEl = cardRef.current.querySelector('img.profile-image');
+            if (imgEl) {
+              originalSrc = imgEl.src;
+              imgEl.src = tempObjectUrl;
+              // Ensure image has finished decoding
+              if (imgEl.decode) await imgEl.decode();
+            }
+          } else {
+            console.warn('Failed to fetch profile image for download, status:', resp && resp.status);
+          }
+        } catch (fetchErr) {
+          console.warn('Error fetching profile image for download:', fetchErr);
+        }
+      }
+
       const html2canvas = await import('html2canvas');
-      
-      // Wait a moment for any images to load
+
+      // Small wait to allow images (including replaced object URL) to render
       await new Promise(resolve => setTimeout(resolve, 500));
-      
+
       const canvas = await html2canvas.default(cardRef.current, {
-        scale: 3,
+        scale: 2,
         backgroundColor: '#ffffff',
         useCORS: true,
         allowTaint: true,
-        foreignObjectRendering: true,
-        width: 856,   // Standard ID card dimensions (85.6mm at ~300dpi)
-        height: 540,  // Standard ID card dimensions (53.98mm at ~300dpi)
+        width: 600,
+        height: 350,
         scrollX: 0,
-        scrollY: 0,
-        windowWidth: window.innerWidth,
-        windowHeight: window.innerHeight
+        scrollY: 0
       });
 
       // Verify canvas has content
@@ -194,20 +219,38 @@ const MembershipCard = () => {
         throw new Error('Canvas is empty');
       }
 
-      // Create and trigger download
-      const link = document.createElement('a');
-      link.download = `membership-card-${user.membershipNumber || 'download'}.png`;
-      link.href = canvas.toDataURL('image/png', 1.0);
-      
-      // Add to DOM temporarily
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      // Use toBlob + object URL for download
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          showNotification('Failed to generate card image', 'error');
+          return;
+        }
 
-      showNotification('Card downloaded successfully!', 'success');
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.download = `membership-card-${user.membershipNumber || 'download'}.png`;
+        link.href = url;
+
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        showNotification('Card downloaded successfully!', 'success');
+      }, 'image/png', 1.0);
     } catch (error) {
       console.error('Error downloading card:', error);
       showNotification('Failed to download card. Please try again.', 'error');
+    } finally {
+      // Restore original image src and revoke temporary object URL
+      try {
+        if (imgEl && originalSrc !== undefined) {
+          imgEl.src = originalSrc;
+        }
+        if (tempObjectUrl) URL.revokeObjectURL(tempObjectUrl);
+      } catch (restoreErr) {
+        console.warn('Error restoring profile image after download:', restoreErr);
+      }
     }
   };
 
@@ -233,8 +276,8 @@ const MembershipCard = () => {
         backgroundColor: '#ffffff',
         useCORS: true,
         allowTaint: true,
-        width: 856,
-        height: 540,
+        width: 600,
+        height: 350,
         scrollX: 0,
         scrollY: 0
       });
@@ -297,8 +340,8 @@ const MembershipCard = () => {
           backgroundColor: '#ffffff',
           useCORS: true,
           allowTaint: true,
-          width: 856,
-          height: 540,
+          width: 600,
+          height: 350,
           scrollX: 0,
           scrollY: 0
         });

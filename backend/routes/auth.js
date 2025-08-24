@@ -407,13 +407,60 @@ router.post('/merchant/register', async (req, res) => {
       }
 
       console.log('Selected plan for merchant:', selectedPlan);
-      
-      // Insert user first
+
+      // Calculate validationDate based on plan's billing cycle (same logic as user registration)
+      let validationDate = new Date();
+      let planBillingCycle = 'yearly'; // default
+
+      if (selectedPlan && selectedPlan !== 'community') {
+        try {
+          const planResult = await new Promise((resolve, reject) => {
+            db.query('SELECT billingCycle FROM plans WHERE `key` = ? AND isActive = 1', [selectedPlan], (err, results) => {
+              if (err) reject(err);
+              else resolve(results);
+            });
+          });
+          if (planResult.length > 0) {
+            planBillingCycle = planResult[0].billingCycle || 'yearly';
+          }
+        } catch (err) {
+          console.warn('Could not fetch merchant plan billing cycle, using default yearly:', err);
+        }
+      }
+
+      // Compute validation date according to billing cycle
+      switch ((planBillingCycle || '').toLowerCase()) {
+        case 'monthly':
+          validationDate.setMonth(validationDate.getMonth() + 1);
+          break;
+        case 'quarterly':
+          validationDate.setMonth(validationDate.getMonth() + 3);
+          break;
+        case 'yearly':
+        case 'annual':
+          validationDate.setFullYear(validationDate.getFullYear() + 1);
+          break;
+        case 'lifetime':
+          validationDate = null;
+          break;
+        case 'weekly':
+          validationDate.setDate(validationDate.getDate() + 7);
+          break;
+        case 'none':
+          // Treat as 1 year for safety
+          validationDate.setFullYear(validationDate.getFullYear() + 1);
+          break;
+        default:
+          validationDate.setFullYear(validationDate.getFullYear() + 1);
+          break;
+      }
+
+      // Insert user first (include validationDate and planAssignedAt)
       const insertUserQuery = `INSERT INTO users
-        (fullName, email, password, phone, bloodGroup, socialMediaFollowed, userType, status, membershipType)
-        VALUES (?, ?, ?, ?, ?, ?, 'merchant', 'pending', ?)`;
+        (fullName, email, password, phone, bloodGroup, socialMediaFollowed, userType, status, membershipType, validationDate, planAssignedAt)
+        VALUES (?, ?, ?, ?, ?, ?, 'merchant', 'pending', ?, ?, NOW())`;
       
-      const userValues = [fullName, email, hashedPassword, phone || null, bloodGroup || null, socialMediaJson, selectedPlan];
+      const userValues = [fullName, email, hashedPassword, phone || null, bloodGroup || null, socialMediaJson, selectedPlan, validationDate ? validationDate.toISOString().slice(0, 19).replace('T', ' ') : null];
       
       db.query(insertUserQuery, userValues, (err2, userResult) => {
         if (err2) {

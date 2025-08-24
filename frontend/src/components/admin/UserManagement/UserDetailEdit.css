@@ -88,7 +88,7 @@
 
 .user-id, .membership-number {
   display: inline-block;
-  font-size: 0.875rem;
+  font-size: 1rem;
   color: #FFC107;
   margin-right: 1rem;
 }

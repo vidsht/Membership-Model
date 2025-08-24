@@ -532,11 +532,11 @@ const handleMerchantLogoRemoval = async () => {
     const availableTabs = [];
     
     if (isMerchant) {
+      // For merchants we should NOT show the Profile Information tab
       availableTabs.push(
-        { id: 'profile', label: 'Profile Information', icon: '👤' },
         { id: 'business', label: 'Business Settings', icon: '🏢' },
         { id: 'security', label: 'Security Settings', icon: '🔒' }
-        // Note: Removed redemption history for merchants as they should not see user redemptions
+        // Note: Profile tab intentionally removed for merchants
       );
     } else {
       availableTabs.push(
@@ -922,6 +922,11 @@ const RedemptionHistoryTab = () => (
 
 
 const renderTabContent = () => {
+  // If a merchant somehow has 'profile' active, show business tab instead
+  if (currentActiveTab === 'profile' && isMerchant) {
+    return <BusinessSettingsTab />;
+  }
+
   switch (currentActiveTab) {
     case 'business':
       return <BusinessSettingsTab />;
