@@ -2504,9 +2504,28 @@ router.get('/deals/:id/redemptions', auth, admin, async (req, res) => {
 
     const redemptions = await queryAsync(query, [dealId]);
 
+    // Normalize DB snake_case columns to camelCase expected by frontend and include rejection_reason
+    const normalizedRedemptions = redemptions.map(r => ({
+      id: r.id,
+      userId: r.user_id || r.userId,
+      dealId: r.deal_id || r.dealId,
+      code: r.code || null,
+      status: r.status || null,
+      redeemedAt: r.redeemed_at || r.redeemedAt || null,
+      rejectionReason: r.rejection_reason || r.rejectionReason || null,
+      userName: r.userName || r.user_name || null,
+      userEmail: r.userEmail || r.user_email || null,
+      dealTitle: r.deal_title || r.dealTitle || null,
+      businessName: r.business_name || r.businessName || null,
+      businessAddress: r.business_address || r.businessAddress || null,
+      discount: r.discount || null,
+      discountType: r.discount_type || r.discountType || null,
+      raw: r
+    }));
+
     res.json({
       success: true,
-      redemptions
+      redemptions: normalizedRedemptions
     });
   } catch (err) {
     console.error('Error fetching deal redemptions:', err);

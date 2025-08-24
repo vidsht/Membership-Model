@@ -194,10 +194,7 @@
 }
 
 .business-logo-container {
-  width: 74px;
-  height: 74px;
   border-radius: 16px;
-  overflow: hidden;
   border: 3px solid #3b82f6;
   background: linear-gradient(135deg, #e0e7ff 0%, #f1f5f9 100%);
   display: flex;

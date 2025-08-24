@@ -112,6 +112,24 @@ export const useImageUrl = () => {
             }
             
             console.log('🖼️ Found logo field:', logoField);
+
+            // Normalize cases where backend returned a path instead of just a filename
+            if (typeof logoField === 'string' && logoField.includes('/')) {
+                try {
+                    const normalized = logoField.replace(/\\\\/g, '/');
+                    const uploadsIndex = normalized.indexOf('/uploads/');
+                    if (uploadsIndex !== -1) {
+                        const parts = normalized.split('/');
+                        logoField = parts[parts.length - 1];
+                    } else {
+                        // If it contains directories like 'merchant_logos' or 'profile_photos', extract basename
+                        const parts = normalized.split('/');
+                        logoField = parts[parts.length - 1];
+                    }
+                } catch (e) {
+                    console.warn('Error normalizing logo field:', e);
+                }
+            }
             
             if (logoField && (logoField.startsWith('http://') || logoField.startsWith('https://'))) {
             console.log('✅ Returning full URL:', logoField);
@@ -283,31 +301,21 @@ export const SmartImage = ({
 
     return (
         <>
-            <img
-                src={currentSrc}
-                alt={alt}
-                className={className}
-                style={style}
-                onLoad={handleLoad}
-                onError={handleError}
-                loading={loading}
-                {...props}
-            />
-            {!fallback && (
-                <div 
-                    className="image-fallback"
-                    style={{
-                        display: 'none',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        backgroundColor: '#f3f4f6',
-                        color: '#9ca3af',
-                        fontSize: '14px',
-                        borderRadius: '8px',
-                        ...style
-                    }}
-                >
-                    {placeholder || <i className="fas fa-image" />}
+            {currentSrc ? (
+                <img
+                    src={currentSrc}
+                    alt={alt}
+                    className={className}
+                    style={style}
+                    onLoad={handleLoad}
+                    onError={handleError}
+                    loading={loading}
+                    {...props}
+                />
+            ) : (
+                // Exact fallback markup requested
+                <div className="image-fallback" style={{display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgb(243, 244, 246)', color: 'rgb(156, 163, 175)', fontSize: '14px', borderRadius: '8px'}}>
+                    {placeholder || <div className="logo-placeholder"><span>P</span></div>}
                 </div>
             )}
         </>

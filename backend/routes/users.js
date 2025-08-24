@@ -285,10 +285,29 @@ router.get('/redemptions/user-history', auth, async (req, res) => {
           console.error('Error fetching redemption history:', err2);
           return res.status(500).json({ message: 'Server error' });
         }
-        
+
+        // Normalize snake_case DB columns to camelCase expected by frontend
+        const normalized = (redemptions || []).map(r => ({
+          id: r.id,
+          userId: r.user_id || r.userId,
+          membershipLevel: r.membership_level || r.membershipLevel || null,
+          dealId: r.deal_id || r.dealId || null,
+          redeemedAt: r.redeemed_at || r.redeemedAt || null,
+          status: r.status || null,
+          rejectionReason: r.rejection_reason || r.rejectionReason || null,
+          approvedAt: r.approved_at || r.approvedAt || null,
+          rejectedAt: r.rejected_at || r.rejectedAt || null,
+          dealTitle: r.dealTitle || r.deal_title || r.title || null,
+          dealDescription: r.dealDescription || r.description || null,
+          discount: r.discount || null,
+          discountType: r.discountType || r.discount_type || null,
+          businessName: r.businessName || r.business_name || null,
+          businessAddress: r.businessAddress || r.business_address || null
+        }));
+
         res.json({ 
-          redemptions: redemptions || [],
-          total: redemptions ? redemptions.length : 0
+          redemptions: normalized,
+          total: normalized.length
         });
       });
     });
