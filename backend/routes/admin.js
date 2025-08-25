@@ -917,7 +917,6 @@ router.post('/users/:id/assign-plan', auth, admin, async (req, res) => {
           planAssignedAt = NOW(), 
           planAssignedBy = ?,
           validationDate = ?,
-          accessLevel = ?,
           updated_at = NOW()
         WHERE id = ?
       `;
@@ -934,7 +933,6 @@ router.post('/users/:id/assign-plan', auth, admin, async (req, res) => {
           planAssignedAt = NOW(), 
           planAssignedBy = ?,
           validationDate = NULL,
-          accessLevel = ?,
           updated_at = NOW()
         WHERE id = ?
       `;
