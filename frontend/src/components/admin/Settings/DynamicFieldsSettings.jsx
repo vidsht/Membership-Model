@@ -228,7 +228,7 @@ const DynamicFieldsSettings = ({ settings, onSettingChange }) => {
                   placeholder="Option name"
                 />
               </div>
-              {(fieldType === 'businessCategories' || fieldType === 'dealCategories') && (
+              {(fieldType === 'businessCategories' || fieldType === 'dealCategories' || fieldType === 'countries' || fieldType === 'states') && (
                 <div className="form-group">
                   <label>Display Label</label>
                   <input
@@ -392,7 +392,7 @@ const DynamicFieldsSettings = ({ settings, onSettingChange }) => {
                 />
               </div>
 
-              {(editModal.fieldType === 'businessCategories' || editModal.fieldType === 'dealCategories') && (
+              {(editModal.fieldType === 'businessCategories' || editModal.fieldType === 'dealCategories' || editModal.fieldType === 'countries' || editModal.fieldType === 'states') && (
                 <div className="form-group">
                   <label>Display Label</label>
                   <input
