@@ -70,7 +70,7 @@ function AppContent() {
           <Route path="/business-benefits" element={<BusinessBenefits />} />
           <Route path="/member-benefits" element={<MemberBenefits />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/reset-password/:token" element={<ResetPassword />} />
 
           {/* Protected Routes */}
           <Route path="/dashboard" element={

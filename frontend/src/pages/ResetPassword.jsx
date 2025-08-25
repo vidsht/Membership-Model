@@ -21,7 +21,10 @@ const ResetPassword = () => {
     // Validate token on component mount
     const validateToken = async () => {
       try {
-        await authApi.validateResetToken(token);
+        const resp = await authApi.validateResetToken(token);
+        if (!resp || resp.valid !== true) {
+          throw new Error('Invalid token');
+        }
       } catch (error) {
         setValidToken(false);
         showNotification('Password reset link is invalid or has expired', 'error');
@@ -89,9 +92,9 @@ const ResetPassword = () => {
       showNotification(response.message || 'Password has been reset successfully!', 'success');
       
       // Redirect to login after 3 seconds
-      // setTimeout(() => {
-      //   navigate('/login');
-      // }, 3000);
+      setTimeout(() => {
+        navigate('/login');
+      }, 3000);
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'An error occurred while resetting your password';
       showNotification(errorMessage, 'error');

@@ -720,31 +720,64 @@ router.post('/forgot-password', async (req, res) => {
           const crypto = require('crypto');
           const resetToken = crypto.randomBytes(32).toString('hex');
           const tokenExpiry = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
-          
-          // Store reset token in database
+          const formattedExpiry = tokenExpiry.toISOString().slice(0, 19).replace('T', ' ');
+
+          // Try camelCase columns first, fallback to snake_case if column doesn't exist
           db.query(
             'UPDATE users SET resetToken = ?, resetTokenExpiry = ? WHERE id = ?',
-            [resetToken, tokenExpiry, user.id],
+            [resetToken, formattedExpiry, user.id],
             async (updateErr) => {
               if (updateErr) {
-                console.error('Error storing reset token:', updateErr);
+                console.error('Error storing reset token (camelCase):', updateErr);
+
+                // Fallback to snake_case column names
+                db.query(
+                  'UPDATE users SET reset_token = ?, reset_token_expiry = ? WHERE id = ?',
+                  [resetToken, formattedExpiry, user.id],
+                  async (updateErr2) => {
+                    if (updateErr2) {
+                      console.error('Error storing reset token (snake_case):', updateErr2);
+                      return;
+                    }
+
+                    // Continue to send email (snake_case path)
+                    try {
+                      const emailService = require('../services/emailService-integrated');
+                      const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password/${resetToken}`;
+                      const resetData = {
+                        fullName: user.fullName || 'Member',
+                        resetUrl: resetUrl,
+                        expiryMinutes: 30,
+                        ipAddress: req.ip || req.connection.remoteAddress || 'Unknown',
+                        userAgent: req.get('User-Agent') || 'Unknown'
+                      };
+                      await emailService.sendPasswordResetEmail(user.email, resetData);
+                      console.log(`✅ Password reset email sent to ${user.email}`);
+                    } catch (emailErr) {
+                      console.error('Error sending password reset email (snake_case path):', emailErr);
+                    }
+                  }
+                );
+
                 return;
               }
-              
-              // Send password reset email
-              const emailService = require('../services/emailService-integrated');
-              const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password/${resetToken}`;
-              
-              const resetData = {
-                fullName: user.fullName || 'Member',
-                resetUrl: resetUrl,
-                expiryMinutes: 30,
-                ipAddress: req.ip || req.connection.remoteAddress || 'Unknown',
-                userAgent: req.get('User-Agent') || 'Unknown'
-              };
-              
-              await emailService.sendPasswordResetEmail(user.email, resetData);
-              console.log(`✅ Password reset email sent to ${user.email}`);
+
+              // Successfully stored token using camelCase columns - send email
+              try {
+                const emailService = require('../services/emailService-integrated');
+                const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password/${resetToken}`;
+                const resetData = {
+                  fullName: user.fullName || 'Member',
+                  resetUrl: resetUrl,
+                  expiryMinutes: 30,
+                  ipAddress: req.ip || req.connection.remoteAddress || 'Unknown',
+                  userAgent: req.get('User-Agent') || 'Unknown'
+                };
+                await emailService.sendPasswordResetEmail(user.email, resetData);
+                console.log(`✅ Password reset email sent to ${user.email}`);
+              } catch (emailErr) {
+                console.error('Error sending password reset email (camelCase path):', emailErr);
+              }
             }
           );
         } catch (tokenError) {
@@ -1099,8 +1132,8 @@ router.get('/business-categories', async (req, res) => {
     console.error('Get business categories error:', error);
     // Fallback to default categories on any error
     const defaultCategories = [
-      { name: 'restaurant', label: 'Restaurant & Food', description: 'Restaurants, food services' },
-      { name: 'retail', label: 'Retail & Shopping', description: 'Retail stores, shopping' },
+      { name: 'restaurant', label: 'Restaurant', description: 'Restaurants, food services' },
+      { name: 'retail', label: 'Retail', description: 'Retail stores, shopping' },
       { name: 'services', label: 'Professional Services', description: 'Consulting, legal, accounting' },
       { name: 'other', label: 'Other', description: 'Other business types' }
     ];
