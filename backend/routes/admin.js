@@ -1060,15 +1060,15 @@ router.get('/users/export', auth, admin, async (req, res) => {
     }
 
     if (search && search.trim()) {
-      whereClause += ' AND (u.fullName LIKE ? OR u.email LIKE ? OR u.phone LIKE ? OR u.membershipNumber LIKE ?)';
+      whereClause += ' AND (u.fullName LIKE ? OR u.email LIKE ? OR u.phone LIKE ?)';
       const searchTerm = `%${search.trim()}%`;
-      params.push(searchTerm, searchTerm, searchTerm, searchTerm);
+      params.push(searchTerm, searchTerm, searchTerm);
     }
 
     let exportQuery = `
       SELECT 
         u.id, u.fullName, u.email, u.phone, u.community, u.membershipType,
-        u.userType, u.status, u.createdAt, u.lastLogin, u.validationDate, u.bloodGroup,
+        u.userType, u.status, u.createdAt, u.lastLogin,
         u.country, u.state, u.city, u.membershipNumber`;
 
     if (await tableExists('plans')) {
@@ -2026,7 +2026,6 @@ router.post('/partners/bulk-action', auth, admin, async (req, res) => {
     });
   } catch (err) {
     console.error('Error performing bulk partner action:', err);
-
     res.status(500).json({ success: false, message: 'Server error performing bulk action' });
   }
 });
@@ -2168,15 +2167,12 @@ router.get('/deals', auth, admin, async (req, res) => {
     const validSortOrder = sortOrder.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
 
     const businessTableExists = await tableExists('businesses');
-    // Check if deal_redemptions table exists so we can include a redemption count
-    const redemptionsTableExists = await tableExists('deal_redemptions');
     
     let query;
     if (businessTableExists) {
       query = `
         SELECT 
-          d.*,
-          ${redemptionsTableExists ? `(SELECT COUNT(*) FROM deal_redemptions dr WHERE dr.deal_id = d.id) AS dealRedemptions,` : '0 AS dealRedemptions,'}
+          d.*, 
           b.businessName,
           u.fullName as merchantName,
           u.email as merchantEmail
@@ -2191,7 +2187,6 @@ router.get('/deals', auth, admin, async (req, res) => {
       query = `
         SELECT 
           d.*,
-          ${redemptionsTableExists ? `(SELECT COUNT(*) FROM deal_redemptions dr WHERE dr.deal_id = d.id) AS dealRedemptions,` : '0 AS dealRedemptions,'}
           NULL as merchantName,
           NULL as merchantEmail,
           NULL as businessName
@@ -3737,7 +3732,7 @@ router.post('/plans/seed', auth, admin, async (req, res) => {
         max_deals_per_month: null,
         maxRedemptions: -1
       },
-      // Merchant Plans
+      // MERCHANT PLANS
       {
         key: 'basic',
         name: 'Basic',
