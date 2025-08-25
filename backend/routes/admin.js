@@ -925,7 +925,6 @@ router.post('/users/:id/assign-plan', auth, admin, async (req, res) => {
         finalPlanKey,
         adminUserId,
         validationDate.toISOString().slice(0, 19).replace('T', ' '),
-        computedAccessLevel,
         userId
       ];
     } else {
@@ -942,7 +941,6 @@ router.post('/users/:id/assign-plan', auth, admin, async (req, res) => {
       updateParams = [
         finalPlanKey,
         adminUserId,
-        computedAccessLevel,
         userId
       ];
     }
