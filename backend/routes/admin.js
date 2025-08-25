@@ -880,25 +880,6 @@ router.post('/users/:id/assign-plan', auth, admin, async (req, res) => {
       console.log('✅ Plan validation successful for user type:', userType, 'Plan details:', planDetails);
     }
 
-    // After successful plan validation, compute the access level based on plan priority
-    let computedAccessLevel = 1;
-    if (planDetails && planDetails.priority) {
-      switch(planDetails.priority.toLowerCase()){
-        case 'platinum':
-          computedAccessLevel = 3;
-          break;
-        case 'gold':
-          computedAccessLevel = 2;
-          break;
-        case 'silver':
-          computedAccessLevel = 1;
-          break;
-        default:
-          computedAccessLevel = 1;
-      }
-    }
-    console.log('🔢 Computed accessLevel:', computedAccessLevel);
-
     const adminUserId = getAdminUserId(req);
 
     // STEP 3: Update user with validated plan

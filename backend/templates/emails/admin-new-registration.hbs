@@ -304,38 +304,6 @@
                     Please review this {{userType}}'s profile and decide whether to approve or reject their application. 
                     They are waiting for your decision to access the platform.
                 </p>
-                
-                <div class="cta-buttons">
-                    <a href="{{reviewUrl}}" class="cta-button primary">Review Profile</a>
-                    <a href="{{reviewUrl}}" class="cta-button secondary">View Details</a>
-                </div>
-            </div>
-            
-            <div class="registration-summary">
-                <h4>📊 Registration Summary</h4>
-                <p style="color: #666; margin-bottom: 15px;">
-                    {{#if (eq userType 'merchant')}}
-                    New business registration requires verification of business details and approval process.
-                    {{else}}
-                    New user registration requires profile review and membership approval.
-                    {{/if}}
-                </p>
-                
-                <div style="background: #fff3e0; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #FF9933;">
-                    <h5 style="color: #FF9933; margin-bottom: 10px;">📋 Review Checklist:</h5>
-                    <ul style="color: #666; padding-left: 20px; margin: 0;">
-                        <li>Verify email address and contact information</li>
-                        {{#if (eq userType 'merchant')}}
-                        <li>Check business legitimacy and documentation</li>
-                        <li>Validate business address and contact details</li>
-                        <li>Ensure business aligns with community guidelines</li>
-                        {{else}}
-                        <li>Check profile completeness and authenticity</li>
-                        <li>Verify community connection and eligibility</li>
-                        {{/if}}
-                        <li>Review terms and conditions acceptance</li>
-                    </ul>
-                </div>
             </div>
             
             <div style="background: #e3f2fd; padding: 20px; border-radius: 8px; margin: 25px 0; text-align: center;">
