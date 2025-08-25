@@ -50,7 +50,7 @@ class NotificationService {
             businessName: deal.businessName,
             discount: deal.discount,
             validUntil: deal.validUntil,
-            dealUrl: `${process.env.FRONTEND_URL}/deals/${dealId}`
+            dealUrl: `${process.env.FRONTEND_URL}/deals`
           }
         });
       }
@@ -208,7 +208,7 @@ class NotificationService {
           planDescription: plan.description,
           monthlyRedemptionLimit: plan.monthlyRedemptionLimit,
           validUntil: user.validationDate,
-          dashboardUrl: `${process.env.FRONTEND_URL}/dashboard`
+          dashboardUrl: `${process.env.FRONTEND_URL}`
         }
       });
 
@@ -234,7 +234,7 @@ class NotificationService {
           email: merchant.email,
           businessType: merchant.businessType,
           validationDate: merchant.validationDate,
-          dashboardUrl: `${process.env.FRONTEND_URL}/dashboard`
+          dashboardUrl: `${process.env.FRONTEND_URL}`
         }
       });
 
@@ -266,7 +266,7 @@ class NotificationService {
           status: deal.status,
           rejectionReason: deal.rejectionReason,
           approvedDate: deal.updatedAt,
-          dealUrl: deal.status === 'approved' ? `${process.env.FRONTEND_URL}/deals/${dealId}` : null
+          dealUrl: deal.status === 'approved' ? `${process.env.FRONTEND_URL}/deals` : null
         }
       });
 
@@ -368,7 +368,7 @@ class NotificationService {
           ownerName: merchant.firstName,
           newLimit: newLimit,
           effectiveDate: new Date().toLocaleDateString(),
-          dashboardUrl: `${process.env.FRONTEND_URL}/dashboard`
+          dashboardUrl: `${process.env.FRONTEND_URL}`
         }
       });
 
@@ -423,7 +423,7 @@ class NotificationService {
           planDescription: plan.description,
           monthlyDealLimit: plan.monthlyDealLimit,
           validUntil: merchant.validationDate,
-          dashboardUrl: `${process.env.FRONTEND_URL}/dashboard`
+          dashboardUrl: `${process.env.FRONTEND_URL}`
         }
       });
 
@@ -453,7 +453,7 @@ class NotificationService {
           userEmail: redemption.userEmail,
           redemptionDate: redemption.redemptionDate,
           qrCode: redemption.qrCode,
-          dashboardUrl: `${process.env.FRONTEND_URL}/dashboard/redemptions`
+          dashboardUrl: `${process.env.FRONTEND_URL}`
         }
       });
 
@@ -577,7 +577,7 @@ class NotificationService {
             dealTitle: deal.title,
             businessName: merchant.businessName,
             publishedDate: deal.updatedAt,
-            dealUrl: `${process.env.FRONTEND_URL}/deals/${dealId}`
+            dealUrl: `${process.env.FRONTEND_URL}/deals`
           }
         });
       }
@@ -604,7 +604,7 @@ class NotificationService {
             adminName: admin.firstName,
             expiringCount: expiringUsers.length,
             expiringUsers: expiringUsers,
-            dashboardUrl: `${process.env.FRONTEND_URL}/admin/users`
+            dashboardUrl: `${process.env.FRONTEND_URL}`
           }
         });
       }

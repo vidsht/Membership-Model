@@ -20,7 +20,7 @@ class NotificationHooks {
         email: userData.email,
         membershipType: userData.membershipType || 'Standard',
         registrationDate: new Date().toLocaleDateString(),
-        dashboardUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/admin/users`
+        dashboardUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}`
       });
 
       return {
@@ -184,7 +184,7 @@ class NotificationHooks {
         ownerName: merchantData.ownerName || merchantData.fullName || 'Business Owner',
         email: merchantData.businessEmail || merchantData.email,
         applicationDate: new Date().toLocaleDateString(),
-        dashboardUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/admin/merchants`
+        dashboardUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}`
       });
 
       return {
@@ -432,7 +432,7 @@ class NotificationHooks {
                       planName: u.currentPlan,
                       type: u.userType
                     })),
-                    dashboardUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/admin/users`,
+                    dashboardUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}`,
                     today: new Date().toLocaleDateString()
                   });
                   

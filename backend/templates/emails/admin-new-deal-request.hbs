@@ -351,19 +351,11 @@
                 <div class="deal-details">
                     <div class="detail-item">
                         <div class="detail-label">Category</div>
-                        <div class="detail-value">{{dealCategory}}</div>
+                        <div class="detail-value">{{category}}</div>
                     </div>
                     <div class="detail-item">
                         <div class="detail-label">Discount</div>
                         <div class="detail-value">{{discount}}{{#if (eq discountType 'percentage')}}%{{else if (eq discountType 'fixed')}} GHS{{/if}} OFF</div>
-                    </div>
-                    <div class="detail-item">
-                        <div class="detail-label">Original Price</div>
-                        <div class="detail-value">{{#if originalPrice}}GHS {{originalPrice}}{{else}}Not specified{{/if}}</div>
-                    </div>
-                    <div class="detail-item">
-                        <div class="detail-label">Discounted Price</div>
-                        <div class="detail-value">{{#if discountedPrice}}GHS {{discountedPrice}}{{else}}Not specified{{/if}}</div>
                     </div>
                     <div class="detail-item">
                         <div class="detail-label">Valid Until</div>
@@ -397,7 +389,7 @@
                     </div>
                     <div class="merchant-detail">
                         <div class="merchant-label">Contact Email</div>
-                        <div class="merchant-value">{{merchantEmail}}</div>
+                        <div class="merchant-value">{{email}}</div>
                     </div>
                 </div>
             </div>
@@ -408,12 +400,6 @@
                     Please review this deal submission and decide whether to approve or reject it. 
                     The merchant is waiting for your decision to make their deal available to customers.
                 </p>
-            </div>
-            
-            <div class="cta-buttons">
-                <a href="{{reviewUrl}}" class="cta-button review">Review Deal</a>
-                <a href="{{approveUrl}}" class="cta-button approve">Quick Approve</a>
-                <a href="{{rejectUrl}}" class="cta-button reject">Reject Deal</a>
             </div>
             
             <div style="background: #e3f2fd; padding: 20px; border-radius: 8px; margin: 25px 0; text-align: center;">

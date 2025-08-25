@@ -48,7 +48,7 @@ class NotificationService {
         businessName: dealData.businessName || 'Business',
         discount: dealData.discount || dealData.discountPercentage || '',
         validUntil: dealData.validUntil || dealData.expiryDate || '',
-        dealUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/deals/${dealData.id}`
+        dealUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/deals`
       };
 
       return await emailService.sendEmail({
@@ -159,7 +159,7 @@ class NotificationService {
         businessName: businessName,
         ownerName: merchantData.ownerName || merchantData.fullName || 'Business Owner',
         email: email,
-        loginUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/merchant/login`
+        loginUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/login`
       };
 
       return await emailService.sendEmail({
@@ -197,7 +197,7 @@ class NotificationService {
         businessName: deal.businessName || 'Your Business',
         status: status,
         reason: dealData.reason || '',
-        dashboardUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/merchant/deals`
+        dashboardUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}`
       };
 
       const templateType = status === 'approved' ? 'deal_approved' : 'deal_rejected';
@@ -425,8 +425,8 @@ class NotificationService {
         assignmentDate: (planData && planData.assignmentDate) || new Date().toLocaleDateString(),
         planMessage: (planData && (planData.message || planData.planMessage)) || '',
         dashboardUrl: isUserPlan 
-          ? `${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard`
-          : `${process.env.FRONTEND_URL || 'http://localhost:3000'}/merchant/dashboard`
+          ? `${process.env.FRONTEND_URL || 'http://localhost:3000'}`
+          : `${process.env.FRONTEND_URL || 'http://localhost:3000'}`
       };
 
       return await emailService.sendEmail({
@@ -483,12 +483,12 @@ class NotificationService {
         pending: status.toLowerCase() === 'pending',
         rejectionReason: options.rejectionReason || '',
         adminMessage: options.adminMessage || '',
-        dealUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/deals/${dealId}`,
-        dashboardUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/merchant/dashboard`,
-        createDealUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/merchant/deals/create`,
-        supportUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/support`,
+        dealUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/deals`,
+        dashboardUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/login`,
+        createDealUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/login`,
+        supportUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/contact`,
         supportEmail: process.env.SUPPORT_EMAIL || 'support@example.com',
-        helpUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/help`
+        helpUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}`
       };
 
       return await emailService.sendEmail({
@@ -563,10 +563,10 @@ class NotificationService {
         activeDeals: activeDeals,
         isPremiumLimit: newLimit >= 20,
         tips: newLimit > previousLimit, // Show tips if it's an increase
-        createDealUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/merchant/deals/create`,
-        dashboardUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/merchant/dashboard`,
+        createDealUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/login`,
+        dashboardUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/login`,
         supportEmail: process.env.SUPPORT_EMAIL || 'support@example.com',
-        helpUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/help`
+        helpUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}`
       };
 
       return await emailService.sendEmail({
@@ -659,7 +659,7 @@ class NotificationService {
       const data = {
         expiringCount: alertData.expiringCount,
         expiringUsers: alertData.expiringUsers,
-        dashboardUrl: alertData.dashboardUrl || `${process.env.FRONTEND_URL || 'http://localhost:3000'}/admin/users`
+        dashboardUrl: alertData.dashboardUrl || `${process.env.FRONTEND_URL || 'http://localhost:3000'}/login`
       };
 
       return await emailService.sendEmail({
