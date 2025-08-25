@@ -167,7 +167,7 @@ const Contact = () => {
                   <i className="fas fa-phone" style={{ fontSize: '1.5rem', color: 'var(--primary)' }}></i>
                   <div>
                     <strong>Phone</strong>
-                    <p style={{ margin: '0', color: '#666' }}>+233 (0) 55 123 4567</p>
+                    <p style={{ margin: '0', color: '#666' }}>+233 (0) 57 232 3912</p>
                     <small>Mon-Fri, 9:00 AM - 6:00 PM</small>
                   </div>
                 </div>
@@ -203,7 +203,7 @@ const Contact = () => {
                   <i className="fab fa-whatsapp" style={{ fontSize: '1.5rem', color: 'var(--success)' }}></i>
                   <div>
                     <strong>WhatsApp</strong>
-                    <p style={{ margin: '0', color: '#666' }}>+233 (0) 55 123 4567</p>
+                    <p style={{ margin: '0', color: '#666' }}>+233 (0) 57 232 3912</p>
                     <small>Quick support available</small>
                   </div>
                 </div>
@@ -393,7 +393,7 @@ const Contact = () => {
               For urgent community matters or emergencies affecting our members:
             </p>
             <p style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>
-              <i className="fas fa-phone"></i> +233 (0) 55 123 4567
+              <i className="fas fa-phone"></i> +233 (0) 57 232 3912
             </p>
             <small>Available 24/7 for genuine emergencies only</small>
           </div>

@@ -519,7 +519,7 @@ For questions or support regarding the Indians in Ghana Membership System:
 
 - Email: info@indiansinghana.org
 - Website: [Coming Soon]
-- Phone: +233 XX XXX XXXX
+- Phone: +233 57 232 3912
 
 ## Acknowledgments
 
