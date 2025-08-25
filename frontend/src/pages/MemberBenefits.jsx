@@ -87,7 +87,7 @@ const MemberBenefits = () => {
           </div>
         </div>
 
-        <div className="membership-tiers">
+        {/* <div className="membership-tiers">
           <h2>Membership Plans</h2>
           <div className="tiers-grid">
             <div className="tier-card basic">
@@ -157,8 +157,8 @@ const MemberBenefits = () => {
               <span className="benefit-tag">Emergency</span>
             </div>
           </div>
-        </div>
-
+        </div> */}
+{/* 
         <div className="testimonials-section">
           <h2>What Our Members Say</h2>
           <div className="testimonials-grid">
@@ -186,7 +186,7 @@ const MemberBenefits = () => {
               </div>
             </div>
           </div>
-        </div>
+        </div> */}
 
         <div className="cta-section">
           <h2>Ready to Join Our Community?</h2>

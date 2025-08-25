@@ -2026,7 +2026,7 @@ router.post('/partners/bulk-action', auth, admin, async (req, res) => {
     });
   } catch (err) {
     console.error('Error performing bulk partner action:', err);
-    res.status(500).json({ success: false, message: 'Server error performing bulk action' });
+    res.status(500).json({ success: false, message: 'Server error performing bulk partner action' });
   }
 });
 
@@ -3121,12 +3121,16 @@ router.put('/settings', auth, admin, async (req, res) => {
 });
 
 // ===== DYNAMIC FIELDS MANAGEMENT =====
+// NOTE: The original smaller GET /dynamic-fields handler that returned only four field types
+// (communities, userTypes, businessCategories, dealCategories) has been removed. The
+// consolidated handler further down in this file includes 'countries' and 'states' and
+// will be used for fetching all dynamic fields. Keeping a single handler prevents the
+// earlier one from responding first and omitting countries/states.
+
 // Get dynamic field options
-// Get all dynamic fields for frontend
-// Get all dynamic fields for frontend
 router.get('/dynamic-fields', async (req, res) => {
   try {
-    const fieldTypes = ['communities', 'userTypes', 'businessCategories', 'dealCategories'];
+    const fieldTypes = ['communities', 'userTypes', 'businessCategories', 'dealCategories', 'countries', 'states'];
     const dynamicFields = {};
 
     if (await tableExists('settings')) {
@@ -3201,45 +3205,6 @@ router.put('/dynamic-fields/:fieldType', auth, admin, async (req, res) => {
   } catch (err) {
     console.error('Error updating dynamic field options:', err);
     res.status(500).json({ success: false, message: 'Server error updating field options' });
-  }
-});
-
-// Get all dynamic fields for frontend
-router.get('/dynamic-fields', async (req, res) => {
-  try {
-    const fieldTypes = ['communities', 'userTypes', 'businessCategories', 'dealCategories', 'countries', 'states'];
-    const dynamicFields = {};
-
-    if (await tableExists('settings')) {
-      for (const fieldType of fieldTypes) {
-        const settingKey = `dynamicFields.${fieldType}`;
-        const result = await queryAsync('SELECT value FROM settings WHERE `key` = ?', [settingKey]);
-        
-        if (result.length > 0) {
-          try {
-            dynamicFields[fieldType] = JSON.parse(result[0].value);
-          } catch (parseError) {
-            console.error(`Error parsing ${fieldType} options:`, parseError);
-            dynamicFields[fieldType] = getDefaultFieldOptions(fieldType);
-          }
-        } else {
-          dynamicFields[fieldType] = getDefaultFieldOptions(fieldType);
-        }
-      }
-    } else {
-      // Return default values if settings table doesn't exist
-      fieldTypes.forEach(fieldType => {
-        dynamicFields[fieldType] = getDefaultFieldOptions(fieldType);
-      });
-    }
-
-    res.json({ 
-      success: true, 
-      dynamicFields
-    });
-  } catch (err) {
-    console.error('Error fetching all dynamic fields:', err);
-    res.status(500).json({ success: false, message: 'Server error fetching dynamic fields' });
   }
 });
 
