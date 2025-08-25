@@ -375,32 +375,55 @@ class NotificationService {
       const isUserPlan = user.userType === 'user';
       const userEmail = user.userType === 'merchant' ? (user.businessEmail || user.email) : user.email;
 
-      // Use planData if provided, otherwise get plan details from database
-      let plan;
-      if (planData.planName) {
+      // Determine plan object: allow planData to be an object, or a plain planId (number/string)
+      let plan = null;
+      let planId = null;
+
+      if (planData === undefined || planData === null) {
+        throw new Error('Plan data or plan id must be provided');
+      }
+
+      if (typeof planData === 'number' || (typeof planData === 'string' && /^\d+$/.test(planData))) {
+        planId = Number(planData);
+      } else if (planData && planData.planId) {
+        planId = Number(planData.planId);
+      }
+
+      if (planData && (planData.planName || planData.name)) {
+        // planData already contains plan info
         plan = planData;
-      } else {
-        const planResult = await this.queryAsync('SELECT * FROM plans WHERE id = ?', [planData.planId]);
+      } else if (planId) {
+        const planResult = await this.queryAsync('SELECT * FROM plans WHERE id = ? OR `key` = ?', [planId, planId]);
         if (planResult.length === 0) {
           throw new Error('Plan not found');
         }
         plan = planResult[0];
+      } else {
+        // Last resort: treat planData as plan object
+        plan = planData;
       }
 
+      // Normalize plan fields with fallbacks
+      const planName = plan.planName || plan.name || plan.key || plan.title || 'Membership Plan';
+      const planType = plan.planType || plan.type || plan.tier || '';
+      const durationMonths = plan.duration_months || plan.durationMonths || plan.duration || 12;
+      const maxDeals = plan.maxDeals || plan.max_deals_per_month || plan.maxDealsPerMonth || plan.max_deals || null;
+      const maxRedemptions = plan.maxRedemptions || plan.max_redemptions || null;
+
       const data = {
-        firstName: user.fullName.split(' ')[0],
-        fullName: user.fullName,
+        firstName: (user.fullName || '').split(' ')[0] || 'Member',
+        fullName: user.fullName || user.email,
         email: userEmail,
-        planName: planData.planName || plan.name,
-        planType: planData.planType || plan.type,
-        effectiveDate: planData.effectiveDate || new Date().toLocaleDateString(),
-        expiryDate: planData.expiryDate || new Date(Date.now() + (plan.duration_months || 12) * 30 * 24 * 60 * 60 * 1000).toLocaleDateString(),
-        maxDeals: planData.maxDeals || plan.maxDeals,
-        maxRedemptions: planData.maxRedemptions || plan.maxRedemptions,
+        planName: planName,
+        planType: planType,
+        effectiveDate: (planData && planData.effectiveDate) || new Date().toLocaleDateString(),
+        expiryDate: (planData && planData.expiryDate) || new Date(Date.now() + (Number(durationMonths) || 12) * 30 * 24 * 60 * 60 * 1000).toLocaleDateString(),
+        maxDeals: (planData && planData.maxDeals) || maxDeals,
+        maxRedemptions: (planData && planData.maxRedemptions) || maxRedemptions,
         isUserPlan: isUserPlan,
-        assignedBy: planData.assignedBy,
-        assignmentDate: planData.assignmentDate || new Date().toLocaleDateString(),
-        planMessage: planData.message,
+        assignedBy: (planData && (planData.assignedBy || planData.assigned_by)) || 'Admin Team',
+        assignmentDate: (planData && planData.assignmentDate) || new Date().toLocaleDateString(),
+        planMessage: (planData && (planData.message || planData.planMessage)) || '',
         dashboardUrl: isUserPlan 
           ? `${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard`
           : `${process.env.FRONTEND_URL || 'http://localhost:3000'}/merchant/dashboard`

@@ -467,6 +467,17 @@ class NotificationHooks {
       return { success: false, error: error.message };
     }
   }
+
+  // Custom Deal Limit Assignment Hook
+  static async onCustomDealLimitAssigned(merchantId, newLimit, options = {}) {
+    try {
+      console.log(`📧 Sending custom deal limit assignment notification for merchant ${merchantId} - New limit: ${newLimit}`);
+      return await notificationService.sendCustomDealsAssignmentNotification(merchantId, newLimit, options);
+    } catch (error) {
+      console.error('❌ Error in custom deal limit assignment hook:', error);
+      return { success: false, error: error.message };
+    }
+  }
 }
 
 module.exports = NotificationHooks;

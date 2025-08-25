@@ -9,7 +9,7 @@
 /* Sidebar Styling */
 .admin-sidebar {
   width: 280px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #213449 0%, #334861 100%);
   color: white;
   display: flex;
   flex-direction: column;
@@ -54,6 +54,7 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+  color: white;
 }
 
 .sidebar-header p {

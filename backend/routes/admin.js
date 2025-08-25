@@ -1758,6 +1758,24 @@ router.put('/partners/:id', auth, admin, async (req, res) => {
       }
     }
 
+    // If admin provided a customDealLimit in the update, notify the merchant about the change
+    if (businessInfo.customDealLimit !== undefined) {
+      try {
+        const newLimit = Number(businessInfo.customDealLimit);
+        const assignedBy = getAdminUserId(req);
+        const adminMessage = req.body.adminMessage || null;
+
+        NotificationHooks.onCustomDealLimitAssigned(merchantId, newLimit, { assignedBy, adminMessage })
+          .then(result => {
+            console.log('📧 Custom deal limit assignment notification result:', result);
+          }).catch(err => {
+            console.error('📧 Failed to send custom deal limit assignment notification:', err);
+          });
+      } catch (notifyError) {
+        console.error('Error while attempting to notify custom deal limit assignment:', notifyError);
+      }
+    }
+
     res.json({ success: true, message: 'Partner updated successfully' });
   } catch (err) {
     console.error('Error updating partner:', err);
@@ -2633,7 +2651,7 @@ router.patch('/deals/:id/approve', auth, admin, async (req, res) => {
   }
 });
 
-// Deal rejection by admin
+// Reject deal
 router.patch('/deals/:id/reject', auth, admin, async (req, res) => {
   try {
     const dealId = parseInt(req.params.id);
@@ -3892,29 +3910,61 @@ router.patch('/deals/:id/approve', auth, admin, async (req, res) => {
 router.patch('/deals/:id/reject', auth, admin, async (req, res) => {
   try {
     const dealId = parseInt(req.params.id);
-    const { rejectionReason } = req.body;
+    const { reason } = req.body;
     
     if (!dealId || isNaN(dealId)) {
       return res.status(400).json({ success: false, message: 'Valid deal ID is required' });
     }
 
-    if (!rejectionReason || typeof rejectionReason !== 'string' || rejectionReason.trim().length === 0) {
-      return res.status(400).json({ success: false, message: 'Rejection reason is required' });
+    if (!(await tableExists('deals'))) {
+      return res.status(404).json({ success: false, message: 'Deals table not found' });
     }
 
-    const result = await queryAsync(
-      'UPDATE deals SET status = "rejected", rejection_reason = ?, updated_at = NOW() WHERE id = ? AND status = "pending_approval"',
-      [rejectionReason.trim(), dealId]
-    );
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ success: false, message: 'Pending deal not found' });
+    // Check if deal exists and is pending
+    const existingDeal = await queryAsync('SELECT id, status, businessId FROM deals WHERE id = ?', [dealId]);
+    if (existingDeal.length === 0) {
+      return res.status(404).json({ success: false, message: 'Deal not found' });
     }
 
-    res.json({ success: true, message: 'Deal rejected successfully', rejectionReason: rejectionReason.trim() });
+    if (existingDeal[0].status !== 'pending_approval') {
+      return res.status(400).json({ success: false, message: 'Deal is not pending approval' });
+    }
+
+    // Update deal status to rejected
+    await queryAsync('UPDATE deals SET status = ? WHERE id = ?', ['rejected', dealId]);
+
+    // TODO: Send notification to merchant about deal rejection
+    // For now, we'll add a basic notification entry if notifications table exists
+    if (await tableExists('notifications')) {
+      try {
+        const message = reason ? `Your deal has been rejected. Reason: ${reason}` : 'Your deal has been rejected.';
+        await queryAsync(
+          'INSERT INTO notifications (userId, type, title, message, relatedId, created_at) VALUES ((SELECT userId FROM businesses WHERE businessId = ?), ?, ?, ?, ?, NOW())',
+          [existingDeal[0].businessId, 'deal_rejected', 'Deal Rejected', message, dealId]
+        );
+      } catch (notificationError) {
+        console.warn('Failed to create notification:', notificationError);
+      }
+    }
+
+    // Send email notification to merchant
+    NotificationHooks.onDealStatusChange(dealId, 'rejected', reason).then(emailResult => {
+      console.log('📧 Deal rejection email sent:', emailResult);
+    }).catch(emailError => {
+      console.error('📧 Failed to send deal rejection email:', emailError);
+    });
+
+    res.json({
+      success: true,
+      message: 'Deal rejected successfully'
+    });
   } catch (err) {
     console.error('Error rejecting deal:', err);
-    res.status(500).json({ success: false, message: 'Server error rejecting deal' });
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error rejecting deal',
+      error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+    });
   }
 });
 
