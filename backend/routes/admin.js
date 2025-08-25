@@ -2673,7 +2673,7 @@ router.patch('/deals/:id/approve', auth, admin, async (req, res) => {
     }
 
     // Send email notification to merchant
-    NotificationHooks.onDealStatusChange(dealId, 'approved').then(emailResult => {
+    NotificationHooks.onDealStatusChange(dealId, 'active').then(emailResult => {
       console.log('📧 Deal approval email sent:', emailResult);
     }).catch(emailError => {
       console.error('📧 Failed to send deal approval email:', emailError);
