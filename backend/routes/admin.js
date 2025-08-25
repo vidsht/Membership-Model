@@ -2696,8 +2696,8 @@ router.patch('/deals/:id/approve', auth, admin, async (req, res) => {
 // Reject deal
 router.patch('/deals/:id/reject', auth, admin, async (req, res) => {
   try {
-    const dealId = parseInt(req.params.id);
-    const { reason } = req.body;
+  const dealId = parseInt(req.params.id);
+  const reason = req.body.reason || req.body.rejectionReason || '';
     
     if (!dealId || isNaN(dealId)) {
       return res.status(400).json({ success: false, message: 'Valid deal ID is required' });
@@ -2717,8 +2717,8 @@ router.patch('/deals/:id/reject', auth, admin, async (req, res) => {
       return res.status(400).json({ success: false, message: 'Deal is not pending approval' });
     }
 
-    // Update deal status to rejected
-    await queryAsync('UPDATE deals SET status = ? WHERE id = ?', ['rejected', dealId]);
+  // Update deal status to rejected and save rejection reason
+  await queryAsync('UPDATE deals SET status = ?, rejection_reason = ? WHERE id = ?', ['rejected', reason || '', dealId]);
 
     // TODO: Send notification to merchant about deal rejection
     // For now, we'll add a basic notification entry if notifications table exists
