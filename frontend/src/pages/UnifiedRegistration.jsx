@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useDynamicFields } from '../hooks/useDynamicFields';
 import '../styles/registration.css';
 import '../styles/global.css';
+import PasswordStrengthIndicator from '../components/PasswordStrengthIndicator/PasswordStrengthIndicator';
 
 
 
@@ -257,6 +258,32 @@ const UnifiedRegistration = () => {
   const { register, merchantRegister } = useAuth();
   
   // User Registration Handlers
+  // Password strength helper (matches ResetPassword criteria)
+  const checkPasswordStrength = (password) => {
+    const criteria = {
+      hasMinLength: password && password.length >= 6,
+      hasMaxLength: password && password.length <= 20,
+      hasNumber: /\d/.test(password || ''),
+      hasSymbol: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>\/?]/.test(password || ''),
+      hasLowercase: /[a-z]/.test(password || ''),
+      hasUppercase: /[A-Z]/.test(password || ''),
+      onlyLatin: /^[a-zA-Z0-9!@#$%^&*()_+\-=[\]{};':"\\|,.<>\/?]*$/.test(password || '')
+    };
+
+    const isValid = Object.values(criteria).every(Boolean);
+    const failed = [];
+    if (!criteria.hasMinLength) failed.push('At least 6 characters');
+    if (!criteria.hasMaxLength) failed.push('Maximum 20 characters');
+    if (!criteria.hasNumber) failed.push('One number');
+    if (!criteria.hasSymbol) failed.push('One symbol');
+    if (!criteria.hasLowercase) failed.push('One lowercase letter');
+    if (!criteria.hasUppercase) failed.push('One uppercase letter');
+    if (!criteria.onlyLatin) failed.push('Only Latin letters and symbols');
+
+    return { isValid, failed, criteria };
+  };
+
+  // User Registration Handlers
   const handleUserInputChange = (e) => {
     const { name, value, id } = e.target;
     const fieldName = name || id; // Support both name and id attributes
@@ -277,6 +304,12 @@ const UnifiedRegistration = () => {
     e.preventDefault();
     
     // Validation
+    // Password strength check
+    const pwCheck = checkPasswordStrength(userForm.password);
+    if (!pwCheck.isValid) {
+      showNotification(`Password requirements: ${pwCheck.failed.join(', ')}`, 'error');
+      return;
+    }
     if (!userForm.firstName || !userForm.lastName || !userForm.email || !userForm.password || !userForm.phone) {
       showNotification('Please fill in all required fields', 'error');
       return;
@@ -297,14 +330,16 @@ const UnifiedRegistration = () => {
       return;
     }
     
+    if (!userForm.password || !userForm.confirmPassword) {
+      showNotification('Please provide and confirm your password', 'error');
+      return;
+    }
+    
     if (userForm.password !== userForm.confirmPassword) {
       showNotification('Passwords do not match', 'error');
       return;
     }    
-    if (userForm.password.length < 6) {
-      showNotification('Password must be at least 6 characters', 'error');
-      return;
-    }
+    // length check already covered by strength
     
     // Check required social media follows
     const socialLinks = getSocialMediaLinks();
@@ -384,6 +419,12 @@ const UnifiedRegistration = () => {
     }
   };
   const validateMerchantForm = () => {
+    // Merchant password strength check
+    const pwCheck = checkPasswordStrength(merchantForm.password);
+    if (!pwCheck.isValid) {
+      showNotification(`Password requirements: ${pwCheck.failed.join(', ')}`, 'error');
+      return false;
+    }
     if (!merchantForm.fullName || !merchantForm.email || !merchantForm.password) {
       showNotification('Please fill in all required personal information', 'error');
       return false;
@@ -395,10 +436,7 @@ const UnifiedRegistration = () => {
       showNotification('Passwords do not match', 'error');
       return false;
     }
-    if (merchantForm.password.length < 6) {
-      showNotification('Password must be at least 6 characters', 'error');
-      return false;
-    }
+    // length and other checks covered by strength
     
     // Check required social media follows
     const socialLinks = getSocialMediaLinks();
@@ -796,21 +834,22 @@ const UnifiedRegistration = () => {
                     placeholder="Create a strong password"
                     required
                   />
-                </div>
+                <PasswordStrengthIndicator password={userForm.password} showCriteria={true} />
+               </div>
 
-                {/* Confirm Password */}
-                <div className="form-group">
-                  <label htmlFor="confirmPassword">Confirm Password <span className="required">*</span></label>
-                  <input
-                    type="password"
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    value={userForm.confirmPassword}
-                    onChange={handleUserInputChange}
-                    placeholder="Confirm your password"
-                    required
-                  />
-                </div>
+               {/* Confirm Password */}
+               <div className="form-group">
+                 <label htmlFor="confirmPassword">Confirm Password <span className="required">*</span></label>
+                 <input
+                   type="password"
+                   id="confirmPassword"
+                   name="confirmPassword"
+                   value={userForm.confirmPassword}
+                   onChange={handleUserInputChange}
+                   placeholder="Confirm your password"
+                   required
+                 />
+               </div>
 
                 {/* Membership Plan Section - Conditional Display */}
                 {adminSettings.features?.showMembershipPlans === true && (
@@ -1011,6 +1050,7 @@ const UnifiedRegistration = () => {
                       placeholder="At least 6 characters"
                       required
                     />
+                    <PasswordStrengthIndicator password={merchantForm.password} showCriteria={true} />
                   </div>                  <div className="form-group">
                     <label htmlFor="confirmPassword">Confirm Password *</label>
                     <input

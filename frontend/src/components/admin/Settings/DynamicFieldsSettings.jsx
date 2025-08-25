@@ -110,11 +110,21 @@ const DynamicFieldsSettings = ({ settings, onSettingChange }) => {
       return;
     }
 
+    // Preserve label behavior: if the existing option used the default label (label === name),
+    // then when the name changes we should update the label to match the new name so the
+    // admin list shows the updated value. If the label was customized, keep it unchanged
+    // unless the admin explicitly changed the label in the modal.
+    const existingOption = currentOptions[optionIndex] || {};
+    let newLabel = optionData.label;
+    if (!optionData.label || (existingOption.label && existingOption.label === existingOption.name)) {
+      newLabel = optionData.name.trim();
+    }
+
     const updatedOptions = [...currentOptions];
     updatedOptions[optionIndex] = {
       ...optionData,
       name: optionData.name.trim(),
-      label: optionData.label || optionData.name
+      label: newLabel || optionData.name.trim()
     };
 
     try {

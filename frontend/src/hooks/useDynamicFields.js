@@ -153,7 +153,7 @@ export const useDynamicFields = () => {
   const getCommunityOptions = () => {
     return dynamicFields.communities.map(community => ({
       value: community.name,
-      label: community.name,
+      label: community.label || community.name,
       description: community.description
     }));
   };
@@ -161,7 +161,7 @@ export const useDynamicFields = () => {
   const getUserTypeOptions = () => {
     return dynamicFields.userTypes.map(userType => ({
       value: userType.name,
-      label: userType.name,
+      label: userType.label || userType.name,
       description: userType.description
     }));
   };
@@ -185,7 +185,7 @@ export const useDynamicFields = () => {
   const getCountryOptions = () => {
     return dynamicFields.countries.map(country => ({
       value: country.name,
-      label: country.name,
+      label: country.label || country.name,
       description: country.description
     }));
   };
@@ -193,7 +193,7 @@ export const useDynamicFields = () => {
   const getStateOptions = () => {
     return dynamicFields.states.map(state => ({
       value: state.name,
-      label: state.name,
+      label: state.label || state.name,
       description: state.description
     }));
   };
