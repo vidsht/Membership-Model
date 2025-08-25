@@ -38,6 +38,11 @@
   overflow: hidden;
 }
 
+.tab-navigation{
+  display: flex;
+  flex-direction: row;
+}
+
 /* Tabs */
 .deal-tabs {
   display: flex;

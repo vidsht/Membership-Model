@@ -10,7 +10,9 @@ export const useDynamicFields = () => {
     communities: [],
     userTypes: [],
     businessCategories: [],
-    dealCategories: []
+    dealCategories: [],
+    countries: [],
+    states: []
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -180,6 +182,22 @@ export const useDynamicFields = () => {
     }));
   };
 
+  const getCountryOptions = () => {
+    return dynamicFields.countries.map(country => ({
+      value: country.name,
+      label: country.name,
+      description: country.description
+    }));
+  };
+
+  const getStateOptions = () => {
+    return dynamicFields.states.map(state => ({
+      value: state.name,
+      label: state.name,
+      description: state.description
+    }));
+  };
+
   return {
     dynamicFields,
     isLoading,
@@ -190,6 +208,8 @@ export const useDynamicFields = () => {
     getCommunityOptions,
     getUserTypeOptions,
     getBusinessCategoryOptions,
-    getDealCategoryOptions
+    getDealCategoryOptions,
+    getCountryOptions,
+    getStateOptions
   };
 };

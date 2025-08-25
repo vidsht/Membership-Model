@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../../services/api';
-// import './DealDetail.css'; // TEMPORARILY DISABLED FOR DEBUGGING
+import './DealDetail.css'; 
 import { useModal } from '../../../hooks/useModal';
 import ModalComponent from '../../shared/Modal';
 

@@ -907,40 +907,43 @@ const Home = () => {
       </section>       
 
 
-      <section className="stats">
-        <div className="stats-container">
-          <div className="stats-header">
-            <h2><i className="fas fa-chart-bar"></i> Community Statistics</h2>
-            <p>Real-time insights into our growing community</p>
-          </div>
-          <div className="stats-grid">
-            <div className="stat-card">
-              <div className="stat-icon">
-                <i className="fas fa-users"></i>
-              </div>
-              <div className="stat-number">{stats.totalMembers || 0}</div>
-              <div className="stat-label">Community Members</div>
-              <div className="stat-description">Active registered members</div>
+      {/* Community Statistics Section */}
+      {adminSettings.features?.show_community_statistics !== false && (
+        <section className="stats">
+          <div className="stats-container">
+            <div className="stats-header">
+              <h2><i className="fas fa-chart-bar"></i> Community Statistics</h2>
+              <p>Real-time insights into our growing community</p>
             </div>
-            <div className="stat-card">
-              <div className="stat-icon">
-                <i className="fas fa-store"></i>
+            <div className="stats-grid">
+              <div className="stat-card">
+                <div className="stat-icon">
+                  <i className="fas fa-users"></i>
+                </div>
+                <div className="stat-number">{stats.totalMembers || 0}</div>
+                <div className="stat-label">Community Members</div>
+                <div className="stat-description">Active registered members</div>
               </div>
-              <div className="stat-number">{stats.activeBusinesses || 0}</div>
-              <div className="stat-label">Active Businesses</div>
-              <div className="stat-description">Verified business partners</div>
-            </div>
-            <div className="stat-card">
-              <div className="stat-icon">
-                <i className="fas fa-tags"></i>
+              <div className="stat-card">
+                <div className="stat-icon">
+                  <i className="fas fa-store"></i>
+                </div>
+                <div className="stat-number">{stats.activeBusinesses || 0}</div>
+                <div className="stat-label">Active Businesses</div>
+                <div className="stat-description">Verified business partners</div>
               </div>
-              <div className="stat-number">{stats.exclusiveDeals || 0}</div>
-              <div className="stat-label">Exclusive Deals</div>
-              <div className="stat-description">Member-only offers</div>
-            </div>
+              <div className="stat-card">
+                <div className="stat-icon">
+                  <i className="fas fa-tags"></i>
+                </div>
+                <div className="stat-number">{stats.exclusiveDeals || 0}</div>
+                <div className="stat-label">Exclusive Deals</div>
+                <div className="stat-description">Member-only offers</div>
+              </div>
+             </div>
            </div>
-         </div>
-       </section>
+         </section>
+      )}
 
       {/* ...footer is rendered after this in the layout... */}
     </div>

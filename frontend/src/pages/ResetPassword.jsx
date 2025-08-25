@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { authApi } from '../services/api.js';
 import { useNotification } from '../contexts/NotificationContext';
+import PasswordStrengthIndicator from '../components/PasswordStrengthIndicator/PasswordStrengthIndicator';
 
 const ResetPassword = () => {
   const [passwords, setPasswords] = useState({
@@ -38,8 +39,30 @@ const ResetPassword = () => {
   };
 
   const validateForm = () => {
-    if (passwords.password.length < 6) {
-      showNotification('Password must be at least 6 characters long', 'error');
+    // Password validation with strength criteria
+    const passwordCriteria = {
+      hasMinLength: passwords.password.length >= 6,
+      hasMaxLength: passwords.password.length <= 20,
+      hasNumber: /\d/.test(passwords.password),
+      hasSymbol: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(passwords.password),
+      hasLowercase: /[a-z]/.test(passwords.password),
+      hasUppercase: /[A-Z]/.test(passwords.password),
+      onlyLatin: /^[a-zA-Z0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]*$/.test(passwords.password)
+    };
+    
+    const isPasswordValid = Object.values(passwordCriteria).every(Boolean);
+    
+    if (!isPasswordValid) {
+      const failedCriteria = [];
+      if (!passwordCriteria.hasMinLength) failedCriteria.push('At least 6 characters');
+      if (!passwordCriteria.hasMaxLength) failedCriteria.push('Maximum 20 characters');
+      if (!passwordCriteria.hasNumber) failedCriteria.push('One number');
+      if (!passwordCriteria.hasSymbol) failedCriteria.push('One symbol');
+      if (!passwordCriteria.hasLowercase) failedCriteria.push('One lowercase letter');
+      if (!passwordCriteria.hasUppercase) failedCriteria.push('One uppercase letter');
+      if (!passwordCriteria.onlyLatin) failedCriteria.push('Only Latin letters and symbols');
+      
+      showNotification(`Password requirements: ${failedCriteria.join(', ')}`, 'error');
       return false;
     }
 
@@ -126,9 +149,12 @@ const ResetPassword = () => {
                     id="password" 
                     value={passwords.password}
                     onChange={handleInputChange}
-                    placeholder="Enter new password (min. 6 characters)" 
+                    placeholder="Enter new password" 
                     required 
-                    minLength="6"
+                  />
+                  <PasswordStrengthIndicator 
+                    password={passwords.password} 
+                    showCriteria={true} 
                   />
                 </div>
 

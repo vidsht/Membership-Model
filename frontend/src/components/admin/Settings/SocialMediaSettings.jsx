@@ -59,7 +59,7 @@ const SocialMediaSettings = ({ settings, onSettingChange }) => {
   };
 
   const handleToggleFeature = (enabled) => {
-    onSettingChange('featureToggles', 'showSocialMediaHome', enabled);
+    onSettingChange('features', 'show_social_media_home', enabled);
     if (!enabled) {
       // Clear socialMediaRequirements when disabling
       onSettingChange('socialMediaRequirements', '', {});
@@ -68,9 +68,18 @@ const SocialMediaSettings = ({ settings, onSettingChange }) => {
       showNotification('Social media section enabled on home page', 'success');
     }
   };
+
+  const handleCommunityStatsToggle = (enabled) => {
+    onSettingChange('features', 'show_community_statistics', enabled);
+    if (!enabled) {
+      showNotification('Community statistics section disabled on home page.', 'info');
+    } else {
+      showNotification('Community statistics section enabled on home page', 'success');
+    }
+  };
   return (
     <div className="social-media-settings">
-      {/* Feature Toggle */}
+      {/* Social Media Feature Toggle */}
       <div className="setting-group">
         <div className="setting-header">
           <h3><i className="fas fa-share-alt"></i> Social Media Home Section</h3>
@@ -80,19 +89,40 @@ const SocialMediaSettings = ({ settings, onSettingChange }) => {
           <label className="toggle-switch">
             <input
               type="checkbox"
-              checked={settings?.featureToggles?.showSocialMediaHome ?? true}
+              checked={settings?.features?.show_social_media_home ?? true}
               onChange={(e) => handleToggleFeature(e.target.checked)}
             />
             <span className="toggle-slider"></span>
           </label>
           <span className="toggle-label">
-            {settings?.featureToggles?.showSocialMediaHome ? 'Enabled' : 'Disabled'}
+            {settings?.features?.show_social_media_home ? 'Enabled' : 'Disabled'}
+          </span>
+        </div>
+      </div>
+
+      {/* Community Statistics Feature Toggle */}
+      <div className="setting-group">
+        <div className="setting-header">
+          <h3><i className="fas fa-chart-bar"></i> Community Statistics Section</h3>
+          <p>Control the community statistics section display on the home page</p>
+        </div>
+        <div className="toggle-setting">
+          <label className="toggle-switch">
+            <input
+              type="checkbox"
+              checked={settings?.features?.show_community_statistics ?? true}
+              onChange={(e) => handleCommunityStatsToggle(e.target.checked)}
+            />
+            <span className="toggle-slider"></span>
+          </label>
+          <span className="toggle-label">
+            {settings?.features?.show_community_statistics ? 'Enabled' : 'Disabled'}
           </span>
         </div>
       </div>
 
       {/* Section Content Settings */}
-      {settings?.featureToggles?.showSocialMediaHome && (
+      {settings?.features?.show_social_media_home && (
         <>
           <div className="setting-group">
             <div className="setting-header">

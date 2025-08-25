@@ -1,9 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import PasswordStrengthIndicator from '../components/PasswordStrengthIndicator/PasswordStrengthIndicator';
+import { useDynamicFields } from '../hooks/useDynamicFields';
 import '../styles/registration.css';
 
 const MerchantRegister = () => {
+  // Use dynamic fields hook
+  const { 
+    getStateOptions, 
+    getCountryOptions,
+    isLoading: fieldsLoading 
+  } = useDynamicFields();
+  
   const [formData, setFormData] = useState({
     // Personal Information
     fullName: '',
@@ -27,7 +36,8 @@ const MerchantRegister = () => {
     businessStreet: '',
     businessCity: '',
     businessState: '',
-    businessZipCode: ''
+    businessZipCode: '',
+    businessCountry: ''
   });
   
   const [termsAccepted, setTermsAccepted] = useState(false);
@@ -72,8 +82,30 @@ const MerchantRegister = () => {
       return false;
     }
 
-    if (formData.password.length < 6) {
-      showNotification('Password must be at least 6 characters', 'error');
+    // Password validation with strength criteria
+    const passwordCriteria = {
+      hasMinLength: formData.password.length >= 6,
+      hasMaxLength: formData.password.length <= 20,
+      hasNumber: /\d/.test(formData.password),
+      hasSymbol: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(formData.password),
+      hasLowercase: /[a-z]/.test(formData.password),
+      hasUppercase: /[A-Z]/.test(formData.password),
+      onlyLatin: /^[a-zA-Z0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]*$/.test(formData.password)
+    };
+    
+    const isPasswordValid = Object.values(passwordCriteria).every(Boolean);
+    
+    if (!isPasswordValid) {
+      const failedCriteria = [];
+      if (!passwordCriteria.hasMinLength) failedCriteria.push('At least 6 characters');
+      if (!passwordCriteria.hasMaxLength) failedCriteria.push('Maximum 20 characters');
+      if (!passwordCriteria.hasNumber) failedCriteria.push('One number');
+      if (!passwordCriteria.hasSymbol) failedCriteria.push('One symbol');
+      if (!passwordCriteria.hasLowercase) failedCriteria.push('One lowercase letter');
+      if (!passwordCriteria.hasUppercase) failedCriteria.push('One uppercase letter');
+      if (!passwordCriteria.onlyLatin) failedCriteria.push('Only Latin letters and symbols');
+      
+      showNotification(`Password requirements: ${failedCriteria.join(', ')}`, 'error');
       return false;
     }
 
@@ -115,7 +147,7 @@ const MerchantRegister = () => {
             city: formData.businessCity,
             state: formData.businessState,
             zipCode: formData.businessZipCode,
-            country: 'Ghana'
+            country: formData.businessCountry || 'Ghana'
           }
         }
       };      
@@ -251,8 +283,12 @@ const MerchantRegister = () => {
                         id="password" 
                         value={formData.password}
                         onChange={handleInputChange}
-                        placeholder="At least 6 characters" 
+                        placeholder="Create a strong password" 
                         required 
+                      />
+                      <PasswordStrengthIndicator 
+                        password={formData.password} 
+                        showCriteria={true} 
                       />
                     </div>
                     <div className="form-group">
@@ -420,13 +456,19 @@ const MerchantRegister = () => {
                     </div>
                     <div className="form-group">
                       <label htmlFor="businessState">State/Region</label>
-                      <input 
-                        type="text" 
+                      <select 
                         id="businessState" 
                         value={formData.businessState}
                         onChange={handleInputChange}
-                        placeholder="State or Region" 
-                      />
+                        disabled={fieldsLoading}
+                      >
+                        <option value="">Select State/Region</option>
+                        {getStateOptions().map((state) => (
+                          <option key={state.value} value={state.value}>
+                            {state.label}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                     <div className="form-group">
                       <label htmlFor="businessZipCode">Postal Code</label>
@@ -438,6 +480,23 @@ const MerchantRegister = () => {
                         placeholder="Postal/Zip code" 
                       />
                     </div>
+                  </div>
+                  
+                  <div className="form-group">
+                    <label htmlFor="businessCountry">Country</label>
+                    <select 
+                      id="businessCountry" 
+                      value={formData.businessCountry}
+                      onChange={handleInputChange}
+                      disabled={fieldsLoading}
+                    >
+                      <option value="">Select Country</option>
+                      {getCountryOptions().map((country) => (
+                        <option key={country.value} value={country.value}>
+                          {country.label}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
 

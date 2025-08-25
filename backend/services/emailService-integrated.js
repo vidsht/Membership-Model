@@ -425,6 +425,29 @@ class EmailService {
     }
   }
 
+  // Send password reset email
+  async sendPasswordResetEmail(email, resetData) {
+    try {
+      const templateData = {
+        fullName: resetData.fullName || 'Member',
+        resetUrl: resetData.resetUrl,
+        expiryMinutes: resetData.expiryMinutes || 30,
+        requestTime: new Date().toLocaleString(),
+        ipAddress: resetData.ipAddress || 'Unknown',
+        userAgent: resetData.userAgent || 'Unknown'
+      };
+
+      return await this.sendEmail({
+        to: email,
+        templateType: 'password-reset',
+        data: templateData
+      });
+    } catch (error) {
+      console.error('Error sending password reset email:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
   // Clear template cache
   clearTemplateCache() {
     this.templatesCache.clear();

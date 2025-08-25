@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
+import PasswordStrengthIndicator from '../components/PasswordStrengthIndicator/PasswordStrengthIndicator';
+import { useDynamicFields } from '../hooks/useDynamicFields';
 
 function Register() {
   const [formData, setFormData] = useState({
@@ -24,6 +26,15 @@ function Register() {
   const [communities, setCommunities] = useState([]);
   const [membershipPlans, setMembershipPlans] = useState({});
   const [loadingData, setLoadingData] = useState(true);
+  
+  // Use dynamic fields hook
+  const { 
+    dynamicFields, 
+    isLoading: fieldsLoading, 
+    getCommunityOptions, 
+    getCountryOptions, 
+    getStateOptions 
+  } = useDynamicFields();
   // Social media tracking
   const [socialMedia, setSocialMedia] = useState({});
   const [socialMediaSettings, setSocialMediaSettings] = useState({});
@@ -185,8 +196,29 @@ function Register() {
     }
 
     // Password validation
-    if (formData.password.length < 6) {
-      showNotification('Password must be at least 6 characters long.', 'error');
+    const passwordCriteria = {
+      hasMinLength: formData.password.length >= 6,
+      hasMaxLength: formData.password.length <= 20,
+      hasNumber: /\d/.test(formData.password),
+      hasSymbol: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(formData.password),
+      hasLowercase: /[a-z]/.test(formData.password),
+      hasUppercase: /[A-Z]/.test(formData.password),
+      onlyLatin: /^[a-zA-Z0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]*$/.test(formData.password)
+    };
+    
+    const isPasswordValid = Object.values(passwordCriteria).every(Boolean);
+    
+    if (!isPasswordValid) {
+      const failedCriteria = [];
+      if (!passwordCriteria.hasMinLength) failedCriteria.push('At least 6 characters');
+      if (!passwordCriteria.hasMaxLength) failedCriteria.push('Maximum 20 characters');
+      if (!passwordCriteria.hasNumber) failedCriteria.push('One number');
+      if (!passwordCriteria.hasSymbol) failedCriteria.push('One symbol');
+      if (!passwordCriteria.hasLowercase) failedCriteria.push('One lowercase letter');
+      if (!passwordCriteria.hasUppercase) failedCriteria.push('One uppercase letter');
+      if (!passwordCriteria.onlyLatin) failedCriteria.push('Only Latin letters and symbols');
+      
+      showNotification(`Password requirements: ${failedCriteria.join(', ')}`, 'error');
       return false;
     }
 
@@ -368,9 +400,12 @@ function Register() {
                       id="password" 
                       value={formData.password}
                       onChange={handleInputChange}
-                      placeholder="Create a password (min. 6 characters)" 
-                      minLength="6"
+                      placeholder="Create a strong password" 
                       required 
+                    />
+                    <PasswordStrengthIndicator 
+                      password={formData.password} 
+                      showCriteria={true} 
                     />
                   </div>
 
@@ -429,25 +464,16 @@ function Register() {
                         value={formData.state}
                         onChange={handleInputChange}
                         required
+                        disabled={fieldsLoading}
                       >
-                        <option value="">Select Region</option>
-                        <option value="Greater Accra">Greater Accra</option>
-                        <option value="Ashanti">Ashanti</option>
-                        <option value="Western">Western</option>
-                        <option value="Central">Central</option>
-                        <option value="Eastern">Eastern</option>
-                        <option value="Volta">Volta</option>
-                        <option value="Northern">Northern</option>
-                        <option value="Upper East">Upper East</option>
-                        <option value="Upper West">Upper West</option>
-                        <option value="Brong-Ahafo">Brong-Ahafo</option>
-                        <option value="Western North">Western North</option>
-                        <option value="Ahafo">Ahafo</option>
-                        <option value="Bono">Bono</option>
-                        <option value="Bono East">Bono East</option>
-                        <option value="Oti">Oti</option>
-                        <option value="North East">North East</option>
-                        <option value="Savannah">Savannah</option>
+                        <option value="">
+                          {fieldsLoading ? 'Loading states...' : 'Select State/Region'}
+                        </option>
+                        {getStateOptions().map((state) => (
+                          <option key={state.value} value={state.value}>
+                            {state.label}
+                          </option>
+                        ))}
                       </select>
                     </div>
                   </div>
@@ -459,14 +485,14 @@ function Register() {
                         value={formData.community}
                         onChange={handleInputChange}
                         required
-                        disabled={loadingData}
+                        disabled={fieldsLoading}
                       >
                         <option value="">
-                          {loadingData ? 'Loading communities...' : 'Select Community'}
+                          {fieldsLoading ? 'Loading communities...' : 'Select Community'}
                         </option>
-                        {communities.map((community) => (
-                          <option key={community} value={community}>
-                            {community}
+                        {getCommunityOptions().map((community) => (
+                          <option key={community.value} value={community.value}>
+                            {community.label}
                           </option>
                         ))}
                       </select>
@@ -474,15 +500,22 @@ function Register() {
 
                     <div className="form-group" style={{ flex: 1 }}>
                       <label htmlFor="country">Country *</label>
-                      <input 
-                        type="text" 
+                      <select 
                         id="country" 
                         value={formData.country}
                         onChange={handleInputChange}
-                        placeholder="Ghana" 
-                        readOnly
-                        style={{ backgroundColor: '#f5f5f5' }}
-                      />
+                        required
+                        disabled={fieldsLoading}
+                      >
+                        <option value="">
+                          {fieldsLoading ? 'Loading countries...' : 'Select Country'}
+                        </option>
+                        {getCountryOptions().map((country) => (
+                          <option key={country.value} value={country.value}>
+                            {country.label}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   </div>
 

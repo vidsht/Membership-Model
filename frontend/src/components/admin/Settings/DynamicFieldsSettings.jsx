@@ -9,12 +9,15 @@ const DynamicFieldsSettings = ({ settings, onSettingChange }) => {
     communities: [],
     userTypes: [],
     businessCategories: [],
-    dealCategories: []
+    dealCategories: [],
+    countries: [],
+    states: []
   });
   const [editingField, setEditingField] = useState(null);
   const [newOption, setNewOption] = useState({ name: '', label: '', description: '', isActive: true });
   const [isLoading, setIsLoading] = useState(true);
   const [editModal, setEditModal] = useState({ isOpen: false, fieldType: '', optionIndex: -1, optionData: {} });
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     fetchDynamicFields();
@@ -26,6 +29,7 @@ const DynamicFieldsSettings = ({ settings, onSettingChange }) => {
       const response = await api.get('/admin/dynamic-fields');
       if (response.data.success) {
         setDynamicFields(response.data.dynamicFields);
+        setRefreshKey(prev => prev + 1); // Force re-render
       }
     } catch (error) {
       console.error('Error fetching dynamic fields:', error);
@@ -116,12 +120,20 @@ const DynamicFieldsSettings = ({ settings, onSettingChange }) => {
     try {
       const response = await api.put(`/admin/dynamic-fields/${fieldType}`, { options: updatedOptions });
       if (response.data.success) {
+        // Update local state immediately
         setDynamicFields(prev => ({
           ...prev,
           [fieldType]: updatedOptions
         }));
+        
+        // Force a complete refresh from server to ensure data consistency
+        await fetchDynamicFields();
+        
         showNotification(`${getFieldDisplayName(fieldType)} option updated successfully`, 'success');
         closeEditModal();
+        
+        // Force a re-render with new key
+        setRefreshKey(prev => prev + 1);
       }
     } catch (error) {
       console.error('Error updating dynamic field option:', error);
@@ -149,11 +161,19 @@ const DynamicFieldsSettings = ({ settings, onSettingChange }) => {
     try {
       const response = await api.put(`/admin/dynamic-fields/${fieldType}`, { options });
       if (response.data.success) {
+        // Update local state immediately
         setDynamicFields(prev => ({
           ...prev,
           [fieldType]: options
         }));
+        
+        // Force a complete refresh from server to ensure data consistency
+        await fetchDynamicFields();
+        
         showNotification(`${getFieldDisplayName(fieldType)} updated successfully`, 'success');
+        
+        // Force a re-render with new key
+        setRefreshKey(prev => prev + 1);
       }
     } catch (error) {
       console.error('Error updating dynamic field:', error);
@@ -166,7 +186,9 @@ const DynamicFieldsSettings = ({ settings, onSettingChange }) => {
       communities: 'Communities',
       userTypes: 'User Types',
       businessCategories: 'Business Categories',
-      dealCategories: 'Deal Categories'
+      dealCategories: 'Deal Categories',
+      countries: 'Countries',
+      states: 'States/Regions'
     };
     return names[fieldType] || fieldType;
   };
@@ -236,7 +258,7 @@ const DynamicFieldsSettings = ({ settings, onSettingChange }) => {
 
         <div className="options-list">
           {options.map((option, index) => (
-            <div key={index} className={`option-item ${!option.isActive ? 'inactive' : ''}`}>
+            <div key={`${fieldType}-${option.name}-${option.label}-${index}-${refreshKey}`} className={`option-item ${!option.isActive ? 'inactive' : ''}`}>
               <div className="option-content">
                 <div className="option-main">
                   <strong>{option.label || option.name}</strong>
@@ -287,11 +309,24 @@ const DynamicFieldsSettings = ({ settings, onSettingChange }) => {
   return (
     <div className="dynamic-fields-settings">
       <div className="settings-section-header">
-        <h3>Dynamic Fields Management</h3>
-        <p>Manage dropdown options for forms throughout the application</p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <h3>Dynamic Fields Management</h3>
+            <p>Manage dropdown options for forms throughout the application</p>
+          </div>
+          <button 
+            className="btn btn-primary"
+            onClick={() => {
+              fetchDynamicFields();
+            }}
+            style={{ marginLeft: 'auto' }}
+          >
+            <i className="fas fa-sync-alt"></i> Refresh Data
+          </button>
+        </div>
       </div>
 
-      <div className="dynamic-fields-container">
+      <div className="dynamic-fields-container" key={refreshKey}>
         {Object.entries(dynamicFields).map(([fieldType, options]) => (
           <div key={fieldType}>
             {renderFieldEditor(fieldType, options)}
@@ -307,6 +342,8 @@ const DynamicFieldsSettings = ({ settings, onSettingChange }) => {
             <li><strong>User Types:</strong> Used in user registration to categorize users</li>
             <li><strong>Business Categories:</strong> Used when merchants register their businesses</li>
             <li><strong>Deal Categories:</strong> Used when creating deals and offers</li>
+            <li><strong>Countries:</strong> Used in registration and profile forms for country selection</li>
+            <li><strong>States/Regions:</strong> Used in registration and profile forms for state/region selection</li>
           </ul>
           <p className="note">
             <strong>Note:</strong> Changes to these fields will be reflected immediately across all forms in the application.

@@ -21,6 +21,8 @@ import About from './pages/About';
 import Contact from './pages/Contact';
 import Terms from './pages/Terms';
 import Disclaimer from './pages/Disclaimer';
+import BusinessBenefits from './pages/BusinessBenefits';
+import MemberBenefits from './pages/MemberBenefits';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -65,6 +67,8 @@ function AppContent() {
           <Route path="/contact" element={<Contact />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/disclaimer" element={<Disclaimer />} />
+          <Route path="/business-benefits" element={<BusinessBenefits />} />
+          <Route path="/member-benefits" element={<MemberBenefits />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
 

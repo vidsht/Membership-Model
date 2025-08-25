@@ -3167,7 +3167,7 @@ router.put('/dynamic-fields/:fieldType', auth, admin, async (req, res) => {
   try {
     const { fieldType } = req.params;
     const { options } = req.body;
-    const validFieldTypes = ['communities', 'userTypes', 'businessCategories', 'dealCategories'];
+    const validFieldTypes = ['communities', 'userTypes', 'businessCategories', 'dealCategories', 'countries', 'states'];
     
     if (!validFieldTypes.includes(fieldType)) {
       return res.status(400).json({ 
@@ -3207,7 +3207,7 @@ router.put('/dynamic-fields/:fieldType', auth, admin, async (req, res) => {
 // Get all dynamic fields for frontend
 router.get('/dynamic-fields', async (req, res) => {
   try {
-    const fieldTypes = ['communities', 'userTypes', 'businessCategories', 'dealCategories'];
+    const fieldTypes = ['communities', 'userTypes', 'businessCategories', 'dealCategories', 'countries', 'states'];
     const dynamicFields = {};
 
     if (await tableExists('settings')) {
@@ -3243,6 +3243,58 @@ router.get('/dynamic-fields', async (req, res) => {
   }
 });
 
+// Get specific dynamic field type
+router.get('/dynamic-fields/:fieldType', auth, admin, async (req, res) => {
+  try {
+    const { fieldType } = req.params;
+    const validFieldTypes = ['communities', 'userTypes', 'businessCategories', 'dealCategories', 'countries', 'states'];
+    
+    if (!validFieldTypes.includes(fieldType)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid field type'
+      });
+    }
+    
+    if (await tableExists('settings')) {
+      const settingKey = `dynamicFields.${fieldType}`;
+      const result = await queryAsync('SELECT value FROM settings WHERE `key` = ?', [settingKey]);
+      
+      if (result.length > 0) {
+        try {
+          const fieldOptions = JSON.parse(result[0].value);
+          res.json({ 
+            success: true, 
+            [fieldType]: fieldOptions
+          });
+        } catch (parseError) {
+          console.error(`Error parsing ${fieldType} options:`, parseError);
+          const defaultOptions = getDefaultFieldOptions(fieldType);
+          res.json({ 
+            success: true, 
+            [fieldType]: defaultOptions
+          });
+        }
+      } else {
+        const defaultOptions = getDefaultFieldOptions(fieldType);
+        res.json({ 
+          success: true, 
+          [fieldType]: defaultOptions
+        });
+      }
+    } else {
+      const defaultOptions = getDefaultFieldOptions(fieldType);
+      res.json({ 
+        success: true, 
+        [fieldType]: defaultOptions
+      });
+    }
+  } catch (err) {
+    console.error('Error fetching dynamic field:', err);
+    res.status(500).json({ success: false, message: 'Server error fetching field options' });
+  }
+});
+
 // Helper function to get default field options
 const getDefaultFieldOptions = (fieldType) => {
   switch (fieldType) {
@@ -3275,6 +3327,36 @@ const getDefaultFieldOptions = (fieldType) => {
         { name: 'retail', label: 'Retail', description: 'Shopping and retail deals', isActive: true },
         { name: 'services', label: 'Services', description: 'Professional and personal services', isActive: true },
         { name: 'other', label: 'Other', description: 'Other categories', isActive: true }
+      ];
+    case 'countries':
+      return [
+        { name: 'Ghana', description: 'Republic of Ghana', isActive: true },
+        { name: 'India', description: 'Republic of India', isActive: true },
+        { name: 'United States', description: 'United States of America', isActive: true },
+        { name: 'United Kingdom', description: 'United Kingdom', isActive: true },
+        { name: 'Canada', description: 'Canada', isActive: true },
+        { name: 'Australia', description: 'Australia', isActive: true },
+        { name: 'Other', description: 'Other countries', isActive: true }
+      ];
+    case 'states':
+      return [
+        { name: 'Greater Accra', description: 'Greater Accra Region', isActive: true },
+        { name: 'Ashanti', description: 'Ashanti Region', isActive: true },
+        { name: 'Western', description: 'Western Region', isActive: true },
+        { name: 'Central', description: 'Central Region', isActive: true },
+        { name: 'Eastern', description: 'Eastern Region', isActive: true },
+        { name: 'Volta', description: 'Volta Region', isActive: true },
+        { name: 'Northern', description: 'Northern Region', isActive: true },
+        { name: 'Upper East', description: 'Upper East Region', isActive: true },
+        { name: 'Upper West', description: 'Upper West Region', isActive: true },
+        { name: 'Brong-Ahafo', description: 'Brong-Ahafo Region', isActive: true },
+        { name: 'Western North', description: 'Western North Region', isActive: true },
+        { name: 'Ahafo', description: 'Ahafo Region', isActive: true },
+        { name: 'Bono', description: 'Bono Region', isActive: true },
+        { name: 'Bono East', description: 'Bono East Region', isActive: true },
+        { name: 'Oti', description: 'Oti Region', isActive: true },
+        { name: 'North East', description: 'North East Region', isActive: true },
+        { name: 'Savannah', description: 'Savannah Region', isActive: true }
       ];
     default:
       return [];

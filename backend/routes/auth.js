@@ -4,6 +4,7 @@ const db = require('../db');
 const { auth } = require('../middleware/auth');
 const { generateMembershipNumber } = require('../utils/membershipGenerator');
 const NotificationHooks = require('../services/notificationHooks-integrated');
+const { validatePassword } = require('../utils/passwordValidator');
 
 const router = express.Router();
 
@@ -46,8 +47,9 @@ router.post('/register', async (req, res) => {
     }
 
     // Password validation
-    if (password.length < 6) {
-      return res.status(400).json({ success: false, message: 'Password must be at least 6 characters long.' });
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.isValid) {
+      return res.status(400).json({ success: false, message: passwordValidation.message });
     }
     if (!termsAccepted) {
       return res.status(400).json({ success: false, message: 'You must accept the terms and conditions.' });
@@ -385,8 +387,9 @@ router.post('/merchant/register', async (req, res) => {
     }
 
     // Password validation
-    if (password.length < 6) {
-      return res.status(400).json({ success: false, message: 'Password must be at least 6 characters long.' });
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.isValid) {
+      return res.status(400).json({ success: false, message: passwordValidation.message });
     }
 
     // Check if user already exists
@@ -696,7 +699,8 @@ router.post('/forgot-password', async (req, res) => {
       return res.status(400).json({ message: 'Email is required' });
     }
 
-    db.query('SELECT id FROM users WHERE email = ?', [email], (err, results) => {
+    // Get user details
+    db.query('SELECT id, fullName, email FROM users WHERE email = ?', [email], async (err, results) => {
       if (err) {
         console.error('Forgot password SQL error:', err);
         return res.status(500).json({ message: 'Server error' });
@@ -708,9 +712,44 @@ router.post('/forgot-password', async (req, res) => {
         success: true 
       });
       
-      if (results.length) {
-        // TODO: Implement email sending logic here
-        console.log(`Password reset requested for user ID: ${results[0].id}`);
+      if (results.length > 0) {
+        const user = results[0];
+        
+        try {
+          // Generate reset token
+          const crypto = require('crypto');
+          const resetToken = crypto.randomBytes(32).toString('hex');
+          const tokenExpiry = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
+          
+          // Store reset token in database
+          db.query(
+            'UPDATE users SET resetToken = ?, resetTokenExpiry = ? WHERE id = ?',
+            [resetToken, tokenExpiry, user.id],
+            async (updateErr) => {
+              if (updateErr) {
+                console.error('Error storing reset token:', updateErr);
+                return;
+              }
+              
+              // Send password reset email
+              const emailService = require('../services/emailService-integrated');
+              const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password/${resetToken}`;
+              
+              const resetData = {
+                fullName: user.fullName || 'Member',
+                resetUrl: resetUrl,
+                expiryMinutes: 30,
+                ipAddress: req.ip || req.connection.remoteAddress || 'Unknown',
+                userAgent: req.get('User-Agent') || 'Unknown'
+              };
+              
+              await emailService.sendPasswordResetEmail(user.email, resetData);
+              console.log(`✅ Password reset email sent to ${user.email}`);
+            }
+          );
+        } catch (tokenError) {
+          console.error('Error generating reset token:', tokenError);
+        }
       }
     });
   } catch (error) {
@@ -728,17 +767,98 @@ router.post('/reset-password', async (req, res) => {
       return res.status(400).json({ message: 'Token and new password are required' });
     }
 
-    if (newPassword.length < 6) {
-      return res.status(400).json({ message: 'Password must be at least 6 characters long' });
+    // Password validation
+    const passwordValidation = validatePassword(newPassword);
+    if (!passwordValidation.isValid) {
+      return res.status(400).json({ message: passwordValidation.message });
     }
 
-    // TODO: Implement token validation and password reset logic
-    res.json({ 
-      message: 'Password reset functionality is not yet implemented',
-      success: false 
-    });
+    // Validate token and check expiry
+    db.query(
+      'SELECT id, email, fullName FROM users WHERE resetToken = ? AND resetTokenExpiry > NOW()',
+      [token],
+      async (err, results) => {
+        if (err) {
+          console.error('Reset password SQL error:', err);
+          return res.status(500).json({ message: 'Server error' });
+        }
+        
+        if (results.length === 0) {
+          return res.status(400).json({ message: 'Invalid or expired reset token' });
+        }
+        
+        const user = results[0];
+        
+        try {
+          // Hash new password
+          const bcrypt = require('bcryptjs');
+          const saltRounds = 10;
+          const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+          
+          // Update password and clear reset token
+          db.query(
+            'UPDATE users SET password = ?, resetToken = NULL, resetTokenExpiry = NULL WHERE id = ?',
+            [hashedPassword, user.id],
+            (updateErr) => {
+              if (updateErr) {
+                console.error('Error updating password:', updateErr);
+                return res.status(500).json({ message: 'Error updating password' });
+              }
+              
+              console.log(`✅ Password reset successful for user: ${user.email}`);
+              res.json({ 
+                message: 'Password has been reset successfully. You can now login with your new password.',
+                success: true 
+              });
+            }
+          );
+        } catch (hashError) {
+          console.error('Error hashing password:', hashError);
+          res.status(500).json({ message: 'Error processing password' });
+        }
+      }
+    );
   } catch (error) {
     console.error('Reset password error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Validate Reset Token
+router.get('/reset-password/:token/validate', async (req, res) => {
+  try {
+    const { token } = req.params;
+    
+    if (!token) {
+      return res.status(400).json({ message: 'Token is required' });
+    }
+
+    // Check if token exists and is not expired
+    db.query(
+      'SELECT id, email FROM users WHERE resetToken = ? AND resetTokenExpiry > NOW()',
+      [token],
+      (err, results) => {
+        if (err) {
+          console.error('Token validation SQL error:', err);
+          return res.status(500).json({ message: 'Server error' });
+        }
+        
+        if (results.length === 0) {
+          return res.status(400).json({ 
+            message: 'Invalid or expired reset token',
+            valid: false 
+          });
+        }
+        
+        res.json({ 
+          message: 'Token is valid',
+          valid: true,
+          email: results[0].email
+        });
+      }
+    );
+  } catch (error) {
+    console.error('Token validation error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

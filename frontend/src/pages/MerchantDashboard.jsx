@@ -681,7 +681,6 @@ const MerchantDashboard = () => {
 
       <div className="dashboard-header">
         <h1>Merchant Dashboard</h1>
-        <p>Welcome back, {user?.businessInfo?.businessName || user?.firstName}!</p>
       </div>
 
       {/* Plan Expiry Banner */}
