@@ -1782,6 +1782,14 @@ router.post('/partners/:id/approve', auth, admin, async (req, res) => {
       return res.status(404).json({ success: false, message: 'Partner not found' });
     }
 
+    // Send profile status update notification
+    NotificationHooks.onProfileStatusChange(merchantId, 'approved', 'Your business profile has been approved by admin.')
+      .then(emailResult => {
+        console.log('📧 Profile status update email sent:', emailResult);
+      }).catch(emailError => {
+        console.error('📧 Failed to send profile status update email:', emailError);
+      });
+
     res.json({ success: true, message: 'Partner approved successfully' });
   } catch (err) {
     console.error('Error approving partner:', err);
@@ -1793,6 +1801,8 @@ router.post('/partners/:id/approve', auth, admin, async (req, res) => {
 router.post('/partners/:id/reject', auth, admin, async (req, res) => {
   try {
     const merchantId = parseInt(req.params.id);
+    const { reason } = req.body;
+    
     if (!merchantId || isNaN(merchantId)) {
       return res.status(400).json({ success: false, message: 'Valid partner ID is required' });
     }
@@ -1805,6 +1815,14 @@ router.post('/partners/:id/reject', auth, admin, async (req, res) => {
     if (result.affectedRows === 0) {
       return res.status(404).json({ success: false, message: 'Partner not found' });
     }
+
+    // Send profile status update notification
+    NotificationHooks.onProfileStatusChange(merchantId, 'rejected', reason || 'Your business profile was not approved. Please contact support for more information.')
+      .then(emailResult => {
+        console.log('📧 Profile status update email sent:', emailResult);
+      }).catch(emailError => {
+        console.error('📧 Failed to send profile status update email:', emailError);
+      });
 
     res.json({ success: true, message: 'Partner rejected successfully' });
   } catch (err) {
@@ -2433,7 +2451,14 @@ router.patch('/deals/:id/status', auth, admin, [
       return res.status(404).json({ success: false, message: 'Deal not found' });
     }
 
-  await queryAsync('UPDATE deals SET status = ? WHERE id = ?', [status, dealId]);
+    await queryAsync('UPDATE deals SET status = ? WHERE id = ?', [status, dealId]);
+
+    // Send deal status change notification
+    NotificationHooks.onDealStatusChange(dealId, status, req.body.reason || '').then(emailResult => {
+      console.log('📧 Deal status change emails sent:', emailResult);
+    }).catch(emailError => {
+      console.error('📧 Failed to send deal status change emails:', emailError);
+    });
 
     res.json({
       success: true,

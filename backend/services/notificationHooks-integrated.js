@@ -53,44 +53,38 @@ class NotificationHooks {
     try {
       console.log(`📧 Processing deal creation notifications for deal ${dealId}`);
       
-      // Get all active users who should receive deal notifications
       const db = require('../db');
       const { promisify } = require('util');
       const queryAsync = promisify(db.query).bind(db);
       
-      const usersResult = await queryAsync(`
-        SELECT u.id, u.email, u.fullName
-        FROM users u
-        LEFT JOIN user_email_preferences uep ON u.id = uep.user_id AND uep.notification_type = 'deals'
-        WHERE u.status = 'approved' 
-        AND (uep.is_enabled IS NULL OR uep.is_enabled = 1)
-        LIMIT 100
-      `);
+      // Send admin notification about new deal request
+      console.log(`📧 Sending admin notification for new deal request ${dealId}`);
+      const adminResult = await notificationService.sendAdminNotification('admin_new_deal_request', {
+        adminName: 'Admin',
+        dealTitle: dealData.title || dealData.dealTitle,
+        dealDescription: dealData.description || dealData.dealDescription,
+        dealCategory: dealData.category || 'Uncategorized',
+        discount: dealData.discount || dealData.discountPercentage || '',
+        discountType: dealData.discountType || 'percentage',
+        originalPrice: dealData.originalPrice || '',
+        discountedPrice: dealData.discountedPrice || '',
+        validUntil: dealData.validUntil || dealData.expiryDate || '',
+        businessName: dealData.businessName || 'Business',
+        merchantEmail: dealData.merchantEmail || '',
+        submissionDate: new Date().toLocaleDateString(),
+        termsConditions: dealData.termsConditions || '',
+        reviewUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/admin/deals/${dealId}/review`,
+        approveUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/admin/deals/${dealId}/approve`,
+        rejectUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/admin/deals/${dealId}/reject`
+      });
 
-      if (usersResult.length === 0) {
-        return { success: true, message: 'No users to notify' };
-      }
-
-      // Send deal notifications to users
-      const recipients = usersResult.map(user => ({
-        email: user.email,
-        data: {
-          firstName: user.fullName?.split(' ')[0] || 'Member'
-        }
-      }));
-
-      return await notificationService.sendBulkNotifications(
-        recipients,
-        'new_deal_notification',
-        {
-          dealTitle: dealData.title || dealData.dealTitle,
-          dealDescription: dealData.description || dealData.dealDescription,
-          businessName: dealData.businessName || 'Business',
-          discount: dealData.discount || dealData.discountPercentage || '',
-          validUntil: dealData.validUntil || dealData.expiryDate || '',
-          dealUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/deals/${dealId}`
-        }
-      );
+      // Note: User notifications should only be sent when deal status is 'active'
+      // This will be handled in the deal status change hook
+      
+      return {
+        adminNotification: adminResult,
+        message: 'Admin notification sent for new deal request'
+      };
     } catch (error) {
       console.error('Error in deal creation hook:', error);
       return { success: false, error: error.message };
@@ -102,10 +96,74 @@ class NotificationHooks {
     try {
       console.log(`📧 Sending deal status notification for deal ${dealId}: ${newStatus}`);
       
-      return await notificationService.sendDealStatusNotification({
-        id: dealId,
-        reason: reason
-      }, newStatus);
+      const db = require('../db');
+      const { promisify } = require('util');
+      const queryAsync = promisify(db.query).bind(db);
+      
+      // Get deal details first
+      const dealResult = await queryAsync('SELECT * FROM deals WHERE id = ?', [dealId]);
+      if (dealResult.length === 0) {
+        throw new Error('Deal not found');
+      }
+      const deal = dealResult[0];
+      
+      // If deal becomes active, send notifications to users
+      if (newStatus === 'active') {
+        console.log(`📧 Deal ${dealId} is now active, sending notifications to users`);
+        
+        // Get business name
+        const businessResult = await queryAsync('SELECT businessName FROM businesses WHERE businessId = ?', [deal.businessId]);
+        const businessName = businessResult.length > 0 ? businessResult[0].businessName : 'Business';
+        
+        // Get all active users who should receive deal notifications
+        const usersResult = await queryAsync(`
+          SELECT u.id, u.email, u.fullName
+          FROM users u
+          LEFT JOIN user_email_preferences uep ON u.id = uep.user_id AND uep.notification_type = 'deals'
+          WHERE u.status = 'approved' 
+          AND (uep.is_enabled IS NULL OR uep.is_enabled = 1)
+          LIMIT 100
+        `);
+
+        if (usersResult.length > 0) {
+          // Send deal notifications to users
+          const recipients = usersResult.map(user => ({
+            email: user.email,
+            data: {
+              firstName: user.fullName?.split(' ')[0] || 'Member'
+            }
+          }));
+
+          const userNotificationResult = await notificationService.sendBulkNotifications(
+            recipients,
+            'new_deal_notification',
+            {
+              dealTitle: deal.title,
+              dealDescription: deal.description,
+              businessName: businessName,
+              discount: deal.discount || '',
+              validUntil: deal.validUntil || deal.expiration_date || '',
+              dealUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/deals/${dealId}`
+            }
+          );
+          
+          console.log(`📧 Sent deal notifications to ${userNotificationResult.sent || 0} users`);
+        }
+      }
+      
+      // Send deal status update to merchant
+      // Get merchant ID from deal's business
+      const merchantResult = await queryAsync('SELECT userId FROM businesses WHERE businessId = ?', [deal.businessId]);
+      const merchantId = merchantResult.length > 0 ? merchantResult[0].userId : null;
+      
+      if (merchantId) {
+        return await notificationService.sendDealPostingStatusNotification(dealId, merchantId, newStatus, {
+          reason: reason
+        });
+      } else {
+        console.warn(`No merchant found for deal ${dealId} with businessId ${deal.businessId}`);
+        return { success: true, message: 'Deal status changed but no merchant notification sent' };
+      }
     } catch (error) {
       console.error('Error in deal status change hook:', error);
       return { success: false, error: error.message };
@@ -286,6 +344,126 @@ class NotificationHooks {
       return await notificationService.sendWelcomeEmail(999, testData);
     } catch (error) {
       console.error('Error sending test email:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Plan Expiry Check Hook (Called by cron job)
+  static async onPlanExpiryCheck() {
+    try {
+      console.log('🔄 Starting plan expiry check...');
+      
+      const db = require('../db');
+      const { promisify } = require('util');
+      const queryAsync = promisify(db.query).bind(db);
+      
+      // Check for users whose plans are expiring in 30, 7, 3, and 1 days
+      const warningDays = [30, 7, 3, 1];
+      
+      for (const days of warningDays) {
+        console.log(`📅 Checking for plans expiring in ${days} days...`);
+        
+        // Calculate expiry date based on planAssignedAt and planExpiry
+        // For yearly plans: add 1 year, for monthly plans: add 1 month
+        const usersQuery = `
+          SELECT u.id, u.email, u.fullName, u.currentPlan, u.planExpiry, u.planAssignedAt, u.userType,
+                 CASE 
+                   WHEN u.planExpiry = 'yearly' THEN DATE_ADD(u.planAssignedAt, INTERVAL 1 YEAR)
+                   WHEN u.planExpiry = 'monthly' THEN DATE_ADD(u.planAssignedAt, INTERVAL 1 MONTH)
+                   ELSE DATE_ADD(u.planAssignedAt, INTERVAL 1 YEAR)
+                 END as calculated_expiry_date
+          FROM users u
+          WHERE u.currentPlan IS NOT NULL 
+          AND u.planStatus = 'active'
+          AND u.status = 'approved'
+          AND u.planAssignedAt IS NOT NULL
+          HAVING DATE(calculated_expiry_date) = DATE_ADD(CURDATE(), INTERVAL ${days} DAY)
+        `;
+        
+        const expiringUsers = await queryAsync(usersQuery);
+        
+        if (expiringUsers.length > 0) {
+          console.log(`📧 Found ${expiringUsers.length} users with plans expiring in ${days} days`);
+          
+          // Send warnings to users and merchants
+          for (const user of expiringUsers) {
+            try {
+              const expiryDate = new Date(user.calculated_expiry_date);
+              
+              if (user.userType === 'user') {
+                // Send user plan expiry warning
+                await notificationService.sendPlanExpiryWarning(user.id, {
+                  planName: user.currentPlan,
+                  daysLeft: days,
+                  expiryDate: expiryDate.toLocaleDateString(),
+                  firstName: user.fullName.split(' ')[0],
+                  renewalUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/plans`
+                });
+              } else if (user.userType === 'merchant') {
+                // Send merchant plan expiry warning  
+                await notificationService.sendMerchantPlanExpiryWarning(user.id, {
+                  planName: user.currentPlan,
+                  daysLeft: days,
+                  expiryDate: expiryDate.toLocaleDateString(),
+                  businessName: user.fullName,
+                  renewalUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/merchant/plans`
+                });
+              }
+              
+              console.log(`✅ Sent expiry warning to ${user.userType} ${user.fullName} (${user.email})`);
+            } catch (userError) {
+              console.error(`Error sending expiry warning to user ${user.id}:`, userError);
+            }
+          }
+          
+          // If expiring in 1 day, also notify admin
+          if (days === 1) {
+            const adminQuery = `SELECT email FROM users WHERE adminRole = 'superAdmin' AND status = 'approved'`;
+            const admins = await queryAsync(adminQuery);
+            
+            if (admins.length > 0) {
+              for (const admin of admins) {
+                try {
+                  await notificationService.sendAdminPlanExpiryAlert(admin.email, {
+                    expiringCount: expiringUsers.length,
+                    expiringUsers: expiringUsers.map(u => ({
+                      name: u.fullName,
+                      email: u.email,
+                      planName: u.currentPlan,
+                      type: u.userType
+                    })),
+                    dashboardUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/admin/users`,
+                    today: new Date().toLocaleDateString()
+                  });
+                  
+                  console.log(`✅ Sent admin expiry alert to ${admin.email}`);
+                } catch (adminError) {
+                  console.error('Error sending admin expiry alert:', adminError);
+                }
+              }
+            }
+          }
+        } else {
+          console.log(`📭 No users found with plans expiring in ${days} days`);
+        }
+      }
+      
+      console.log('✅ Plan expiry check completed successfully');
+      return { success: true, message: 'Plan expiry check completed' };
+    } catch (error) {
+      console.error('❌ Error in plan expiry check:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Plan Assignment Hook
+  static async onPlanAssigned(userId, planData) {
+    try {
+      console.log(`📧 Sending plan assignment notification for user ${userId}`);
+      
+      return await notificationService.sendPlanAssignmentNotification(userId, planData);
+    } catch (error) {
+      console.error('Error in plan assignment hook:', error);
       return { success: false, error: error.message };
     }
   }

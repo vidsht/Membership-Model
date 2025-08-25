@@ -355,13 +355,13 @@ class NotificationService {
   }
 
   // Send plan assignment notification to user or merchant
-  async sendPlanAssignmentNotification(userId, planId, planType = 'user') {
+  async sendPlanAssignmentNotification(userId, planData) {
     try {
-      console.log(`📧 Sending plan assignment notification for plan ${planId} to user ${userId}`);
+      console.log(`📧 Sending plan assignment notification to user ${userId}`);
       
       // Get user details
       const userResult = await this.queryAsync(`
-        SELECT u.email, u.fullName, b.businessName, b.businessEmail
+        SELECT u.email, u.fullName, u.userType, b.businessName, b.businessEmail
         FROM users u 
         LEFT JOIN businesses b ON u.id = b.userId 
         WHERE u.id = ?
@@ -372,31 +372,38 @@ class NotificationService {
       }
 
       const user = userResult[0];
-      const userEmail = planType === 'merchant' ? (user.businessEmail || user.email) : user.email;
+      const isUserPlan = user.userType === 'user';
+      const userEmail = user.userType === 'merchant' ? (user.businessEmail || user.email) : user.email;
 
-      // Get plan details
-      const planResult = await this.queryAsync('SELECT * FROM plans WHERE id = ?', [planId]);
-
-      if (planResult.length === 0) {
-        throw new Error('Plan not found');
+      // Use planData if provided, otherwise get plan details from database
+      let plan;
+      if (planData.planName) {
+        plan = planData;
+      } else {
+        const planResult = await this.queryAsync('SELECT * FROM plans WHERE id = ?', [planData.planId]);
+        if (planResult.length === 0) {
+          throw new Error('Plan not found');
+        }
+        plan = planResult[0];
       }
 
-      const plan = planResult[0];
-
       const data = {
-        userName: planType === 'merchant' ? user.businessName : (user.fullName || user.email),
-        planName: plan.name,
-        planType: planType,
-        planDescription: plan.description,
-        planPrice: plan.price,
-        planDuration: plan.duration_months,
-        features: plan.features ? plan.features.split(',') : [],
-        dealsPerMonth: plan.deals_per_month || 'Unlimited',
-        redemptionsPerMonth: plan.redemptions_per_month || 'Unlimited',
-        activationDate: new Date().toLocaleDateString(),
-        expiryDate: new Date(Date.now() + (plan.duration_months * 30 * 24 * 60 * 60 * 1000)).toLocaleDateString(),
-        dashboardUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/${planType === 'merchant' ? 'merchant' : 'user'}/dashboard`,
-        supportEmail: process.env.SUPPORT_EMAIL || 'support@example.com'
+        firstName: user.fullName.split(' ')[0],
+        fullName: user.fullName,
+        email: userEmail,
+        planName: planData.planName || plan.name,
+        planType: planData.planType || plan.type,
+        effectiveDate: planData.effectiveDate || new Date().toLocaleDateString(),
+        expiryDate: planData.expiryDate || new Date(Date.now() + (plan.duration_months || 12) * 30 * 24 * 60 * 60 * 1000).toLocaleDateString(),
+        maxDeals: planData.maxDeals || plan.maxDeals,
+        maxRedemptions: planData.maxRedemptions || plan.maxRedemptions,
+        isUserPlan: isUserPlan,
+        assignedBy: planData.assignedBy,
+        assignmentDate: planData.assignmentDate || new Date().toLocaleDateString(),
+        planMessage: planData.message,
+        dashboardUrl: isUserPlan 
+          ? `${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard`
+          : `${process.env.FRONTEND_URL || 'http://localhost:3000'}/merchant/dashboard`
       };
 
       return await emailService.sendEmail({
@@ -404,7 +411,6 @@ class NotificationService {
         templateType: 'plan_assignment',
         data: data
       });
-      
     } catch (error) {
       console.error('❌ Error sending plan assignment notification:', error);
       return { success: false, error: error.message };
@@ -548,6 +554,98 @@ class NotificationService {
       
     } catch (error) {
       console.error('❌ Error sending custom deals assignment notification:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Plan Expiry Warning for Users
+  async sendPlanExpiryWarning(userId, expiryData) {
+    try {
+      console.log(`📧 Sending plan expiry warning to user ${userId}`);
+      
+      // Get user email
+      const userResult = await this.queryAsync('SELECT email, fullName FROM users WHERE id = ?', [userId]);
+      if (userResult.length === 0) return { success: false, error: 'User not found' };
+
+      const user = userResult[0];
+      
+      const data = {
+        firstName: expiryData.firstName || user.fullName.split(' ')[0],
+        planName: expiryData.planName,
+        daysLeft: expiryData.daysLeft,
+        expiryDate: expiryData.expiryDate,
+        renewalUrl: expiryData.renewalUrl || `${process.env.FRONTEND_URL || 'http://localhost:3000'}/plans`
+      };
+
+      return await emailService.sendEmail({
+        to: user.email,
+        templateType: 'plan_expiry_warning',
+        data: data
+      });
+    } catch (error) {
+      console.error('Error sending plan expiry warning:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Plan Expiry Warning for Merchants
+  async sendMerchantPlanExpiryWarning(merchantId, expiryData) {
+    try {
+      console.log(`📧 Sending merchant plan expiry warning to merchant ${merchantId}`);
+      
+      // Get merchant email - check business email first, then user email
+      const merchantResult = await this.queryAsync(`
+        SELECT u.email as userEmail, u.fullName, b.businessEmail, b.businessName
+        FROM users u
+        LEFT JOIN businesses b ON u.id = b.userId
+        WHERE u.id = ?
+      `, [merchantId]);
+      
+      if (merchantResult.length === 0) return { success: false, error: 'Merchant not found' };
+
+      const merchant = merchantResult[0];
+      const merchantEmail = merchant.businessEmail || merchant.userEmail;
+      
+      if (!merchantEmail) return { success: false, error: 'No email found for merchant' };
+
+      const data = {
+        businessName: expiryData.businessName || merchant.businessName || 'Your Business',
+        firstName: expiryData.firstName || merchant.fullName.split(' ')[0],
+        planName: expiryData.planName,
+        daysLeft: expiryData.daysLeft,
+        expiryDate: expiryData.expiryDate,
+        renewalUrl: expiryData.renewalUrl || `${process.env.FRONTEND_URL || 'http://localhost:3000'}/merchant/plans`
+      };
+
+      return await emailService.sendEmail({
+        to: merchantEmail,
+        templateType: 'plan_expiry_warning',
+        data: data
+      });
+    } catch (error) {
+      console.error('Error sending merchant plan expiry warning:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Admin Alert for Plan Expiries
+  async sendAdminPlanExpiryAlert(adminEmail, alertData) {
+    try {
+      console.log(`📧 Sending admin plan expiry alert to ${adminEmail}`);
+      
+      const data = {
+        expiringCount: alertData.expiringCount,
+        expiringUsers: alertData.expiringUsers,
+        dashboardUrl: alertData.dashboardUrl || `${process.env.FRONTEND_URL || 'http://localhost:3000'}/admin/users`
+      };
+
+      return await emailService.sendEmail({
+        to: adminEmail,
+        templateType: 'admin_plan_expiry_alert',
+        data: data
+      });
+    } catch (error) {
+      console.error('Error sending admin plan expiry alert:', error);
       return { success: false, error: error.message };
     }
   }

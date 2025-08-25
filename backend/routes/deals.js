@@ -585,11 +585,36 @@ router.post('/:id/redeem', checkDealAccess, (req, res) => {
           // Insert redemption request with PENDING status - merchant approval required
           const insertQuery = 'INSERT INTO deal_redemptions (deal_id, user_id, redeemed_at, status) VALUES (?, ?, NOW(), "pending")';
           
-          db.query(insertQuery, [dealId, userId], (err5) => {
+          db.query(insertQuery, [dealId, userId], (err5, result) => {
             if (err5) {
               console.error('Redemption request insert error:', err5);
               return res.status(500).json({ message: 'Server error processing redemption request' });
             }
+
+            // Get redemption ID and send notification to merchant
+            const redemptionId = result.insertId;
+            
+            // Get merchant information from the deal's business
+            db.query('SELECT userId FROM businesses WHERE businessId = ?', [deal.businessId], (merchantErr, merchantResults) => {
+              if (!merchantErr && merchantResults.length > 0) {
+                const merchantId = merchantResults[0].userId;
+                
+                // Send notification to merchant about the redemption request
+                const NotificationHooks = require('../services/notificationHooks-integrated');
+                NotificationHooks.onRedemptionRequested(redemptionId, {
+                  merchantId: merchantId,
+                  customerName: user.fullName,
+                  dealTitle: deal.title,
+                  membershipNumber: user.membershipNumber || `MEMBER${user.id}`,
+                  customerEmail: user.email
+                }).catch(err => {
+                  console.error('Error sending redemption notification:', err);
+                  // Don't fail the redemption if notification fails
+                });
+              } else {
+                console.warn('Could not find merchant for deal:', deal.businessId);
+              }
+            });
 
             // Don't update deal redemption count yet - wait for merchant approval
             
