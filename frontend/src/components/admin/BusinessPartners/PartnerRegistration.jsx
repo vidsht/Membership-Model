@@ -11,7 +11,7 @@ import './PartnerRegistration.css';
  * @returns {React.ReactElement} The partner registration component
  */
 const PartnerRegistration = () => {
-  const { getBusinessCategoryOptions } = useDynamicFields();
+  const { getBusinessCategoryOptions, getStateOptions, isLoading: fieldsLoading } = useDynamicFields();
   const { showNotification } = useNotification();
   const navigate = useNavigate();
   const { id: partnerId } = useParams();
@@ -40,20 +40,40 @@ const PartnerRegistration = () => {
   const [step, setStep] = useState(1);
   const [merchantPlans, setMerchantPlans] = useState([]);
   const totalSteps = 3;
-  
+
+  // Normalize website input: strip http(s):// and ensure www. prefix when non-empty
+  const sanitizeWebsite = (value) => {
+    if (!value) return '';
+    let v = String(value).trim();
+    if (v.startsWith('https://')) v = v.slice(8);
+    if (v.startsWith('http://')) v = v.slice(7);
+    if (v && !v.startsWith('www.')) v = 'www.' + v;
+    return v;
+  };
+
   // Fetch merchant plans on component mount
   useEffect(() => {
     const fetchMerchantPlans = async () => {
       try {
         // Use the same endpoint and logic as UnifiedRegistration.jsx
-        const response = await api.get('/admin/plans?userType=merchant');
+        const API_BASE = 'https://membership-model.onrender.com/api';
 
-      if (response.data && response.data.success) {
-        setMerchantPlans(response.data.plans || []);
-      } else {
-        setMerchantPlans([]);
-        showNotification('Error loading merchant plans', 'error');
-      }
+        const plansRes = await fetch(`${API_BASE}/plans?type=merchant&isActive=true`, {
+          credentials: 'include',
+          headers: { 'Accept': 'application/json' }
+        });
+
+        if (plansRes.ok) {
+          const plansJson = await plansRes.json();
+          setMerchantPlans(plansJson.plans || []);
+          // Set default planType to first available merchant plan if not already set
+          if (plansJson.plans && plansJson.plans.length > 0) {
+            setFormData(prev => ({ ...prev, planType: prev.planType || plansJson.plans[0].key }));
+          }
+        } else {
+          setMerchantPlans([]);
+          showNotification('Error loading merchant plans', 'error');
+        }
       } catch (error) {
         console.error('Error fetching merchant plans:', error);
         setMerchantPlans([]);
@@ -89,7 +109,7 @@ const PartnerRegistration = () => {
               city: m.city || '',
               state: m.state || '',
               zipCode: m.zipCode || '',
-              website: m.website || '',
+              website: sanitizeWebsite(m.website || ''),
               description: m.businessDescription || m.description || '',
               businessLicense: m.businessLicense || null,
               taxId: m.taxId || '',
@@ -118,19 +138,20 @@ const PartnerRegistration = () => {
   }, [partnerId, navigate, showNotification]);
   
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    
-    if (type === 'checkbox') {
-      setFormData({ ...formData, [name]: checked });
-    } else {
+     const { name, value, type, checked } = e.target;
+     
+     if (type === 'checkbox') {
+       setFormData({ ...formData, [name]: checked });
+     } else {
+      // Allow free typing; we'll normalize on blur and before submit
       setFormData({ ...formData, [name]: value });
-    }
-    
-    // Clear error when field is edited
-    if (formErrors[name]) {
-      setFormErrors({ ...formErrors, [name]: '' });
-    }
-  };
+     }
+     
+     // Clear error when field is edited
+     if (formErrors[name]) {
+       setFormErrors({ ...formErrors, [name]: '' });
+     }
+   };
   
   const handleFileChange = (e) => {
     const { name, files } = e.target;
@@ -241,7 +262,7 @@ const PartnerRegistration = () => {
           city: formData.city,
           state: formData.state,
           zipCode: formData.zipCode,
-          website: formData.website,
+          website: sanitizeWebsite(formData.website),
           description: formData.description,
           businessLicense: formData.businessLicense,
           taxId: formData.taxId,
@@ -267,7 +288,7 @@ const PartnerRegistration = () => {
             businessCategory: formData.category,
             businessPhone: formData.phone,
             businessEmail: formData.email,
-            website: formData.website,
+            website: sanitizeWebsite(formData.website),
             businessLicense: formData.businessLicense,
             taxId: formData.taxId,
             businessAddress
@@ -439,6 +460,7 @@ const PartnerRegistration = () => {
                 placeholder="https://example.com"
                 value={formData.website}
                 onChange={handleChange}
+                onBlur={(e) => setFormData(prev => ({ ...prev, website: sanitizeWebsite(prev.website) }))}
               />
             </div>
           </div>
@@ -478,13 +500,25 @@ const PartnerRegistration = () => {
               
               <div className="form-group">
                 <label htmlFor="state">State/Region</label>
-                <input
-                  type="text"
-                  id="state"
-                  name="state"
-                  value={formData.state}
-                  onChange={handleChange}
-                />
+                <div className="select-with-icon" style={{ position: 'relative' }}>
+                  <select
+                    id="state"
+                    name="state"
+                    value={formData.state}
+                    onChange={handleChange}
+                    style={{ paddingRight: '36px' }}
+                  >
+                    <option value="">Select a state/region</option>
+                    {fieldsLoading ? (
+                      <option disabled>Loading states...</option>
+                    ) : (
+                      getStateOptions().map(option => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                      ))
+                    )}
+                  </select>
+                  <i className="fas fa-chevron-down dropdown-arrow" style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}></i>
+                </div>
               </div>
               
               <div className="form-group">
@@ -515,29 +549,12 @@ const PartnerRegistration = () => {
             <div className="form-group">
               <label htmlFor="businessLicense">Business License / Registration Document (optional)</label>
               <input
-                type="file"
+                type="businessLicense"
                 id="businessLicense"
                 name="businessLicense"
-                accept=".pdf,.jpg,.jpeg,.png"
-                onChange={handleFileChange}
-                className={formErrors.businessLicense ? 'error' : ''}
+                value={formData.businessLicense}
+                onChange={handleChange}
               />
-              <small>Allowed formats: PDF, JPG, PNG (Max: 5MB)</small>
-              {formErrors.businessLicense && <div className="error-message">{formErrors.businessLicense}</div>}
-            </div>
-            
-            <div className="form-group">
-              <label htmlFor="logoFile">Business Logo</label>
-              <input
-                type="file"
-                id="logoFile"
-                name="logoFile"
-                accept=".jpg,.jpeg,.png"
-                onChange={handleFileChange}
-                className={formErrors.logoFile ? 'error' : ''}
-              />
-              <small>Allowed formats: JPG, PNG (Max: 5MB)</small>
-              {formErrors.logoFile && <div className="error-message">{formErrors.logoFile}</div>}
             </div>
             
             <div className="form-group">

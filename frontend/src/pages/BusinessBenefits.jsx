@@ -87,83 +87,11 @@ const BusinessBenefits = () => {
           </div>
         </div>
 
-        <div className="membership-tiers">
-          <h2>Business Membership Tiers</h2>
-          <div className="tiers-grid">
-            <div className="tier-card basic">
-              <h3>Basic</h3>
-              <div className="price">Free</div>
-              <ul>
-                <li>Basic business listing</li>
-                <li>Contact information display</li>
-                <li>Customer reviews</li>
-                <li>Basic analytics</li>
-              </ul>
-              <Link to="/merchant/register" className="tier-button">Get Started</Link>
-            </div>
-
-            <div className="tier-card premium">
-              <h3>Premium</h3>
-              <div className="price">GHS 50/month</div>
-              <ul>
-                <li>Everything in Basic</li>
-                <li>Featured business placement</li>
-                <li>Unlimited deals posting</li>
-                <li>Advanced analytics</li>
-                <li>Priority customer support</li>
-              </ul>
-              <Link to="/merchant/register" className="tier-button">Upgrade Now</Link>
-            </div>
-
-            <div className="tier-card enterprise">
-              <h3>Enterprise</h3>
-              <div className="price">GHS 150/month</div>
-              <ul>
-                <li>Everything in Premium</li>
-                <li>Custom branding options</li>
-                <li>Dedicated account manager</li>
-                <li>Event sponsorship opportunities</li>
-                <li>API access for integration</li>
-              </ul>
-              <Link to="/merchant/register" className="tier-button">Contact Sales</Link>
-            </div>
-          </div>
-        </div>
-
-        <div className="testimonials-section">
-          <h2>What Our Business Partners Say</h2>
-          <div className="testimonials-grid">
-            <div className="testimonial-card">
-              <p>"Joining Indians in Ghana has significantly increased our customer base. The platform has been instrumental in connecting us with the community."</p>
-              <div className="testimonial-author">
-                <strong>Rajesh Patel</strong>
-                <span>Owner, Patel Groceries</span>
-              </div>
-            </div>
-
-            <div className="testimonial-card">
-              <p>"The deals platform has helped us boost sales by 40%. Our customers love the exclusive offers we provide through this network."</p>
-              <div className="testimonial-author">
-                <strong>Priya Sharma</strong>
-                <span>Manager, Bombay Palace Restaurant</span>
-              </div>
-            </div>
-
-            <div className="testimonial-card">
-              <p>"The networking opportunities have been invaluable. We've formed partnerships that have taken our business to the next level."</p>
-              <div className="testimonial-author">
-                <strong>Arjun Gupta</strong>
-                <span>CEO, Gujarat Textiles</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <div className="cta-section">
           <h2>Ready to Grow Your Business?</h2>
           <p>Join thousands of Indian businesses in Ghana and unlock your growth potential</p>
           <div className="cta-buttons">
-            <Link to="/merchant/register" className="cta-button primary">
+            <Link to="/unified-registration" className="cta-button primary">
               Register Your Business
             </Link>
             <Link to="/contact" className="cta-button secondary">

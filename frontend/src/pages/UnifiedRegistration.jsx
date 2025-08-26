@@ -23,6 +23,7 @@ const UnifiedRegistration = () => {
     getCommunityOptions, 
     getUserTypeOptions, 
     getBusinessCategoryOptions 
+    , getCountryOptions, getStateOptions
   } = useDynamicFields();
 
   // User Registration State
@@ -58,6 +59,8 @@ const UnifiedRegistration = () => {
   // Dynamic dropdown options and settings
   const [communities, setCommunities] = useState([]);
   const [userTypes, setUserTypes] = useState([]);
+  const [countries, setCountries] = useState([]);
+  const [states, setStates] = useState([]);
   const [userPlans, setUserPlans] = useState([]);
   const [merchantPlans, setMerchantPlans] = useState([]);
   const [loadingOptions, setLoadingOptions] = useState(true);
@@ -178,6 +181,8 @@ const UnifiedRegistration = () => {
         if (!fieldsLoading && dynamicFields) {
           setCommunities(dynamicFields.communities || []);
           setUserTypes(dynamicFields.userTypes || []);
+          setCountries(dynamicFields.countries || []);
+          setStates(dynamicFields.states || []);
         }
 
         // FIXED: Use absolute URLs pointing to your backend
@@ -742,31 +747,42 @@ const UnifiedRegistration = () => {
                       required
                       style={{ paddingRight: '36px' }}
                     >
-                      <option value="">Select a country </option>
-                      <option value="Ghana">Ghana</option>
-                      <option value="India">India</option>
-                      <option value="United States">United States</option>
-                      <option value="United Kingdom">United Kingdom</option>
-                      <option value="Canada">Canada</option>
-                      <option value="Australia">Australia</option>
-                      <option value="Others">Others</option>
+                      <option value="">Select a country</option>
+                      {fieldsLoading ? (
+                        <option disabled>Loading countries...</option>
+                      ) : (
+                        getCountryOptions().map(option => (
+                          <option key={option.value} value={option.value}>{option.label}</option>
+                        ))
+                      )}
                     </select>
                     <i className="fas fa-chevron-down dropdown-arrow" style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}></i>
                   </div>
                 </div>
-
+ 
                 {/* State (India) */}
                 <div className="form-group">
                   <label htmlFor="state">State (India) <span className="required">*</span></label>
-                  <input
-                    type="text"
-                    id="state"
-                    name="state"
-                    value={userForm.state}
-                    onChange={handleUserInputChange}
-                    placeholder="Enter your state in India"
-                    required
-                  />
+                  <div className="select-with-icon" style={{ position: 'relative' }}>
+                    <select
+                      id="state"
+                      name="state"
+                      value={userForm.state}
+                      onChange={handleUserInputChange}
+                      required
+                      style={{ paddingRight: '36px' }}
+                    >
+                      <option value="">Select a state/region</option>
+                      {fieldsLoading ? (
+                        <option disabled>Loading states...</option>
+                      ) : (
+                        getStateOptions().map(option => (
+                          <option key={option.value} value={option.value}>{option.label}</option>
+                        ))
+                      )}
+                    </select>
+                    <i className="fas fa-chevron-down dropdown-arrow" style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}></i>
+                  </div>
                 </div>
 
                 {/* City (India) */}
@@ -1276,13 +1292,24 @@ const UnifiedRegistration = () => {
                   </div>
                   <div className="form-group">
                     <label htmlFor="businessState">State/Region</label>
-                    <input
-                      type="text"
-                      id="businessState"
-                      value={merchantForm.businessState}
-                      onChange={handleMerchantInputChange}
-                      placeholder="State or Region"
-                    />
+                    <div className="select-with-icon" style={{ position: 'relative' }}>
+                      <select
+                        id="businessState"
+                        value={merchantForm.businessState}
+                        onChange={handleMerchantInputChange}
+                        style={{ paddingRight: '36px' }}
+                      >
+                        <option value="">Select a state/region</option>
+                        {fieldsLoading ? (
+                          <option disabled>Loading states...</option>
+                        ) : (
+                          getStateOptions().map(option => (
+                            <option key={option.value} value={option.value}>{option.label}</option>
+                          ))
+                        )}
+                      </select>
+                      <i className="fas fa-chevron-down dropdown-arrow" style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}></i>
+                    </div>
                   </div>
                   <div className="form-group">
                     <label htmlFor="businessZipCode">Postal Code</label>

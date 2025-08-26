@@ -192,7 +192,7 @@ const MemberBenefits = () => {
           <h2>Ready to Join Our Community?</h2>
           <p>Become part of a thriving Indian community in Ghana and unlock exclusive benefits</p>
           <div className="cta-buttons">
-            <Link to="/register" className="cta-button primary">
+            <Link to="/unified-registration" className="cta-button primary">
               Become a Member
             </Link>
             <Link to="/contact" className="cta-button secondary">

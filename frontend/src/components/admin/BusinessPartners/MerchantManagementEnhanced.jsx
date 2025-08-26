@@ -10,7 +10,7 @@ const MerchantManagementEnhanced = () => {
   const { showNotification } = useNotification();
   const { getMerchantLogoUrl } = useImageUrl();
   const navigate = useNavigate();
-  const { getCommunityOptions, getBusinessCategoryOptions } = useDynamicFields();
+  const { getCommunityOptions, getBusinessCategoryOptions, getStateOptions } = useDynamicFields();
   const [merchants, setMerchants] = useState([]);
   const [businesses, setBusinesses] = useState([]);
   const [viewMode, setViewMode] = useState('cards'); // 'table' or 'cards'
@@ -41,6 +41,7 @@ const MerchantManagementEnhanced = () => {
       businessPhone: '',
       businessEmail: '',
       website: '',
+      state: '',
       customDealLimit: ''
     }
   });
@@ -273,8 +274,7 @@ const MerchantManagementEnhanced = () => {
       },
       businessInfo: {
         businessName: '', businessDescription: '', businessCategory: '',
-        businessAddress: '', businessPhone: '', businessEmail: '', website: '', 
-        customDealLimit: ''
+        businessAddress: '', businessPhone: '', businessEmail: '', website: '', country: '', state: ''
       }
     });
   };
@@ -282,37 +282,48 @@ const MerchantManagementEnhanced = () => {
   // Validate form - UserManagement style
   const validateForm = () => {
     const newErrors = {};
-    
+
     // User info validation
     if (!formData.userInfo.fullName.trim()) {
       newErrors.fullName = 'Full name is required';
     }
-    
+
     if (!formData.userInfo.email.trim()) {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.userInfo.email)) {
       newErrors.email = 'Email is invalid';
     }
-    
+
     if (formData.userInfo.phone && !/^\+?[\d\s\-\(\)]+$/.test(formData.userInfo.phone)) {
       newErrors.phone = 'Phone number is invalid';
     }
-    
+
     // Business info validation
     if (!formData.businessInfo.businessName.trim()) {
       newErrors.businessName = 'Business name is required';
     }
-    
+
     if (formData.businessInfo.businessEmail && !/\S+@\S+\.\S+/.test(formData.businessInfo.businessEmail)) {
       newErrors.businessEmail = 'Business email is invalid';
     }
-    
-    if (formData.businessInfo.website && !/^https?:\/\/.+/.test(formData.businessInfo.website)) {
-      newErrors.website = 'Website must be a valid URL (starting with http:// or https://)';
+
+    // Accept websites that start with http(s):// or with www. (we store as www.example.com by default)
+    if (formData.businessInfo.website && !/^(https?:\/\/.+|www\..+)/.test(formData.businessInfo.website)) {
+      newErrors.website = 'Website must be a valid URL (start with www. or http(s)://)';
     }
-    
+
     setFormErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  // Normalize website input: strip http(s):// and ensure www. prefix when non-empty
+  const sanitizeWebsite = (value) => {
+    if (!value) return '';
+    let v = String(value).trim();
+    if (v.startsWith('https://')) v = v.slice(8);
+    if (v.startsWith('http://')) v = v.slice(7);
+    if (v && !v.startsWith('www.')) v = 'www.' + v;
+    return v;
   };
 
   // Unified submit handler for add/edit - UserManagement style
@@ -365,7 +376,7 @@ const MerchantManagementEnhanced = () => {
           },
           businessInfo: {
             businessName: '', businessDescription: '', businessCategory: '',
-            businessAddress: '', businessPhone: '', businessEmail: '', website: ''
+            businessAddress: '', businessPhone: '', businessEmail: '', website: '', country: '', state: ''
           }
         });
         setFormErrors({});
@@ -621,7 +632,12 @@ const MerchantManagementEnhanced = () => {
               </div>
               <div className="form-group">
                 <label>Community</label>
-                <input type="text" value={formData.userInfo.community} onChange={e => setFormData(f => ({ ...f, userInfo: { ...f.userInfo, community: e.target.value } }))} />
+                <select value={formData.userInfo.community} onChange={e => setFormData(f => ({ ...f, userInfo: { ...f.userInfo, community: e.target.value } }))}>
+                  <option value="">Select Community</option>
+                  {getCommunityOptions().map(option => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
               </div>
               <div className="form-group">
                 <label>Status</label>
@@ -665,6 +681,15 @@ const MerchantManagementEnhanced = () => {
                 <input type="text" value={formData.businessInfo.businessAddress} onChange={e => setFormData(f => ({ ...f, businessInfo: { ...f.businessInfo, businessAddress: e.target.value } }))} />
               </div>
               <div className="form-group">
+                <label>State</label>
+                <select value={formData.businessInfo.state} onChange={e => setFormData(f => ({ ...f, businessInfo: { ...f.businessInfo, state: e.target.value } }))}>
+                  <option value="">Select State</option>
+                  {getStateOptions().map(option => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
                 <label>Business Phone</label>
                 <input type="text" value={formData.businessInfo.businessPhone} onChange={e => setFormData(f => ({ ...f, businessInfo: { ...f.businessInfo, businessPhone: e.target.value } }))} />
               </div>
@@ -675,7 +700,8 @@ const MerchantManagementEnhanced = () => {
               </div>
               <div className="form-group">
                 <label>Website</label>
-                <input type="text" value={formData.businessInfo.website} onChange={e => setFormData(f => ({ ...f, businessInfo: { ...f.businessInfo, website: e.target.value } }))} className={formErrors.website ? 'error' : ''} />
+-                <input type="text" value={formData.businessInfo.website} onChange={e => setFormData(f => ({ ...f, businessInfo: { ...f.businessInfo, website: e.target.value } }))} className={formErrors.website ? 'error' : ''} />
++                <input type="text" value={formData.businessInfo.website} onChange={e => setFormData(f => ({ ...f, businessInfo: { ...f.businessInfo, website: sanitizeWebsite(e.target.value) } }))} className={formErrors.website ? 'error' : ''} />
                 {formErrors.website && <div className="error-message">{formErrors.website}</div>}
               </div>
               

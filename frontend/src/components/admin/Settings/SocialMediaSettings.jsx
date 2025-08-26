@@ -70,7 +70,15 @@ const SocialMediaSettings = ({ settings, onSettingChange }) => {
   };
 
   const handleCommunityStatsToggle = (enabled) => {
+    // Maintain backward compatibility by setting both new featureToggles keys and legacy features keys
+    // Write the canonical key that backend parses: showStatistics / show_statistics
+    onSettingChange('featureToggles', 'showStatistics', enabled);
+    onSettingChange('features', 'show_statistics', enabled);
+
+    // Also keep the previous community-specific keys for backward compatibility
+    onSettingChange('featureToggles', 'showCommunityStatistics', enabled);
     onSettingChange('features', 'show_community_statistics', enabled);
+
     if (!enabled) {
       showNotification('Community statistics section disabled on home page.', 'info');
     } else {
@@ -110,13 +118,19 @@ const SocialMediaSettings = ({ settings, onSettingChange }) => {
           <label className="toggle-switch">
             <input
               type="checkbox"
-              checked={settings?.features?.show_community_statistics ?? true}
+              checked={
+                // Prefer canonical featureToggles.showStatistics when present,
+                // then fall back to featureToggles.showCommunityStatistics,
+                // then legacy features.show_statistics, then features.show_community_statistics,
+                // default true
+                (settings?.featureToggles?.showStatistics ?? settings?.featureToggles?.showCommunityStatistics ?? settings?.features?.show_statistics ?? settings?.features?.show_community_statistics) ?? true
+              }
               onChange={(e) => handleCommunityStatsToggle(e.target.checked)}
             />
             <span className="toggle-slider"></span>
           </label>
           <span className="toggle-label">
-            {settings?.features?.show_community_statistics ? 'Enabled' : 'Disabled'}
+            {((settings?.featureToggles?.showStatistics ?? settings?.featureToggles?.showCommunityStatistics ?? settings?.features?.show_statistics ?? settings?.features?.show_community_statistics) ?? true) ? 'Enabled' : 'Disabled'}
           </span>
         </div>
       </div>

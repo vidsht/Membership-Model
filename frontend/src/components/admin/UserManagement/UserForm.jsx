@@ -8,7 +8,7 @@ import api from '../../../services/api';
 import './UserForm.css';
 
 const UserForm = () => {
-  const { getCommunityOptions, isLoading: fieldsLoading } = useDynamicFields();
+  const { getCommunityOptions, getCountryOptions, getStateOptions, isLoading: fieldsLoading } = useDynamicFields();
   const { userId } = useParams();
   const navigate = useNavigate();
   const isEditMode = Boolean(userId);
@@ -56,44 +56,60 @@ const UserForm = () => {
   // Fetch reference data
   const fetchReferenceData = useCallback(async () => {
     try {
-      const [communitiesRes, allPlansRes, userPlansRes, merchantPlansRes] = await Promise.allSettled([
-        api.get('/admin/communities'),
-        api.get('/admin/plans'),
-        api.get('/admin/plans?userType=user'),
-        api.get('/admin/plans?userType=merchant')
-      ]);
-
-      // Handle communities
+      // Fetch communities via existing API (fallback to built-in list if it fails)
       let communities = [];
-      if (communitiesRes.status === 'fulfilled' && communitiesRes.value?.data?.success) {
-        communities = communitiesRes.value.data.communities || [];
-      } else {
+      try {
+        const cRes = await api.get('/admin/communities');
+        if (cRes?.data?.success) {
+          communities = cRes.data.communities || [];
+        } else {
+          throw new Error('No communities');
+        }
+      } catch (e) {
         communities = [
-          'Gujarati', 'Bengali', 'Tamil', 'Punjabi', 'Hindi', 'Marathi', 'Telugu', 
+          'Gujarati', 'Bengali', 'Tamil', 'Punjabi', 'Hindi', 'Marathi', 'Telugu',
           'Kannada', 'Malayalam', 'Sindhi', 'Rajasthani', 'Other Indian', 'Mixed Heritage'
         ].map(name => ({ name, isActive: true }));
       }
 
-      // Handle plans
+      // Load plans using the same approach as UnifiedRegistration (absolute API endpoints)
+      const API_BASE = 'https://membership-model.onrender.com/api'; // Replace with real backend URL or env var
+
+      // Try to fetch all plans via admin API as fallback
       let allPlans = [];
-      if (allPlansRes.status === 'fulfilled' && allPlansRes.value?.data?.success) {
-        allPlans = allPlansRes.value.data.plans || [];
-      } else {
+      try {
+        const allRes = await api.get('/admin/plans');
+        if (allRes?.data?.success) allPlans = allRes.data.plans || [];
+      } catch (e) {
         allPlans = fallbackPlans;
       }
 
+      // Fetch user and merchant plans from API_BASE endpoints (active plans)
       let userPlans = [];
-      if (userPlansRes.status === 'fulfilled' && userPlansRes.value?.data?.success) {
-        userPlans = userPlansRes.value.data.plans.filter(plan => plan.type === 'user') || [];
-      } else {
-        userPlans = allPlans.filter(plan => plan.type === 'user');
-      }
-
       let merchantPlans = [];
-      if (merchantPlansRes.status === 'fulfilled' && merchantPlansRes.value?.data?.success) {
-        merchantPlans = merchantPlansRes.value.data.plans.filter(plan => plan.type === 'merchant') || [];
-      } else {
-        merchantPlans = allPlans.filter(plan => plan.type === 'merchant');
+      try {
+        const [uRes, mRes] = await Promise.all([
+          fetch(`${API_BASE}/plans?type=user&isActive=true`, { credentials: 'include', headers: { 'Accept': 'application/json' } }),
+          fetch(`${API_BASE}/plans?type=merchant&isActive=true`, { credentials: 'include', headers: { 'Accept': 'application/json' } })
+        ]);
+
+        if (uRes.ok) {
+          const uJson = await uRes.json();
+          userPlans = uJson.plans || [];
+        } else {
+          userPlans = allPlans.filter(p => p.type === 'user');
+        }
+
+        if (mRes.ok) {
+          const mJson = await mRes.json();
+          merchantPlans = mJson.plans || [];
+        } else {
+          merchantPlans = allPlans.filter(p => p.type === 'merchant');
+        }
+      } catch (e) {
+        // fallback
+        userPlans = allPlans.filter(p => p.type === 'user');
+        merchantPlans = allPlans.filter(p => p.type === 'merchant');
       }
 
       setReferenceData({
@@ -102,6 +118,13 @@ const UserForm = () => {
         userPlans,
         merchantPlans
       });
+
+      // If creating a new user, default membershipType to first user plan if available
+      if (!isEditMode && (!formData.membershipType || formData.membershipType === 'community')) {
+        if (userPlans && userPlans.length > 0) {
+          setFormData(prev => ({ ...prev, membershipType: userPlans[0].key || prev.membershipType }));
+        }
+      }
     } catch (err) {
       console.error('Error fetching reference data:', err);
       setReferenceData({
@@ -423,19 +446,33 @@ const UserForm = () => {
                     value={formData.country}
                     onChange={(e) => handleInputChange('country', e.target.value)}
                   >
-                    <option value="Ghana">Ghana</option>
+                    <option value="">Select country</option>
+                    {fieldsLoading ? (
+                      <option disabled>Loading countries...</option>
+                    ) : (
+                      getCountryOptions().map(option => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                      ))
+                    )}
                   </select>
                 </div>
 
                 <div className="form-group">
                   <label htmlFor="state">State/Region</label>
-                  <input
-                    type="text"
+                  <select
                     id="state"
                     value={formData.state}
                     onChange={(e) => handleInputChange('state', e.target.value)}
-                    placeholder="Enter state or region"
-                  />
+                  >
+                    <option value="">Select state/region</option>
+                    {fieldsLoading ? (
+                      <option disabled>Loading states...</option>
+                    ) : (
+                      getStateOptions().map(option => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                      ))
+                    )}
+                  </select>
                 </div>
 
                 <div className="form-group">

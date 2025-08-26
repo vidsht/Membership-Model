@@ -3,6 +3,7 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { useNotification } from '../../../contexts/NotificationContext';
 import { useAuth } from '../../../contexts/AuthContext';
 import api from '../../../services/api';
+import { useDynamicFields } from '../../../hooks/useDynamicFields';
 import './PartnerList.css';
 import PartnerDetail from './PartnerDetail';
 import ConfirmationDialog from '../../common/ConfirmationDialog';
@@ -878,6 +879,17 @@ const PartnerList = () => {
                   />
                 </div>
                 
+                <div className="form-group">
+                  <label>Website</label>
+                  <input
+                    type="url"
+                    value={editingPartner.website}
+                    onChange={(e) => setEditingPartner({ ...editingPartner, website: sanitizeWebsite(e.target.value) })}
+                    className="form-control"
+                    placeholder="https://example.com"
+                  />
+                </div>
+                
                 <div className="form-actions">
                   <button type="submit" className="button button-primary">
                     <i className="fas fa-save"></i> Save Changes
@@ -1001,10 +1013,7 @@ const PartnerList = () => {
                   <input
                     type="url"
                     value={editingPartner.website}
-                    onChange={(e) => setEditingPartner({
-                      ...editingPartner,
-                      website: e.target.value
-                    })}
+                    onChange={(e) => setEditingPartner({ ...editingPartner, website: sanitizeWebsite(e.target.value) })}
                     className="form-control"
                     placeholder="https://example.com"
                   />
@@ -1114,6 +1123,16 @@ const PartnerList = () => {
 
 // Add Partner Modal Component
 const AddPartnerModal = ({ onClose, onSubmit, showNotification }) => {
+  const { getCountryOptions, getStateOptions, isLoading: fieldsLoading } = useDynamicFields();
+  const sanitizeWebsite = (value) => {
+    if (!value) return '';
+    let processed = String(value).trim();
+    if (processed.startsWith('https://')) processed = processed.replace('https://', '');
+    if (processed.startsWith('http://')) processed = processed.replace('http://', '');
+    if (processed && !processed.startsWith('www.')) processed = 'www.' + processed;
+    return processed;
+  };
+
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -1131,7 +1150,7 @@ const AddPartnerModal = ({ onClose, onSubmit, showNotification }) => {
       city: '',
       state: '',
       zipCode: '',
-      country: 'Ghana'
+      country: 'Ghana',
     }
   });
 
@@ -1147,7 +1166,11 @@ const AddPartnerModal = ({ onClose, onSubmit, showNotification }) => {
         }
       }));
     } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
+      if (name === 'website') {
+        setFormData(prev => ({ ...prev, [name]: sanitizeWebsite(value) }));
+      } else {
+        setFormData(prev => ({ ...prev, [name]: value }));
+      }
     }
   };
   const handleSubmit = (e) => {
@@ -1283,12 +1306,12 @@ const AddPartnerModal = ({ onClose, onSubmit, showNotification }) => {
               <div className="form-group">
                 <label htmlFor="website">Website</label>
                 <input
-                  type="url"
+                  type="text"
                   id="website"
                   name="website"
                   value={formData.website}
                   onChange={handleChange}
-                />
+                  />
               </div>
               <div className="form-group">
                 <label htmlFor="businessLicense">Business License</label>
@@ -1330,13 +1353,21 @@ const AddPartnerModal = ({ onClose, onSubmit, showNotification }) => {
             <div className="form-row">
               <div className="form-group">
                 <label htmlFor="businessAddress.state">State</label>
-                <input
-                  type="text"
+                <select
                   id="businessAddress.state"
                   name="businessAddress.state"
                   value={formData.businessAddress.state}
                   onChange={handleChange}
-                />
+                >
+                  <option value="">Select state</option>
+                  {fieldsLoading ? (
+                    <option disabled>Loading states...</option>
+                  ) : (
+                    getStateOptions().map(option => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))
+                  )}
+                </select>
               </div>
               <div className="form-group">
                 <label htmlFor="businessAddress.zipCode">Zip Code</label>

@@ -54,10 +54,8 @@ const MerchantDetailEdit = () => {
     website: '',
     customDealLimit: '',
     logo: null,
-    establishedYear: '',
-    businessRegistrationNumber: '',
     taxId: '',
-    operatingHours: '',
+    businessLicense: '',
     socialMediaLinks: ''
   });
 
@@ -188,10 +186,8 @@ const MerchantDetailEdit = () => {
         website: businessData?.website || '',
         customDealLimit: businessData?.customDealLimit || '',
         logo: businessData?.logo || null,
-        establishedYear: businessData?.establishedYear || '',
-        businessRegistrationNumber: businessData?.businessRegistrationNumber || '',
         taxId: businessData?.taxId || '',
-        operatingHours: businessData?.operatingHours || '',
+        businessLicense: businessData?.businessLicense || '',
         socialMediaLinks: businessData?.socialMediaLinks ? JSON.stringify(businessData.socialMediaLinks) : ''
       });
 
@@ -322,10 +318,8 @@ const MerchantDetailEdit = () => {
           website: formData.website,
           customDealLimit: formData.customDealLimit,
           logo: formData.logo,
-          establishedYear: formData.establishedYear,
-          businessRegistrationNumber: formData.businessRegistrationNumber,
           taxId: formData.taxId,
-          operatingHours: formData.operatingHours,
+          businessLicense: formData.businessLicense,
           socialMediaLinks: formData.socialMediaLinks ? JSON.parse(formData.socialMediaLinks) : null,
           userId: merchantId
          }
@@ -418,10 +412,8 @@ const MerchantDetailEdit = () => {
         website: business.website || '',
         customDealLimit: business.customDealLimit || '',
         logo: business.logo || null,
-        establishedYear: business.establishedYear || '',
-        businessRegistrationNumber: business.businessRegistrationNumber || '',
         taxId: business.taxId || '',
-        operatingHours: business.operatingHours || '',
+        businessLicense: business.businessLicense || '',
         socialMediaLinks: business.socialMediaLinks ? JSON.stringify(business.socialMediaLinks) : ''
       });
     }
@@ -499,7 +491,15 @@ const MerchantDetailEdit = () => {
             </div>
           </div>
           <div className="header-actions">
-            {editMode && (
+            {!editMode ? (
+              <button
+                onClick={() => setEditMode(true)}
+                className="btn btn-primary"
+              >
+                <i className="fas fa-edit"></i>
+                Edit Merchant
+              </button>
+            ) : (
               <div className="edit-actions">
                 <button
                   onClick={handleCancelEdit}
@@ -648,12 +648,6 @@ const MerchantDetailEdit = () => {
                     <div className="stat-item">
                       <i className="fas fa-clock"></i>
                       <span>Last seen {formatDate(merchant.lastLogin)}</span>
-                    </div>
-                  )}
-                  {business?.establishedYear && (
-                    <div className="stat-item">
-                      <i className="fas fa-building"></i>
-                      <span>Est. {business.establishedYear}</span>
                     </div>
                   )}
                 </div>
@@ -846,34 +840,32 @@ const MerchantDetailEdit = () => {
                 </div>
 
                 <div className="detail-item">
-                  <label>Established Year</label>
+                  <label>Tax ID</label>
                   {editMode ? (
                     <input
-                      type="number"
-                      value={formData.establishedYear}
-                      onChange={(e) => handleInputChange('establishedYear', e.target.value)}
+                      type="text"
+                      value={formData.taxId}
+                      onChange={(e) => handleInputChange('taxId', e.target.value)}
                       className="edit-input"
-                      placeholder="e.g., 2020"
-                      min="1900"
-                      max={new Date().getFullYear()}
+                      placeholder="Tax identification number"
                     />
                   ) : (
-                    <span>{business?.establishedYear || 'N/A'}</span>
+                    <span>{business?.taxId || 'N/A'}</span>
                   )}
                 </div>
 
                 <div className="detail-item">
-                  <label>Registration Number</label>
+                  <label>Business License</label>
                   {editMode ? (
                     <input
                       type="text"
-                      value={formData.businessRegistrationNumber}
-                      onChange={(e) => handleInputChange('businessRegistrationNumber', e.target.value)}
+                      value={formData.businessLicense}
+                      onChange={(e) => handleInputChange('businessLicense', e.target.value)}
                       className="edit-input"
-                      placeholder="Business registration number"
+                      placeholder="Enter business license number"
                     />
                   ) : (
-                    <span>{business?.businessRegistrationNumber || 'N/A'}</span>
+                    <span>{business?.businessLicense || 'N/A'}</span>
                   )}
                 </div>
 
