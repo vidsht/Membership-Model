@@ -70,14 +70,8 @@ const SocialMediaSettings = ({ settings, onSettingChange }) => {
   };
 
   const handleCommunityStatsToggle = (enabled) => {
-    // Maintain backward compatibility by setting both new featureToggles keys and legacy features keys
-    // Write the canonical key that backend parses: showStatistics / show_statistics
+    // Align with membership plan toggle: write the canonical featureToggles key only
     onSettingChange('featureToggles', 'showStatistics', enabled);
-    onSettingChange('features', 'show_statistics', enabled);
-
-    // Also keep the previous community-specific keys for backward compatibility
-    onSettingChange('featureToggles', 'showCommunityStatistics', enabled);
-    onSettingChange('features', 'show_community_statistics', enabled);
 
     if (!enabled) {
       showNotification('Community statistics section disabled on home page.', 'info');
@@ -120,17 +114,15 @@ const SocialMediaSettings = ({ settings, onSettingChange }) => {
               type="checkbox"
               checked={
                 // Prefer canonical featureToggles.showStatistics when present,
-                // then fall back to featureToggles.showCommunityStatistics,
-                // then legacy features.show_statistics, then features.show_community_statistics,
                 // default true
-                (settings?.featureToggles?.showStatistics ?? settings?.featureToggles?.showCommunityStatistics ?? settings?.features?.show_statistics ?? settings?.features?.show_community_statistics) ?? true
+                (settings?.featureToggles?.showStatistics) ?? true
               }
               onChange={(e) => handleCommunityStatsToggle(e.target.checked)}
             />
             <span className="toggle-slider"></span>
           </label>
           <span className="toggle-label">
-            {((settings?.featureToggles?.showStatistics ?? settings?.featureToggles?.showCommunityStatistics ?? settings?.features?.show_statistics ?? settings?.features?.show_community_statistics) ?? true) ? 'Enabled' : 'Disabled'}
+            {(settings?.featureToggles?.showStatistics ?? true) ? 'Enabled' : 'Disabled'}
           </span>
         </div>
       </div>

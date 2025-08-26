@@ -2884,6 +2884,8 @@ router.get('/settings/public', async (req, res) => {
       features: {
         show_social_media_home: false,
         show_statistics: true,
+        // ensure legacy community-specific key exists by default
+        show_community_statistics: true,
         business_directory: true,
         showMembershipPlans: true
       },
@@ -2931,30 +2933,47 @@ router.get('/settings/public', async (req, res) => {
             console.log('✅ Membership plan settings loaded:', Object.keys(settings.membershipPlanRequirements));
           }
 
-          // Parse feature toggles
-          const featureRows = dbSettings.filter(s => s.section === 'featureToggles');
+          // Parse feature toggles (support both new 'featureToggles' and legacy 'features' sections)
+          const featureRows = dbSettings.filter(s => s.section === 'featureToggles' || s.section === 'features');
           featureRows.forEach(row => {
-            const key = row.key.replace('featureToggles.', '');
+            // Row.key stored as '<section>.<key>' so strip the section prefix to get the raw key
+            const key = row.key.replace(`${row.section}.`, '');
             const isOn = row.value === 'true';
-            
+
             switch (key) {
               case 'showSocialMediaHome':
               case 'show_social_media_home':
                 settings.features.show_social_media_home = isOn;
                 break;
+
+              // Canonical / generic statistics flag - map to both modern and legacy names
               case 'showStatistics':
               case 'show_statistics':
                 settings.features.show_statistics = isOn;
+                // Keep legacy community-specific flag in sync so front-end checks work
+                settings.features.show_community_statistics = isOn;
                 break;
+
+              // Community-specific toggles (some older UI used this exact key)
+              case 'showCommunityStatistics':
+              case 'show_community_statistics':
+                settings.features.show_community_statistics = isOn;
+                // Also set the generic statistics flag for consistency
+                settings.features.show_statistics = isOn;
+                break;
+
               case 'businessDirectory':
               case 'business_directory':
                 settings.features.business_directory = isOn;
                 break;
+
               case 'showMembershipPlans':
               case 'show_membership_plans':
                 settings.features.showMembershipPlans = isOn;
                 break;
+
               default:
+                // Unknown feature toggle - ignore for now
                 break;
             }
           });
@@ -2990,7 +3009,7 @@ router.get('/settings/public', async (req, res) => {
   }
 });
 
-
+// Admin settings endpoint
 router.get('/settings', auth, admin, async (req, res) => {
   try {
     // Initialize admin editable settings sections, including toggles and content
@@ -3282,8 +3301,10 @@ const getDefaultFieldOptions = (fieldType) => {
     case 'businessCategories':
       return [
         { name: 'restaurant', label: 'Restaurant & Food', description: 'Restaurants, food services', isActive: true },
-        { name: 'retail', label: 'Retail & Shopping', description: 'Retail stores, shopping', isActive: true },
-        { name: 'services', label: 'Professional Services', description: 'Consulting, legal, accounting', isActive: true },
+        { name: 'retail', label: 'Retail & Shopping', description: 'Retail stores, shopping centers', isActive: true },
+        { name: 'services', label: 'Professional Services', description: 'Consulting, legal, accounting, etc.', isActive: true },
+        { name: 'healthcare', label: 'Healthcare', description: 'Medical, dental, wellness services', isActive: true },
+        { name: 'technology', label: 'Technology', description: 'IT services, software, tech products', isActive: true },
         { name: 'other', label: 'Other', description: 'Other business types', isActive: true }
       ];
     case 'dealCategories':
