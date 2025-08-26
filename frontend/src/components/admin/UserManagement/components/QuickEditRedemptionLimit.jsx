@@ -31,9 +31,22 @@ const QuickEditRedemptionLimit = ({
       setSaving(true);
       console.log('💾 QuickEdit: Saving custom redemption limit:', customRedemptionLimit, 'for user:', user.id);
       
+      let parsedLimit = null;
+      if (customRedemptionLimit !== '' && customRedemptionLimit !== null && customRedemptionLimit !== undefined) {
+        const trimmedValue = String(customRedemptionLimit).trim();
+        if (trimmedValue !== '') {
+          const numValue = parseInt(trimmedValue, 10);
+          if (!isNaN(numValue) && isFinite(numValue)) {
+            parsedLimit = numValue;
+          }
+        }
+      }
+      
       const payload = {
-        customRedemptionLimit: customRedemptionLimit ? parseInt(customRedemptionLimit) : null
+        customRedemptionLimit: parsedLimit
       };
+      
+      console.log('💾 QuickEdit: Parsed limit value:', parsedLimit, 'from input:', customRedemptionLimit, 'typeof:', typeof customRedemptionLimit);
       
       const response = await api.put(`/admin/users/${user.id}`, payload);
       console.log('✅ QuickEdit: Redemption limit update response:', response);

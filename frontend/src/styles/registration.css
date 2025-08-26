@@ -125,10 +125,6 @@ html {
   transform: translateX(0);
 }
 
-.registration-content.merchant .unified-panels {
-  transform: translateX(-50%);
-}
-
 .unified-panels {
   display: flex;
   width: 300%;

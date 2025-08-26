@@ -724,7 +724,6 @@ router.put('/users/:id', auth, admin, async (req, res) => {
       if (allowedFields.includes(field) && updateData[field] !== undefined) {
         // Skip customRedemptionLimit if column doesn't exist
         if (field === 'customRedemptionLimit' && customRedemptionColumnExists.length === 0) {
-          console.log('⚠️ Skipping customRedemptionLimit - column does not exist');
           return;
         }
         
@@ -881,7 +880,6 @@ router.put('/users/:id/password', auth, admin, async (req, res) => {
     const targetUser = userCheck[0];
 
     // Hash the new password
-    const bcrypt = require('bcrypt');
     const hashedPassword = await bcrypt.hash(newPassword, 12);
 
     // Update the password
