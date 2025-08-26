@@ -218,25 +218,35 @@ class NotificationService {
     }
   }
 
-  async notifyPasswordChangedByAdmin(userId, userData) {
+  async notifyPasswordChangedByAdmin(userId, userData = {}) {
     try {
       const user = await this.getUserById(userId);
-      if (!user) throw new Error('User not found');
+      // Prefer admin-provided data when available (useful for legacy flows or when DB record is incomplete)
+      const recipientEmail = (userData && userData.email) ? userData.email : (user && user.email) ? user.email : null;
+      const recipientFullName = (userData && userData.fullName) ? userData.fullName : (user && user.fullName) ? user.fullName : '';
+
+      if (!recipientEmail) {
+        console.warn(`Password change notification skipped: no recipient email available for userId=${userId}`);
+        return { success: false, reason: 'no_recipient_email' };
+      }
+
+      const firstName = (recipientFullName || '').split(' ')[0] || 'Member';
 
       await this.emailService.sendEmail({
-        to: user.email,
+        to: recipientEmail,
         type: 'password_changed_by_admin',
         data: {
-          firstName: (user.fullName || '').split(' ')[0] || 'Member',
-          fullName: userData.fullName,
-          email: userData.email,
-          tempPassword: userData.tempPassword,
+          firstName: firstName,
+          fullName: recipientFullName,
+          email: recipientEmail,
+          tempPassword: (userData && userData.tempPassword) || '',
           loginUrl: `${process.env.FRONTEND_URL}/login`,
           supportEmail: process.env.SUPPORT_EMAIL || 'support@indiansinghana.com'
         }
       });
 
-      console.log(`Password change notification sent to user: ${user.email}`);
+      console.log(`Password change notification sent to ${recipientEmail} for user ID: ${userId}`);
+      return { success: true, to: recipientEmail };
     } catch (error) {
       console.error('Error sending password change notification:', error);
       throw error;
