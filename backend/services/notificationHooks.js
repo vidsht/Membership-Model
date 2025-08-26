@@ -110,6 +110,16 @@ class NotificationHooks {
     }
   }
 
+  // Password Changed by Admin Hook
+  static async onPasswordChangedByAdmin(userId, userData) {
+    try {
+      await notificationService.notifyPasswordChangedByAdmin(userId, userData);
+      console.log(`✅ Password change notification sent for user ID: ${userId}`);
+    } catch (error) {
+      console.error('❌ Error sending password change notification:', error);
+    }
+  }
+
   // Redemption Limit Reached Hook
   static async onRedemptionLimitReached(userId) {
     try {
@@ -224,7 +234,8 @@ class NotificationHooks {
       const defaultPreferences = [
         'profile_status_update',
         'plan_expiry_warning',
-        'plan_assigned'
+        'plan_assigned',
+        'password_changed_by_admin'
       ];
 
       if (userType === 'user') {

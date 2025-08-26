@@ -502,7 +502,7 @@
   }
   
   .header-content {
-    flex-direction: column;
+    flex-direction: row;
     align-items: flex-start;
     gap: 15px;
     padding: 15px 20px;

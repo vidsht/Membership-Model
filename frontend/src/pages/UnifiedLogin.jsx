@@ -135,7 +135,7 @@ const UnifiedLogin = () => {
         <div className="unified-login-card">
           {/* Left Side - Hero Section */}
           <div className="login-hero-section">
-            <div className="hero-content">
+            <div className="hero-content-login">
               <div className="logo-login">
                 <img className="logo-img-login" src="/logo.jpeg" alt="logo" />
               </div>
@@ -166,22 +166,6 @@ const UnifiedLogin = () => {
 
           {/* Right Side - Login Form */}
           <div className="login-form-section">
-            <div className="login-tabs">
-              <button 
-                className={`tab-btn ${activeTab === 'user' ? 'active' : ''}`}
-                onClick={() => setActiveTab('user')}
-              >
-                <i className="fas fa-user"></i> Member Login
-              </button>
-              <button 
-                className={`tab-btn ${activeTab === 'merchant' ? 'active' : ''}`}
-                onClick={() => setActiveTab('merchant')}
-              >
-                <i className="fas fa-store"></i> Merchant Login
-              </button>
-              <div className={`slider ${activeTab}`}></div>
-            </div>
-
             <div className="login-form-container">
               <div className="form-header">
                 <h2 className="form-title">

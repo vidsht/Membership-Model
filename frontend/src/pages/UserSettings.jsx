@@ -7,6 +7,8 @@ import { useImageUrl,  SmartImage, DefaultAvatar } from '../hooks/useImageUrl.js
 import api from '../services/api';
 import '../styles/enhanced-user-settings.css';
 import { useDynamicFields } from '../hooks/useDynamicFields';
+import PasswordStrengthIndicator from '../components/PasswordStrengthIndicator/PasswordStrengthIndicator';
+import { checkPasswordStrength } from '../utils/passwordStrength';
 
 
 const UserSettings = () => {
@@ -384,13 +386,17 @@ useEffect(() => {
   const updateUserPassword = useCallback(async (e) => {
   e.preventDefault();
   
+  // New/confirm match check
   if (passwordFormData.newPassword !== passwordFormData.confirmPassword) {
     setNotificationState({ message: 'New passwords do not match', type: 'error' });
     return;
   }
 
-  if (passwordFormData.newPassword.length < 6) {
-    setNotificationState({ message: 'Password must be at least 6 characters long', type: 'error' });
+  // Use the centralized password strength validator used by ResetPassword
+  const pwCheck = checkPasswordStrength(passwordFormData.newPassword);
+  if (!pwCheck.isValid) {
+    // Show the same user-facing message as other password flows
+    setNotificationState({ message: pwCheck.message || 'Password does not meet requirements', type: 'error' });
     return;
   }
 
@@ -847,82 +853,168 @@ const handleMerchantLogoRemoval = async () => {
     </div>
   );
 
-const RedemptionHistoryTab = () => (
-  <div className="user-settings-tab-content">
-    <div className="user-profile-header">
-      <h2 className="user-profile-title">Redemption History</h2>
-      <p className="user-profile-section-description">
-        View your redeemed deals and offers
-      </p>
-    </div>
+const RedemptionHistoryTab = () => {
+  // Calculate redemption stats for this month
+  const now = new Date();
+  const currentMonth = now.toISOString().slice(0, 7); // YYYY-MM format
+  const thisMonthRedemptions = userRedemptions.filter(redemption => {
+    if (!redemption.redeemed_at) return false;
+    const redemptionMonth = new Date(redemption.redeemed_at).toISOString().slice(0, 7);
+    return redemptionMonth === currentMonth && redemption.status === 'approved';
+  });
 
-    <div className="redemption-history-container">
-      {redemptionsLoadingState ? (
-        <div className="loading-state">
-          <div className="loading-spinner"></div>
-          <p>Loading redemption history...</p>
+  // Get user redemption limit info
+  // Priority: customRedemptionLimit (admin override) -> planMaxDealRedemptions (from plan) -> fallback values
+  const userRedemptionLimit = user?.customRedemptionLimit || 
+                              userProfile?.customRedemptionLimit || 
+                              user?.planMaxDealRedemptions || 
+                              userProfile?.planMaxDealRedemptions ||
+                              userProfile?.maxRedemptionsPerMonth || 
+                              userProfile?.maxRedemptions || 
+                              // Default fallback based on plan type
+                              (userProfile?.membershipType === 'platinum' ? 3 : 
+                               userProfile?.membershipType === 'gold' ? 2 : 1);
+  const isCustomLimit = !!(user?.customRedemptionLimit || userProfile?.customRedemptionLimit);
+  const planName = userProfile?.membershipType || userProfile?.membership || 'Basic';
+  const redemptionsUsed = thisMonthRedemptions.length;
+  const redemptionsRemaining = userRedemptionLimit === -1 ? 'Unlimited' : Math.max(0, userRedemptionLimit - redemptionsUsed);
+  const canRedeem = userRedemptionLimit === -1 || redemptionsUsed < userRedemptionLimit;
+
+  return (
+    <div className="user-settings-tab-content">
+      <div className="user-profile-header">
+        <h2 className="user-profile-title">Redemption History</h2>
+        <p className="user-profile-section-description">
+          View your redeemed deals and track your monthly redemption limits
+        </p>
+      </div>
+
+      {/* Redemption Limit Info Card - Similar to Merchant Plan Info Card */}
+      <div className="plan-info-card redemption-limit-card">
+        <div className="card-header">
+          <h2><i className="fas fa-ticket-alt"></i> Redemption Limits</h2>
+          {!canRedeem && (
+            <span className="limit-warning">
+              <i className="fas fa-exclamation-triangle"></i> Limit Reached
+            </span>
+          )}
         </div>
-      ) : userRedemptions.length === 0 ? (
-        <div className="empty-state">
-          <div className="empty-state-icon">🎫</div>
-          <h3>No Redemptions Yet</h3>
-          <p>You haven't redeemed any deals yet. Start exploring deals to see your redemption history here!</p>
-        </div>
-      ) : (
-        <div className="redemption-cards-grid">
-          {userRedemptions.map((redemption, index) => (
-            <div key={redemption.id || index} className="redemption-card">
-              <div className="redemption-card-header">
-                <h4 className="deal-title">{redemption.dealTitle || redemption.title || 'Deal'}</h4>
-                <span className="redemption-date">
-                  {redemption.redeemed_at ? new Date(redemption.redeemed_at).toLocaleDateString() : 'Date not available'}
-                </span>
-              </div>
-              <div className="redemption-card-body">
-                <p className="business-name">
-                  <i className="fas fa-store"></i>
-                  {redemption.businessName || 'Business Name Not Available'}
-                </p>
-                {redemption.businessAddress && (
-                  <p className="business-address">
-                    <i className="fas fa-map-marker-alt"></i>
-                    {redemption.businessAddress}
-                  </p>
+        <div className="plan-details">
+          <div className="plan-name">
+            <h3>{planName.charAt(0).toUpperCase() + planName.slice(1)} Plan</h3>
+            <span className="plan-key">{planName}</span>
+          </div>
+          <div className="plan-limits">
+            <div className="limit-item">
+              <strong>
+                Redemptions This Month:
+                {isCustomLimit && (
+                  <span className="custom-limit-badge" title="Custom limit set by admin">
+                    <i className="fas fa-star"></i> Custom
+                  </span>
                 )}
-                <p className="redemption-code">
-                  {redemption.discount ? (
-                    <span className="discount-badge">
-                      {redemption.discountType === 'percentage' 
-                        ? `${redemption.discount}% OFF` 
-                        : `$${redemption.discount} OFF`
-                      }
-                    </span>
-                  ) : (
-                    <span>Discount not available</span>
-                  )}
-                </p>
-                <div className="redemption-status">
-                  <span className={`status-badge status-${redemption.status || 'redeemed'}`}>
-                    {redemption.status?.charAt(0).toUpperCase() + redemption.status?.slice(1) || 'Redeemed'}
+              </strong>
+              <div className="progress-bar">
+                <div 
+                  className="progress-fill" 
+                  style={{
+                    width: `${userRedemptionLimit === -1 ? 0 : Math.min(100, (redemptionsUsed / Math.max(userRedemptionLimit, 1)) * 100)}%`
+                  }}
+                ></div>
+              </div>
+              <span className="progress-text">
+                {redemptionsUsed} / {userRedemptionLimit === -1 ? 'Unlimited' : userRedemptionLimit}
+              </span>
+              {isCustomLimit && (
+                <small className="limit-explanation">
+                  Custom limit: {userRedemptionLimit === -1 ? 'Unlimited' : userRedemptionLimit} redemptions/month
+                </small>
+              )}
+            </div>
+            <div className="limit-item">
+              <strong>Remaining:</strong>
+              <span className="remaining-count">
+                {redemptionsRemaining} {userRedemptionLimit === -1 ? '' : 'redemptions'}
+              </span>
+            </div>
+            <div className="limit-item">
+              <strong>Next Reset:</strong>
+              <span className="reset-date">
+                {new Date(now.getFullYear(), now.getMonth() + 1, 1).toLocaleDateString()}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="redemption-history-container">
+        {redemptionsLoadingState ? (
+          <div className="loading-state">
+            <div className="loading-spinner"></div>
+            <p>Loading redemption history...</p>
+          </div>
+        ) : userRedemptions.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-state-icon">🎫</div>
+            <h3>No Redemptions Yet</h3>
+            <p>You haven't redeemed any deals yet. Start exploring deals to see your redemption history here!</p>
+          </div>
+        ) : (
+          <div className="redemption-cards-grid">
+            {userRedemptions.map((redemption, index) => (
+              <div key={redemption.id || index} className="redemption-card">
+                <div className="redemption-card-header">
+                  <h4 className="deal-title">{redemption.dealTitle || redemption.title || 'Deal'}</h4>
+                  <span className="redemption-date">
+                    {redemption.redeemed_at ? new Date(redemption.redeemed_at).toLocaleDateString() : 'Date not available'}
                   </span>
                 </div>
-
-                {/* Robust rejection reason display: handle snake_case/camelCase and variant status values */}
-                {(['rejected','declined','rejected_by_admin','rejected_by_merchant'].includes((redemption.status || '').toLowerCase())) && (
-                  <div className="rejection-reason">
-                    <small>
-                      Reason: {redemption.rejectionReason || redemption.rejection_reason || redemption.rejection || 'Not provided'}
-                    </small>
+                <div className="redemption-card-body">
+                  <p className="business-name">
+                    <i className="fas fa-store"></i>
+                    {redemption.businessName || 'Business Name Not Available'}
+                  </p>
+                  {redemption.businessAddress && (
+                    <p className="business-address">
+                      <i className="fas fa-map-marker-alt"></i>
+                      {redemption.businessAddress}
+                    </p>
+                  )}
+                  <p className="redemption-code">
+                    {redemption.discount ? (
+                      <span className="discount-badge">
+                        {redemption.discountType === 'percentage' 
+                          ? `${redemption.discount}% OFF` 
+                          : `$${redemption.discount} OFF`
+                        }
+                      </span>
+                    ) : (
+                      <span>Discount not available</span>
+                    )}
+                  </p>
+                  <div className="redemption-status">
+                    <span className={`status-badge status-${redemption.status || 'redeemed'}`}>
+                      {redemption.status?.charAt(0).toUpperCase() + redemption.status?.slice(1) || 'Redeemed'}
+                    </span>
                   </div>
-                )}
+
+                  {/* Robust rejection reason display: handle snake_case/camelCase and variant status values */}
+                  {(['rejected','declined','rejected_by_admin','rejected_by_merchant'].includes((redemption.status || '').toLowerCase())) && (
+                    <div className="rejection-reason">
+                      <small>
+                        Reason: {redemption.rejectionReason || redemption.rejection_reason || redemption.rejection || 'Not provided'}
+                      </small>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 
 const renderTabContent = () => {
@@ -977,6 +1069,7 @@ const renderTabContent = () => {
                     minLength="6"
                     autoComplete="new-password"
                   />
+                  <PasswordStrengthIndicator password={passwordFormData.newPassword} showCriteria={true} />
                 </div>
 
                 <div className="form-field-group">

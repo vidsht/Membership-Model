@@ -180,6 +180,11 @@ class EmailService {
         subject: 'Plan Expiry Alert - Multiple Users',
         htmlContent: await this.loadTemplate('admin-plan-expiry-alert'),
         textContent: 'Multiple user plans are expiring soon.'
+      },
+      'password_changed_by_admin': {
+        subject: 'Password Changed by Administrator - {{fullName}}',
+        htmlContent: await this.loadTemplate('password-changed-by-admin'),
+        textContent: 'Your password has been changed by an administrator. Please check your email for the new password.'
       }
     };
 

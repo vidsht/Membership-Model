@@ -1187,3 +1187,93 @@
     break-inside: avoid;
   }
 }
+
+/* ===================================
+   REDEMPTION LIMIT COLUMN STYLES
+   =================================== */
+
+.redemption-limit-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 140px;
+}
+
+.custom-limit {
+  background: linear-gradient(45deg, #ff6b6b, #ffa726);
+  color: white;
+  padding: 0.25rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  animation: glow 2s ease-in-out infinite alternate;
+}
+
+.custom-limit i {
+  font-size: 0.7rem;
+}
+
+.plan-limit {
+  background: #e5e7eb;
+  color: #6b7280;
+  padding: 0.25rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.btn-mini {
+  padding: 0.25rem 0.5rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+}
+
+.btn-edit-limit {
+  background: #667eea;
+  color: white;
+}
+
+.btn-edit-limit:hover {
+  background: #5a67d8;
+  transform: scale(1.1);
+}
+
+.btn-password {
+  background: #f59e0b;
+  color: white;
+}
+
+.btn-password:hover {
+  background: #d97706;
+  transform: scale(1.1);
+}
+
+@keyframes glow {
+  from { box-shadow: 0 0 5px rgba(255, 107, 107, 0.5); }
+  to { box-shadow: 0 0 15px rgba(255, 163, 38, 0.8); }
+}
+
+/* Responsive adjustments for redemption limit column */
+@media (max-width: 768px) {
+  .redemption-limit-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+    min-width: unset;
+  }
+  
+  .btn-mini {
+    align-self: flex-start;
+  }
+}

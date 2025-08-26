@@ -5,7 +5,7 @@
   flex-direction: column;
   align-items: center;
   padding: 20px;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  background: linear-gradient(135deg, var(--neutral-lightest) 0%, #c3cfe2 100%);
   min-height: 100vh;
 }
 
@@ -16,7 +16,7 @@
   justify-content: center;
   gap: 15px;
   padding: 40px;
-  color: #6B46C1;
+  color: var(--primary-color);
 }
 
 .loading-spinner i {
@@ -25,7 +25,7 @@
 
 .loading-spinner p {
   font-size: 1.1rem;
-  color: #666;
+  color: var(--neutral-medium);
   margin: 0;
 }
 
@@ -36,10 +36,10 @@
   justify-content: center;
   gap: 15px;
   padding: 40px;
-  background: #f8f9fa;
-  border: 2px dashed #dee2e6;
-  border-radius: 10px;
-  color: #6c757d;
+  background: var(--neutral-lightest);
+  border: 2px dashed var(--neutral-light);
+  border-radius: var(--border-radius-md);
+  color: var(--neutral-medium);
   text-align: center;
   max-width: 400px;
   margin: 20px auto;
@@ -47,18 +47,18 @@
 
 .status-message i {
   font-size: 3rem;
-  color: #ffc107;
+  color: var(--warning-color);
 }
 
 .status-message h3 {
   margin: 0;
-  color: #495057;
-  font-size: 1.3rem;
+  color: var(--neutral-dark);
+  font-size: var(--h3-size);
 }
 
 .status-message p {
   margin: 0;
-  font-size: 1rem;
+  font-size: var(--text-base);
   line-height: 1.5;
 }
 
@@ -272,14 +272,14 @@
   font-size: 20px;
 }
 
-.info-label {
+.info-label-card {
   font-size: 18px;
   color: rgba(255, 255, 255, 0.8) !important;
   font-weight: 500;
   margin: 0;
 }
 
-.info-value {
+.info-value-card {
   font-size: 18px;
   color: white !important;
   font-weight: 600;
@@ -362,31 +362,116 @@
   color: white;
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
-  .membership-card-new {
-    width: 100%;
-    max-width: 400px;
-    height: auto;
-    min-height: 250px;
-    padding: 12px;
+/* Responsive Design - Maintaining Desktop Layout */
+@media (max-width: 1024px) {
+  .membership-card-container {
+    padding: 15px;
+    background: linear-gradient(135deg, var(--neutral-lightest) 0%, #c3cfe2 100%);
   }
 
-  .card-header-new {
+  .membership-card-new {
+    /* Maintain aspect ratio and proportions */
+    width: 90%;
+    max-width: 600px;
     height: auto;
-    flex-direction: column;
-    gap: 8px;
-    text-align: center;
+    aspect-ratio: 600/350; /* Maintain desktop aspect ratio */
+    padding: 15px;
+    /* Scale font sizes proportionally */
+    font-size: 0.9em;
+  }
+
+  /* Keep desktop layout structure intact */
+  .card-header-new {
+    height: 60px;
+    margin-bottom: 8px;
+    /* No flex-direction change - keep horizontal layout */
+  }
+
+  .main-title {
+    font-size: 20px; /* Slightly smaller but proportional */
+  }
+
+  .subtitle {
+    font-size: 9px;
+  }
+
+  .membership-card-title {
+    font-size: 16px;
+  }
+
+  .card-content-grid {
+    /* Keep the same grid structure as desktop */
+    grid-template-columns: 40% 60%;
+    gap: 15px;
+  }
+
+  .profile-photo {
+    width: 85px; /* Proportionally smaller */
+    height: 85px;
+  }
+
+  .qr-code {
+    width: 85px;
+    height: 85px;
+  }
+
+  .info-label-card {
+    font-size: 16px; /* Maintain readability */
+  }
+
+  .info-value-card {
+    font-size: 16px;
+  }
+
+  .name-value {
+    font-size: 16px;
+  }
+
+  .blood-group-value {
+    font-size: 16px;
+  }
+
+  .membership-number {
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .membership-card-container {
+    padding: 10px;
+  }
+
+  .membership-card-new {
+    /* Maintain aspect ratio on mobile */
+    width: 95%;
+    max-width: 500px;
+    aspect-ratio: 600/350; /* Same aspect ratio as desktop */
+    padding: 12px;
+    font-size: 0.8em;
+  }
+
+  /* Keep header horizontal on mobile too */
+  .card-header-new {
+    height: 50px;
+    /* Keep horizontal layout - don't stack vertically */
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
   }
 
   .card-logo {
-    flex-direction: row;
-    justify-content: center;
+    /* Maintain logo positioning */
+    flex-shrink: 0;
   }
 
-  .logo-text {
-    text-orientation: mixed;
-    font-size: 6px;
+  .logo-circle {
+    height: 45px;
+  }
+
+  .card-title-section {
+    flex: 1;
+    text-align: center;
+    margin: 0 10px;
   }
 
   .main-title {
@@ -394,96 +479,208 @@
   }
 
   .subtitle {
-    font-size: 8px;
+    font-size: 7px;
+  }
+
+  .membership-badge {
+    flex-shrink: 0;
+    padding: 4px 8px;
+    font-size: 9px;
   }
 
   .membership-card-title {
     font-size: 14px;
   }
 
+  /* Maintain desktop grid layout on mobile */
   .card-content-grid {
-    grid-template-columns: 35% 65%;
+    grid-template-columns: 40% 60%; /* Same as desktop */
     gap: 10px;
   }
 
   .profile-photo {
-    width: 60px;
-    height: 60px;
+    width: 70px;
+    height: 70px;
   }
 
   .qr-code {
-    width: 45px;
-    height: 45px;
+    width: 70px;
+    height: 70px;
   }
 
-  .info-label {
-    font-size: 8px;
+  /* Maintain readable font sizes */
+  .info-label-card {
+    font-size: 13px;
   }
 
-  .info-value {
-    font-size: 10px;
+  .info-value-card {
+    font-size: 13px;
   }
 
   .name-value {
-    font-size: 11px;
-  }
-
-  .mobile-value {
-    font-size: 10px;
+    font-size: 14px;
   }
 
   .blood-group-value {
-    font-size: 12px;
+    font-size: 14px;
   }
 
   .membership-number {
-    font-size: 6px;
+    font-size: 0.8rem;
+  }
+
+  /* Keep left column structure */
+  .left-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .photo-qr-container {
+    /* Keep side-by-side layout */
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .right-column {
+    margin: 8px 0 0 0;
+    padding-left: 8px;
+    gap: 8px;
   }
 
   .card-actions {
-    flex-direction: column;
-    align-items: center;
+    margin-top: 15px;
+    gap: 8px;
   }
 
   .btn {
-    width: 100%;
-    max-width: 200px;
+    padding: 8px 16px;
+    font-size: 12px;
+    min-width: 100px;
   }
 }
 
 @media (max-width: 480px) {
   .membership-card-container {
-    padding: 10px;
-  }
-
-  .membership-card-new {
     padding: 8px;
   }
 
-  .card-content-grid {
-    grid-template-columns: 1fr;
-    gap: 15px;
+  .membership-card-new {
+    width: 98%;
+    max-width: 420px;
+    aspect-ratio: 600/350; /* Maintain aspect ratio even on small screens */
+    padding: 10px;
+    font-size: 0.75em;
   }
 
-  .left-column {
+  .card-header-new {
+    height: 40px;
+    /* IMPORTANT: Keep horizontal layout even on very small screens */
     flex-direction: row;
-    justify-content: space-around;
     align-items: center;
+    justify-content: space-between;
+  }
+
+  .logo-circle {
+    height: 35px;
+  }
+
+  .card-title-section {
+    margin: 0 5px;
+  }
+
+  .main-title {
+    font-size: 12px;
+  }
+
+  .subtitle {
+    font-size: 6px;
+  }
+
+  .membership-badge {
+    padding: 3px 6px;
+    font-size: 7px;
+  }
+
+  .membership-card-title {
+    font-size: 11px;
+  }
+
+  /* CRITICAL: Maintain desktop layout structure */
+  .card-content-grid {
+    grid-template-columns: 40% 60%; /* Same grid as desktop */
+    gap: 8px;
+  }
+
+  /* Don't change to single column layout */
+  .left-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .photo-qr-container {
+    display: flex;
+    flex-direction: row; /* Keep side-by-side */
+    align-items: center;
+    gap: 4px;
+    margin: 0 0 0 0;
   }
 
   .profile-photo {
-    width: 50px;
-    height: 50px;
+    width: 55px;
+    height: 55px;
   }
 
   .qr-code {
-    width: 40px;
-    height: 40px;
+    width: 55px;
+    height: 55px;
   }
 
-  .right-column {
-    padding-left: 0;
+  /* Fix: ensure membership-number scales properly on small screens
+     - remove any accidental extreme values (e.g. 2px)
+     - use a slightly more specific selector so media query overrides reliably
+     - use responsive/clamped sizing for better cross-device rendering */
+  .membership-card-new .membership-number {
+    font-size: clamp(5px, 2.5vw, 10px);
+  }
+
+  .membership-card-new .right-column {
     gap: 6px;
+    margin: 0 0 0 0;
+  }
+
+  .membership-card-new .info-label-card {
+    font-size: 10px;
+  }
+
+  .membership-card-new .info-value-card {
+    font-size: 10px;
+  }
+
+  .membership-card-new .name-value {
+    font-size: 11px;
+  }
+
+  .membership-card-new .blood-group-value {
+    font-size: 11px;
+  }
+
+  .card-actions {
+    flex-direction: column;
+    align-items: center;
+    margin-top: 12px;
+  }
+
+  .btn {
+    width: 100%;
+    max-width: 180px;
+    padding: 6px 12px;
+    font-size: 11px;
   }
 }
 

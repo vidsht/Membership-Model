@@ -219,6 +219,31 @@ class NotificationService {
     }
   }
 
+  async notifyPasswordChangedByAdmin(userId, userData) {
+    try {
+      const user = await this.getUserById(userId);
+      if (!user) throw new Error('User not found');
+
+      await this.emailService.sendEmail({
+        to: user.email,
+        type: 'password_changed_by_admin',
+        data: {
+          firstName: user.firstName,
+          fullName: userData.fullName,
+          email: userData.email,
+          tempPassword: userData.tempPassword,
+          loginUrl: `${process.env.FRONTEND_URL}/login`,
+          supportEmail: process.env.SUPPORT_EMAIL || 'support@indiansinghana.com'
+        }
+      });
+
+      console.log(`Password change notification sent to user: ${user.email}`);
+    } catch (error) {
+      console.error('Error sending password change notification:', error);
+      throw error;
+    }
+  }
+
   // Merchant Notifications
   async sendMerchantWelcomeMessage(merchantId) {
     try {

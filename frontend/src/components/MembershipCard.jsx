@@ -576,28 +576,28 @@ const MembershipCard = () => {
           {/* Right Column - Personal Information */}
           <div className="right-column">
             <div className="info-field">
-              <span className="info-label">Name :</span>
-              <span className="info-value name-value">{user.fullName}</span>
+              <span className="info-label-card">Name :</span>
+              <span className="info-value-card name-value">{user.fullName}</span>
             </div>
 
             <div className="info-field">
-              <span className="info-label">Mobile Number :</span>
-              <span className="info-value mobile-value">{user.phone || 'Not provided'}</span>
+              <span className="info-label-card">Mobile Number :</span>
+              <span className="info-value-card mobile-value">{user.phone || 'Not provided'}</span>
             </div>
 
             <div className="info-field">
-              <span className="info-label">Date of Issue :</span>
-              <span className="info-value">{formatDate(user.statusUpdatedAt || user.created_at)}</span>
+              <span className="info-label-card">Date of Issue :</span>
+              <span className="info-value-card">{formatDate(user.statusUpdatedAt || user.created_at)}</span>
             </div>
 
             <div className="info-field">
-              <span className="info-label">Date of Expiry :</span>
-              <span className="info-value">{getExpiryDate()}</span>
+              <span className="info-label-card">Date of Expiry :</span>
+              <span className="info-value-card">{getExpiryDate()}</span>
             </div>
 
             <div className="info-field">
-              <span className="info-label">Blood Group :</span>
-              <span className="info-value blood-group-value">{user.bloodGroup || 'N/A'}</span>
+              <span className="info-label-card">Blood Group :</span>
+              <span className="info-value-card blood-group-value">{user.bloodGroup || 'N/A'}</span>
             </div>
           </div>
         </div>

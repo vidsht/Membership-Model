@@ -1,0 +1,135 @@
+import React, { useState, useEffect } from 'react';
+import { useNotification } from '../../../../contexts/NotificationContext';
+import api from '../../../../services/api';
+import './QuickEditRedemptionLimit.css';
+
+const QuickEditRedemptionLimit = ({ 
+  user, 
+  isOpen, 
+  onClose, 
+  onUpdate 
+}) => {
+  const { showNotification } = useNotification();
+  const [customRedemptionLimit, setCustomRedemptionLimit] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (user && isOpen) {
+      setCustomRedemptionLimit(user.customRedemptionLimit || '');
+    }
+  }, [user, isOpen]);
+
+  const handleClose = () => {
+    setCustomRedemptionLimit('');
+    onClose();
+  };
+
+  const handleSave = async () => {
+    if (!user) return;
+    
+    try {
+      setSaving(true);
+      console.log('💾 QuickEdit: Saving custom redemption limit:', customRedemptionLimit, 'for user:', user.id);
+      
+      const payload = {
+        customRedemptionLimit: customRedemptionLimit ? parseInt(customRedemptionLimit) : null
+      };
+      
+      const response = await api.put(`/admin/users/${user.id}`, payload);
+      console.log('✅ QuickEdit: Redemption limit update response:', response);
+      
+      if (response.data.success) {
+        showNotification('Custom redemption limit updated successfully', 'success');
+        handleClose();
+        if (onUpdate) {
+          onUpdate();
+        }
+      } else {
+        throw new Error(response.data.message || 'Failed to update redemption limit');
+      }
+    } catch (error) {
+      console.error('❌ QuickEdit: Error updating redemption limit:', error);
+      if (error.response && error.response.data && error.response.data.message) {
+        showNotification(error.response.data.message, 'error');
+      } else {
+        showNotification('Failed to update custom redemption limit. Please try again.', 'error');
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!isOpen || !user) return null;
+
+  return (
+    <div className="modal-overlay" onClick={handleClose}>
+      <div className="modal-content quick-edit-redemption-modal" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h3>Quick Edit Redemption Limit</h3>
+          <button className="close-btn" onClick={handleClose}>×</button>
+        </div>
+        
+        <div className="modal-body">
+          <div className="user-info-section">
+            <h4>{user.fullName}</h4>
+            <div className="user-details-grid">
+              <div className="info-row">
+                <span className="info-label">Email:</span>
+                <span className="info-value">{user.email}</span>
+              </div>
+              <div className="info-row">
+                <span className="info-label">Plan:</span>
+                <span className="info-value">{user.membershipType || user.planName || 'N/A'}</span>
+              </div>
+              <div className="info-row">
+                <span className="info-label">Current Custom Limit:</span>
+                <span className="info-value">
+                  {user.customRedemptionLimit ? (
+                    <span className="custom-limit">
+                      <i className="fas fa-star"></i> {user.customRedemptionLimit}/month
+                    </span>
+                  ) : (
+                    <span className="plan-limit">Using plan default</span>
+                  )}
+                </span>
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="customRedemptionLimit">Custom Redemption Limit (per month)</label>
+              <input
+                type="number"
+                id="customRedemptionLimit"
+                min="0"
+                max="100"
+                value={customRedemptionLimit}
+                onChange={(e) => setCustomRedemptionLimit(e.target.value)}
+                placeholder="Leave empty for plan default"
+                className="form-control"
+              />
+              <small className="form-hint">
+                Enter a number between 0-100, or leave empty to use plan default. Set to -1 for unlimited.
+              </small>
+            </div>
+          </div>
+        </div>
+        
+        <div className="modal-footer">
+          <button type="button" className="btn btn-secondary" onClick={handleClose}>
+            Cancel
+          </button>
+          <button 
+            type="button" 
+            className="btn btn-primary" 
+            onClick={handleSave}
+            disabled={saving}
+          >
+            {saving ? 'Saving...' : 'Update Limit'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default QuickEditRedemptionLimit;

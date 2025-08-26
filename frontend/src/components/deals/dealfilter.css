@@ -203,6 +203,10 @@
     gap: 8px;
   }
 
+  .user-filters__filter-group{
+      flex: 0 0 0;
+  } 
+
   .user-filters__btn-reset,
   .user-filters__btn-apply {
     width: 100%;

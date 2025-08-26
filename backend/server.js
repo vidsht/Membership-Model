@@ -132,6 +132,9 @@ app.use('/api/plans', require('./routes/plans'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/admin', require('./routes/roles'));
 
+// Migration routes (for database schema updates)
+app.use('/api/migration', require('./routes/migration'));
+
 // Email admin routes
 const emailAdminRoutes = require('./routes/emailAdmin');
 app.use('/api/admin/email', emailAdminRoutes);

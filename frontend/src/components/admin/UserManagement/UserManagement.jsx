@@ -7,6 +7,8 @@ import UserTable from './components/UserTable';
 import UserFilters from './components/UserFilters';
 import UserModal from './components/UserModal';
 import BulkActions from './components/BulkActions';
+import QuickEditRedemptionLimit from './components/QuickEditRedemptionLimit';
+import QuickChangePassword from './components/QuickChangePassword';
 import './UserManagement.css';
 
 
@@ -47,6 +49,16 @@ const UserManagement = () => {
     message: '',
     details: '',
     onConfirm: null
+  });
+
+  const [quickEditRedemptionState, setQuickEditRedemptionState] = useState({
+    isOpen: false,
+    user: null
+  });
+
+  const [quickChangePasswordState, setQuickChangePasswordState] = useState({
+    isOpen: false,
+    user: null
   });
 
   const [filters, setFilters] = useState({
@@ -520,6 +532,47 @@ const UserManagement = () => {
     }
   }, [selectedUsers.length, users]);
 
+  const handleQuickEditRedemption = useCallback((user) => {
+    setQuickEditRedemptionState({
+      isOpen: true,
+      user: user
+    });
+  }, []);
+
+  const closeQuickEditRedemption = useCallback(() => {
+    setQuickEditRedemptionState({
+      isOpen: false,
+      user: null
+    });
+  }, []);
+
+  const handleQuickEditUpdate = useCallback(() => {
+    // Refresh users data after update
+    fetchUsers();
+    closeQuickEditRedemption();
+  }, []);
+
+  const handleQuickChangePassword = useCallback((user) => {
+    setQuickChangePasswordState({
+      isOpen: true,
+      user: user
+    });
+  }, []);
+
+  const closeQuickChangePassword = useCallback(() => {
+    setQuickChangePasswordState({
+      isOpen: false,
+      user: null
+    });
+  }, []);
+
+  const handlePasswordChangeUpdate = useCallback(() => {
+    // Close the modal after successful password change
+    closeQuickChangePassword();
+    // Optionally refresh users data if needed
+    // fetchUsers();
+  }, []);
+
   const openModal = useCallback((type, user = null, additionalData = {}) => {
     const titles = {
       delete: 'Delete User',
@@ -719,6 +772,8 @@ const UserManagement = () => {
         onSelectAll={handleSelectAll}
         onUserAction={() => {}}
         onStatusChange={handleStatusChange}
+        onQuickEditRedemption={handleQuickEditRedemption}
+        onQuickChangePassword={handleQuickChangePassword}
         referenceData={referenceData}
         loading={loading}
         pagination={pagination}
@@ -782,6 +837,22 @@ const UserManagement = () => {
           onSubmit={null}
         />
       )}
+
+      {/* Quick Edit Redemption Limit Modal */}
+      <QuickEditRedemptionLimit
+        user={quickEditRedemptionState.user}
+        isOpen={quickEditRedemptionState.isOpen}
+        onClose={closeQuickEditRedemption}
+        onUpdate={handleQuickEditUpdate}
+      />
+
+      {/* Quick Change Password Modal */}
+      <QuickChangePassword
+        user={quickChangePasswordState.user}
+        isOpen={quickChangePasswordState.isOpen}
+        onClose={closeQuickChangePassword}
+        onUpdate={handlePasswordChangeUpdate}
+      />
     </div>
   );
 };

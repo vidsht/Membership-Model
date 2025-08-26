@@ -4,6 +4,7 @@ import api from '../../../services/api';
 import { useNotification } from '../../../contexts/NotificationContext';
 import { useDynamicFields } from '../../../hooks/useDynamicFields';
 import useImageUrl from '../../../hooks/useImageUrl';
+import QuickChangePassword from './QuickChangePassword';
 import './MerchantManagementEnhanced.css';
 
 const MerchantManagementEnhanced = () => {
@@ -21,6 +22,10 @@ const MerchantManagementEnhanced = () => {
   const [showMerchantDetails, setShowMerchantDetails] = useState(false);
   const [showQuickEditModal, setShowQuickEditModal] = useState(false);
   const [quickEditMerchant, setQuickEditMerchant] = useState(null);
+  const [quickChangePasswordState, setQuickChangePasswordState] = useState({
+    isOpen: false,
+    user: null
+  });
   const [editingMerchant, setEditingMerchant] = useState(null);
   const [formLoading, setFormLoading] = useState(false);
   const [formErrors, setFormErrors] = useState({});
@@ -222,6 +227,27 @@ const MerchantManagementEnhanced = () => {
     setEditingMerchant(merchant);
     setShowEditModal(true);
   }, [showNotification]);
+
+  const handleQuickChangePassword = useCallback((merchant) => {
+    setQuickChangePasswordState({
+      isOpen: true,
+      user: merchant
+    });
+  }, []);
+
+  const closeQuickChangePassword = useCallback(() => {
+    setQuickChangePasswordState({
+      isOpen: false,
+      user: null
+    });
+  }, []);
+
+  const handlePasswordChangeUpdate = useCallback(() => {
+    // Close the modal after successful password change
+    closeQuickChangePassword();
+    // Optionally refresh merchants data if needed
+    // fetchMerchants();
+  }, []);
 
   const handleEditSubmit = async (updatedMerchant) => {
     try {
@@ -939,6 +965,18 @@ const MerchantManagementEnhanced = () => {
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
+                        handleQuickChangePassword(merchant);
+                      }}
+                      title="Change Password"
+                      type="button"
+                    >
+                      <i className="fas fa-key"></i>
+                    </button>
+                    <button
+                      className="btn btn-sm btn-warning"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
                         handleInlineEdit(merchant);
                       }}
                       title="Quick Edit Deal Limit"
@@ -1437,6 +1475,14 @@ const MerchantManagementEnhanced = () => {
           </div>
         </div>
       )}
+
+      {/* Quick Change Password Modal */}
+      <QuickChangePassword
+        user={quickChangePasswordState.user}
+        isOpen={quickChangePasswordState.isOpen}
+        onClose={closeQuickChangePassword}
+        onUpdate={handlePasswordChangeUpdate}
+      />
 
     </div>
   );

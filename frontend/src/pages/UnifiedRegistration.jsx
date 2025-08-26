@@ -529,24 +529,9 @@ const UnifiedRegistration = () => {
 
   // Only user registration form is rendered (merchant login removed)
   return (
-    <div className="registration-card unified-registration-card">
-      <div className="registration-tabs unified-tabs">
-        <button
-          className={`tab-btn${activeTab === 'member' ? ' active' : ''}`}
-          onClick={() => setActiveTab('member')}
-        >
-          <i className="fas fa-user"></i> Member Registration
-        </button>
-        <button
-          className={`tab-btn${activeTab === 'merchant' ? ' active' : ''}`}
-          onClick={() => setActiveTab('merchant')}
-        >
-          <i className="fas fa-store"></i> Merchant Registration
-        </button>
-        <div className={`slider ${activeTab}`}></div>
-      </div>
-        {/* Back to Home floating button */}
-        <Link to="/" style={{
+    <>
+      {/* Back to Home floating button */}
+          <Link to="/" style={{
           position: 'fixed',
           top: '18px',
           right: '24px',
@@ -568,6 +553,24 @@ const UnifiedRegistration = () => {
           <i className="fas fa-home" style={{ fontSize: '1.1rem', marginRight: '2px' }}></i>
           Home
         </Link>
+        
+    <div className="registration-card unified-registration-card">
+      <div className="registration-tabs unified-tabs">
+        <button
+          className={`tab-btn${activeTab === 'member' ? ' active' : ''}`}
+          onClick={() => setActiveTab('member')}
+        >
+          <i className="fas fa-user"></i> Member Registration
+        </button>
+        <button
+          className={`tab-btn${activeTab === 'merchant' ? ' active' : ''}`}
+          onClick={() => setActiveTab('merchant')}
+        >
+          <i className="fas fa-store"></i> Merchant Registration
+        </button>
+        <div className={`slider ${activeTab}`}></div>
+      </div>
+
       <div className={`registration-content ${activeTab}`}>
         <div className="registration-panels-container unified-panels">
           {/* Member Panel */}
@@ -1351,6 +1354,7 @@ const UnifiedRegistration = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

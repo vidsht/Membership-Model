@@ -1505,6 +1505,16 @@
     padding: 1rem;
     flex-direction: column;
   }
+
+  .feature-items {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .stat-icon{
+    width: 10px;
+    height: 10px;
+  }
 }
 
 /* Rejection Reason Styles */

@@ -10,6 +10,8 @@ const UserTable = ({
   onSelectAll,
   onUserAction,
   onStatusChange,
+  onQuickEditRedemption,
+  onQuickChangePassword,
   referenceData,
   loading,
   pagination,
@@ -198,6 +200,7 @@ const UserTable = ({
                 <th>Contact</th>
                 <th>Type</th>
                 <th>Plan</th>
+                <th>Redemption Limit</th>
                 <th>Valid Till</th>
                 <th>Status</th>
                 <th>Registered</th>
@@ -207,7 +210,7 @@ const UserTable = ({
             <tbody>
               {users.length === 0 ? (
                 <tr>
-                  <td colSpan="9" className="no-data">
+                  <td colSpan="10" className="no-data">
                     <div className="no-data-content no-merchants">
                       <i className="fas fa-users fa-3x"></i>
                       <h3>No Users Found</h3>
@@ -272,6 +275,28 @@ const UserTable = ({
                       </div>
                     </td>
                     <td>
+                      <div className="redemption-limit-info">
+                        {user.customRedemptionLimit ? (
+                          <span className="custom-limit" title="Custom limit set by admin">
+                            <i className="fas fa-star"></i> {user.customRedemptionLimit === -1 ? 'Unlimited' : `${user.customRedemptionLimit}/month`}
+                          </span>
+                        ) : (
+                          <span className="plan-limit" title="Using plan default">
+                            {user.planMaxDealRedemptions ? `${user.planMaxDealRedemptions}/month` : 'Plan Default'}
+                          </span>
+                        )}
+                        {onQuickEditRedemption && user.userType === 'user' && (
+                          <button
+                            onClick={() => onQuickEditRedemption(user)}
+                            className="btn-mini btn-edit-limit"
+                            title="Edit Redemption Limit"
+                          >
+                            <i className="fas fa-edit"></i>
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                    <td>
                       <span className="validity-date">
                         {formatValidTill(user)}
                       </span>
@@ -292,6 +317,17 @@ const UserTable = ({
                         >
                           <i className="fas fa-eye"></i>
                         </Link>
+
+                        {/* Password Change Button */}
+                        {onQuickChangePassword && (
+                          <button
+                            onClick={() => onQuickChangePassword(user)}
+                            className="btn-icon btn-password btn btn-sm btn-warning"
+                            title="Change Password"
+                          >
+                            <i className="fas fa-key"></i>
+                          </button>
+                        )}
 
                         {/* Status Actions (PRESERVED) */}
                         {user.status === 'pending' && (

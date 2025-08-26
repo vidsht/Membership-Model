@@ -1122,3 +1122,118 @@
 .request-actions .btn {
   min-width: 100px;
 }
+
+/* Responsive adjustments for redemption modal (tablet & phone) */
+@media (max-width: 1024px) {
+  .modal-content.redemption-modal {
+    width: 85%;
+    max-width: 700px;
+    padding: 16px;
+  }
+
+  .modal-header, .modal-body, .modal-footer {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .warning-notice {
+    padding: 16px;
+    gap: 12px;
+  }
+}
+
+@media (max-width: 768px) {
+  .modal-content.redemption-modal {
+    width: 92%;
+    max-width: 520px;
+    padding: 12px;
+    border-radius: 10px;
+  }
+
+  .modal-header {
+    padding: 12px 12px 10px 12px;
+  }
+
+  .modal-body {
+    padding: 12px;
+  }
+
+  .modal-footer {
+    padding: 12px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .modal-footer .btn {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .deal-summary {
+    flex-direction: row;
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .deal-image {
+    width: 50px;
+    height: 50px;
+    font-size: 20px;
+  }
+
+  .warning-notice {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .warning-icon {
+    font-size: 20px;
+  }
+
+  .warning-content h4 {
+    font-size: 16px;
+  }
+
+  .deal-image{
+    width: 100%;
+    height: 100px;
+  }
+}
+
+@media (max-width: 480px) {
+  .modal-content.redemption-modal {
+    width: 98%;
+    max-width: 420px;
+    padding: 10px;
+    border-radius: 8px;
+  }
+
+  .modal-header h3 {
+    font-size: 16px;
+  }
+
+  .deal-details h4 {
+    font-size: 16px;
+  }
+
+  .warning-content p,
+  .warning-content li {
+    font-size: 14px;
+  }
+
+  .deal-image {
+    width: 44px;
+    height: 44px;
+    font-size: 18px;
+  }
+
+  .warning-icon {
+    font-size: 18px;
+  }
+
+  /* Ensure modal doesn't overflow vertically on small devices */
+  .modal-content {
+    max-height: 85vh;
+  }
+}

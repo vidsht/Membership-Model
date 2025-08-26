@@ -7,7 +7,7 @@
   max-width: 700px;
   margin: 0 auto;
   padding: 20px;
-  background: #f8f9fa;
+  background: var(--neutral-lightest);
   min-height: 100vh;
 }
 
@@ -17,7 +17,7 @@
   background: #ffffff;
   border: 8px solid #8B0000;
   border-radius: 0;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-lg);
   margin: 0 auto 20px;
   overflow: hidden;
   position: relative;
@@ -369,13 +369,13 @@
   align-items: center;
   justify-content: center;
   padding: 60px 20px;
-  color: #666;
+  color: var(--neutral-medium);
 }
 
 .loading-spinner i {
   font-size: 3rem;
   margin-bottom: 20px;
-  color: #8B0000;
+  color: var(--primary-color);
 }
 
 .loading-spinner p {
@@ -390,10 +390,10 @@
   justify-content: center;
   gap: 15px;
   padding: 40px;
-  background: #f8f9fa;
-  border: 2px dashed #dee2e6;
-  border-radius: 10px;
-  color: #6c757d;
+  background: var(--neutral-lightest);
+  border: 2px dashed var(--neutral-light);
+  border-radius: var(--border-radius-md);
+  color: var(--neutral-medium);
   text-align: center;
   max-width: 400px;
   margin: 20px auto;
@@ -401,18 +401,18 @@
 
 .status-message i {
   font-size: 3rem;
-  color: #ffc107;
+  color: var(--warning-color);
 }
 
 .status-message h3 {
   margin: 0;
-  color: #495057;
-  font-size: 1.3rem;
+  color: var(--neutral-dark);
+  font-size: var(--h3-size);
 }
 
 .status-message p {
   margin: 0;
-  font-size: 1rem;
+  font-size: var(--text-base);
   line-height: 1.5;
 }
 
@@ -515,55 +515,6 @@
   justify-content: center;
   transform: rotate(-15deg);
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-}
-
-.stamp-content {
-  text-align: center;
-  color: #d4af37;
-  font-weight: bold;
-  font-size: 0.8rem;
-  line-height: 1.2;
-  text-transform: uppercase;
-}
-
-.certificate-number {
-  text-align: center;
-  background: rgba(44, 90, 160, 0.1);
-  padding: 6px;
-  border-radius: 4px;
-  border: 1px dashed #2c5aa0;
-  margin: 8px 0;
-}
-
-.certificate-number p {
-  font-size: 0.5rem;
-  color: #2c5aa0;
-  margin: 0;
-  font-weight: bold;
-  letter-spacing: 1px;
-}
-
-.authenticity-note {
-  text-align: center;
-  font-size: 0.35rem;
-  color: #666;
-  background: rgba(248, 249, 250, 0.8);
-  padding: 6px;
-  border-radius: 3px;
-  border-left: 2px solid #d4af37;
-  margin-top: 8px;
-}
-
-.authenticity-note p {
-  margin: 0;
-  line-height: 1.3;
-  font-style: italic;
-}
-
-.authenticity-note .security-features {
-  margin-top: 4px;
-  font-size: 0.3rem;
-  color: #888;
 }
 
 /* QR Code and Verification Section */
@@ -677,120 +628,12 @@
   margin: 0;
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
-  .certificate-container {
-    padding: 10px;
-  }
-
-  .merchant-certificate-a4 {
-    border-radius: 10px;
-    min-height: auto;
-  }
-
-  .certificate-header {
-    flex-direction: column;
-    padding: 30px 30px 20px;
-    text-align: center;
-  }
-
-  .certificate-logo {
-    margin-bottom: 20px;
-  }
-
-  .certificate-title-section {
-    margin: 20px 0;
-  }
-
-  .certificate-main-title {
-    font-size: 2rem;
-  }
-
-  .certificate-subtitle {
-    font-size: 1.1rem;
-  }
-
-  .certificate-body {
-    padding: 30px 30px;
-  }
-
-  .certificate-content h2 {
-    font-size: 1.8rem;
-  }
-
-  .certificate-statement {
-    font-size: 1.1rem;
-  }
-
-  .business-details-grid {
-    grid-template-columns: 1fr;
-    gap: 30px;
-    margin: 30px 0;
-  }
-
-  .detail-section {
-    padding: 20px;
-  }
-
-  .certificate-footer {
-    padding: 30px 30px 20px;
-  }
-
-  .signature-section {
-    flex-direction: column;
-    gap: 20px;
-    text-align: center;
-  }
-
-  .certificate-actions {
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .certificate-actions .btn {
-    min-width: 200px;
-  }
-}
-
-@media (max-width: 480px) {
-  .certificate-header,
-  .certificate-body,
-  .certificate-footer {
-    padding-left: 20px;
-    padding-right: 20px;
-  }
-
-  .merchant-certificate-a4::before {
-    left: 10px;
-    right: 10px;
-    top: 10px;
-    bottom: 10px;
-  }
-
-  .merchant-certificate-a4::after {
-    left: 15px;
-    right: 15px;
-    top: 15px;
-    bottom: 15px;
-  }
-
-  .certificate-main-title {
-    font-size: 1.6rem;
-    letter-spacing: 1px;
-  }
-
-  .business-name {
-    font-size: 2rem;
-    letter-spacing: 1px;
-  }
-}
-
 /* Certificate Verification Footer */
 .certificate-verification-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 60px;
+  margin-top: 50px;
   padding: 35px;
   background: linear-gradient(90deg, rgba(139, 0, 0, 0.05) 0%, rgba(255, 215, 0, 0.05) 50%, rgba(139, 0, 0, 0.05) 100%);
   z-index: 3;
@@ -837,7 +680,7 @@
 }
 
 .certificate-number p {
-  font-size: 14px;
+  font-size: 10px;
   color: #8B0000;
   margin: 0;
   font-weight: bold;
@@ -868,8 +711,8 @@
 }
 
 .verification-stamp {
-  width: 80px;
-  height: 80px;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
   background: radial-gradient(circle, #FFD700 0%, #B8860B 70%, #8B4513 100%);
   border: 3px solid #8B0000;
@@ -883,7 +726,7 @@
   text-align: center;
   color: #8B0000;
   font-weight: bold;
-  font-size: 11px;
+  font-size: 7px;
   line-height: 1.1;
   text-transform: uppercase;
   font-family: 'Times New Roman', serif;
@@ -892,6 +735,441 @@
 .stamp-content div:nth-child(2) {
   font-size: 16px;
   margin: 3px 0;
+}
+
+/* Responsive Design - Maintaining Desktop Layout Structure */
+@media (max-width: 1024px) {
+  .certificate-container {
+    padding: 15px;
+    max-width: 100%;
+  }
+
+  .merchant-certificate-a4 {
+    /* Maintain aspect ratio while scaling down */
+    width: 90%;
+    max-width: 650px;
+    height: auto;
+    aspect-ratio: 700/820; /* Maintain exact desktop proportions */
+    border-width: 6px;
+    /* Scale font sizes proportionally */
+    font-size: 0.95em;
+  }
+
+  /* Keep all desktop layout structures intact */
+  .certificate-header {
+    padding: 35px 50px 2px;
+    /* Maintain horizontal layout */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .certificate-logo .logo-circle {
+    width: 70px;
+    height: 70px;
+  }
+
+  .certificate-logo .logo-circle img {
+    width: 55px;
+    height: 55px;
+  }
+
+  .certificate-main-title {
+    font-size: 1.8rem;
+  }
+
+  .certificate-subtitle {
+    font-size: 1.1rem;
+  }
+
+  .certificate-content h2 {
+    font-size: 50px;
+  }
+
+  .business-name h3{
+    font-size: 1rem;
+  }
+
+  .certificate-statement {
+    font-size: 13px;
+    padding: 0 50px;
+  }
+
+  .certificate-dates {
+    padding-left: 50px;
+  }
+
+  .signature-section-new {
+    bottom: 160px;
+    right: 50px;
+  }
+
+  .signature-image {
+    width: 130px;
+    height: 45px;
+  }
+
+  .signature-name {
+    font-size: 16px;
+  }
+
+  .verification-seal {
+    bottom: -130px;
+    left: 35px;
+    width: 110px;
+    height: 110px;
+  }
+
+  .verification-stamp {
+    width: 70px;
+    height: 70px;
+  }
+
+  .qr-section canvas {
+    width: 70px;
+    height: 70px;
+  }
+}
+
+@media (max-width: 768px) {
+  .certificate-container {
+    padding: 10px;
+  }
+
+  .merchant-certificate-a4::before {
+  top: 5px;
+  left: 5px;
+  right: 5px;
+  bottom: 5px;
+}
+
+  .merchant-certificate-a4 {
+    /* Maintain desktop proportions on mobile */
+    width: 95%;
+    max-width: 550px;
+    aspect-ratio: 700/820; /* Exact same aspect ratio as desktop */
+    border-width: 5px;
+    font-size: 0.85em;
+  }
+
+  /* CRITICAL: Keep desktop header layout on mobile */
+  .certificate-header {
+    padding: 10px 30px 2px;
+    /* DO NOT change to flex-direction: column */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-direction: row; /* Explicitly maintain horizontal layout */
+  }
+
+  .certificate-logo {
+    /* Keep logo on the left */
+    flex-shrink: 0;
+  }
+
+  .certificate-logo .logo-circle {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 0; /* Remove desktop margin-bottom */
+  }
+
+  .certificate-logo .logo-circle img {
+    width: 45px;
+    height: 45px;
+  }
+
+  .certificate-title-section {
+    /* Keep title in center */
+    flex: 1;
+    text-align: center;
+    margin: 0 15px; /* Side margins instead of top/bottom */
+  }
+
+  .certificate-main-title {
+    font-size: 1.5rem;
+    margin: 0; /* Remove desktop margins */
+  }
+
+  .certificate-subtitle {
+    font-size: 0.9rem;
+    margin: 2px 0;
+  }
+
+  .certificate-decoration {
+    margin-top: 0.2px;
+  }
+
+  .decoration-line {
+    width: 40px;
+  }
+
+  .certificate-content h2 {
+    font-size: 40px;
+  }
+
+  .business-name {
+    font-size: 0.8rem;
+  }
+
+  .certificate-statement {
+    font-size: 11px;
+    padding: 0 40px;
+  }
+
+  .certificate-dates {
+    padding-left: 40px;
+  }
+
+  .certificate-dates p {
+    font-size: 12px;
+  }
+
+  .signature-section-new {
+    bottom: 140px;
+    right: 40px;
+  }
+
+  .signature-image {
+    width: 110px;
+    height: 35px;
+  }
+
+  .signature-name {
+    font-size: 14px;
+  }
+
+  .verification-seal {
+    bottom: -110px;
+    left: 30px;
+    width: 90px;
+    height: 90px;
+  }
+
+  .verification-seal-text {
+    font-size: 10px;
+  }
+
+  .certificate-verification-footer {
+    padding: 25px;
+  }
+
+  .verification-stamp {
+    width: 60px;
+    height: 60px;
+  }
+
+  .stamp-content {
+    font-size: 9px;
+  }
+
+  .qr-section canvas {
+    width: 60px;
+    height: 60px;
+  }
+
+  .qr-text {
+    font-size: 10px;
+  }
+
+  .certificate-number p {
+    font-size: 12px;
+  }
+
+  .authenticity-note {
+    font-size: 9px;
+  }
+
+  .certificate-actions {
+    gap: 12px;
+  }
+
+  .certificate-actions .btn {
+    padding: 10px 20px;
+    font-size: 14px;
+    min-width: 140px;
+  }
+}
+
+@media (max-width: 480px) {
+  .certificate-container {
+    padding: 8px;
+  }
+
+  .merchant-certificate-a4 {
+    width: 98%;
+    max-width: 450px;
+    aspect-ratio: 700/820; /* Maintain exact desktop aspect ratio */
+    border-width: 4px;
+    font-size: 0.75em;
+  }
+
+  /* CRITICAL: Maintain desktop layout even on very small screens */
+  .certificate-header {
+    padding: 18px 30px 2px;
+    /* Keep horizontal layout */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-direction: row;
+  }
+
+  .certificate-logo .logo-circle {
+    width: 30px;
+    height: 30px;
+    margin-bottom: 32px
+  }
+
+  .certificate-logo .logo-circle img {
+    width: 20px;
+    height: 20px;
+  }
+
+  .certificate-title-section {
+    margin: 0 10px;
+  }
+
+  .certificate-main-title {
+    font-size: 1.2rem;
+    letter-spacing: 1px;
+  }
+
+  .certificate-subtitle {
+    font-size: 0.8rem;
+  }
+
+  .decoration-line {
+    width: 30px;
+  }
+
+  .decoration-ornament {
+    font-size: 1rem;
+  }
+
+  .certificate-content h2 {
+    font-size: 17px;
+    margin-bottom: 10px;
+  }
+
+  .certificate-content h2::after {
+    font-size: 12px;
+  }
+
+  .business-name {
+    font-size: 0.8rem;
+  }
+
+  .certificate-intro {
+    font-size: 10px;
+    margin-bottom: 5px;
+  }
+
+  .certificate-statement {
+    font-size: 9px;
+    padding: 0 30px;
+    margin: 0 0;
+  }
+
+  .certificate-dates {
+    padding-left: 30px;
+    padding-top: 5px;
+    margin: 0 0;
+  }
+
+  .certificate-dates p {
+    font-size: 7px;
+    margin: 0 0 ;
+  }
+
+  .signature-section-new {
+    bottom: 130px;
+    right: 40px;
+  }
+
+  .signature-line-new {
+    height: 23px;
+  }
+
+  .signature-image {
+    width: 50px;
+    height: 20px;
+  }
+
+  .signature-name {
+    font-size: 8px;
+    margin: 0 0;
+  }
+
+  .signature-org {
+    font-size: 6px;
+  }
+
+  .certificate-verification-footer {
+    padding: 30px 30px 30px 50px;
+    margin-top: -20px;
+  }
+  
+  .verification-left{
+    font-size: 6px;
+  }
+  .verification-center{
+    margin-bottom: 40px;
+    margin-left: 41px;
+  }
+
+  .certificate-number{
+    margin-bottom: 0;
+  }
+
+  .verification-right{
+    margin-bottom: 40px;
+  }
+
+  .verification-stamp {
+    width: 50px;
+    height: 50px;
+  }
+
+  .stamp-content {
+    font-size: 8px;
+  }
+
+  .stamp-content div:nth-child(2) {
+    font-size: 12px;
+  }
+
+  .qr-section {
+    width: 24px;
+    height: 108px;
+  }
+
+  .qr-text {
+    font-size: 4px;
+  }
+
+  .certificate-number p {
+    font-size: 9px;
+  }
+
+  .authenticity-note {
+    font-size: 8px;
+  }
+
+  .security-features {
+    font-size: 7px;
+  }
+
+  .certificate-actions {
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .certificate-actions .btn {
+    width: 100%;
+    max-width: 200px;
+    padding: 8px 16px;
+    font-size: 12px;
+  }
 }
 
 /* Print Styles */

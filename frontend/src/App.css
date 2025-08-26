@@ -502,7 +502,7 @@ header .auth-btn:hover {
 /* Mobile responsive header */
 @media (max-width: 768px) {
   header .header-content {
-    flex-direction: column;
+    flex-direction: row;
     gap: 1rem;
     padding: 1rem;
   }

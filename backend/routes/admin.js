@@ -331,11 +331,24 @@ router.get('/users', auth, admin, async (req, res) => {
         u.country, u.state, u.city, u.planAssignedAt, u.planAssignedBy, u.currentPlan,
         u.membershipNumber, u.validationDate, u.updated_at, u.profilePicture`;
 
+    // Check if customRedemptionLimit column exists
+    const customRedemptionColumnExists = await queryAsync(`
+      SELECT COLUMN_NAME 
+      FROM INFORMATION_SCHEMA.COLUMNS 
+      WHERE TABLE_SCHEMA = DATABASE() 
+      AND TABLE_NAME = 'users' 
+      AND COLUMN_NAME = 'customRedemptionLimit'
+    `);
+
+    if (customRedemptionColumnExists.length > 0) {
+      mainQuery += `, u.customRedemptionLimit`;
+    }
+
     const plansTableExists = await tableExists('plans');
     const communitiesTableExists = await tableExists('communities');
 
     if (plansTableExists) {
-      mainQuery += `, p.name as planName, p.price as planPrice, p.billingCycle, p.currency, p.features`;
+      mainQuery += `, p.name as planName, p.price as planPrice, p.billingCycle, p.currency, p.features, p.maxDealRedemptions as planMaxDealRedemptions`;
     }
 
     if (communitiesTableExists) {
@@ -519,11 +532,24 @@ router.get('/users/:id', auth, admin, async (req, res) => {
         u.country, u.state, u.city, u.planAssignedAt, u.planAssignedBy, u.currentPlan,
         u.membershipNumber, u.validationDate, u.updated_at, u.profilePicture`;
 
+    // Check if customRedemptionLimit column exists
+    const customRedemptionColumnExists = await queryAsync(`
+      SELECT COLUMN_NAME 
+      FROM INFORMATION_SCHEMA.COLUMNS 
+      WHERE TABLE_SCHEMA = DATABASE() 
+      AND TABLE_NAME = 'users' 
+      AND COLUMN_NAME = 'customRedemptionLimit'
+    `);
+
+    if (customRedemptionColumnExists.length > 0) {
+      query += `, u.customRedemptionLimit`;
+    }
+
     const plansTableExists = await tableExists('plans');
     const communitiesTableExists = await tableExists('communities');
 
     if (plansTableExists) {
-      query += `, p.name as planName, p.price as planPrice, p.billingCycle, p.currency, p.features`;
+      query += `, p.name as planName, p.price as planPrice, p.billingCycle, p.currency, p.features, p.maxDealRedemptions as planMaxDealRedemptions`;
     }
 
     if (communitiesTableExists) {
@@ -678,11 +704,30 @@ router.put('/users/:id', auth, admin, async (req, res) => {
       'userCategory', 'currentPlan'
     ];
 
+    // Check if customRedemptionLimit column exists before adding it to allowed fields
+    const customRedemptionColumnExists = await queryAsync(`
+      SELECT COLUMN_NAME 
+      FROM INFORMATION_SCHEMA.COLUMNS 
+      WHERE TABLE_SCHEMA = DATABASE() 
+      AND TABLE_NAME = 'users' 
+      AND COLUMN_NAME = 'customRedemptionLimit'
+    `);
+
+    if (customRedemptionColumnExists.length > 0) {
+      allowedFields.push('customRedemptionLimit');
+    }
+
     const updates = [];
     const values = [];
 
     Object.keys(updateData).forEach(field => {
       if (allowedFields.includes(field) && updateData[field] !== undefined) {
+        // Skip customRedemptionLimit if column doesn't exist
+        if (field === 'customRedemptionLimit' && customRedemptionColumnExists.length === 0) {
+          console.log('⚠️ Skipping customRedemptionLimit - column does not exist');
+          return;
+        }
+        
         updates.push(`${field} = ?`);
         
         if (field === 'address' && typeof updateData[field] === 'object') {
@@ -715,7 +760,7 @@ router.put('/users/:id', auth, admin, async (req, res) => {
     }
     
     if (await tableExists('plans')) {
-      query += ', p.name as planName';
+      query += ', p.name as planName, p.maxDealRedemptions as planMaxDealRedemptions';
     }
     
     query += ' FROM users u';
@@ -806,6 +851,80 @@ router.put('/users/:id/status', auth, admin, async (req, res) => {
   } catch (err) {
     console.error('Error updating user status:', err);
     res.status(500).json({ success: false, message: 'Server error updating user status' });
+  }
+});
+
+// Admin Change User Password
+router.put('/users/:id/password', auth, admin, async (req, res) => {
+  try {
+    const userId = parseInt(req.params.id);
+    const { newPassword } = req.body;
+
+    if (!userId || isNaN(userId)) {
+      return res.status(400).json({ success: false, message: 'Valid user ID is required' });
+    }
+
+    if (!newPassword) {
+      return res.status(400).json({ success: false, message: 'New password is required' });
+    }
+
+    if (newPassword.length < 6 || newPassword.length > 20) {
+      return res.status(400).json({ success: false, message: 'Password must be between 6 and 20 characters' });
+    }
+
+    // Check if user exists
+    const userCheck = await queryAsync('SELECT id, fullName, email, userType FROM users WHERE id = ?', [userId]);
+    if (!userCheck.length) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const targetUser = userCheck[0];
+
+    // Hash the new password
+    const bcrypt = require('bcrypt');
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+
+    // Update the password
+    const updateQuery = 'UPDATE users SET password = ?, updated_at = NOW() WHERE id = ?';
+    const result = await queryAsync(updateQuery, [hashedPassword, userId]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'User not found or password not updated' });
+    }
+
+    // Log admin activity
+    const adminUserId = getAdminUserId(req);
+    if (await tableExists('activities')) {
+      try {
+        await queryAsync(
+          'INSERT INTO activities (type, description, userId, timestamp) VALUES (?, ?, ?, NOW())',
+          ['password_changed_by_admin', `Password changed for user ${targetUser.fullName} by admin`, adminUserId]
+        );
+      } catch (activityError) {
+        console.warn('Error logging password change activity:', activityError);
+      }
+    }
+
+    // Send notification to user about password change
+    const NotificationHooks = require('../services/notificationHooks');
+    NotificationHooks.onPasswordChangedByAdmin(userId, {
+      fullName: targetUser.fullName,
+      email: targetUser.email,
+      tempPassword: newPassword
+    }).then(emailResult => {
+      console.log('📧 Password change notification sent:', emailResult);
+    }).catch(emailError => {
+      console.error('📧 Failed to send password change notification:', emailError);
+    });
+
+    res.json({ 
+      success: true, 
+      message: 'Password updated successfully',
+      notification: 'User will be notified of the password change'
+    });
+  } catch (err) {
+    console.error('Error changing user password:', err);
+    res.status(500).json({ success: false, message: 'Server error changing password' });
   }
 });
 

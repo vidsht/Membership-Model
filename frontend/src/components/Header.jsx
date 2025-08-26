@@ -8,6 +8,8 @@ const Header = () => {
   const location = useLocation();
   const [notification, setNotification] = useState({ message: '', type: '' });
   const [scrolled, setScrolled] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [businessOpen, setBusinessOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -21,6 +23,24 @@ const Header = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Close mobile menus when navigating
+  useEffect(() => {
+    setMobileOpen(false);
+    setBusinessOpen(false);
+  }, [location.pathname]);
+
+  const toggleMobile = () => {
+    setMobileOpen(prev => !prev);
+  };
+
+  const toggleBusiness = (e) => {
+    // On mobile, toggle dropdown on click. On desktop, keep hover behavior.
+    if (typeof window !== 'undefined' && window.innerWidth <= 768) {
+      e.stopPropagation();
+      setBusinessOpen(prev => !prev);
+    }
+  };
 
   const showNotification = (message, type = 'info') => {
     setNotification({ message, type });
@@ -52,16 +72,36 @@ const Header = () => {
           />
         </div>
             
-        <nav className="main-nav">
+        {/* Centered auth on mobile; stays to the right on desktop */}
+        <div className="auth-buttons">
+          {isAuthenticated ? (
+            <div className="auth-btn logout-btn" onClick={handleLogout}>
+              <i className="fas fa-sign-out-alt"></i> Logout
+            </div>
+          ) : (
+            <Link to="/login" className="auth-btn login-btn">
+              <i className="fas fa-sign-in-alt"></i> Member Login
+            </Link>
+          )}
+        </div>
+
+        {/* Hamburger for mobile - visible via CSS on small screens */}
+        <button className={`hamburger ${mobileOpen ? 'open' : ''}`} aria-label="Toggle navigation" onClick={toggleMobile}>
+          <span className="line" />
+          <span className="line" />
+          <span className="line" />
+        </button>
+        
+        <nav className={`main-nav ${mobileOpen ? 'open' : ''}`}>
           <ul>
             <li><Link to="/" className={isActive('/')}>Home</Link></li>
             <li><Link to="/deals" className={isActive('/deals')}><i className="fas fa-tags nav-icon"></i> Deals</Link></li>
             {/* Business Directory and Merchant options */}
-            <li className="dropdown">
-              <div className="dropdown">
+            <li className={`dropdown ${businessOpen ? 'open' : ''}`}>
+              <div className="dropdown" onClick={toggleBusiness} role="button" tabIndex={0}>
                 <i className="fas fa-store nav-icon"></i> Business <i className="fas fa-chevron-down dropdown-arrow"></i>
               </div>
-              <ul className="dropdown-menu">
+              <ul className={`dropdown-menu ${businessOpen ? 'open' : ''}`}>
                 <li><Link to="/business-directory"><i className="fas fa-building"></i> Business Directory</Link></li>
                 {!isAuthenticated && (
                   <>
@@ -99,17 +139,7 @@ const Header = () => {
           </ul>
         </nav>
         
-        <div className="auth-buttons">
-          {isAuthenticated ? (
-            <div className="auth-btn logout-btn" onClick={handleLogout}>
-              <i className="fas fa-sign-out-alt"></i> Logout
-            </div>
-          ) : (
-            <Link to="/login" className="auth-btn login-btn">
-              <i className="fas fa-sign-in-alt"></i> Member Login
-            </Link>
-          )}
-        </div>
+        {/* end header-content children */}
       </div>
       
       {/* Notification */}

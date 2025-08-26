@@ -79,7 +79,7 @@
   z-index: 1;
 }
 
-.hero-content {
+.hero-content-login {
   position: relative;
   z-index: 2;
   text-align: center;
@@ -365,6 +365,52 @@
   }
 }
 
+/* Tablet & Mobile: hide hero section and make form full-width */
+@media (max-width: 1024px) {
+  /* Remove the left hero panel entirely */
+  .login-hero-section {
+    display: none !important;
+  }
+
+  /* Stack card vertically and let the form take full width */
+  .unified-login-card {
+    flex-direction: column;
+    min-height: auto;
+    max-width: 900px; /* keep reasonable width on tablets */
+  }
+
+  .login-form-section {
+    flex: none;
+    width: 100%;
+    padding: 2rem 1.25rem;
+  }
+
+  /* Override absolutely positioned form container used on desktop */
+  .login-form-container {
+    position: relative !important;
+    top: auto !important;
+    right: auto !important;
+    width: 100% !important;
+    height: auto !important;
+    transform: none !important;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+    border-radius: 0 0 20px 20px;
+    background-color: #fff;
+    padding: 2rem !important;
+  }
+
+  /* Ensure any hero-specific background layers are hidden */
+  .login-hero-section::before,
+  .hero-content-login {
+    display: none !important;
+  }
+
+  /* Improve spacing of the container on smaller viewports */
+  .unified-login-container {
+    padding: 1.5rem 1rem;
+  }
+}
+
 /* Login Panel Styling */
 .login-panel {
   padding: 30px;
@@ -617,7 +663,7 @@
   color: white;
   border: none;
   border-radius: var(--border-radius-btn);
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 600;
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
