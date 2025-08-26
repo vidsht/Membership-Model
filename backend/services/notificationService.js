@@ -16,8 +16,8 @@ class NotificationService {
         to: user.email,
         type: 'user_welcome',
         data: {
-          fullName: user.fullName || `${user.firstName} ${user.lastName}`,
-          firstName: user.firstName,
+          fullName: user.fullName,
+          firstName: (user.fullName || '').split(' ')[0] || 'Member',
           email: user.email,
           membershipNumber: user.membershipNumber,
           validationDate: user.validationDate
@@ -44,7 +44,7 @@ class NotificationService {
           to: user.email,
           type: 'new_deal_notification',
           data: {
-            firstName: user.firstName,
+            firstName: (user.fullName || '').split(' ')[0] || 'Member',
             dealTitle: deal.title,
             dealDescription: deal.description,
             businessName: deal.businessName,
@@ -71,8 +71,8 @@ class NotificationService {
         to: user.email,
         type: 'profile_status_update',
         data: {
-          firstName: user.firstName,
-          fullName: user.fullName || `${user.firstName} ${user.lastName}`,
+          firstName: (user.fullName || '').split(' ')[0] || 'Member',
+          fullName: user.fullName,
           newStatus: newStatus,
           reason: reason,
           statusMessage: this.getStatusMessage(newStatus),
@@ -126,13 +126,12 @@ class NotificationService {
         to: user.email,
         type: 'redemption_limit_reached',
         data: {
-          firstName: user.firstName,
+          firstName: (user.fullName || '').split(' ')[0] || 'Member',
           currentLimit: userPlan.monthlyRedemptionLimit,
           resetDate: this.getNextMonthFirstDay(),
           planName: userPlan.planName
         }
       });
-
       console.log(`Max redemption limit notification sent to user: ${user.email}`);
     } catch (error) {
       console.error('Error sending max redemption limit notification:', error);
@@ -151,7 +150,7 @@ class NotificationService {
         to: user.email,
         type: 'plan_expiry_warning',
         data: {
-          firstName: user.firstName,
+          firstName: (user.fullName || '').split(' ')[0] || 'Member',
           planName: userPlan.planName,
           expiryDate: user.validationDate,
           daysLeft: daysUntilExpiry,
@@ -177,7 +176,7 @@ class NotificationService {
         to: user.email,
         type: 'redemption_limit_renewed',
         data: {
-          firstName: user.firstName,
+          firstName: (user.fullName || '').split(' ')[0] || 'Member',
           newLimit: userPlan.monthlyRedemptionLimit,
           planName: userPlan.planName,
           currentMonth: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
@@ -203,7 +202,7 @@ class NotificationService {
         to: user.email,
         type: 'plan_assigned',
         data: {
-          firstName: user.firstName,
+          firstName: (user.fullName || '').split(' ')[0] || 'Member',
           planName: plan.name,
           planDescription: plan.description,
           monthlyRedemptionLimit: plan.monthlyRedemptionLimit,
@@ -228,7 +227,7 @@ class NotificationService {
         to: user.email,
         type: 'password_changed_by_admin',
         data: {
-          firstName: user.firstName,
+          firstName: (user.fullName || '').split(' ')[0] || 'Member',
           fullName: userData.fullName,
           email: userData.email,
           tempPassword: userData.tempPassword,
@@ -255,7 +254,7 @@ class NotificationService {
         type: 'merchant_welcome',
         data: {
           businessName: merchant.businessName,
-          ownerName: merchant.ownerName || merchant.firstName,
+          ownerName: merchant.ownerName || (merchant.fullName || '').split(' ')[0] || 'Owner',
           email: merchant.email,
           businessType: merchant.businessType,
           validationDate: merchant.validationDate,
@@ -285,7 +284,7 @@ class NotificationService {
         type: emailType,
         data: {
           businessName: merchant.businessName,
-          ownerName: merchant.firstName,
+          ownerName: (merchant.fullName || '').split(' ')[0] || 'Owner',
           dealTitle: deal.title,
           dealDescription: deal.description,
           status: deal.status,
@@ -312,7 +311,7 @@ class NotificationService {
         type: 'profile_status_update',
         data: {
           businessName: merchant.businessName,
-          ownerName: merchant.firstName,
+          ownerName: (merchant.fullName || '').split(' ')[0] || 'Owner',
           newStatus: newStatus,
           reason: reason,
           statusMessage: this.getStatusMessage(newStatus),
@@ -339,7 +338,7 @@ class NotificationService {
         type: 'deal_limit_reached',
         data: {
           businessName: merchant.businessName,
-          ownerName: merchant.firstName,
+          ownerName: (merchant.fullName || '').split(' ')[0] || 'Owner',
           currentLimit: merchantPlan.monthlyDealLimit,
           resetDate: this.getNextMonthFirstDay(),
           planName: merchantPlan.planName
@@ -365,7 +364,7 @@ class NotificationService {
         type: 'plan_expiry_warning',
         data: {
           businessName: merchant.businessName,
-          ownerName: merchant.firstName,
+          ownerName: (merchant.fullName || '').split(' ')[0] || 'Owner',
           planName: merchantPlan.planName,
           expiryDate: merchant.validationDate,
           daysLeft: daysUntilExpiry,
@@ -390,7 +389,7 @@ class NotificationService {
         type: 'custom_deal_limit_assigned',
         data: {
           businessName: merchant.businessName,
-          ownerName: merchant.firstName,
+          ownerName: (merchant.fullName || '').split(' ')[0] || 'Owner',
           newLimit: newLimit,
           effectiveDate: new Date().toLocaleDateString(),
           dashboardUrl: `${process.env.FRONTEND_URL}/login`
@@ -416,7 +415,7 @@ class NotificationService {
         type: 'deal_limit_renewed',
         data: {
           businessName: merchant.businessName,
-          ownerName: merchant.firstName,
+          ownerName: (merchant.fullName || '').split(' ')[0] || 'Owner',
           newLimit: merchantPlan.monthlyDealLimit,
           planName: merchantPlan.planName,
           currentMonth: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
@@ -443,7 +442,7 @@ class NotificationService {
         type: 'plan_assigned',
         data: {
           businessName: merchant.businessName,
-          ownerName: merchant.firstName,
+          ownerName: (merchant.fullName || '').split(' ')[0] || 'Owner',
           planName: plan.name,
           planDescription: plan.description,
           monthlyDealLimit: plan.monthlyDealLimit,
@@ -472,7 +471,7 @@ class NotificationService {
         type: 'new_redemption_request',
         data: {
           businessName: merchant.businessName,
-          ownerName: merchant.firstName,
+          ownerName: (merchant.fullName || '').split(' ')[0] || 'Owner',
           dealTitle: redemption.dealTitle,
           userName: redemption.userName,
           userEmail: redemption.userEmail,
@@ -502,9 +501,9 @@ class NotificationService {
           to: admin.email,
           type: 'admin_new_registration',
           data: {
-            adminName: admin.firstName,
+            adminName: (admin.fullName || '').split(' ')[0] || 'Admin',
             userType: user.userType,
-            fullName: user.fullName || `${user.firstName} ${user.lastName}`,
+            fullName: user.fullName,
             email: user.email,
             businessName: user.businessName,
             registrationDate: user.createdAt,
@@ -532,7 +531,7 @@ class NotificationService {
           to: admin.email,
           type: 'admin_deal_redemption',
           data: {
-            adminName: admin.firstName,
+            adminName: (admin.fullName || '').split(' ')[0] || 'Admin',
             dealTitle: redemption.dealTitle,
             businessName: redemption.businessName,
             userName: redemption.userName,
@@ -565,7 +564,7 @@ class NotificationService {
           to: admin.email,
           type: 'admin_new_deal_request',
           data: {
-            adminName: admin.firstName,
+            adminName: (admin.fullName || '').split(' ')[0] || 'Admin',
             dealTitle: deal.title,
             dealDescription: deal.description,
             businessName: merchant.businessName,
@@ -598,7 +597,7 @@ class NotificationService {
           to: admin.email,
           type: 'admin_deal_published',
           data: {
-            adminName: admin.firstName,
+            adminName: (admin.fullName || '').split(' ')[0] || 'Admin',
             dealTitle: deal.title,
             businessName: merchant.businessName,
             publishedDate: deal.updatedAt,
@@ -626,7 +625,7 @@ class NotificationService {
           to: admin.email,
           type: 'admin_plan_expiry_alert',
           data: {
-            adminName: admin.firstName,
+            adminName: (admin.fullName || '').split(' ')[0] || 'Admin',
             expiringCount: expiringUsers.length,
             expiringUsers: expiringUsers,
             dashboardUrl: `${process.env.FRONTEND_URL}`
@@ -757,8 +756,8 @@ class NotificationService {
   async getRedemptionById(redemptionId) {
     const query = `
       SELECT dr.*, d.title as dealTitle, d.description as dealDescription,
-             u.firstName, u.lastName, u.email as userEmail,
-             u.firstName as userName,
+             u.fullName, u.email as userEmail,
+             u.fullName as userName,
              b.businessName, b.email as merchantEmail
       FROM deal_redemptions dr
       LEFT JOIN deals d ON dr.dealId = d.id
@@ -802,7 +801,7 @@ class NotificationService {
   }
 
   async getAdminEmails() {
-    const query = 'SELECT email, firstName FROM users WHERE userType = "admin" AND status = "active"';
+    const query = 'SELECT email, fullName FROM users WHERE userType = "admin" AND status = "active"';
     return await this.queryAsync(query);
   }
 
@@ -828,7 +827,7 @@ class NotificationService {
 
   async getExpiringUsers() {
     const query = `
-      SELECT id, firstName, lastName, email, userType, validationDate
+      SELECT id, fullName, email, userType, validationDate
       FROM users 
       WHERE status = 'active'
       AND validationDate BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 7 DAY)
