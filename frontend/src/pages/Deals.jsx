@@ -150,6 +150,11 @@ const Deals = () => {
     setLoading(true);
     try {
       const data = await getAllDeals();
+      console.log('🔍 Deals data received:', data.map(deal => ({
+        id: deal.id,
+        businessName: deal.businessName,
+        businessLogo: deal.businessLogo
+      })));
       setDeals(data);
     } catch (error) {
       setDeals([]);
@@ -280,7 +285,8 @@ const Deals = () => {
         <div className="no-deals">No deals available.</div>
       ) : (
         <div className="deals-grid">
-          {filteredDeals.map(deal => (
+          {filteredDeals.map(deal => {
+            return (
             <div className="deal-card" key={deal.id}>
               {/* Deal Banner Image */}
               <div className="deal-banner">
@@ -303,29 +309,38 @@ const Deals = () => {
               <div className="deal-business-minimal">
                 <div className="business-logo-name">
                   <div className="business-logo">
-                    {getMerchantLogoUrl({ logo: deal.businessLogo }) ? (
-                    <SmartImage
-                      src={getMerchantLogoUrl({ logo: deal.businessLogo })}
-                      alt={`${deal.businessName} Logo`}
-                      placeholder={
-                        <div className="logo-placeholder">
-                          <span>{deal.businessName?.charAt(0) || "B"}</span>
+                    {(() => {
+                      const logoUrl = getMerchantLogoUrl({ logo: deal.businessLogo });
+                      console.log('🎯 Deal logo debug:', {
+                        dealId: deal.id,
+                        businessName: deal.businessName,
+                        businessLogo: deal.businessLogo,
+                        logoUrl: logoUrl
+                      });
+                      return logoUrl ? (
+                        <SmartImage
+                          src={logoUrl}
+                          alt={`${deal.businessName} Logo`}
+                          placeholder={
+                            <div className="logo-placeholder">
+                              <span>{deal.businessName?.charAt(0) || "B"}</span>
+                            </div>
+                          }
+                          className="logo-image"
+                          maxRetries={3}
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            objectPosition: 'center'
+                          }}
+                        />
+                      ) : (
+                        <div className="business-logo-placeholder">
+                          <span>{deal.businessName?.charAt(0) || 'B'}</span>
                         </div>
-                      }
-                      className="logo-image"
-                      maxRetries={3}
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
-                        objectPosition: 'center'
-                      }}
-                    />
-                    ) : (
-                      <div className="business-logo-placeholder">
-                        <span>{deal.businessName?.charAt(0) || 'B'}</span>
-                      </div>
-                    )}
+                      );
+                    })()}
                   </div>
                   <Link 
                     to="/business-directory"
@@ -485,7 +500,7 @@ const Deals = () => {
                 )}
               </div>
             </div>
-          ))}
+          )})}
         </div>
       )}
       

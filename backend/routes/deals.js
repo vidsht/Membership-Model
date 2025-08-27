@@ -169,7 +169,7 @@ router.get('/', async (req, res) => {
     // Simplified query to show all active and non-expired deals to everyone
     const dealsQuery = `
       SELECT d.*, b.businessName, b.businessCategory, b.businessAddress,
-             b.businessPhone, b.businessEmail, b.website
+             b.businessPhone, b.businessEmail, b.website, b.logo as businessLogo
       FROM deals d
       LEFT JOIN businesses b ON d.businessId = b.businessId
       WHERE d.status = 'active'
@@ -226,7 +226,7 @@ router.get('/public', async (req, res) => {
              d.validFrom, d.validUntil, d.expiration_date, d.status, d.created_at,
              d.termsConditions, d.views, d.redemptions, d.minPlanPriority,
              b.businessName, b.businessCategory, b.businessAddress, b.businessPhone,
-             b.businessEmail, b.website
+             b.businessEmail, b.website, b.logo as businessLogo
       FROM deals d
       LEFT JOIN businesses b ON d.businessId = b.businessId
       WHERE d.status = 'active'

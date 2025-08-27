@@ -510,7 +510,7 @@ const MerchantRegister = () => {
                       required 
                     />
                     <span className="checkmark"></span>
-                    I agree to the <Link to="/terms" target="_blank">Terms of Service</Link> and <Link to="/privacy" target="_blank">Privacy Policy</Link> for merchants
+                    I agree to <Link to="/terms" target="_blank">Terms of Service</Link> and <Link to="/disclaimer" target="_blank">Disclaimer</Link> for merchants
                   </label>
 
                   <button 
