@@ -2321,7 +2321,7 @@ router.get('/deals', auth, admin, async (req, res) => {
     // Add redemptionCount to each deal
     if (await tableExists('deal_redemptions')) {
       for (const deal of deals) {
-        const countResult = await queryAsync('SELECT COUNT(*) AS count FROM deal_redemptions WHERE deal_id = ?', [deal.id]);
+        const countResult = await queryAsync('SELECT COUNT(*) AS count FROM deal_redemptions WHERE deal_id = ? AND status = "approved"', [deal.id]);
         deal.redemptionCount = countResult[0]?.count || 0;
       }
     } else {

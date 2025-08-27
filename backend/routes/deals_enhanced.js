@@ -215,7 +215,7 @@ router.post('/:id/redeem', checkDealAccess, (req, res) => {
     const monthlyLimitQuery = `
       SELECT COUNT(*) as redemptionsThisMonth
       FROM deal_redemptions
-      WHERE userId = ? AND DATE_FORMAT(redeemedAt, '%Y-%m') = ?
+      WHERE userId = ? AND DATE_FORMAT(redeemedAt, '%Y-%m') = ? AND status = 'approved'
     `;
 
     db.query(monthlyLimitQuery, [userId, currentMonth], (err2, limitResults) => {
@@ -250,7 +250,7 @@ router.post('/:id/redeem', checkDealAccess, (req, res) => {
 
         // Check max redemptions for the deal
         if (deal.maxRedemptions) {
-          db.query('SELECT COUNT(*) as totalRedemptions FROM deal_redemptions WHERE dealId = ?', [dealId], (err4, countResults) => {
+          db.query('SELECT COUNT(*) as totalRedemptions FROM deal_redemptions WHERE dealId = ? AND status = "approved"', [dealId], (err4, countResults) => {
             if (err4) {
               console.error('Deal redemption count error:', err4);
               return res.status(500).json({ message: 'Server error' });

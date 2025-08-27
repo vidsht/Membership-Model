@@ -982,9 +982,9 @@ router.get('/analytics/deals/:dealId?', checkMerchantAccess, async (req, res) =>
                (SELECT COUNT(*) FROM deal_redemptions dr WHERE dr.deal_id = d.id AND dr.status = 'approved') as approvedRedemptions,
                (SELECT COUNT(*) FROM deal_redemptions dr WHERE dr.deal_id = d.id AND dr.status = 'pending') as pendingRedemptions,
                (SELECT COUNT(*) FROM deal_redemptions dr WHERE dr.deal_id = d.id AND dr.status = 'rejected') as rejectedRedemptions,
-               (SELECT COUNT(*) FROM deal_redemptions dr WHERE dr.deal_id = d.id AND DATE(dr.redeemed_at) >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)) as monthlyRedemptions,
-               (SELECT COUNT(*) FROM deal_redemptions dr WHERE dr.deal_id = d.id AND DATE(dr.redeemed_at) >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)) as weeklyRedemptions,
-               (SELECT COUNT(*) FROM deal_redemptions dr WHERE dr.deal_id = d.id AND DATE(dr.redeemed_at) = CURDATE()) as todayRedemptions
+               (SELECT COUNT(*) FROM deal_redemptions dr WHERE dr.deal_id = d.id AND dr.status = 'approved' AND DATE(dr.redeemed_at) >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)) as monthlyRedemptions,
+               (SELECT COUNT(*) FROM deal_redemptions dr WHERE dr.deal_id = d.id AND dr.status = 'approved' AND DATE(dr.redeemed_at) >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)) as weeklyRedemptions,
+               (SELECT COUNT(*) FROM deal_redemptions dr WHERE dr.deal_id = d.id AND dr.status = 'approved' AND DATE(dr.redeemed_at) = CURDATE()) as todayRedemptions
         FROM deals d
         WHERE d.id = ? AND d.businessId = ?
       `;

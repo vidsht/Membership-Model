@@ -122,8 +122,10 @@ const Header = () => {
               </>
             )}
 
-            {/* <li><Link to="/about" className={isActive('/about')}>About Us</Link></li>
-            <li><Link to="/contact" className={isActive('/contact')}>Contact</Link></li> */}
+            <li><Link to="/about" className={isActive('/about')}>About Us</Link></li>
+            <li><Link to="/contact" className={isActive('/contact')}>Contact</Link></li>
+            <li><Link to="/terms" className={isActive('/terms')}>Terms</Link></li>
+            <li><Link to="/disclaimer" className={isActive('/disclaimer')}>Disclaimer</Link></li>
             
             {/* Admin/Merchant specific links */}
             {isAuthenticated && user?.userType === 'merchant' && (

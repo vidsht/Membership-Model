@@ -10,7 +10,7 @@ const router = express.Router();
 // Get user profile (MySQL)
 router.get('/profile', auth, (req, res) => {
   const userId = req.user.id;
-  db.query('SELECT id, fullName, email, phone, address, profilePicture, preferences, membership, socialMediaFollowed, membershipNumber, membershipType, bloodGroup, statusUpdatedAt, validationDate, planExpiryDate, subscriptionEndDate, planEndDate, created_at FROM users WHERE id = ?', [userId], (err, results) => {
+  db.query('SELECT id, fullName, email, phone, address, profilePicture, preferences, membership, socialMediaFollowed, membershipNumber, membershipType, bloodGroup, statusUpdatedAt, validationDate, planExpiryDate, subscriptionEndDate, planEndDate, customRedemptionLimit, created_at FROM users WHERE id = ?', [userId], (err, results) => {
     if (err) {
       console.error('Get profile error:', err);
       return res.status(500).json({ message: 'Server error' });
@@ -40,7 +40,7 @@ router.get('/profile/complete', auth, (req, res) => {
         id, fullName, email, phone, dob, bloodGroup, 
         community, address, country, state, city, profilePicture, profilePhoto,
         membership, membershipType, membershipNumber, preferences, created_at, 
-        lastLogin, updated_at, validationDate, userType
+        lastLogin, updated_at, validationDate, userType, customRedemptionLimit
       FROM users 
       WHERE id = ?
     `;
@@ -77,6 +77,62 @@ router.get('/profile/complete', auth, (req, res) => {
     if (user.address && typeof user.address === 'string') {
       try {
         user.address = JSON.parse(user.address);
+      } catch (e) {
+        // Keep as string if not valid JSON
+      }
+    }
+    
+    res.json({ user });
+  });
+});
+
+// @route   GET /api/users/profile/with-plan
+// @desc    Get user profile with plan details including redemption limits
+// @access  Private
+router.get('/profile/with-plan', auth, (req, res) => {
+  const userId = req.user.id;
+  
+  const query = `
+    SELECT 
+      u.id, u.fullName, u.email, u.phone, u.dob, u.bloodGroup, 
+      u.community, u.address, u.country, u.state, u.city, 
+      u.profilePicture, u.profilePhoto, u.membership, u.membershipType, 
+      u.membershipNumber, u.preferences, u.created_at, u.lastLogin, 
+      u.updated_at, u.validationDate, u.userType, u.customRedemptionLimit,
+      u.statusUpdatedAt, u.planExpiryDate, u.subscriptionEndDate, u.planEndDate,
+      p.name as planName, p.price as planPrice, p.currency as planCurrency,
+      p.billingCycle, p.features as planFeatures, p.dealAccess,
+      p.maxDealRedemptions as planMaxDealRedemptions, p.maxRedemptions as planMaxRedemptions, 
+      p.priority as planPriority, p.\`key\` as planKey
+    FROM users u
+    LEFT JOIN plans p ON u.membershipType = p.\`key\` AND p.type = 'user'
+    WHERE u.id = ?
+  `;
+
+  db.query(query, [userId], (err, results) => {
+    if (err) {
+      console.error('Get profile with plan error:', err);
+      return res.status(500).json({ message: 'Server error' });
+    }
+    
+    if (!results.length) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    const user = results[0];
+    
+    // Parse JSON fields if they exist
+    if (user.preferences) {
+      try {
+        user.preferences = JSON.parse(user.preferences);
+      } catch (e) {
+        // Keep as string if not valid JSON
+      }
+    }
+    
+    if (user.planFeatures) {
+      try {
+        user.planFeatures = JSON.parse(user.planFeatures);
       } catch (e) {
         // Keep as string if not valid JSON
       }

@@ -59,7 +59,7 @@ class EmailService {
 
   async getEmailTemplate(type) {
     try {
-      const query = 'SELECT * FROM email_templates WHERE type = ? AND isActive = 1';
+      const query = 'SELECT * FROM email_templates WHERE type = ?';
       const results = await this.queryAsync(query, [type]);
       
       if (results.length > 0) {
@@ -75,124 +75,146 @@ class EmailService {
   }
 
   async getDefaultTemplate(type) {
-    const templates = {
+    // Define template configurations without loading them
+    const templateConfigs = {
       'user_welcome': {
         subject: 'Welcome to Indians in Ghana - {{fullName}}!',
-        htmlContent: await this.loadTemplate('user-welcome'),
+        templateName: 'user-welcome',
         textContent: 'Welcome to Indians in Ghana community!'
       },
       'merchant_welcome': {
         subject: 'Welcome to Indians in Ghana Business Directory - {{businessName}}!',
-        htmlContent: await this.loadTemplate('merchant-welcome'),
+        templateName: 'merchant-welcome',
         textContent: 'Welcome to Indians in Ghana Business Directory!'
       },
       'deal_approved': {
         subject: 'Your Deal Has Been Approved - {{dealTitle}}',
-        htmlContent: await this.loadTemplate('deal-approved'),
+        templateName: 'deal-approved',
         textContent: 'Your deal has been approved and is now live!'
       },
       'deal_rejected': {
         subject: 'Deal Submission Update - {{dealTitle}}',
-        htmlContent: await this.loadTemplate('deal-rejected'),
+        templateName: 'deal-rejected',
         textContent: 'Your deal submission has been reviewed.'
       },
       'redemption_approved': {
         subject: 'Redemption Request Approved - {{dealTitle}}',
-        htmlContent: await this.loadTemplate('redemption-approved'),
+        templateName: 'redemption-approved',
         textContent: 'Your redemption request has been approved!'
       },
       'redemption_rejected': {
         subject: 'Redemption Request Update - {{dealTitle}}',
-        htmlContent: await this.loadTemplate('redemption-rejected'),
+        templateName: 'redemption-rejected',
         textContent: 'Your redemption request has been reviewed.'
       },
       'plan_expiry_warning': {
         subject: 'Plan Expiry Warning - {{planName}}',
-        htmlContent: await this.loadTemplate('plan-expiry-warning'),
+        templateName: 'plan-expiry-warning',
         textContent: 'Your membership plan is expiring soon.'
       },
       'plan_assigned': {
         subject: 'New Plan Assigned - {{planName}}',
-        htmlContent: await this.loadTemplate('plan-assigned'),
+        templateName: 'plan-assignment',
         textContent: 'A new membership plan has been assigned to your account.'
       },
       'profile_status_update': {
         subject: 'Profile Status Update - Indians in Ghana',
-        htmlContent: await this.loadTemplate('profile-status-update'),
+        templateName: 'profile-status-update',
         textContent: 'Your profile status has been updated.'
       },
       'new_deal_notification': {
         subject: 'New Deal Available - {{dealTitle}}',
-        htmlContent: await this.loadTemplate('new-deal-notification'),
+        templateName: 'new-deal-notification',
         textContent: 'A new deal is now available for you!'
       },
       'redemption_limit_reached': {
         subject: 'Monthly Redemption Limit Reached',
-        htmlContent: await this.loadTemplate('redemption-limit-reached'),
+        templateName: 'redemption-limit-reached',
         textContent: 'You have reached your monthly redemption limit.'
       },
       'redemption_limit_renewed': {
         subject: 'Redemption Limit Renewed',
-        htmlContent: await this.loadTemplate('redemption-limit-renewed'),
+        templateName: 'redemption-limit-renewed',
         textContent: 'Your monthly redemption limit has been renewed!'
       },
       'deal_limit_reached': {
         subject: 'Monthly Deal Posting Limit Reached',
-        htmlContent: await this.loadTemplate('deal-limit-reached'),
+        templateName: 'deal-limit-reached',
         textContent: 'You have reached your monthly deal posting limit.'
       },
       'deal_limit_renewed': {
         subject: 'Deal Posting Limit Renewed',
-        htmlContent: await this.loadTemplate('deal-limit-renewed'),
+        templateName: 'deal-limit-renewed',
         textContent: 'Your monthly deal posting limit has been renewed!'
       },
       'custom_deal_limit_assigned': {
         subject: 'Custom Deal Limit Assigned',
-        htmlContent: await this.loadTemplate('custom-deal-limit-assigned'),
+        templateName: 'custom-deals-assignment',
         textContent: 'A custom deal posting limit has been assigned to your account.'
       },
       'new_redemption_request': {
         subject: 'New Redemption Request - {{dealTitle}}',
-        htmlContent: await this.loadTemplate('new-redemption-request'),
+        templateName: 'redemption-request-alert',
         textContent: 'You have received a new redemption request.'
       },
       'admin_new_registration': {
         subject: 'New Registration - Action Required',
-        htmlContent: await this.loadTemplate('admin-new-registration'),
+        templateName: 'admin-new-registration',
         textContent: 'A new user has registered and requires approval.'
       },
       'admin_deal_redemption': {
         subject: 'Deal Redemption Alert - {{dealTitle}}',
-        htmlContent: await this.loadTemplate('admin-deal-redemption'),
+        templateName: 'admin-deal-redemption',
         textContent: 'A deal has been redeemed.'
       },
       'admin_new_deal_request': {
         subject: 'New Deal Approval Required - {{dealTitle}}',
-        htmlContent: await this.loadTemplate('admin-new-deal-request'),
+        templateName: 'admin-new-deal-request',
         textContent: 'A new deal has been submitted for approval.'
       },
       'admin_deal_published': {
         subject: 'Deal Published - {{dealTitle}}',
-        htmlContent: await this.loadTemplate('admin-deal-published'),
+        templateName: 'admin-deal-published',
         textContent: 'A new deal has been published.'
       },
       'admin_plan_expiry_alert': {
         subject: 'Plan Expiry Alert - Multiple Users',
-        htmlContent: await this.loadTemplate('admin-plan-expiry-alert'),
+        templateName: 'admin-plan-expiry-alert',
         textContent: 'Multiple user plans are expiring soon.'
       },
       'password_changed_by_admin': {
         subject: 'Password Changed by Administrator - {{fullName}}',
-        htmlContent: await this.loadTemplate('password-changed-by-admin'),
+        templateName: 'password-changed-by-admin',
         textContent: 'Your password has been changed by an administrator. Please check your email for the new password.'
       }
     };
 
-    return templates[type] || {
-      subject: 'Notification from Indians in Ghana',
-      htmlContent: '<p>{{message}}</p>',
-      textContent: '{{message}}'
-    };
+    const config = templateConfigs[type];
+    if (!config) {
+      return {
+        subject: 'Notification from Indians in Ghana',
+        htmlContent: '<p>{{message}}</p>',
+        textContent: '{{message}}'
+      };
+    }
+
+    try {
+      // Load the template only when needed
+      const htmlContent = await this.loadTemplate(config.templateName);
+      return {
+        subject: config.subject,
+        htmlContent: htmlContent,
+        textContent: config.textContent
+      };
+    } catch (error) {
+      console.error(`Error loading template ${config.templateName}:`, error);
+      // Return a fallback template
+      return {
+        subject: config.subject,
+        htmlContent: `<p>{{message}}</p>`,
+        textContent: config.textContent
+      };
+    }
   }
 
   async sendEmail(options) {
