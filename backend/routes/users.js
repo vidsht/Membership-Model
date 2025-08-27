@@ -10,11 +10,20 @@ const router = express.Router();
 // Get user profile (MySQL)
 router.get('/profile', auth, (req, res) => {
   const userId = req.user.id;
-  db.query('SELECT id, fullName, email, phone, address, profilePicture, preferences, membership, socialMediaFollowed, membershipNumber, membershipType, bloodGroup, statusUpdatedAt, validationDate, planExpiryDate, subscriptionEndDate, planEndDate, customRedemptionLimit, created_at FROM users WHERE id = ?', [userId], (err, results) => {
+  const query = `
+    SELECT id, fullName, email, phone, address, profilePicture, preferences,
+           membership, socialMediaFollowed, membershipNumber, membershipType,
+           bloodGroup, statusUpdatedAt, validationDate, planExpiryDate,
+           subscriptionEndDate, planEndDate, customRedemptionLimit, monthlyRedemptionCount,
+           monthlyRedemptionLimit, monthlyDealCount, monthlyDealLimit, created_at
+    FROM users WHERE id = ?
+  `;
+
+  db.query(query, [userId], (err, results) => {
     if (err) {
       console.error('Get profile error:', err);
       return res.status(500).json({ message: 'Server error' });
-  }
+    }
     if (!results.length) return res.status(404).json({ message: 'User not found' });
     const user = results[0];
     if (user.socialMediaFollowed) {
@@ -24,6 +33,16 @@ router.get('/profile', auth, (req, res) => {
         user.socialMediaFollowed = {};
       }
     }
+
+    // Compute remaining allowances (limit - used). If limit is null treat as 0.
+    const redemptionLimit = Number(user.monthlyRedemptionLimit || 0);
+    const redemptionUsed = Number(user.monthlyRedemptionCount || 0);
+    user.monthlyRedemptionsRemaining = Math.max(redemptionLimit - redemptionUsed, 0);
+
+    const dealLimit = Number(user.monthlyDealLimit || 0);
+    const dealUsed = Number(user.monthlyDealCount || 0);
+    user.monthlyDealsRemaining = Math.max(dealLimit - dealUsed, 0);
+
     res.json({ user });
   });
 });
@@ -100,6 +119,7 @@ router.get('/profile/with-plan', auth, (req, res) => {
       u.membershipNumber, u.preferences, u.created_at, u.lastLogin, 
       u.updated_at, u.validationDate, u.userType, u.customRedemptionLimit,
       u.statusUpdatedAt, u.planExpiryDate, u.subscriptionEndDate, u.planEndDate,
+      u.monthlyRedemptionCount, u.monthlyRedemptionLimit, u.monthlyDealCount, u.monthlyDealLimit,
       p.name as planName, p.price as planPrice, p.currency as planCurrency,
       p.billingCycle, p.features as planFeatures, p.dealAccess,
       p.maxDealRedemptions as planMaxDealRedemptions, p.maxRedemptions as planMaxRedemptions, 
@@ -137,6 +157,15 @@ router.get('/profile/with-plan', auth, (req, res) => {
         // Keep as string if not valid JSON
       }
     }
+
+    // Compute remaining allowances for frontend convenience
+    const redemptionLimit = Number(user.monthlyRedemptionLimit || 0);
+    const redemptionUsed = Number(user.monthlyRedemptionCount || 0);
+    user.monthlyRedemptionsRemaining = Math.max(redemptionLimit - redemptionUsed, 0);
+
+    const dealLimit = Number(user.monthlyDealLimit || 0);
+    const dealUsed = Number(user.monthlyDealCount || 0);
+    user.monthlyDealsRemaining = Math.max(dealLimit - dealUsed, 0);
     
     res.json({ user });
   });

@@ -131,26 +131,6 @@ const Disclaimer = () => {
                 </p>
               </section>
 
-              <section className="disclaimer-section">
-                <h2>Contact Information</h2>
-                <p>
-                  If you have any questions about this disclaimer, please contact us:
-                </p>
-                <div className="contact-info">
-                  <div className="contact-item">
-                    <i className="fas fa-envelope"></i>
-                    <span>support@indiansinghana.com</span>
-                  </div>
-                  <div className="contact-item">
-                    <i className="fas fa-phone"></i>
-                    <span>+233 57 232 3912</span>
-                  </div>
-                  <div className="contact-item">
-                    <i className="fas fa-map-marker-alt"></i>
-                    <span>East Legon, Accra, Ghana</span>
-                  </div>
-                </div>
-              </section>
             </div>
 
             <div className="disclaimer-actions">

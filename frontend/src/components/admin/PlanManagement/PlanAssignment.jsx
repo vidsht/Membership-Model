@@ -171,7 +171,7 @@ const PlanAssignment = (props) => {
         </h2>
         <button
           className="button button-secondary"
-          onClick={() => navigate('/admin/plan-management')}
+          onClick={() => navigate('/admin')}
         >
           <i className="fas fa-arrow-left"></i> Back to Plan Management
         </button>

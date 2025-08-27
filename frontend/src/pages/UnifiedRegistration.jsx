@@ -105,38 +105,52 @@ const UnifiedRegistration = () => {
   const getSocialMediaLinks = () => {
     const links = {};
     const requirements = adminSettings.socialMediaRequirements || {};
-    
+
     // Match Home page logic - check for truthy values and parse properly
     Object.keys(requirements).forEach(platform => {
       const platformData = requirements[platform];
-      
-      // Include platform if it's truthy and not false
-      if (platformData && platformData !== false && platformData !== 'false') {
-        let parsedData = {};
-        
-        // Try to parse if it's a JSON string
-        if (typeof platformData === 'string' && platformData.startsWith('{')) {
+
+      // Exclude empty/false values
+      if (!platformData || platformData === false || platformData === 'false') return;
+
+      let parsedData = {};
+
+      // If platformData is a JSON string, try to parse
+      if (typeof platformData === 'string' && platformData.trim().length > 0) {
+        const trimmed = platformData.trim();
+        if (trimmed.startsWith('{')) {
           try {
-            parsedData = JSON.parse(platformData);
+            parsedData = JSON.parse(trimmed);
           } catch (e) {
             console.warn(`Failed to parse social media data for ${platform}:`, e);
+            // fallback to treat the string as a URL
+            parsedData = { url: trimmed };
           }
-        } else if (typeof platformData === 'object') {
-          parsedData = platformData;
+        } else {
+          // plain non-empty string -> treat as URL
+          parsedData = { url: trimmed };
         }
-        
-        // Use parsed URL or fallback to placeholder
-        const url = parsedData.url || `#${platform}`;
-        
-        links[platform] = {
-          url: url,
-          name: getSocialPlatformName(platform),
-          icon: getSocialPlatformIcon(platform),
-          required: parsedData.required || false
-        };
+      } else if (typeof platformData === 'object' && Object.keys(platformData).length > 0) {
+        parsedData = platformData;
+      } else {
+        // nothing useful provided, skip this platform
+        return;
       }
+
+      // Require at least one meaningful property: url, required, name, or icon
+      if (!parsedData.url && !parsedData.required && !parsedData.name && !parsedData.icon) return;
+
+      // Use parsed URL or fallback to placeholder (placeholder only if we had meaningful metadata)
+      const url = parsedData.url || `#${platform}`;
+
+      links[platform] = {
+        url: url,
+        name: parsedData.name || getSocialPlatformName(platform),
+        icon: parsedData.icon || getSocialPlatformIcon(platform),
+        required: !!parsedData.required
+      };
     });
-    
+
     return links;
   };
   
@@ -524,7 +538,7 @@ const UnifiedRegistration = () => {
       setMerchantLoading(false);
     }
   };
-
+  
 
 
   // Only user registration form is rendered (merchant login removed)
@@ -750,7 +764,7 @@ const UnifiedRegistration = () => {
                       required
                       style={{ paddingRight: '36px' }}
                     >
-                      <option value="">Select a country</option>
+                      <option value="">Select your Home country</option>
                       {fieldsLoading ? (
                         <option disabled>Loading countries...</option>
                       ) : (
@@ -951,7 +965,7 @@ const UnifiedRegistration = () => {
                   </div>
                 ))}
                 <small style={{ color: '#e74c3c', fontSize: '0.8em' }}>
-                  * You must follow at least one social media channel to join our community
+                  * You must follow all our social media channels to join our community
                 </small>
               </div>
               )}
@@ -1164,7 +1178,7 @@ const UnifiedRegistration = () => {
                   </div>
                 ))}
                 <small style={{ color: '#e74c3c', fontSize: '0.8em' }}>
-                  * You must follow at least one social media channel to register as a merchant
+                  * You must follow all our social media channels to register as a merchant
                 </small>
               </div>
               )}

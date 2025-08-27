@@ -599,7 +599,7 @@ function Register() {
                       );
                     })}
                     <small style={{ color: '#e74c3c', fontSize: '0.8em' }}>
-                      * You must follow at least one social media channel to join our community
+                      * You must follow all our social media channels to join our community
                     </small>
                   </div>
                 )}

@@ -34,6 +34,12 @@
   margin: 0 auto;
   padding: 0 var(--space-lg);
 }
+
+@keyframes scrollCommunities {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(calc(-150px * 18)); } /* Move by width of 18 cards */
+}
+
 /* Improved Alternating Layout for Membership Benefits Section */
 .membership-benefits-alt {
   padding: 6rem 0;
@@ -486,7 +492,6 @@
 .features-header p {
   max-width: 700px;
   margin: 1.5rem auto 0;
-  color: var(--neutral-medium);
   font-size: 1.1rem;
 }
 
@@ -498,7 +503,7 @@
 
 .features-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: var(--space-lg);
 }
 
@@ -805,10 +810,9 @@
 }
 
 .business-carousel-logo {
-  width: 80px;
-  height: 80px;
+  width: 120px;
+  height: 110px;
   margin: 0 auto 1.5rem;
-  border-radius: 50%;
   overflow: hidden;
   border: 3px solid #e5f7f0;
   transition: all 0.3s ease;
@@ -1128,15 +1132,14 @@
   border-radius: 12px;
   font-weight: 700;
   padding: var(--space-md) var(--space-xl);
-  transition: all 0.3s ease;
-  box-shadow: 0 5px 15px rgba(255, 255, 255, 0.3);
+  transition: all 0.3s ease;  
+  background-color: white !important
 }
 
-.cta .btn-primary {
+/* .cta .btn-primary {
   background-color: white;
-  color: #6D28D9;
   border: none;
-}
+} */
 
 .cta .btn-primary:hover {
   background-color: #f8fafc;
@@ -1369,134 +1372,137 @@
   animation-name: slideInUp;
 }
 
-/* Membership Benefits Section */
-.membership-benefits-alt {
-  padding: 6rem 0;
-  background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%);
-  position: relative;
-}
-
-.membership-benefits-alt-container {
-  max-width: var(--container-xl);
-  margin: 0 auto;
-  padding: 0 var(--space-lg);
-}
-
-.membership-benefits-alt-header {
-  text-align: center;
-  margin-bottom: 1rem;
-  padding: 0 var(--space-lg);
-}
-
-.membership-benefits-alt-header h2 {
-  font-size: 2.5rem;
-  font-weight: 800;
-  color:white;
-  position: relative;
-  display: inline-block;
-  margin-bottom: var(--space-md);
-}
-
-.membership-benefits-alt-header h2 i {
-  color: #ec4899;
-  margin-right: 0.5rem;
-}
-
-.membership-benefits-alt-header p {
-  max-width: 750px;
-  margin: 1.5rem auto 0;
+/* Why Get Your Membership Card Section */
+.why-section {
+  background: #FFF0C4;
+  padding: 80px 0;
   color: white;
-  font-size: 1.1rem;
+  position: relative;
+  overflow: visible;
 }
 
-.membership-benefits-alt-rows {
-  display: flex;
-  flex-direction: column;
-  gap: 1 rem;
+.why-section::before { 
+  content: ''; 
+  position: absolute; 
+  top: 0; 
+  left: 0; 
+  width: 100%; 
+  height: 10px; 
+  background: linear-gradient(to right, #FF9B00, #de9321, #f6a834); 
 }
 
-/* Each row base styling */
-.benefit-row {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6rem;
+.why-container {
   margin: 0 auto;
-  padding: 2.5rem;
-  flex-wrap: nowrap;
+  padding: 0 20px;
+  text-align: center;
 }
 
-/* Zigzag pattern by row index: odd rows text left, image right */
-.benefit-row:nth-child(odd) {
-  flex-direction: row;
-}
-
-/* Zigzag pattern by row index: even rows image left, text right */
-.benefit-row:nth-child(even) {
-  flex-direction: row-reverse;
-}
-
-.benefit-text {
-  flex: 1;
-  min-width: 220px;
-  padding: 2 2rem;
-  background-color: #fdf2f8;
-  text-align: left;
-}
-
-.benefit-title {
-  font-size: 2rem; /* kept your original font size */
-  color: #1C2E42;
+.section-title {
+  font-size: 2.5rem;
   font-weight: 700;
   margin-bottom: 1rem;
-  line-height: 1.3;
+  color: white;
 }
 
-.benefit-description {
+.section-subtitle {
+  font-size: 1.2rem;
+  font-weight: 300;
+  margin-bottom: 3rem;
+  opacity: 0.9;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+  margin-top: 3rem;
+}
+
+.benefit-card {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 15px;
+  padding: 2rem;
+  text-align: center;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.benefit-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left 0.6s ease;
+}
+
+.benefit-card:hover::before {
+  left: 100%;
+}
+
+.benefit-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.card-icon {
+  margin-bottom: 1.5rem;
+}
+
+.benefit-icon {
+  font-size: 3rem;
+  color: #ffd700;
+  transition: all 0.3s ease;
+}
+
+.benefit-card:hover .benefit-icon {
+  transform: scale(1.1);
+  color: #ffed4e;
+}
+
+.card-title {
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: white;
+}
+
+.card-desc {
   font-size: 1rem;
   line-height: 1.6;
+  opacity: 0.9;
+  color: white;
 }
 
-.benefit-image {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.benefit-image img {
-  transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
-}
-
-.benefit-row:hover .benefit-image img {
-  transform: scale(1.05);
-}
-
-/* Responsive style */
-@media (max-width: 900px) {
-  .membership-benefits-alt-rows {
-    gap: 2rem;
+@media (max-width: 768px) {
+  .why-section {
+    padding: 60px 0;
   }
-
-  .benefit-row {
-    flex-direction: column !important;
-    padding: 2rem 1rem;
-    text-align: center;
+  
+  .section-title {
+    font-size: 2rem;
+  }
+  
+  .section-subtitle {
+    font-size: 1.1rem;
+  }
+  
+  .cards-grid {
+    grid-template-columns: 1fr;
     gap: 1.5rem;
   }
-
-  .benefit-text, .benefit-image {
-    padding: 0;
-    min-width: 0;
-  }
-
-  .benefit-text {
-    text-align: center !important;
-  }
-
-  .benefit-image img {
-    max-width: 100%;
-    border-radius: 12px;
+  
+  .benefit-card {
+    padding: 1.5rem;
   }
 }
 
@@ -1989,171 +1995,126 @@
   }
 }
 
-/* Communities Logo Carousel Section */
-.communities-carousel {
-  background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
-  padding: 4rem 0;
+/* Community Associations Section */
+.community-section::before { 
+  content: ''; 
+  position: absolute; 
+  top: 0; 
+  left: 0; 
+  width: 100%; 
+  height: 10px; 
+  background: linear-gradient(to right, #CFAB8D, #eaba93, #a88364); 
+}
+
+.community-section {
+  background: rgba(212, 175, 55, 0.03);
+  border-radius: 15px;
+  padding: 90px;
   overflow: hidden;
   position: relative;
 }
 
-.communities-container {
+.community-section .container {
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 var(--space-lg);
+}
+
+.community-section .section-title {
   text-align: center;
-}
-
-.communities-header {
-  margin-bottom: 3rem;
-}
-
-.communities-header h2 {
-  font-size: 2.8rem;
-  margin-bottom: var(--space-md);
-  color: var(--text-dark);
-  position: relative;
-  display: inline-block;
+  font-family: 'Inter', sans-serif;
   font-weight: 800;
+  font-size: 2.2rem;
+  color: #8B0000;
+  margin: 40px 0 30px;
+  position: relative;
 }
 
-.communities-header h2::after {
+.community-section .section-title:after {
   content: '';
-  position: absolute;
-  bottom: -12px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100px;
+  display: block;
+  width: 80px;
   height: 4px;
-  background: linear-gradient(90deg, #ec4899, #f472b6, #f9a8d4);
+  background: linear-gradient(to right, #8B0000, #D4AF37);
+  margin: 15px auto;
   border-radius: 2px;
 }
 
-.communities-header h2 i {
-  color: #ec4899;
-  margin-right: 0.5rem;
-}
-
-.communities-header p {
+.community-section .section-subtitle {
+  text-align: center;
+  font-size: 1.2rem;
+  color: #555;
   max-width: 700px;
-  margin: 1.5rem auto 0;
-  color: var(--text-muted);
-  font-size: 1.1rem;
-  line-height: 1.6;
+  margin: 0 auto 40px;
+  font-weight: 500;
 }
 
-.carousel-wrapper {
-  position: relative;
-  overflow: hidden;
-  width: 100%;
-  mask: linear-gradient(
-    to right,
-    transparent 0%,
-    black 10%,
-    black 90%,
-    transparent 100%
-  );
-  -webkit-mask: linear-gradient(
-    to right,
-    transparent 0%,
-    black 10%,
-    black 90%,
-    transparent 100%
-  );
-}
-
-.carousel-track {
+.communities-container {
   display: flex;
-  gap: 2rem;
-  animation: scroll-left 30s linear infinite;
-  width: fit-content;
+  animation: scrollCommunities 40s linear infinite;
+  width: calc(150px * 36);
+  margin-top:5rem;
 }
 
-.logo-item {
-  flex-shrink: 0;
-  width: 200px;
-  height: 100px;
-  background: white;
-  border-radius: 12px;
-  padding: 1rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  transition: all 0.3s ease;
+.community-card {
+  min-width: 150px;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  border: 1px solid #e2e8f0;
+  padding: 15px;
+  margin-right: 20px;
+  transition: all 0.3s ease;
 }
 
-.logo-item:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+.community-logo {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #8B0000;
+  padding: 5px;
+  background: white;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  margin-bottom: 15px;
 }
 
-.logo-item img {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-  transition: filter 0.3s ease;
+.community-name {
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 1rem;
+  color: #8B0000;
+  text-align: center;
+  line-height: 1.4;
 }
 
-.logo-item:hover img {
-  filter: grayscale(0%);
+.community-card:hover {
+  transform: scale(1.05);
 }
 
-@keyframes scroll-left {
-  0% {
-    transform: translateX(0);
-  }
-  100% {
-    transform: translateX(-50%);
-  }
-}
-
-/* Pause animation on hover */
-.carousel-wrapper:hover .carousel-track {
-  animation-play-state: paused;
-}
-
-/* Responsive Design for Communities Carousel */
+/* Responsive Design for Community Associations */
 @media (max-width: 768px) {
-  .communities-header h2 {
-    font-size: 2.2rem;
+  .community-card {
+    min-width: 130px;
   }
   
-  .communities-header p {
-    font-size: 1rem;
-  }
-  
-  .logo-item {
-    width: 150px;
-    height: 75px;
-    padding: 0.8rem;
-  }
-  
-  .carousel-track {
-    gap: 1.5rem;
-    animation-duration: 25s;
+  .community-logo {
+    width: 100px;
+    height: 100px;
   }
 }
 
 @media (max-width: 480px) {
-  .communities-carousel {
-    padding: 3rem 0;
+  .community-card {
+    min-width: 110px;
   }
   
-  .communities-header h2 {
-    font-size: 1.8rem;
+  .community-logo {
+    width: 80px;
+    height: 80px;
   }
   
-  .logo-item {
-    width: 120px;
-    height: 60px;
-    padding: 0.6rem;
-  }
-  
-  .carousel-track {
-    gap: 1rem;
-    animation-duration: 20s;
+  .community-name {
+    font-size: 0.85rem;
   }
 }
 

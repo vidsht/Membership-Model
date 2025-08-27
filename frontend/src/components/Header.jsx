@@ -65,22 +65,23 @@ const Header = () => {
     <header className={scrolled ? 'scrolled' : ''}>
       <div className="header-content">
         <div className="logo">
-          <img 
-            src="/logo1.jpeg" 
-            alt="logo" 
-            className="logo-img"
-          />
+          <Link to="/" aria-label="Home">
+            <img 
+              src="/logo1.jpeg" 
+              alt="logo" 
+              className="logo-img"
+            />
+          </Link>
         </div>
             
         {/* Centered auth on mobile; stays to the right on desktop */}
         <div className="auth-buttons">
           {isAuthenticated ? (
-            <div className="auth-btn logout-btn" onClick={handleLogout}>
+            <div className="logout-btn" onClick={handleLogout}>
               <i className="fas fa-sign-out-alt"></i> Logout
             </div>
           ) : (
-            <Link to="/login" className="auth-btn login-bt
-            n">
+            <Link to="/login" className="auth-btn login-btn">
               <i className="fas fa-sign-in-alt"></i> Member Login
             </Link>
           )}

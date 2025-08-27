@@ -144,11 +144,6 @@ const Activities = () => {
           <h2>System Activities</h2>
           <p>Monitor and track all system activities and user actions</p>
         </div>
-        <div className="header-actions">
-          <Link to="/admin" className="btn-secondary">
-            <i className="fas fa-arrow-left"></i> Back to Dashboard
-          </Link>
-        </div>
       </div>
 
       <div className="user-filters">

@@ -404,6 +404,14 @@ const Home = () => {
               <p className="feature-description">Over 25 major sectors will be covered, ensuring members enjoy benefits across every essential area of life</p>
               <a href="/unified-registration" className="feature-link">View Benefits <i className="fas fa-arrow-right"></i></a>
             </div>
+            <div className="feature-card">
+              <div className="feature-icon">
+                <i className="fas fa-industry"></i>
+              </div>
+              <h3 className="feature-title">25+ Major Sectors Will Be Covered</h3>
+              <p className="feature-description">From healthcare and education to dining and entertainment, our comprehensive network spans all essential sectors of life in Ghana.</p>
+              <a href="/business-directory" className="feature-link">Explore Sectors <i className="fas fa-arrow-right"></i></a>
+            </div>
           </div>
         </div>
       </section>
@@ -434,7 +442,6 @@ const Home = () => {
                           src={getMerchantLogoUrl(business)}
                           alt={`${business.businessName || business.name} logo`}
                           fallback={<DefaultAvatar name={business.businessName || business.name} />}
-                          className="business-logo"
                           maxRetries={3}
                           style={{
                             width: '100%',
@@ -485,61 +492,44 @@ const Home = () => {
 
 
       {/* Why Get Your Membership Card Section */}
-      <section 
-        className="membership-benefits-alt" 
-        style={{
-          backgroundImage: "url('https://images.pexels.com/photos/25748892/pexels-photo-25748892.jpeg')",
-          backgroundAttachment: "fixed",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-          backgroundSize: "cover"
-        }}
-      >
-        <div className="membership-benefits-alt-container">
-          <div className="membership-benefits-alt-header">
-            <h2> Why Get Your Membership Card?</h2>
+      <section className="why-section">
+        <div className="why-container">
+          <div className="features-header">
+            <h2>Why Get Your Membership Card?</h2>
             <p>Discover the exclusive benefits and privileges that come with your Indians in Ghana membership</p>
           </div>
-          <div className="membership-benefits-alt-rows">
-            {/* Row 1: text left, image right */}
-            <div className="benefit-row">
-              <div className="benefit-text">
-                <h3 className="benefit-title">Exclusive Discounts</h3>
-                <p className="benefit-description">Enjoy significant savings at over 100 partner businesses across Ghana with exclusive member-only discounts.</p>
+          
+          <div className="cards-grid">
+            <div className="card benefit-card">
+              <div className="card-icon">
+                <i className="fas fa-money-bill-wave benefit-icon"></i>
               </div>
-              <div className="benefit-image">
-                <img src="https://images.pexels.com/photos/6567538/pexels-photo-6567538.jpeg" alt="Exclusive Discounts" />
-              </div>
+              <h3 className="card-title">Exclusive Discounts</h3>
+              <p className="card-desc">Enjoy significant savings at over 100 partner businesses across Ghana with exclusive member-only discounts.</p>
             </div>
-            {/* Row 2: text left, image right (Community Support) */}
-            <div className="benefit-row">
-              <div className="benefit-text">
-                <h3 className="benefit-title">Community Support</h3>
-                <p className="benefit-description">Access our network of support services including legal assistance, medical referrals, and cultural integration programs.</p>
+            
+            <div className="card benefit-card">
+              <div className="card-icon">
+                <i className="fas fa-users benefit-icon"></i>
               </div>
-              <div className="benefit-image">
-                <img src="https://images.pexels.com/photos/3184436/pexels-photo-3184436.jpeg" alt="Community Support" />
-              </div>
+              <h3 className="card-title">Community Support</h3>
+              <p className="card-desc">Access our network of support services including legal assistance, medical referrals, and cultural integration programs.</p>
             </div>
-            {/* Row 3: text left, image right */}
-            <div className="benefit-row">
-              <div className="benefit-text">
-                <h3 className="benefit-title">Priority Event Access</h3>
-                <p className="benefit-description">Get VIP access and early bird pricing for cultural festivals, networking events, and community gatherings.</p>
+            
+            <div className="card benefit-card">
+              <div className="card-icon">
+                <i className="fas fa-calendar-alt benefit-icon"></i>
               </div>
-              <div className="benefit-image">
-                <img src="https://images.pexels.com/photos/7685719/pexels-photo-7685719.jpeg" alt="Priority Event Access" />
-              </div>
+              <h3 className="card-title">Priority Event Access</h3>
+              <p className="card-desc">Get VIP access and early bird pricing for cultural festivals, networking events, and community gatherings.</p>
             </div>
-            {/* Row 4: image left, text right */}
-            <div className="benefit-row">
-              <div className="benefit-text">
-                <h3 className="benefit-title">Identity & Security</h3>
-                <p className="benefit-description">A recognized form of identity within the Indian community in Ghana, with emergency support services.</p>
+            
+            <div className="card benefit-card">
+              <div className="card-icon">
+                <i className="fas fa-shield-alt benefit-icon"></i>
               </div>
-              <div className="benefit-image">
-                <img src="https://images.pexels.com/photos/4291/door-green-closed-lock.jpg" alt="Community Support" />
-              </div>
+              <h3 className="card-title">Identity & Security</h3>
+              <p className="card-desc">A recognized form of identity within the Indian community in Ghana, with emergency support services.</p>
             </div>
           </div>
         </div>
@@ -763,129 +753,190 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Communities Logo Carousel Section */}
-      <section className="communities-carousel">
-        <div className="communities-container">
-          <div className="communities-header">
-            <h2>
-              <i className="fas fa-users"></i>
-              Communities
-            </h2>
-            <p>Connecting Indian communities across Ghana and beyond</p>
-          </div>
-          <div className="carousel-wrapper">
-            <div className="carousel-track" >
-              {/* First set of logos */}
-              <div className="logo-item">
-                <img src="https://indiansinghana.com/wp-content/uploads/2025/07/Big-Bengalis-in-Ghana-Logo.jpg" alt="Business Association" />
-              </div>
-              <div className="logo-item">
-                <img src="https://indiansinghana.com/wp-content/uploads/2024/10/Bhojpuri-Logo.jpg" alt="Cultural Center" />
-              </div>
-              <div className="logo-item">
-                <img src="https://indiansinghana.com/wp-content/uploads/2024/10/GIMA-Logo.jpg" alt="Tech Community" />
-              </div>
-              <div className="logo-item">
-                <img src="https://indiansinghana.com/wp-content/uploads/2024/10/GTA-Logo-671d149a82a14.jpg" alt="Professional Network" />
-              </div>
-              <div className="logo-item">
-                <img src="https://indiansinghana.com/wp-content/uploads/2024/10/Gujarati-Association-of-Ghana-Logo.jpg" alt="Student Association" />
-              </div>
-              <div className="logo-item">
-                <img src="https://indiansinghana.com/wp-content/uploads/2025/06/Hindu-Swayamsevak-Sangh-HSS-Logo.jpg" alt="Women's Group" />
-              </div>
-              <div className="logo-item">
-                <img src="https://indiansinghana.com/wp-content/uploads/2024/10/IAG-Logo.jpg" alt="Youth Council" />
-              </div>
-              <div className="logo-item">
-                <img src="https://indiansinghana.com/wp-content/uploads/2024/10/iTAG-Logo.jpg" alt="Sports Club" />
-              </div>
-              <div className="logo-item">
-                <img src="https://indiansinghana.com/wp-content/uploads/2024/10/Indian-Womens-Accociation-Accra.jpeg" alt="Business Association" />
-              </div>
-              <div className="logo-item">
-                <img src="https://indiansinghana.com/wp-content/uploads/2024/10/Karnataka-Sangha-Ghana.jpg" alt="Cultural Center" />
-              </div>
-              <div className="logo-item">
-                <img src="https://indiansinghana.com/wp-content/uploads/2024/10/KIA-Logo.png" alt="Tech Community" />
-              </div>
-              <div className="logo-item">
-                <img src="https://indiansinghana.com/wp-content/uploads/2024/10/WhatsApp-Image-2024-06-06-at-12.10.49_33fd33d7.jpg" alt="Professional Network" />
-              </div>
-              <div className="logo-item">
-                <img src="https://indiansinghana.com/wp-content/uploads/2024/10/Punjabi-Association-of-Ghana-Logo-1.jpg" alt="Student Association" />
-              </div>
-              <div className="logo-item">
-                <img src="https://indiansinghana.com/wp-content/uploads/2025/07/Rajasthan-Association-Logo.jpg" alt="Women's Group" />
-              </div>
-              <div className="logo-item">
-                <img src="https://indiansinghana.com/wp-content/uploads/2025/07/SAG_Logo1.jpg" alt="Youth Council" />
-              </div>
-              <div className="logo-item">
-                <img src="https://indiansinghana.com/wp-content/uploads/2024/10/Utkala-Association-of-Ghana-Logo.jpg" alt="Sports Club" />
-              </div>
-              <div className="logo-item">
-                <img src="https://indiansinghana.com/wp-content/uploads/2025/06/Uttarakhand-Association-of-Ghana-Logo.jpg" alt="Youth Council" />
-              </div>
-              <div className="logo-item">
-                <img src="https://indiansinghana.com/wp-content/uploads/2024/10/0i1hnewV_400x400.jpg" alt="Sports Club" />
-              </div>
-              
-              {/* Duplicate set for seamless looping */}
-              <div className="logo-item">
-                <img src="https://indiansinghana.com/wp-content/uploads/2025/07/Big-Bengalis-in-Ghana-Logo.jpg" alt="Business Association" />
-              </div>
-              <div className="logo-item">
-                <img src="https://indiansinghana.com/wp-content/uploads/2024/10/Bhojpuri-Logo.jpg" alt="Cultural Center" />
-              </div>
-              <div className="logo-item">
-                <img src="https://indiansinghana.com/wp-content/uploads/2024/10/GIMA-Logo.jpg" alt="Tech Community" />
-              </div>
-              <div className="logo-item">
-                <img src="https://indiansinghana.com/wp-content/uploads/2024/10/GTA-Logo-671d149a82a14.jpg" alt="Professional Network" />
-              </div>
-              <div className="logo-item">
-                <img src="https://indiansinghana.com/wp-content/uploads/2024/10/Gujarati-Association-of-Ghana-Logo.jpg" alt="Student Association" />
-              </div>
-              <div className="logo-item">
-                <img src="https://indiansinghana.com/wp-content/uploads/2025/06/Hindu-Swayamsevak-Sangh-HSS-Logo.jpg" alt="Women's Group" />
-              </div>
-              <div className="logo-item">
-                <img src="https://indiansinghana.com/wp-content/uploads/2024/10/IAG-Logo.jpg" alt="Youth Council" />
-              </div>
-              <div className="logo-item">
-                <img src="https://indiansinghana.com/wp-content/uploads/2024/10/iTAG-Logo.jpg" alt="Sports Club" />
-              </div>
-              <div className="logo-item">
-                <img src="https://indiansinghana.com/wp-content/uploads/2024/10/Indian-Womens-Accociation-Accra.jpeg" alt="Business Association" />
-              </div>
-              <div className="logo-item">
-                <img src="https://indiansinghana.com/wp-content/uploads/2024/10/Karnataka-Sangha-Ghana.jpg" alt="Cultural Center" />
-              </div>
-              <div className="logo-item">
-                <img src="https://indiansinghana.com/wp-content/uploads/2024/10/KIA-Logo.png" alt="Tech Community" />
-              </div>
-              <div className="logo-item">
-                <img src="https://indiansinghana.com/wp-content/uploads/2024/10/WhatsApp-Image-2024-06-06-at-12.10.49_33fd33d7.jpg" alt="Professional Network" />
-              </div>
-              <div className="logo-item">
-                <img src="https://indiansinghana.com/wp-content/uploads/2024/10/Punjabi-Association-of-Ghana-Logo-1.jpg" alt="Student Association" />
-              </div>
-              <div className="logo-item">
-                <img src="https://indiansinghana.com/wp-content/uploads/2025/07/Rajasthan-Association-Logo.jpg" alt="Women's Group" />
-              </div>
-              <div className="logo-item">
-                <img src="https://indiansinghana.com/wp-content/uploads/2025/07/SAG_Logo1.jpg" alt="Youth Council" />
-              </div>
-              <div className="logo-item">
-                <img src="https://indiansinghana.com/wp-content/uploads/2024/10/Utkala-Association-of-Ghana-Logo.jpg" alt="Sports Club" />
-              </div>
-              <div className="logo-item">
-                <img src="https://indiansinghana.com/wp-content/uploads/2025/06/Uttarakhand-Association-of-Ghana-Logo.jpg" alt="Youth Council" />
-              </div>
-              <div className="logo-item">
-                <img src="https://indiansinghana.com/wp-content/uploads/2024/10/0i1hnewV_400x400.jpg" alt="Sports Club" />
-              </div>
+      {/* Our Community Associations Section */}
+      <section className="community-section">
+        <div className="features-header">
+          <h2>Our Community Associations</h2>
+          <p>Representing the diversity and unity of Indians in Ghana</p>
+
+          <div className="communities-container">
+            {/* Big Bengalies in Ghana */}
+            <div className="community-card">
+              <img src="https://indiansinghana.com/wp-content/uploads/2025/07/Big-Bengalis-in-Ghana-Logo.jpg" alt="Big Bengalies in Ghana" className="community-logo" />
+              <h3 className="community-name">Big Bengalies in Ghana</h3>
+            </div>
+            
+            {/* Bhojpuri Association of Ghana */}
+            <div className="community-card">
+              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/Bhojpuri-Logo.jpg" alt="Bhojpuri Association of Ghana" className="community-logo" />
+              <h3 className="community-name">Bhojpuri Association of Ghana</h3>
+            </div>
+            
+            {/* Ghana Indian Malayalee Association */}
+            <div className="community-card">
+              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/GIMA-Logo.jpg" alt="Ghana Indian Malayalee Association" className="community-logo" />
+              <h3 className="community-name">Ghana Indian Malayalee Association</h3>
+            </div>
+            
+            {/* Ghana Tamil Association */}
+            <div className="community-card">
+              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/GTA-Logo-671d149a82a14.jpg" alt="Ghana Tamil Association" className="community-logo" />
+              <h3 className="community-name">Ghana Tamil Association</h3>
+            </div>
+            
+            {/* Gujarati Association of Ghana */}
+            <div className="community-card">
+              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/Gujarati-Association-of-Ghana-Logo.jpg" alt="Gujarati Association of Ghana" className="community-logo" />
+              <h3 className="community-name">Gujarati Association of Ghana</h3>
+            </div>
+            
+            {/* Hindu Swayamsevak Sangh */}
+            <div className="community-card">
+              <img src="https://indiansinghana.com/wp-content/uploads/2025/06/Hindu-Swayamsevak-Sangh-HSS-Logo.jpg" alt="Hindu Swayamsevak Sangh" className="community-logo" />
+              <h3 className="community-name">Hindu Swayamsevak Sangh</h3>
+            </div>
+            
+            {/* Indian Association of Ghana */}
+            <div className="community-card">
+              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/IAG-Logo.jpg" alt="Indian Association of Ghana" className="community-logo" />
+              <h3 className="community-name">Indian Association of Ghana</h3>
+            </div>
+            
+            {/* Indian Telugu Association of Ghana */}
+            <div className="community-card">
+              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/iTAG-Logo.jpg" alt="Indian Telugu Association of Ghana" className="community-logo" />
+              <h3 className="community-name">Indian Telugu Association of Ghana</h3>
+            </div>
+            
+            {/* Indian Women's Association */}
+            <div className="community-card">
+              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/Indian-Womens-Accociation-Accra.jpeg" alt="Indian Women's Association" className="community-logo" />
+              <h3 className="community-name">Indian Women's Association</h3>
+            </div>
+            
+            {/* Karnataka Sangha Ghana */}
+            <div className="community-card">
+              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/Karnataka-Sangha-Ghana.jpg" alt="Karnataka Sangha Ghana" className="community-logo" />
+              <h3 className="community-name">Karnataka Sangha Ghana</h3>
+            </div>
+            
+            {/* Kumasi Indian Association */}
+            <div className="community-card">
+              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/KIA-Logo.png" alt="Kumasi Indian Association" className="community-logo" />
+              <h3 className="community-name">Kumasi Indian Association</h3>
+            </div>
+            
+            {/* Maharashtra Mandal Ghana */}
+            <div className="community-card">
+              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/WhatsApp-Image-2024-06-06-at-12.10.49_33fd33d7.jpg" alt="Maharashtra Mandal Ghana" className="community-logo" />
+              <h3 className="community-name">Maharashtra Mandal Ghana</h3>
+            </div>
+            
+            {/* Punjabi Association of Ghana */}
+            <div className="community-card">
+              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/Punjabi-Association-of-Ghana-Logo-1.jpg" alt="Punjabi Association of Ghana" className="community-logo" />
+              <h3 className="community-name">Punjabi Association of Ghana</h3>
+            </div>
+            
+            {/* Rajasthan Association of Ghana */}
+            <div className="community-card">
+              <img src="https://indiansinghana.com/wp-content/uploads/2025/07/Rajasthan-Association-Logo.jpg" alt="Rajasthan Association of Ghana" className="community-logo" />
+              <h3 className="community-name">Rajasthan Association of Ghana</h3>
+            </div>
+            
+            {/* Sindhi Association of Ghana */}
+            <div className="community-card">
+              <img src="https://indiansinghana.com/wp-content/uploads/2025/07/SAG_Logo1.jpg" alt="Sindhi Association of Ghana" className="community-logo" />
+              <h3 className="community-name">Sindhi Association of Ghana</h3>
+            </div>
+            
+            {/* Utkala Ghana Association */}
+            <div className="community-card">
+              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/Utkala-Association-of-Ghana-Logo.jpg" alt="Utkala Ghana Association" className="community-logo" />
+              <h3 className="community-name">Utkala Ghana Association</h3>
+            </div>
+            
+            {/* Uttarakhand Association of Ghana */}
+            <div className="community-card">
+              <img src="https://indiansinghana.com/wp-content/uploads/2025/06/Uttarakhand-Association-of-Ghana-Logo.jpg" alt="Uttarakhand Association of Ghana" className="community-logo" />
+              <h3 className="community-name">Uttarakhand Association of Ghana</h3>
+            </div>
+            
+            {/* World Malayalee Federation */}
+            <div className="community-card">
+              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/0i1hnewV_400x400.jpg" alt="World Malayalee Federation" className="community-logo" />
+              <h3 className="community-name">World Malayalee Federation</h3>
+            </div>
+            
+            {/* Duplicates for continuous scrolling */}
+            <div className="community-card">
+              <img src="https://indiansinghana.com/wp-content/uploads/2025/07/Big-Bengalis-in-Ghana-Logo.jpg" alt="Big Bengalies in Ghana" className="community-logo" />
+              <h3 className="community-name">Big Bengalies in Ghana</h3>
+            </div>
+            
+            <div className="community-card">
+              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/Bhojpuri-Logo.jpg" alt="Bhojpuri Association of Ghana" className="community-logo" />
+              <h3 className="community-name">Bhojpuri Association of Ghana</h3>
+            </div>
+            
+            <div className="community-card">
+              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/GIMA-Logo.jpg" alt="Ghana Indian Malayalee Association" className="community-logo" />
+              <h3 className="community-name">Ghana Indian Malayalee Association</h3>
+            </div>
+            
+            <div className="community-card">
+              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/GTA-Logo-671d149a82a14.jpg" alt="Ghana Tamil Association" className="community-logo" />
+              <h3 className="community-name">Ghana Tamil Association</h3>
+            </div>
+            
+            <div className="community-card">
+              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/Gujarati-Association-of-Ghana-Logo.jpg" alt="Gujarati Association of Ghana" className="community-logo" />
+              <h3 className="community-name">Gujarati Association of Ghana</h3>
+            </div>
+            
+            <div className="community-card">
+              <img src="https://indiansinghana.com/wp-content/uploads/2025/06/Hindu-Swayamsevak-Sangh-HSS-Logo.jpg" alt="Hindu Swayamsevak Sangh" className="community-logo" />
+              <h3 className="community-name">Hindu Swayamsevak Sangh</h3>
+            </div>
+            
+            <div className="community-card">
+              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/IAG-Logo.jpg" alt="Indian Association of Ghana" className="community-logo" />
+              <h3 className="community-name">Indian Association of Ghana</h3>
+            </div>
+            
+            <div className="community-card">
+              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/iTAG-Logo.jpg" alt="Indian Telugu Association of Ghana" className="community-logo" />
+              <h3 className="community-name">Indian Telugu Association of Ghana</h3>
+            </div>
+            
+            <div className="community-card">
+              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/Indian-Womens-Accociation-Accra.jpeg" alt="Indian Women's Association" className="community-logo" />
+              <h3 className="community-name">Indian Women's Association</h3>
+            </div>
+            
+            <div className="community-card">
+              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/Karnataka-Sangha-Ghana.jpg" alt="Karnataka Sangha Ghana" className="community-logo" />
+              <h3 className="community-name">Karnataka Sangha Ghana</h3>
+            </div>
+            
+            <div className="community-card">
+              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/KIA-Logo.png" alt="Kumasi Indian Association" className="community-logo" />
+              <h3 className="community-name">Kumasi Indian Association</h3>
+            </div>
+            
+            <div className="community-card">
+              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/WhatsApp-Image-2024-06-06-at-12.10.49_33fd33d7.jpg" alt="Maharashtra Mandal Ghana" className="community-logo" />
+              <h3 className="community-name">Maharashtra Mandal Ghana</h3>
+            </div>
+            
+            <div className="community-card">
+              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/Punjabi-Association-of-Ghana-Logo-1.jpg" alt="Punjabi Association of Ghana" className="community-logo" />
+              <h3 className="community-name">Punjabi Association of Ghana</h3>
+            </div>
+            
+            <div className="community-card">
+              <img src="https://indiansinghana.com/wp-content/uploads/2025/07/Rajasthan-Association-Logo.jpg" alt="Rajasthan Association of Ghana" className="community-logo" />
+              <h3 className="community-name">Rajasthan Association of Ghana</h3>
             </div>
           </div>
         </div>

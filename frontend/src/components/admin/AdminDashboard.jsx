@@ -342,13 +342,7 @@ const AdminDashboard = () => {
         </nav>
         
         <div className="sidebar-footer">
-          <button 
-            onClick={() => navigate('/dashboard')}
-            className="back-button"
-          >
-            <i className="fas fa-arrow-left"></i>
-            Back to Dashboard
-          </button>
+c
         </div>
       </div>  
       {/* Main Content */}

@@ -77,8 +77,6 @@ const Terms = () => {
       <div className="terms-page loading">
         <div className="container">
           <div className="loading-spinner">
-            <i className="fas fa-spinner fa-spin"></i>
-            <p>Loading terms and conditions...</p>
           </div>
         </div>
       </div>

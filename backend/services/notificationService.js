@@ -710,19 +710,23 @@ class NotificationService {
     try {
       console.log('Renewing monthly limits...');
       
-      // Reset user redemption counts
+      // Reset user redemption counts (preserve current behavior for notification)
       const usersToReset = await this.getUsersWithRedemptionLimits();
       for (const user of usersToReset) {
         await this.resetUserRedemptionCount(user.id);
         await this.notifyRedemptionLimitRenewed(user.id);
       }
 
-      // Reset merchant deal counts
+      // Reset merchant deal counts (preserve current behavior for notification)
       const merchantsToReset = await this.getMerchantsWithDealLimits();
       for (const merchant of merchantsToReset) {
         await this.resetMerchantDealCount(merchant.id);
         await this.notifyDealLimitRenewed(merchant.id);
       }
+
+      // Recompute and persist current calendar-month counts based on DB rows
+      // This ensures frontend (calendar-month) and backend counters stay in sync.
+      await this.recomputeMonthlyCounts();
 
       console.log(`Monthly limits renewed for ${usersToReset.length} users and ${merchantsToReset.length} merchants`);
     } catch (error) {
@@ -871,13 +875,243 @@ class NotificationService {
   }
 
   async resetUserRedemptionCount(userId) {
-    const query = 'UPDATE users SET monthlyRedemptionCount = 0 WHERE id = ?';
+    // Reset usage counter to 0, set the user's monthly limit to their custom limit or plan default,
+    // and record the renewal date (first day of this month)
+    const query = `
+      UPDATE users u
+      LEFT JOIN user_plans up ON u.id = up.userId AND up.isActive = 1
+      LEFT JOIN plans p ON up.planId = p.id
+      SET u.monthlyRedemptionCount = 0,
+          u.monthlyRedemptionLimit = COALESCE(u.customRedemptionLimit, p.monthlyRedemptionLimit, 0),
+          u.lastRenewalDate = DATE_FORMAT(CURDATE(), '%Y-%m-01')
+      WHERE u.id = ? AND u.userType = 'user'
+    `;
     await this.queryAsync(query, [userId]);
   }
 
   async resetMerchantDealCount(merchantId) {
-    const query = 'UPDATE users SET monthlyDealCount = 0 WHERE id = ?';
+    // Reset merchant usage counter to 0, set monthly deal limit to custom or plan default,
+    // and record the renewal date (first day of this month)
+    const query = `
+      UPDATE users u
+      LEFT JOIN user_plans up ON u.id = up.userId AND up.isActive = 1
+      LEFT JOIN plans p ON up.planId = p.id
+      SET u.monthlyDealCount = 0,
+          u.monthlyDealLimit = COALESCE(u.customDealLimit, p.monthlyDealLimit, 0),
+          u.lastRenewalDate = DATE_FORMAT(CURDATE(), '%Y-%m-01')
+      WHERE u.id = ? AND u.userType = 'merchant'
+    `;
     await this.queryAsync(query, [merchantId]);
+  }
+
+  // New: recompute monthly counters from DB using calendar-month (frontend date)
+  async recomputeMonthlyCounts() {
+    try {
+      console.log('🔄 Recomputing monthly counts from database...');
+      
+      // Recompute user redemption counts (approved only, calendar-month)
+      const userCountsQuery = `
+        SELECT dr.user_id as userId, COUNT(*) as cnt
+        FROM deal_redemptions dr
+        WHERE dr.status = 'approved'
+          AND DATE_FORMAT(dr.redeemed_at, '%Y-%m') = DATE_FORMAT(CURDATE(), '%Y-%m')
+        GROUP BY dr.user_id
+      `;
+      const userCounts = await this.queryAsync(userCountsQuery);
+
+      // Zero all user monthly counts, then apply computed values
+      await this.queryAsync("UPDATE users SET monthlyRedemptionCount = 0 WHERE userType = 'user'");
+      if (userCounts && userCounts.length) {
+        const promises = userCounts.map(r => this.queryAsync('UPDATE users SET monthlyRedemptionCount = ? WHERE id = ?', [r.cnt, r.userId]));
+        await Promise.all(promises);
+        console.log(`✅ Updated redemption counts for ${userCounts.length} users`);
+      }
+
+      // Recompute merchant deal counts (approved deals posted this calendar-month)
+      const merchantCountsQuery = `
+        SELECT d.businessId as merchantId, COUNT(*) as cnt
+        FROM deals d
+        WHERE d.status IN ('approved', 'active')
+          AND DATE_FORMAT(d.created_at, '%Y-%m') = DATE_FORMAT(CURDATE(), '%Y-%m')
+        GROUP BY d.businessId
+      `;
+      const merchantCounts = await this.queryAsync(merchantCountsQuery);
+
+      // Zero all merchant monthly deal counts, then apply computed values
+      await this.queryAsync("UPDATE users SET monthlyDealCount = 0 WHERE userType = 'merchant'");
+      if (merchantCounts && merchantCounts.length) {
+        const mPromises = merchantCounts.map(r => this.queryAsync('UPDATE users SET monthlyDealCount = ? WHERE id = ?', [r.cnt, r.merchantId]));
+        await Promise.all(mPromises);
+        console.log(`✅ Updated deal counts for ${merchantCounts.length} merchants`);
+      }
+
+      console.log('✅ Monthly count recomputation completed');
+    } catch (err) {
+      console.error('❌ Error recomputing monthly counts:', err);
+      throw err;
+    }
+  }
+
+  // Increment user's redemption count when a redemption is approved
+  async incrementUserRedemptionCount(userId, redemptionDate = new Date()) {
+    try {
+      // Only increment if redemption is from current calendar month
+      const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
+      const redemptionMonth = new Date(redemptionDate).toISOString().slice(0, 7);
+      
+      if (currentMonth === redemptionMonth) {
+        await this.queryAsync(
+          'UPDATE users SET monthlyRedemptionCount = monthlyRedemptionCount + 1 WHERE id = ? AND userType = "user"',
+          [userId]
+        );
+        console.log(`📈 Incremented redemption count for user ${userId}`);
+      }
+    } catch (err) {
+      console.error('Error incrementing user redemption count:', err);
+    }
+  }
+
+  // Increment merchant's deal count when a deal is approved
+  async incrementMerchantDealCount(merchantId, dealDate = new Date()) {
+    try {
+      // Only increment if deal is from current calendar month
+      const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
+      const dealMonth = new Date(dealDate).toISOString().slice(0, 7);
+      
+      if (currentMonth === dealMonth) {
+        await this.queryAsync(
+          'UPDATE users SET monthlyDealCount = monthlyDealCount + 1 WHERE id = ? AND userType = "merchant"',
+          [merchantId]
+        );
+        console.log(`📈 Incremented deal count for merchant ${merchantId}`);
+      }
+    } catch (err) {
+      console.error('Error incrementing merchant deal count:', err);
+    }
+  }
+
+  // Decrement user's redemption count when a redemption is rejected (if it was previously approved)
+  async decrementUserRedemptionCount(userId, redemptionDate = new Date()) {
+    try {
+      // Only decrement if redemption is from current calendar month and count > 0
+      const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
+      const redemptionMonth = new Date(redemptionDate).toISOString().slice(0, 7);
+      
+      if (currentMonth === redemptionMonth) {
+        await this.queryAsync(
+          'UPDATE users SET monthlyRedemptionCount = GREATEST(monthlyRedemptionCount - 1, 0) WHERE id = ? AND userType = "user"',
+          [userId]
+        );
+        console.log(`📉 Decremented redemption count for user ${userId}`);
+      }
+    } catch (err) {
+      console.error('Error decrementing user redemption count:', err);
+    }
+  }
+
+  // Get comprehensive monthly statistics for admin dashboard
+  async getMonthlyStatistics() {
+    try {
+      const currentMonth = new Date().toISOString().slice(0, 7);
+      
+      const stats = {
+        users: {
+          totalActiveUsers: 0,
+          totalRedemptions: 0,
+          avgRedemptionsPerUser: 0,
+          usersAtLimit: 0
+        },
+        merchants: {
+          totalActiveMerchants: 0,
+          totalDealsPosted: 0,
+          avgDealsPerMerchant: 0,
+          merchantsAtLimit: 0
+        },
+        deals: {
+          approvedThisMonth: 0,
+          pendingApproval: 0,
+          totalRedemptions: 0,
+          conversionRate: 0
+        }
+      };
+
+      // User statistics
+      const userStatsQuery = `
+        SELECT 
+          COUNT(*) as totalUsers,
+          SUM(monthlyRedemptionCount) as totalRedemptions,
+          AVG(monthlyRedemptionCount) as avgRedemptions,
+          SUM(CASE WHEN monthlyRedemptionCount >= COALESCE(customRedemptionLimit, 
+            (SELECT monthlyRedemptionLimit FROM plans p 
+             LEFT JOIN user_plans up ON p.id = up.planId 
+             WHERE up.userId = users.id AND up.isActive = 1 LIMIT 1), 5) THEN 1 ELSE 0 END) as usersAtLimit
+        FROM users 
+        WHERE userType = 'user' AND status = 'active'
+      `;
+      const userStats = await this.queryAsync(userStatsQuery);
+      if (userStats.length > 0) {
+        stats.users = {
+          totalActiveUsers: userStats[0].totalUsers || 0,
+          totalRedemptions: userStats[0].totalRedemptions || 0,
+          avgRedemptionsPerUser: parseFloat(userStats[0].avgRedemptions) || 0,
+          usersAtLimit: userStats[0].usersAtLimit || 0
+        };
+      }
+
+      // Merchant statistics
+      const merchantStatsQuery = `
+        SELECT 
+          COUNT(*) as totalMerchants,
+          SUM(monthlyDealCount) as totalDeals,
+          AVG(monthlyDealCount) as avgDeals,
+          SUM(CASE WHEN monthlyDealCount >= COALESCE(
+            (SELECT monthlyDealLimit FROM plans p 
+             LEFT JOIN user_plans up ON p.id = up.planId 
+             WHERE up.userId = users.id AND up.isActive = 1 LIMIT 1), 3) THEN 1 ELSE 0 END) as merchantsAtLimit
+        FROM users 
+        WHERE userType = 'merchant' AND status = 'active'
+      `;
+      const merchantStats = await this.queryAsync(merchantStatsQuery);
+      if (merchantStats.length > 0) {
+        stats.merchants = {
+          totalActiveMerchants: merchantStats[0].totalMerchants || 0,
+          totalDealsPosted: merchantStats[0].totalDeals || 0,
+          avgDealsPerMerchant: parseFloat(merchantStats[0].avgDeals) || 0,
+          merchantsAtLimit: merchantStats[0].merchantsAtLimit || 0
+        };
+      }
+
+      // Deal statistics for current month
+      const dealStatsQuery = `
+        SELECT 
+          SUM(CASE WHEN status IN ('approved', 'active') THEN 1 ELSE 0 END) as approvedDeals,
+          SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pendingDeals,
+          (SELECT COUNT(*) FROM deal_redemptions dr 
+           JOIN deals d ON dr.deal_id = d.id 
+           WHERE dr.status = 'approved' 
+           AND DATE_FORMAT(dr.redeemed_at, '%Y-%m') = '${currentMonth}') as totalRedemptions,
+          (SELECT SUM(views) FROM deals 
+           WHERE DATE_FORMAT(created_at, '%Y-%m') = '${currentMonth}') as totalViews
+        FROM deals 
+        WHERE DATE_FORMAT(created_at, '%Y-%m') = '${currentMonth}'
+      `;
+      const dealStats = await this.queryAsync(dealStatsQuery);
+      if (dealStats.length > 0) {
+        const totalViews = dealStats[0].totalViews || 0;
+        const totalRedemptions = dealStats[0].totalRedemptions || 0;
+        stats.deals = {
+          approvedThisMonth: dealStats[0].approvedDeals || 0,
+          pendingApproval: dealStats[0].pendingDeals || 0,
+          totalRedemptions: totalRedemptions,
+          conversionRate: totalViews > 0 ? ((totalRedemptions / totalViews) * 100).toFixed(2) : 0
+        };
+      }
+
+      return stats;
+    } catch (err) {
+      console.error('Error getting monthly statistics:', err);
+      return null;
+    }
   }
 
   // Utility methods

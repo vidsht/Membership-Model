@@ -331,7 +331,7 @@ const UserDetailEdit = () => {
         <div className="header-content">
           <div className="header-left">
             <button
-              onClick={() => navigate('/admin/users')}
+              onClick={() => navigate('/admin')}
               className="btn-back"
             >
               <i className="fas fa-arrow-left"></i>

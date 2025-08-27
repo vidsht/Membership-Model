@@ -685,9 +685,6 @@ const PlanManagement = () => {
             <i className="fas fa-cog"></i>
             Plan Settings
           </Link>
-          <Link to="/admin" className="btn-secondary" style={{marginLeft: '0.5rem'}}>
-            <i className="fas fa-arrow-left"></i> Back to Dashboard
-          </Link>
         </div>
       </div>
       <div className="plan-tabs">

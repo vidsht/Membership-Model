@@ -4219,6 +4219,18 @@ router.patch('/deals/:id/approve', auth, admin, async (req, res) => {
       return res.status(404).json({ success: false, message: 'Pending deal not found or already processed' });
     }
 
+    // Update merchant's monthly deal count
+    const dealInfoQuery = 'SELECT businessId, created_at FROM deals WHERE id = ?';
+    const dealInfo = await queryAsync(dealInfoQuery, [dealId]);
+    if (dealInfo.length > 0) {
+      const notificationService = require('../services/notificationService');
+      try {
+        await notificationService.incrementMerchantDealCount(dealInfo[0].businessId, dealInfo[0].created_at);
+      } catch (countError) {
+        console.error('Failed to update merchant deal count:', countError);
+      }
+    }
+
     // Verify the update by fetching the updated deal
     const verifyQuery = 'SELECT id, status, accessLevel, minPlanPriority FROM deals WHERE id = ?';
     const verifyResult = await queryAsync(verifyQuery, [dealId]);
@@ -4321,6 +4333,21 @@ router.post('/deals/batch-approve', auth, admin, async (req, res) => {
       `UPDATE deals SET status = "active", updated_at = NOW() WHERE id IN (${placeholders}) AND status = "pending_approval"`,
       dealIds
     );
+
+    // Update merchant deal counts for approved deals
+    if (result.affectedRows > 0) {
+      const dealsInfoQuery = `SELECT businessId, created_at FROM deals WHERE id IN (${placeholders})`;
+      const dealsInfo = await queryAsync(dealsInfoQuery, dealIds);
+      
+      const notificationService = require('../services/notificationService');
+      for (const deal of dealsInfo) {
+        try {
+          await notificationService.incrementMerchantDealCount(deal.businessId, deal.created_at);
+        } catch (countError) {
+          console.error('Failed to update merchant deal count:', countError);
+        }
+      }
+    }
 
     res.json({ 
       success: true, 

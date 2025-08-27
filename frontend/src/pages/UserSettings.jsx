@@ -131,7 +131,14 @@ const UserSettings = () => {
         membershipNumber: userData.membershipNumber || '',
         createdAt: userData.created_at || '',
         status: userData.status || '',
-        role: userData.role || userData.userType || ''
+        role: userData.role || userData.userType || '',
+        // Monthly counters and limits (may be provided by backend)
+        monthlyRedemptionsRemaining: userData.monthlyRedemptionsRemaining,
+        monthlyRedemptionCount: userData.monthlyRedemptionCount,
+        monthlyRedemptionLimit: userData.monthlyRedemptionLimit,
+        monthlyDealsRemaining: userData.monthlyDealsRemaining,
+        monthlyDealCount: userData.monthlyDealCount,
+        monthlyDealLimit: userData.monthlyDealLimit
       });
       return;
     }
@@ -182,7 +189,14 @@ const UserSettings = () => {
       membershipNumber: userData.membershipNumber || '',
       createdAt: userData.created_at || '',
       status: userData.status || '',
-      role: userData.role || ''
+      role: userData.role || '',
+      // Monthly counters and limits (may be provided by backend)
+      monthlyRedemptionsRemaining: userData.monthlyRedemptionsRemaining,
+      monthlyRedemptionCount: userData.monthlyRedemptionCount,
+      monthlyRedemptionLimit: userData.monthlyRedemptionLimit,
+      monthlyDealsRemaining: userData.monthlyDealsRemaining,
+      monthlyDealCount: userData.monthlyDealCount,
+      monthlyDealLimit: userData.monthlyDealLimit
     });
   } catch (error) {
     console.error('Error fetching user profile:', error);
@@ -881,11 +895,25 @@ const RedemptionHistoryTab = () => {
   const isCustomLimit = !!(user?.customRedemptionLimit || userProfile?.customRedemptionLimit);
   const planName = userProfile?.membershipType || userProfile?.membership || 'Basic';
   const redemptionsUsed = thisMonthRedemptions.length;
-  const redemptionsRemaining = userRedemptionLimit === -1 ? 'Unlimited' : Math.max(0, userRedemptionLimit - redemptionsUsed);
-  const canRedeem = userRedemptionLimit === -1 || redemptionsUsed < userRedemptionLimit;
+
+  // Prefer backend-provided remaining/count/limit values when available to avoid discrepancies
+  const backendRemaining = (user?.monthlyRedemptionsRemaining !== undefined && user?.monthlyRedemptionsRemaining !== null) ? user.monthlyRedemptionsRemaining :
+                           (userProfile?.monthlyRedemptionsRemaining !== undefined && userProfile?.monthlyRedemptionsRemaining !== null) ? userProfile.monthlyRedemptionsRemaining : undefined;
+  const backendUsed = (user?.monthlyRedemptionCount !== undefined && user?.monthlyRedemptionCount !== null) ? user.monthlyRedemptionCount :
+                      (userProfile?.monthlyRedemptionCount !== undefined && userProfile?.monthlyRedemptionCount !== null) ? userProfile.monthlyRedemptionCount : undefined;
+  const backendLimit = (user?.monthlyRedemptionLimit !== undefined && user?.monthlyRedemptionLimit !== null) ? user.monthlyRedemptionLimit :
+                       (userProfile?.monthlyRedemptionLimit !== undefined && userProfile?.monthlyRedemptionLimit !== null) ? userProfile.monthlyRedemptionLimit : undefined;
+
+  const redemptionsRemaining = backendRemaining !== undefined ? (backendRemaining === -1 ? 'Unlimited' : Math.max(0, backendRemaining)) : (userRedemptionLimit === -1 ? 'Unlimited' : Math.max(0, userRedemptionLimit - redemptionsUsed));
+
+  // canRedeem should prefer backendRemaining when available
+  const canRedeem = backendRemaining !== undefined ? (backendRemaining === -1 || backendRemaining > 0) : (userRedemptionLimit === -1 || redemptionsUsed < userRedemptionLimit);
 
   // compute progress width as a string to avoid inline template parsing issues
-  const progressWidth = userRedemptionLimit === -1 ? '0%' : `${Math.min(100, (redemptionsUsed / Math.max(userRedemptionLimit, 1)) * 100)}%`;
+  // Prefer server-provided used/limit if available
+  const usedForProgress = backendUsed !== undefined ? backendUsed : redemptionsUsed;
+  const limitForProgress = backendLimit !== undefined ? backendLimit : userRedemptionLimit;
+  const progressWidth = limitForProgress === -1 ? '0%' : `${Math.min(100, (usedForProgress / Math.max(limitForProgress, 1)) * 100)}%`;
 
   return (
     <div className="user-settings-tab-content">

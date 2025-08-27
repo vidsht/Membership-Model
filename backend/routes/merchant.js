@@ -1227,6 +1227,14 @@ router.patch('/redemption-requests/:requestId/approve', checkMerchantAccess, asy
       return res.status(500).json({ success: false, message: 'Failed to update deal redemption count' });
     }
 
+    // Update user's monthly redemption count
+    const notificationService = require('../services/notificationService');
+    try {
+      await notificationService.incrementUserRedemptionCount(checkResults[0].user_id, new Date());
+    } catch (countError) {
+      console.error('Failed to update user redemption count:', countError);
+    }
+
     // Send redemption approval notification
     const redemptionData = checkResults[0];
     NotificationHooks.onRedemptionResponse(requestId, 'approved', {
