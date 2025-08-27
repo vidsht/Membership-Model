@@ -451,6 +451,34 @@ const UnifiedRegistration = () => {
     if (!merchantForm.businessName || !merchantForm.businessCategory) {
       showNotification('Please fill in required business information', 'error');
       return false;    }
+    if (!merchantForm.phone) {
+      showNotification('Please provide your mobile number', 'error');
+      return false;
+    }
+    if (!merchantForm.businessDescription) {
+      showNotification('Please provide a business description', 'error');
+      return false;
+    }
+    if (!merchantForm.businessPhone) {
+      showNotification('Please provide your business phone number', 'error');
+      return false;
+    }
+    if (!merchantForm.businessEmail) {
+      showNotification('Please provide your business email address', 'error');
+      return false;
+    }
+    if (!merchantForm.businessStreet) {
+      showNotification('Please provide your business street address', 'error');
+      return false;
+    }
+    if (!merchantForm.businessCity) {
+      showNotification('Please provide your business city', 'error');
+      return false;
+    }
+    if (!merchantForm.businessState) {
+      showNotification('Please provide your business region', 'error');
+      return false;
+    }
     if (merchantForm.password !== merchantForm.confirmPassword) {
       showNotification('Passwords do not match', 'error');
       return false;
@@ -1037,13 +1065,14 @@ const UnifiedRegistration = () => {
                     />
                   </div>
                   <div className="form-group">
-                    <label htmlFor="phone">Phone Number</label>
+                    <label htmlFor="phone">Phone Number <span className="required">*</span></label>
                     <input
                       type="tel"
                       id="phone"
                       value={merchantForm.phone}
                       onChange={handleMerchantInputChange}
                       placeholder="+233 XX XXX XXXX"
+                      required
                     />
                   </div>
                 </div>
@@ -1197,13 +1226,14 @@ const UnifiedRegistration = () => {
                   />
                 </div>
                 <div className="form-group">
-                  <label htmlFor="businessDescription">Business Description</label>
+                  <label htmlFor="businessDescription">Business Description <span className="required">*</span></label>
                   <textarea
                     id="businessDescription"
                     value={merchantForm.businessDescription}
                     onChange={handleMerchantInputChange}
                     placeholder="Brief description of your business"
                     rows="3"
+                    required
                   />
                 </div>
                 <div className="form-row">
@@ -1228,25 +1258,27 @@ const UnifiedRegistration = () => {
                     </div>
                   </div>
                   <div className="form-group">
-                    <label htmlFor="businessPhone">Business Phone</label>
+                    <label htmlFor="businessPhone">Business Phone <span className="required">*</span></label>
                     <input
                       type="tel"
                       id="businessPhone"
                       value={merchantForm.businessPhone}
                       onChange={handleMerchantInputChange}
                       placeholder="Business phone number"
+                      required
                     />
                   </div>
                 </div>
                 <div className="form-row">
                   <div className="form-group">
-                    <label htmlFor="businessEmail">Business Email ID</label>
+                    <label htmlFor="businessEmail">Business Email ID <span className="required">*</span></label>
                     <input
                       type="email"
                       id="businessEmail"
                       value={merchantForm.businessEmail}
                       onChange={handleMerchantInputChange}
                       placeholder="business@example.com"
+                      required
                     />
                   </div>
                   <div className="form-group">
@@ -1287,46 +1319,38 @@ const UnifiedRegistration = () => {
               <div className="form-section">
                 <h3><i className="fas fa-map-marker-alt"></i> Business Address</h3>
                 <div className="form-group">
-                  <label htmlFor="businessStreet">Street Address</label>
+                  <label htmlFor="businessStreet">Street Address <span className="required">*</span></label>
                   <input
                     type="text"
                     id="businessStreet"
                     value={merchantForm.businessStreet}
                     onChange={handleMerchantInputChange}
                     placeholder="Street address"
+                    required
                   />
                 </div>
                 <div className="form-row">
                   <div className="form-group">
-                    <label htmlFor="businessCity">City</label>
+                    <label htmlFor="businessCity">City <span className="required">*</span></label>
                     <input
                       type="text"
                       id="businessCity"
                       value={merchantForm.businessCity}
                       onChange={handleMerchantInputChange}
                       placeholder="City"
+                      required
                     />
                   </div>
                   <div className="form-group">
-                    <label htmlFor="businessState">State/Region</label>
-                    <div className="select-with-icon" style={{ position: 'relative' }}>
-                      <select
+                    <label htmlFor="businessState">Region <span className="required">*</span></label>
+                      <input
+                        type="text"
                         id="businessState"
                         value={merchantForm.businessState}
                         onChange={handleMerchantInputChange}
-                        style={{ paddingRight: '36px' }}
-                      >
-                        <option value="">Select a state/region</option>
-                        {fieldsLoading ? (
-                          <option disabled>Loading states...</option>
-                        ) : (
-                          getStateOptions().map(option => (
-                            <option key={option.value} value={option.value}>{option.label}</option>
-                          ))
-                        )}
-                      </select>
-                      <i className="fas fa-chevron-down dropdown-arrow" style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}></i>
-                    </div>
+                        placeholder="Region"
+                        required
+                      />
                   </div>
                   <div className="form-group">
                     <label htmlFor="businessZipCode">Postal Code</label>
@@ -1350,7 +1374,7 @@ const UnifiedRegistration = () => {
                     required
                   />
                   <span className="checkmark"></span>
-                  I agree to the <Link to="/terms" target="_blank">Terms of Service</Link> and <Link to="/privacy" target="_blank">Privacy Policy</Link> for merchants
+                  I Accept the<Link to="/terms" target="_blank">Terms and Conditions</Link>
                 </label>
                 <button
                   type="submit"
