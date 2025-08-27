@@ -20,9 +20,20 @@ const Footer = () => {
         <div className="footer-column">
           <h3>Quick Links</h3>
           <ul>
-            <li><Link to="/member-benefits">Member Benefits</Link></li>
+            <li><Link to="/about">About Us</Link></li>
+            <li><Link to="/contact">Contact Us</Link></li>
+            <li><Link to="/terms">Terms and Conditions</Link></li>
+            <li><Link to="/disclaimer">Disclaimer</Link></li>
+          </ul>
+        </div>
+
+        <div className="footer-column">
+          <h3>Membership</h3>
+          <ul>
+            <li><Link to="/unified-registration">Register as a User</Link></li>
+            <li><Link to="/unified-registration">Register as Business</Link></li>
+            <li><Link to="/member-benefits">Member's Benefits</Link></li>
             <li><Link to="/business-benefits">Business Benefits</Link></li>
-            <li><Link to="/unified-registration">Join Now</Link></li>
           </ul>
         </div>
 

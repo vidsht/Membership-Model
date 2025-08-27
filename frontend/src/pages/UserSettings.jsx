@@ -858,9 +858,13 @@ const RedemptionHistoryTab = () => {
   const now = new Date();
   const currentMonth = now.toISOString().slice(0, 7); // YYYY-MM format
   const thisMonthRedemptions = userRedemptions.filter(redemption => {
-    if (!redemption.redeemed_at) return false;
-    const redemptionMonth = new Date(redemption.redeemed_at).toISOString().slice(0, 7);
-    return redemptionMonth === currentMonth && redemption.status === 'approved';
+    // support both camelCase (redeemedAt) and snake_case (redeemed_at) coming from different endpoints
+    const redeemedTimestamp = redemption.redeemedAt || redemption.redeemed_at;
+    if (!redeemedTimestamp) return false;
+
+    const redemptionMonth = new Date(redeemedTimestamp).toISOString().slice(0, 7);
+    const status = String(redemption.status || '').toLowerCase();
+    return redemptionMonth === currentMonth && status === 'approved';
   });
 
   // Get user redemption limit info
@@ -879,6 +883,9 @@ const RedemptionHistoryTab = () => {
   const redemptionsUsed = thisMonthRedemptions.length;
   const redemptionsRemaining = userRedemptionLimit === -1 ? 'Unlimited' : Math.max(0, userRedemptionLimit - redemptionsUsed);
   const canRedeem = userRedemptionLimit === -1 || redemptionsUsed < userRedemptionLimit;
+
+  // compute progress width as a string to avoid inline template parsing issues
+  const progressWidth = userRedemptionLimit === -1 ? '0%' : `${Math.min(100, (redemptionsUsed / Math.max(userRedemptionLimit, 1)) * 100)}%`;
 
   return (
     <div className="user-settings-tab-content">
@@ -917,9 +924,7 @@ const RedemptionHistoryTab = () => {
               <div className="progress-bar">
                 <div 
                   className="progress-fill" 
-                  style={{
-                    width: `${userRedemptionLimit === -1 ? 0 : Math.min(100, (redemptionsUsed / Math.max(userRedemptionLimit, 1)) * 100)}%`
-                  }}
+                  style={{ width: progressWidth }}
                 ></div>
               </div>
               <span className="progress-text">
@@ -1270,13 +1275,11 @@ return (
                           <option value="">Select your community</option>
                           {fieldsLoading ? (
                             <option disabled>Loading communities...</option>
-                          ) : (
-                            (getCommunityOptions() || []).map(option => (
-                              <option key={option.value} value={option.value}>
-                                {option.label}
-                              </option>
-                            ))
-                          )}
+                          ) : getCommunityOptions().map(option => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
                         </select>
                         <i className="fas fa-chevron-down dropdown-arrow" style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}></i>
                         </div>
