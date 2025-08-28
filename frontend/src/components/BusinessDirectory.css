@@ -160,11 +160,11 @@
 }
 
 .businesses-grid {
-  max-width: 2000px;
+  max-width: 1200px;
   margin: 5rem;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: var(--space-sm);
+  gap: var(--space-lg);
 }
 
 .business-card-directory {
@@ -189,6 +189,7 @@
 .business-card-header {
   display: flex;
   align-items: center;
+  gap: 18px;
   margin-bottom: 14px;
 }
 
@@ -242,6 +243,7 @@
   font-weight: 700;
   color: #22223b;
   margin: 0 0 6px 0;
+  white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
 }
@@ -303,12 +305,12 @@
   flex-wrap: wrap;
   gap: 10px;
   align-items: center;
-  justify-content: center;
+  justify-content: left;
 }
 
 .business-website {
-  background-color: #e0e7ff;
-  color: #2563eb;
+  background: linear-gradient(135deg, #8D1515, #4C0808);
+  color: white;
   font-weight: 600;
   font-size: 0.97rem;
   text-decoration: none;
@@ -318,13 +320,12 @@
   padding: 9px 16px;
   border-radius: 14px;
   transition: background .22s, box-shadow .22s;
-  box-shadow: 0 2px 8px rgba(37,99,235,0.08);
+  box-shadow: 0 4px 15px rgba(141, 21, 21, 0.3);
 }
 
 .business-website:hover {
-  color: #fff;
-  background-color: #2563eb;
-  box-shadow: 0 0 18px rgba(37,99,235,0.22);
+  background: linear-gradient(135deg, #A01818, #5A0909);
+  box-shadow: 0 6px 20px rgba(141, 21, 21, 0.4);
 }
 
 /* Business Badge example styling - reposition if used */

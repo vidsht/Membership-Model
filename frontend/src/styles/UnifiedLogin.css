@@ -271,14 +271,13 @@
 .login-btn {
   width: 100%;
   padding: 0.875rem 1.5rem;
-  background: linear-gradient(135deg, #6D28D9, #9333EA);
+  background: linear-gradient(135deg, #E8C999, #B79B70); 
   border: none;
   border-radius: 12px;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  margin-bottom: 1.5rem;
   box-shadow: linear-gradient(135deg, #6D28D9, #9333EA);
 }
 
@@ -655,13 +654,13 @@
 }
 
 /* Login Button */
-.login-btn {
+.auth-btn .login-btn {
   width: 100%;
-  padding: 12px;
-  background: linear-gradient(135deg, #E8C999, #a88d64);
+  padding: 7px;
   border: none;
+  background: linear-gradient(135deg, #E8C999, #B79B70);
   border-radius: var(--border-radius-btn);
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
@@ -672,6 +671,7 @@
 }
 
 .login-btn:hover {
+  background: linear-gradient(135deg, #E8C999, #7D0A0A);
   transform: translateY(-2px);
   box-shadow: white;
 }

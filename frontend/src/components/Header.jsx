@@ -8,20 +8,42 @@ const Header = () => {
   const location = useLocation();
   const [notification, setNotification] = useState({ message: '', type: '' });
   const [scrolled, setScrolled] = useState(false);
+  const [headerHidden, setHeaderHidden] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [businessOpen, setBusinessOpen] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 10) {
-        setScrolled(true);
-      } else {
-        setScrolled(false);
+    let lastScroll = window.pageYOffset || 0;
+    let ticking = false;
+
+    const onScroll = () => {
+      const current = window.pageYOffset || 0;
+
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          // small threshold to avoid jitter
+          const delta = Math.abs(current - lastScroll);
+          if (delta > 5) {
+            // if scrolling down and passed a small threshold, hide header
+            if (current > lastScroll && current > 100) {
+              setHeaderHidden(true);
+            } else {
+              // scrolling up -> show header
+              setHeaderHidden(false);
+            }
+
+            // simple scrolled state for styling when page is not at top
+            setScrolled(current > 10);
+            lastScroll = current <= 0 ? 0 : current;
+          }
+          ticking = false;
+        });
+        ticking = true;
       }
     };
-    
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
   // Close mobile menus when navigating
@@ -62,7 +84,7 @@ const Header = () => {
   };
 
   return (
-    <header className={scrolled ? 'scrolled' : ''}>
+    <header className={`${scrolled ? 'scrolled' : ''} ${headerHidden ? 'header--hidden' : 'header--visible'}`.trim()}>
       <div className="header-content">
         <div className="logo">
           <Link to="/" aria-label="Home">
@@ -98,20 +120,11 @@ const Header = () => {
           <ul>
             <li><Link to="/" className={isActive('/')}>Home</Link></li>
             <li><Link to="/deals" className={isActive('/deals')}><i className="fas fa-tags nav-icon"></i> Deals</Link></li>
-            {/* Business Directory and Merchant options */}
-            <li className={`dropdown ${businessOpen ? 'open' : ''}`}>
-              <div className="dropdown" onClick={toggleBusiness} role="button" tabIndex={0}>
-                <i className="fas fa-store nav-icon"></i> Business <i className="fas fa-chevron-down dropdown-arrow"></i>
-              </div>
-              <ul className={`dropdown-menu ${businessOpen ? 'open' : ''}`}>
-                <li><Link to="/business-directory"><i className="fas fa-building"></i> Business Directory</Link></li>
-                {!isAuthenticated && (
-                  <>
-                    <li><Link to="/login"><i className="fas fa-sign-in-alt"></i> Business Login</Link></li>
-                    <li><Link to="/unified-registration"><i className="fas fa-plus-circle"></i> Register Business</Link></li>
-                  </>
-                )}
-              </ul>
+            {/* Business Directory link (no dropdown) */}
+            <li>
+              <Link to="/business-directory" className={isActive('/business-directory')}>
+                <i className="fas fa-store nav-icon"></i> Business
+              </Link>
             </li>
             {isAuthenticated && (
               <>

@@ -78,8 +78,8 @@ html {
 
 .tab-btn.active {
   color: white;
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
-  box-shadow: var(--shadow-md);
+  background: linear-gradient(135deg, #8D1515, #4C0808);
+  box-shadow: 0 4px 15px rgba(141, 21, 21, 0.3);
   transform: translateY(-2px);
 }
 
@@ -93,7 +93,7 @@ html {
   position: absolute;
   bottom: 0;
   height: 4px;
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+  background: linear-gradient(135deg, #8D1515, #4C0808);
   border-radius: 2px;
   transition: all 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55);
   width: 50%;
@@ -438,7 +438,7 @@ html {
 .register-button, .register-btn {
   width: 100%;
   padding: 15px 25px;
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+  background: linear-gradient(135deg, #8D1515, #4C0808);
   color: white;
   border: none;
   border-radius: var(--border-radius-md);
@@ -450,14 +450,15 @@ html {
   align-items: center;
   justify-content: center;
   gap: 10px;
-  box-shadow: var(--shadow-md);
+  box-shadow: 0 4px 15px rgba(141, 21, 21, 0.3);
   font-family: var(--font-family);
 }
 
 .register-button:hover:not(:disabled),
 .register-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #A01818, #5A0909);
   transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 6px 20px rgba(141, 21, 21, 0.4);
 }
 
 .register-button:disabled,

@@ -106,9 +106,9 @@
 }
 
 .user-filters__status-btn.active {
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: linear-gradient(135deg, #8D1515, #4C0808);
   color: white;
-  border-color: #667eea;
+  border-color: #4C0808;
   box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
 }
 

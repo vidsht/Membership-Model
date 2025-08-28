@@ -351,7 +351,7 @@
 .stats-header h2 {
   font-size: 2.5rem;
   margin-bottom: 10px;
-  color: var(--primary-dark);
+  color: #3E0703;
   font-weight: 800;
 }
 
@@ -362,7 +362,7 @@
 
 .stats-header p {
   font-size: 1.1rem;
-  color: #666;
+  color: #3E0703;
   max-width: 600px;
   margin: 0 auto;
 }
@@ -472,7 +472,7 @@
 .features-header h2 {
   font-size: 3rem;
   margin-bottom: var(--space-md);
-  color: var(--primary-dark);
+  color: #3E0703;
   position: relative;
   display: inline-block;
   font-weight: 800;
@@ -493,6 +493,7 @@
 .features-header p {
   max-width: 700px;
   margin: 1.5rem auto 0;
+  color: #3E0703;
   font-size: 1.1rem;
 }
 
@@ -728,7 +729,7 @@
 .business-partners-header h2 {
   font-size: 3rem;
   margin-bottom: var(--space-md);
-  color: var(--primary-dark);
+  color: #3E0703;
   position: relative;
   display: inline-block;
   font-weight: 800;
@@ -754,7 +755,7 @@
 .business-partners-header p {
   max-width: 700px;
   margin: 1.5rem auto 0;
-  color: var(--neutral-medium);
+  color: #3E0703;
   font-size: 1.1rem;
 }
 
@@ -1540,7 +1541,7 @@
 .partner-testimonials-header h2 {
   font-size: 3rem;
   margin-bottom: var(--space-md);
-  color: var(--primary-dark);
+  color: #3E0703;
   position: relative;
   display: inline-block;
   font-weight: 800;
@@ -1566,7 +1567,7 @@
 .partner-testimonials-header p {
   max-width: 700px;
   margin: 1.5rem auto 0;
-  color: var(--neutral-medium);
+  color: #3E0703;
   font-size: 1.1rem;
 }
 
@@ -1678,7 +1679,7 @@
 .community-testimonials-header h2 {
   font-size: 3rem;
   margin-bottom: var(--space-md);
-  color: var(--primary-dark);
+  color: #3E0703;
   position: relative;
   display: inline-block;
   font-weight: 800;
@@ -1704,7 +1705,7 @@
 .community-testimonials-header p {
   max-width: 700px;
   margin: 1.5rem auto 0;
-  color: var(--neutral-medium);
+  color: #3E0703;
   font-size: 1.1rem;
 }
 
@@ -1808,7 +1809,7 @@
 .faq-header h2 {
   font-size: 3rem;
   margin-bottom: var(--space-md);
-  color: var(--primary-dark);
+  color: #3E0703;
   position: relative;
   display: inline-block;
   font-weight: 800;
@@ -1834,7 +1835,7 @@
 .faq-header p {
   max-width: 700px;
   margin: 1.5rem auto 0;
-  color: var(--neutral-medium);
+  color: #3E0703;
   font-size: 1.1rem;
 }
 

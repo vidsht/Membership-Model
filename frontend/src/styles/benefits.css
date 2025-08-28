@@ -34,19 +34,16 @@
 }
 
 .hero-content h1 {
-  color: #7D0A0A;
-  font-size: 4rem;
+  font-size: 3.5rem;
   font-weight: bold;
   margin-bottom: 20px;
-  text-shadow: 3px 3px 3px white;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .hero-content p {
-  color: #7D0A0A;
-  font-size: 1.5rem;
+  font-size: 1.3rem;
   margin-bottom: 30px;
   opacity: 0.95;
-  text-shadow: 3px 3px 3px white;
 }
 
 .cta-button {
