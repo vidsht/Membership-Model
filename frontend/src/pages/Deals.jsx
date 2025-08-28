@@ -86,6 +86,9 @@ const Deals = () => {
   const [selectedDeal, setSelectedDeal] = useState(null);
   const [isRedeeming, setIsRedeeming] = useState(false);
 
+  // Deal detail modal state
+  const [showDetailModal, setShowDetailModal] = useState(false);
+
   useEffect(() => {
     fetchDeals();
     fetchPlans();
@@ -128,9 +131,18 @@ const Deals = () => {
       });
     }
     
-    // Category filter
-    if (filters.category !== 'all') {
-      result = result.filter(deal => deal.category === filters.category);
+    // Category filter (case-insensitive, supports string or array categories)
+    if (filters.category && filters.category !== 'all') {
+      const selected = String(filters.category).toLowerCase();
+      result = result.filter(deal => {
+        if (!deal || !deal.category) return false;
+        // If category stored as array
+        if (Array.isArray(deal.category)) {
+          return deal.category.map(c => String(c).toLowerCase()).includes(selected);
+        }
+        // String comparison
+        return String(deal.category).toLowerCase() === selected;
+      });
     }
     
     // Search filter
@@ -286,6 +298,10 @@ const Deals = () => {
       ) : (
         <div className="deals-grid">
           {filteredDeals.map(deal => {
+            const shortDescription = deal.description?.length > 100 
+              ? `${deal.description.substring(0, 100)}...` 
+              : deal.description;
+            
             return (
             <div className="deal-card" key={deal.id}>
               {/* Deal Banner Image */}
@@ -305,18 +321,12 @@ const Deals = () => {
                 )}
               </div>
 
-              {/* Business Info - Minimal */}
-              <div className="deal-business-minimal">
-                <div className="business-logo-name">
+              {/* Business Info - Logo and Name */}
+              <div className="deal-business-info">
+                <div className="business-logo-container">
                   <div className="business-logo">
                     {(() => {
                       const logoUrl = getMerchantLogoUrl({ logo: deal.businessLogo });
-                      console.log('🎯 Deal logo debug:', {
-                        dealId: deal.id,
-                        businessName: deal.businessName,
-                        businessLogo: deal.businessLogo,
-                        logoUrl: logoUrl
-                      });
                       return logoUrl ? (
                         <SmartImage
                           src={getMerchantLogoUrl({ logo: deal.businessLogo })}
@@ -342,6 +352,8 @@ const Deals = () => {
                       );
                     })()}
                   </div>
+                </div>
+                <div className="business-name-container">
                   <Link 
                     to="/business-directory"
                     state={{ highlightBusiness: deal.businessId }}
@@ -355,149 +367,37 @@ const Deals = () => {
               {/* Deal Content */}
               <div className="deal-content">
                 <h2 className="deal-title">{deal.title}</h2>
-                <p className="deal-desc">{deal.description}</p>
-                
-                {/* Price Information */}
-                {(deal.originalPrice || deal.discountedPrice) && (
-                  <div className="deal-pricing">
-                    {deal.originalPrice && (
-                      <div className="price-section">
-                        <span className="original-price">
-                          Original: GHS {parseFloat(deal.originalPrice).toFixed(2)}
-                        </span>
-                        {deal.discountedPrice && (
-                          <span className="discounted-price">
-                            Now: GHS {parseFloat(deal.discountedPrice).toFixed(2)}
-                          </span>
-                        )}
-                        {deal.originalPrice && deal.discountedPrice && (
-                          <span className="savings">
-                            Save: GHS {(parseFloat(deal.originalPrice) - parseFloat(deal.discountedPrice)).toFixed(2)}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-                
-                <div className="deal-meta">
-                  <div className="deal-info-grid">
-                    {deal.discount && (
-                      <div className="deal-info-item discount">
-                        <i className="fas fa-tag"></i>
-                        <span>
-                          {deal.discount}{deal.discountType === 'percentage' ? '%' : ' GHS'} OFF
-                        </span>
-                      </div>
-                    )}
-                    {deal.couponCode && (
-                      <div className="deal-info-item coupon">
-                        <i className="fas fa-ticket-alt"></i>
-                        <span>Code: <strong>{deal.couponCode}</strong></span>
-                      </div>
-                    )}
-                    {(deal.expiration_date || deal.expirationDate || deal.validUntil) && (
-                      <div className="deal-info-item expiry">
-                        <i className="fas fa-calendar-times"></i>
-                        <span>
-                          Expires: {new Date(deal.expiration_date || deal.expirationDate || deal.validUntil).toLocaleDateString('en-GB', {
-                            day: '2-digit',
-                            month: 'short',
-                            year: 'numeric'
-                          })}
-                        </span>
-                      </div>
-                    )}
-                    {deal.validFrom && (
-                      <div className="deal-info-item valid-from">
-                        <i className="fas fa-calendar-check"></i>
-                        <span>From {new Date(deal.validFrom).toLocaleDateString('en-GB', {
-                          day: '2-digit',
-                          month: 'short',
-                          year: 'numeric'
-                        })}</span>
-                      </div>
-                    )}
-                    {deal.maxRedemptions && (
-                      <div className="deal-info-item max-redemptions">
-                        <i className="fas fa-users"></i>
-                        <span>Limited to {deal.maxRedemptions} users</span>
-                      </div>
-                    )}
-                  </div>
-                  
-                  {((deal.minPlanPriority || deal.requiredPlanPriority) !== null && (deal.minPlanPriority || deal.requiredPlanPriority) !== undefined) && (
-                    <div className={`deal-badge priority-${deal.minPlanPriority || deal.requiredPlanPriority}`}>
-                      <i className="fas fa-crown"></i>
-                      For {getPlanNameByPriority(deal.minPlanPriority || deal.requiredPlanPriority, plans)} Members & Above
-                    </div>
-                  )}
-                  
-                  {deal.termsConditions && (
-                    <div className="deal-terms">
-                      <details className="terms-details">
-                        <summary className="terms-summary">
-                          <i className="fas fa-info-circle"></i>
-                          <span>Terms & Conditions</span>
-                          <i className="fas fa-chevron-down expand-icon"></i>
-                        </summary>
-                        <div className="terms-content">
-                          {deal.termsConditions}
-                        </div>
-                      </details>
-                    </div>
-                  )}
+                <div className="deal-category">
+                  <i className="fas fa-tag"></i>
+                  {deal.category || 'General'}
                 </div>
+                <p className="deal-description-short">{shortDescription}</p>
+                {deal.description?.length > 100 && (
+                  <button 
+                    className="read-more-btn"
+                    onClick={() => {
+                      // This will be handled by the detailed view modal
+                      setSelectedDeal(deal);
+                      setShowDetailModal(true);
+                    }}
+                  >
+                    Read more
+                  </button>
+                )}
               </div>
 
               {/* Action Section */}
               <div className="deal-actions">
                 <button
-                  className={`btn-redeem ${!user || !canRedeem(user, deal.minPlanPriority, plans) ? 'disabled' : ''}`}
-                  disabled={!user || !canRedeem(user, deal.minPlanPriority, plans)}
-                  onClick={() => handleRedeem(deal.id, deal.minPlanPriority)}
+                  className="btn-view-details"
+                  onClick={() => {
+                    setSelectedDeal(deal);
+                    setShowDetailModal(true);
+                  }}
                 >
-                  <i className="fas fa-gift"></i>
-                  Redeem Deal
+                  <i className="fas fa-eye"></i>
+                  View Details
                 </button>
-                
-                {user && !canRedeem(user, deal.minPlanPriority, plans) && (
-                  <div className="upgrade-prompt">
-                    {(() => {
-                      const requiredPlan = plans.find(p => p.priority === (deal.minPlanPriority || deal.requiredPlanPriority));
-                      if (requiredPlan) {
-                        return (
-                          <button className="btn-upgrade">
-                            <i className="fas fa-arrow-up"></i>
-                            Upgrade to {requiredPlan.name}
-                            {requiredPlan.price && requiredPlan.currency && 
-                              ` (${requiredPlan.currency} ${requiredPlan.price})`
-                            }
-                          </button>
-                        );
-                      }
-                      return (
-                        <button className="btn-upgrade">
-                          <i className="fas fa-lock"></i>
-                          Upgrade Required
-                        </button>
-                      );
-                    })()}
-                  </div>
-                )}
-                
-                {redeemStatus[deal.id] && (
-                  <div className={`redeem-status ${
-                    redeemStatus[deal.id].includes('Upgrade') ? 'upgrade-required' : 
-                    redeemStatus[deal.id] === 'Redeemed!' ? 'success' : 'error'
-                  }`}>
-                    <i className={`fas ${
-                      redeemStatus[deal.id] === 'Redeemed!' ? 'fa-check-circle' : 
-                      redeemStatus[deal.id].includes('Upgrade') ? 'fa-exclamation-triangle' : 'fa-times-circle'
-                    }`}></i>
-                    {redeemStatus[deal.id]}
-                  </div>
-                )}
               </div>
             </div>
           )})}
@@ -585,6 +485,190 @@ const Deals = () => {
                     Submit Redemption Request
                   </>
                 )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Deal Detail Modal */}
+      {showDetailModal && selectedDeal && (
+        <div className="modal-overlay">
+          <div className="modal-content deal-detail-modal">
+            <div className="modal-header">
+              <h3>
+                <i className="fas fa-tag"></i>
+                Deal Details
+              </h3>
+              <button 
+                className="close-btn" 
+                onClick={() => setShowDetailModal(false)}
+              >
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            
+            <div className="modal-body">
+              {/* Deal Banner */}
+              <div className="deal-banner-large">
+                {getDealBannerUrl(selectedDeal) ? (
+                  <SmartImage 
+                    src={getDealBannerUrl(selectedDeal)} 
+                    alt={selectedDeal.title} 
+                    className="deal-banner-image-large" 
+                  />
+                ) : (
+                  <div className="deal-banner-placeholder-large">
+                    <i className="fas fa-image"></i>
+                    <span>No Banner Available</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Business Info */}
+              <div className="business-info-detail">
+                <div className="business-logo-detail">
+                  {(() => {
+                    const logoUrl = getMerchantLogoUrl({ logo: selectedDeal.businessLogo });
+                    return logoUrl ? (
+                      <SmartImage
+                        src={logoUrl}
+                        alt={`${selectedDeal.businessName} Logo`}
+                        className="business-logo-image-detail"
+                      />
+                    ) : (
+                      <div className="business-logo-placeholder-detail">
+                        <span>{selectedDeal.businessName?.charAt(0) || 'B'}</span>
+                      </div>
+                    );
+                  })()}
+                </div>
+                <div>
+                  <h4 className="business-name-detail">{selectedDeal.businessName}</h4>
+                  <div className="deal-category-detail">
+                    <i className="fas fa-tag"></i>
+                    {selectedDeal.category || 'General'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Deal Details */}
+              <div className="deal-details-section">
+                <h3 className="deal-title-detail">{selectedDeal.title}</h3>
+                <p className="deal-description-detail">{selectedDeal.description}</p>
+
+                {/* Pricing Information */}
+                {(selectedDeal.originalPrice || selectedDeal.discountedPrice) && (
+                  <div className="deal-pricing-detail">
+                    <h4>Pricing</h4>
+                    <div className="pricing-info">
+                      {selectedDeal.originalPrice && (
+                        <div className="price-row">
+                          <span className="price-label">Original Price:</span>
+                          <span className="original-price-detail">GHS {parseFloat(selectedDeal.originalPrice).toFixed(2)}</span>
+                        </div>
+                      )}
+                      {selectedDeal.discountedPrice && (
+                        <div className="price-row">
+                          <span className="price-label">Discounted Price:</span>
+                          <span className="discounted-price-detail">GHS {parseFloat(selectedDeal.discountedPrice).toFixed(2)}</span>
+                        </div>
+                      )}
+                      {selectedDeal.originalPrice && selectedDeal.discountedPrice && (
+                        <div className="price-row savings-row">
+                          <span className="price-label">You Save:</span>
+                          <span className="savings-detail">GHS {(parseFloat(selectedDeal.originalPrice) - parseFloat(selectedDeal.discountedPrice)).toFixed(2)}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Deal Information */}
+                <div className="deal-info-detail">
+                  <h4>Deal Information</h4>
+                  <div className="info-grid">
+                    {selectedDeal.discount && (
+                      <div className="info-item">
+                        <i className="fas fa-percentage"></i>
+                        <span>{selectedDeal.discount}{selectedDeal.discountType === 'percentage' ? '%' : ' GHS'} Discount</span>
+                      </div>
+                    )}
+                    {selectedDeal.couponCode && (
+                      <div className="info-item">
+                        <i className="fas fa-ticket-alt"></i>
+                        <span>Coupon Code: <strong>{selectedDeal.couponCode}</strong></span>
+                      </div>
+                    )}
+                    {(selectedDeal.expiration_date || selectedDeal.expirationDate || selectedDeal.validUntil) && (
+                      <div className="info-item">
+                        <i className="fas fa-calendar-times"></i>
+                        <span>
+                          Expires: {new Date(selectedDeal.expiration_date || selectedDeal.expirationDate || selectedDeal.validUntil).toLocaleDateString('en-GB', {
+                            day: '2-digit',
+                            month: 'long',
+                            year: 'numeric'
+                          })}
+                        </span>
+                      </div>
+                    )}
+                    {selectedDeal.validFrom && (
+                      <div className="info-item">
+                        <i className="fas fa-calendar-check"></i>
+                        <span>Valid From: {new Date(selectedDeal.validFrom).toLocaleDateString('en-GB', {
+                          day: '2-digit',
+                          month: 'long',
+                          year: 'numeric'
+                        })}</span>
+                      </div>
+                    )}
+                    {selectedDeal.maxRedemptions && (
+                      <div className="info-item">
+                        <i className="fas fa-users"></i>
+                        <span>Limited to {selectedDeal.maxRedemptions} redemptions</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Terms & Conditions */}
+                {selectedDeal.termsConditions && (
+                  <div className="terms-conditions-detail">
+                    <h4>Terms & Conditions</h4>
+                    <p>{selectedDeal.termsConditions}</p>
+                  </div>
+                )}
+
+                {/* Plan Requirements */}
+                {((selectedDeal.minPlanPriority || selectedDeal.requiredPlanPriority) !== null && (selectedDeal.minPlanPriority || selectedDeal.requiredPlanPriority) !== undefined) && (
+                  <div className="plan-requirements">
+                    <h4>Membership Requirements</h4>
+                    <div className="plan-badge-detail">
+                      <i className="fas fa-crown"></i>
+                      Available for {getPlanNameByPriority(selectedDeal.minPlanPriority || selectedDeal.requiredPlanPriority, plans)} Members & Above
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="modal-footer">
+              <button 
+                className="btn btn-secondary" 
+                onClick={() => setShowDetailModal(false)}
+              >
+                Close
+              </button>
+              <button
+                className={`btn btn-primary ${!user || !canRedeem(user, selectedDeal.minPlanPriority, plans) ? 'disabled' : ''}`}
+                disabled={!user || !canRedeem(user, selectedDeal.minPlanPriority, plans)}
+                onClick={() => {
+                  setShowDetailModal(false);
+                  handleRedeem(selectedDeal.id, selectedDeal.minPlanPriority);
+                }}
+              >
+                <i className="fas fa-gift"></i>
+                Redeem Deal
               </button>
             </div>
           </div>

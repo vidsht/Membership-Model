@@ -300,8 +300,6 @@ const MerchantCertificate = () => {
     return (
       <div className="certificate-container">
         <div className="loading-spinner">
-          <i className="fas fa-spinner fa-spin"></i>
-          <p>Loading merchant certificate...</p>
         </div>
       </div>
     );

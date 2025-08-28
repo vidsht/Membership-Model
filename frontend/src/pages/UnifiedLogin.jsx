@@ -235,9 +235,9 @@ const UnifiedLogin = () => {
 
               <div className="register-link">
                 {activeTab === 'user' ? (
-                  <p>Don't have an account? <Link to="/register">Join us today!</Link></p>
+                  <p>Don't have an account? <Link to="/unified-registration">Join us today!</Link></p>
                 ) : (
-                  <p>Want to partner with us? <Link to="/merchant/register">Register your business</Link></p>
+                  <p>Want to partner with us? <Link to="/unified-registration">Register your business</Link></p>
                 )}
               </div>
             </div>

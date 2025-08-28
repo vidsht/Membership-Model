@@ -364,23 +364,18 @@
 
 /* Loading Spinner */
 .loading-spinner {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 60px 20px;
-  color: var(--neutral-medium);
+  width: 50px;
+  height: 50px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid var(--primary-color, #118AB2);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
 }
 
-.loading-spinner i {
-  font-size: 3rem;
-  margin-bottom: 20px;
-  color: var(--primary-color);
-}
-
-.loading-spinner p {
-  font-size: 1.1rem;
-  margin: 0;
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 .status-message {
@@ -609,23 +604,18 @@
 
 /* Loading Spinner */
 .loading-spinner {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 60px 20px;
-  color: #666;
+  width: 50px;
+  height: 50px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid var(--primary-color, #118AB2);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
 }
 
-.loading-spinner i {
-  font-size: 2rem;
-  margin-bottom: 15px;
-  color: #2c5aa0;
-}
-
-.loading-spinner p {
-  font-size: 1.1rem;
-  margin: 0;
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 /* Certificate Verification Footer */

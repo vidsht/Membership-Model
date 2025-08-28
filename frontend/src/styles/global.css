@@ -106,7 +106,7 @@ p {
 /* Header Styles */
 /* Header Styles - Modern & Professional */
 header {
-  background: linear-gradient(to right, var(--primary-dark), var(--primary-color));
+  background: linear-gradient(to right, #8E1616, #661212, #4b0707);
   box-shadow: var(--shadow-md);
   position: sticky;
   top: 0;
@@ -331,9 +331,9 @@ header {
 }
 
 .login-btn:hover {
-  background-color: rgba(255, 255, 255, 0.9);
-  color: var(--primary-dark);
-  box-shadow: var(--shadow-md);
+  background: linear-gradient(135deg, #E8C999, #7D0A0A);
+  color: white;
+  box-shadow: white;
   transform: translateY(-1px);
 }
 
@@ -363,7 +363,7 @@ header {
 
 /* Footer Styles */
 footer {
-  background-color: var(--primary-dark);
+  background: linear-gradient(to right, #C5172E, #661212, #4b0707);
   color: white;
   padding: var(--space-xl) 0;
   

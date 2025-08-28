@@ -416,8 +416,6 @@ const MembershipCard = () => {
     return (
       <div className="membership-card-container">
         <div className="loading-spinner">
-          <i className="fas fa-spinner fa-spin"></i>
-          <p>Loading membership card...</p>
         </div>
       </div>
     );

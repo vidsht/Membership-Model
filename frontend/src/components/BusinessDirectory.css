@@ -160,11 +160,11 @@
 }
 
 .businesses-grid {
-  max-width: 1200px;
+  max-width: 2000px;
   margin: 5rem;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: var(--space-lg);
+  gap: var(--space-sm);
 }
 
 .business-card-directory {
@@ -189,7 +189,6 @@
 .business-card-header {
   display: flex;
   align-items: center;
-  gap: 18px;
   margin-bottom: 14px;
 }
 
@@ -243,7 +242,6 @@
   font-weight: 700;
   color: #22223b;
   margin: 0 0 6px 0;
-  white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
 }
@@ -305,7 +303,7 @@
   flex-wrap: wrap;
   gap: 10px;
   align-items: center;
-  justify-content: left;
+  justify-content: center;
 }
 
 .business-website {

@@ -244,7 +244,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, rgba(28, 46, 66, 0.7), rgba(58, 80, 107, 0.5));
+  background: linear-gradient(135deg, #f8eedf53, #fdf2f852);
   z-index: 1;
 }
 
@@ -299,14 +299,15 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+  background: linear-gradient(135deg, #7D0A0A, #5f0707);
   color: white;
   border: none;
 }
 
 .hero-actions .btn:hover {
-  transform: translateY(-8px) scale(1.05);
+  transform: translateY(-20px) scale(1.05);
   box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+  background: linear-gradient(135deg, #FBF3C1, #7D0A0A);
 }
 
 /* Enhanced Statistics Section */

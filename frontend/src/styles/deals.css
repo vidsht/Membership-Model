@@ -149,44 +149,44 @@
   gap: 8px;
 }
 
-/* Minimal Business Info Styles */
-.deal-business-minimal {
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid rgba(102, 126, 234, 0.1);
-  background: #ffffff;
-}
-
-.business-logo-name {
+/* Business Info Section - New Layout */
+.deal-business-info {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 1rem;
+}
+
+.business-logo-container {
+  flex-shrink: 0;
 }
 
 .business-logo {
-  width: 40px;
-  height: 40px;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
   overflow: hidden;
-  flex-shrink: 0;
   border: 2px solid rgba(102, 126, 234, 0.1);
+  background: #f8fafc;
 }
 
-.business-logo-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
+.logo-image,
 .business-logo-placeholder {
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, #667eea, #764ba2);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 600;
+}
+
+.business-logo-placeholder {
+  background: linear-gradient(135deg, #667eea, #764ba2);
   color: white;
-  font-size: 1rem;
+  font-weight: 600;
+  font-size: 1.2rem;
+}
+
+.business-name-container {
+  flex: 1;
 }
 
 .business-name-link {
@@ -206,7 +206,7 @@
 /* Enhanced Business Info Styles - Keep for backward compatibility */
 .deal-business-info {
   background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
-  padding: 1.5rem;
+  padding: 0.2rem;
   border-bottom: 1px solid rgba(102, 126, 234, 0.1);
   position: relative;
 }
@@ -233,7 +233,6 @@
   border-radius: 15px;
   font-weight: 600;
   font-size: 0.8rem;
-  white-space: nowrap;
   margin-left: 1rem;
 }
 
@@ -292,19 +291,54 @@
 }
 
 .deal-title {
-  font-size: 1.3rem;
+  font-size: 1.4rem;
   font-weight: 700;
   color: #1e293b;
   margin-bottom: 0.8rem;
   line-height: 1.4;
 }
 
-.deal-desc {
+.deal-category {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  padding: 0.4rem 0.8rem;
+  border-radius: 15px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  width: fit-content;
+}
+
+.deal-category i {
+  font-size: 0.8rem;
+}
+
+.deal-description-short {
   color: #64748b;
   font-size: 1rem;
   line-height: 1.6;
-  margin-bottom: 1.2rem;
+  margin-bottom: 1rem;
   flex: 1;
+}
+
+.read-more-btn {
+  background: none;
+  border: none;
+  color: #667eea;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 0;
+  text-align: left;
+  transition: color 0.3s ease;
+}
+
+.read-more-btn:hover {
+  color: #5a67d8;
+  text-decoration: underline;
 }
 .deal-meta {
   display:block;
@@ -491,7 +525,7 @@
   border-top: 1px solid rgba(102, 126, 234, 0.1);
 }
 
-.btn-redeem {
+.btn-view-details {
   width: 100%;
   padding: 0.8rem 1.5rem;
   background: linear-gradient(135deg, #667eea, #764ba2);
@@ -506,19 +540,12 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  margin-bottom: 1rem;
 }
 
-.btn-redeem:hover:not(.disabled) {
+.btn-view-details:hover {
   background: linear-gradient(135deg, #5a6fd8, #6b46a3);
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
-}
-
-.btn-redeem.disabled {
-  background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
-  color: #94a3b8;
-  cursor: not-allowed;
 }
 
 .upgrade-prompt {
@@ -843,7 +870,272 @@
   }
 }
 
-/* Redemption Modal Styles */
+/* Deal Detail Modal Styles */
+.deal-detail-modal {
+  max-width: 800px;
+  width: 95%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.deal-banner-large {
+  width: 100%;
+  height: 250px;
+  margin-bottom: 1.5rem;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.deal-banner-image-large {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.deal-banner-placeholder-large {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  color: #94a3b8;
+  font-size: 1.2rem;
+}
+
+.deal-banner-placeholder-large i {
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+}
+
+.business-info-detail {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 12px;
+  border: 1px solid rgba(102, 126, 234, 0.1);
+}
+
+.business-logo-detail {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid rgba(102, 126, 234, 0.1);
+  flex-shrink: 0;
+}
+
+.business-logo-image-detail {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.business-logo-placeholder-detail {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 1.5rem;
+}
+
+.business-name-detail {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #667eea;
+  margin: 0 0 0.5rem 0;
+}
+
+.deal-category-detail {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  padding: 0.3rem 0.8rem;
+  border-radius: 15px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.deal-details-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.deal-title-detail {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+}
+
+.deal-description-detail {
+  color: #64748b;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.deal-pricing-detail,
+.deal-info-detail,
+.terms-conditions-detail,
+.plan-requirements {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 1px solid rgba(102, 126, 234, 0.1);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.deal-pricing-detail h4,
+.deal-info-detail h4,
+.terms-conditions-detail h4,
+.plan-requirements h4 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 1rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pricing-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.price-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(102, 126, 234, 0.1);
+}
+
+.price-row:last-child {
+  border-bottom: none;
+}
+
+.price-label {
+  font-weight: 500;
+  color: #64748b;
+}
+
+.original-price-detail {
+  font-size: 1.1rem;
+  color: #9ca3af;
+  text-decoration: line-through;
+}
+
+.discounted-price-detail {
+  font-size: 1.3rem;
+  color: #667eea;
+  font-weight: 700;
+}
+
+.savings-row {
+  background: rgba(16, 185, 129, 0.1);
+  border-radius: 8px;
+  padding: 0.8rem;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.savings-detail {
+  font-size: 1.2rem;
+  color: #059669;
+  font-weight: 700;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.8rem;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.8rem;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 8px;
+  border: 1px solid rgba(102, 126, 234, 0.1);
+}
+
+.info-item i {
+  color: #667eea;
+  font-size: 1rem;
+  width: 20px;
+  text-align: center;
+}
+
+.plan-badge-detail {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  padding: 1rem;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.plan-badge-detail i {
+  font-size: 1.2rem;
+}
+
+/* Responsive Design for Detail Modal */
+@media (max-width: 768px) {
+  .deal-detail-modal {
+    width: 98%;
+    max-height: 95vh;
+  }
+  
+  .deal-banner-large {
+    height: 200px;
+  }
+  
+  .business-info-detail {
+    flex-direction: column;
+    text-align: center;
+    gap: 0.8rem;
+  }
+  
+  .business-logo-detail {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .deal-title-detail {
+    font-size: 1.5rem;
+  }
+  
+  .price-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.3rem;
+  }
+  
+  .modal-footer {
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+  
+  .modal-footer .btn {
+    width: 100%;
+  }
+}
 .redemption-modal {
   max-width: 600px;
   width: 90%;

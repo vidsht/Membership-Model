@@ -243,6 +243,7 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
+  gap: 3rem;
 }
 
 .remember-me {
@@ -271,7 +272,6 @@
   width: 100%;
   padding: 0.875rem 1.5rem;
   background: linear-gradient(135deg, #6D28D9, #9333EA);
-  color: white;
   border: none;
   border-radius: 12px;
   font-size: 1rem;
@@ -279,12 +279,12 @@
   cursor: pointer;
   transition: all 0.3s ease;
   margin-bottom: 1.5rem;
-  box-shadow: 0 4px 15px rgba(109, 40, 217, 0.3);
+  box-shadow: linear-gradient(135deg, #6D28D9, #9333EA);
 }
 
 .login-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(109, 40, 217, 0.4);
+  box-shadow: white;
 }
 
 .login-btn:disabled {
@@ -301,7 +301,6 @@
 .form-divider::before {
   content: '';
   position: absolute;
-  top: 50%;
   left: 0;
   right: 0;
   height: 1px;
@@ -659,8 +658,7 @@
 .login-btn {
   width: 100%;
   padding: 12px;
-  background: linear-gradient(135deg, var(--primary), #0a6d8a);
-  color: white;
+  background: linear-gradient(135deg, #E8C999, #a88d64);
   border: none;
   border-radius: var(--border-radius-btn);
   font-size: 18px;
@@ -675,7 +673,7 @@
 
 .login-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(17, 138, 178, 0.3);
+  box-shadow: white;
 }
 
 .login-btn:active {
@@ -747,7 +745,4 @@
     gap: 10px;
   }
   
-  .forgot-password {
-    align-self: flex-end;
-  }
 }
