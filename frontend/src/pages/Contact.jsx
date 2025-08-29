@@ -48,7 +48,7 @@ const Contact = () => {
     <div style={{ minHeight: '100vh' }}>
       {/* Hero Section */}
       <div style={{
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        background: 'linear-gradient(135deg, #FFF0C4 0%, #E8C999 100%)',
         padding: '4rem 2rem',
         textAlign: 'center',
         color: 'white',
@@ -185,7 +185,7 @@ const Contact = () => {
                   <i className="fas fa-envelope" style={{ fontSize: '1.5rem', color: 'var(--secondary)' }}></i>
                   <div>
                     <strong>Email</strong>
-                    <p style={{ margin: '0', color: '#666' }}>info@indiansinghana.com</p>
+                    <p style={{ margin: '0', color: '#666' }}>cards@indiansinghana.com</p>
                     <small>We respond within 24 hours</small>
                   </div>
                 </div>

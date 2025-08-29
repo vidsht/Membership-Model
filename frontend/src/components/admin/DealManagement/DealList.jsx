@@ -639,7 +639,7 @@ const DealList = ({ onTabChange }) => {
       )}
       
       {/* Modal for delete confirmations only */}
-      {modalState.isOpen && modalState.type === 'confirm' && (
+      {modalState.isOpen && (modalState.type === 'confirm' || modalState.type === 'warning') && (
         <Modal
           isOpen={modalState.isOpen}
           title={modalState.title}

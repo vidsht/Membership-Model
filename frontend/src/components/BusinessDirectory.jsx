@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useImageUrl, SmartImage, DefaultAvatar } from '../hooks/useImageUrl.jsx';
 import api from '../services/api';
+import { useDynamicFields } from '../hooks/useDynamicFields';
 import './BusinessDirectory.css';
 
 
@@ -13,11 +14,14 @@ const BusinessDirectory = () => {
   const [showBusinessModal, setShowBusinessModal] = useState(false);
   const [selectedBusiness, setSelectedBusiness] = useState(null);
   const { getMerchantLogoUrl } = useImageUrl();
-  
-  // Get unique categories from businesses (match Home page logic)
-  const categories = businesses.length > 0
-    ? [...new Set(businesses.map(business => business.category || business.sector || business.businessCategory).filter(Boolean))]
-    : [];
+  const { dynamicFields, isLoading: dynamicLoading } = useDynamicFields();
+
+  // Use dynamic business categories from hook
+  const categories = dynamicFields.businessCategories && dynamicFields.businessCategories.length > 0
+    ? dynamicFields.businessCategories.map(cat => cat.name || cat)
+    : (businesses.length > 0
+      ? [...new Set(businesses.map(business => business.category || business.sector || business.businessCategory).filter(Boolean))]
+      : []);
 
 
   useEffect(() => {
@@ -88,6 +92,19 @@ const BusinessDirectory = () => {
               onChange={(e) => setFilter(e.target.value)}
             />
           </div>
+          {/* Business Category Filter Dropdown */}
+          <div className="category-filter-bar">
+            <select
+              value={selectedCategory}
+              onChange={e => setSelectedCategory(e.target.value)}
+              className="category-filter-select"
+            >
+              <option value="">All Categories</option>
+              {categories.map((cat, idx) => (
+                <option key={cat + idx} value={cat}>{cat}</option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
@@ -129,7 +146,7 @@ const BusinessDirectory = () => {
                       src={getMerchantLogoUrl(business)}
                       alt={`${name} Logo`}
                       placeholder={
-                        <div className="image-fallback" style={{display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgb(243, 244, 246)', color: 'rgb(156, 163, 175)', fontSize: '14px', borderRadius: '8px'}}>
+                        <div className="image-fallback" style={{display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgb(243, 244, 246)', color: 'rgb(156, 163, 175)', fontSize: '14px', borderRadius: '8px', width: '100%', height: '100%'}}>
                           <div className="logo-placeholder"><span>{name.charAt(0) || 'P'}</span></div>
                         </div>
                       }

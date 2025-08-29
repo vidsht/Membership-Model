@@ -173,7 +173,7 @@ select.form-control {
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background-color: #4b5563;
+  background-color: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
   transform: translateY(-1px);
 }
 

@@ -59,7 +59,7 @@ async function installEmailSystem() {
 # Email Configuration
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
-SMTP_USER=support@indiansinghana.com
+SMTP_USER=cards@indiansinghana.com
 SMTP_PASS=your_app_password_here
 FRONTEND_URL=http://localhost:3000
 `;

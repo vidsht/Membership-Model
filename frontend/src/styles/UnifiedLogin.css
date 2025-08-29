@@ -645,7 +645,7 @@
 
 /* Forgot Password Link */
 .forgot-password {
-  color: var(--primary);
+  color: #660B05;
   font-size: 14px;
   text-decoration: none;
 }

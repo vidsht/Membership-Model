@@ -420,14 +420,23 @@ html {
 }
 
 .terms-link {
-  color: var(--primary-color);
+  color: #630B0B;
   text-decoration: none;
   font-weight: 600;
 }
 
 .terms-link:hover {
   text-decoration: underline;
-  color: var(--primary-dark);
+  color: #4d0505;
+}
+
+.checkbox-container a{
+  color: #4d0505;
+}
+
+.checkbox-container a:hover {
+  text-decoration: underline;
+  color: #4d0505;
 }
 
 /* Form Actions */

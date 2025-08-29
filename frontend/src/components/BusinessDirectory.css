@@ -315,7 +315,7 @@
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  padding: 9px 16px;
+  padding: 4px 16px;
   border-radius: 14px;
   transition: background .22s, box-shadow .22s;
   box-shadow: 0 4px 15px rgba(141, 21, 21, 0.3);
@@ -507,6 +507,76 @@
 }
 
 @media (max-width: 900px) {
+  .business-modal-overlay {
+    padding: 8px;
+  }
+  .business-detail-modal {
+    max-width: 98vw;
+    width: 99vw;
+    border-radius: 12px;
+    padding: 0.5rem;
+  }
+  .business-detail-modal .modal-content-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  .business-detail-modal .modal-body-compact {
+    padding: 0.7rem 0.5rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .business-modal-overlay {
+    padding: 2px;
+  }
+  .business-detail-modal {
+    max-width: 100vw;
+    width: 100vw;
+    border-radius: 8px;
+    padding: 0.2rem;
+  }
+  .business-detail_modal .modal-header-compact {
+    padding: 12px 10px;
+  }
+  .business-detail-modal .modal-title {
+    font-size: 1.1rem;
+  }
+  .business-detail-modal .modal-content-grid {
+    grid-template-columns: 1fr;
+    gap: 0.7rem;
+  }
+  .business-detail-modal .modal-left-section,
+  .business-detail-modal .modal-right-section {
+    padding: 0.5rem;
+    gap: 0.7rem;
+  }
+  .business-logo-modal {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 0.5rem;
+  }
+  .business-description-modal {
+    max-height: 90px;
+    overflow-y: auto;
+    font-size: 0.95rem;
+    padding: 0.6rem;
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    line-height: 1.5;
+    word-break: break-word;
+  }
+  .business-contact-modal .contact-item-modal {
+    font-size: 0.95rem;
+    padding: 0.3rem 0.5rem;
+  }
+  .business-website-modal {
+    font-size: 0.95rem;
+    padding: 0.3rem 0.7rem;
+  }
+}
+
+@media (max-width: 900px) {
   .businesses-grid {
     grid-template-columns: 1fr 1fr;
     margin: 1rem;
@@ -534,7 +604,7 @@
 @media (max-width: 580px) {
   .businesses-grid {
     grid-template-columns: 1fr;
-    margin: 4px;
+    margin: 25px;
     gap: 12px;
   }
   .business-card-directory {
@@ -570,6 +640,42 @@
   .business-card-directory .business-logo-container {
     width: 64px;
     height: 64px;
+  }
+}
+
+@media (max-width: 600px) {
+  .businesses-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+  .business-card-directory {
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+    min-height: 260px;
+    height: 260px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: stretch;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(141, 21, 21, 0.04);
+    border: 1px solid #e2e8f0;
+    padding: 1rem;
+    margin: 0;
+  }
+  .business-card-header {
+    flex: 0 0 auto;
+  }
+  .business-description {
+    flex: 1 1 auto;
+    margin-bottom: 0.5rem;
+  }
+  .business-contact, .business-actions {
+    flex: 0 0 auto;
   }
 }
 

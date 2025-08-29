@@ -579,7 +579,7 @@ const UnifiedRegistration = () => {
           right: '24px',
           zIndex: 1000,
           background: 'rgba(255,255,255,0.95)',
-          color: '#667eea',
+          color: '#660B05',
           borderRadius: '50px',
           boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
           padding: '8px 16px',

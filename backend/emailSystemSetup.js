@@ -238,7 +238,7 @@ app.use('/api/admin/email', require('./routes/emailAdmin'));
 Add to your .env file:
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
-SMTP_USER=support@indiansinghana.com
+SMTP_USER=cards@indiansinghana.com
 SMTP_PASS=your_email_password
 FRONTEND_URL=http://localhost:3000
 

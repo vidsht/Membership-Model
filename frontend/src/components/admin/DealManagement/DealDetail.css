@@ -107,8 +107,8 @@
 }
 
 .deal-image {
-  width: 100%;
-  height: 220px;
+  width: 20%;
+  height: 111px;
   border-radius: 8px;
   overflow: hidden;
   margin-bottom: 20px;
@@ -588,7 +588,7 @@
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 1rem;
 }
 

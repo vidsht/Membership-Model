@@ -46,9 +46,8 @@
 }
 
 .header-content {
-  max-width: 1200px;
   margin: 0 auto;
-  padding: 0.3rem 2rem;
+  padding: 0.2rem 1rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -329,7 +328,7 @@
 }
 
 .section-header {
-  background: linear-gradient(90deg, #f8fafc 0%, #f1f5f9 100%);
+  background: linear-gradient(90deg, #611d1d 0%, #640f0f 100%);
   padding: 1.5rem 2rem;
   border-bottom: 1px solid #e5e7eb;
 }
@@ -448,7 +447,7 @@
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background: #4b5563;
+  background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
   transform: translateY(-1px);
 }
 

@@ -79,7 +79,6 @@
 .user-filters__status-buttons {
   display: flex;
   gap: 0.8rem;
-  margin-bottom: 1.5rem;
   flex-wrap: wrap;
 }
 
@@ -209,6 +208,39 @@
   color: white;
 }
 
+/* Toggle row for small screens */
+.user-filters__toggle-row {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.user-filters__toggle-btn {
+  background: none;
+  color: #64748b;
+  border: none;
+  border-radius: 0;
+  padding: 0.15rem 0.4rem;
+  font-size: 0.92rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  box-shadow: none;
+  transition: color 0.2s;
+}
+
+.user-filters__toggle-btn:hover {
+  color: #1e293b;
+  background: none;
+}
+
+.user-filters__toggle-btn i {
+  font-size: 0.95rem;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .user-filters__main-row {
@@ -248,7 +280,8 @@
 
   .user-filters__status-buttons {
     grid-template-columns: 1fr 1fr;
-    display: grid;
+    display: flex;
+    flex-direction: column;
     gap: 0.6rem;
   }
 

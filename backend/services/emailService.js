@@ -18,7 +18,7 @@ class EmailService {
       port: process.env.SMTP_PORT || 587,
       secure: false, // true for 465, false for other ports
       auth: {
-        user: process.env.SMTP_USER || 'support@indiansinghana.com',
+        user: process.env.SMTP_USER || 'cards@indiansinghana.com',
         pass: process.env.SMTP_PASS || process.env.EMAIL_PASSWORD
       },
       tls: {
@@ -28,7 +28,7 @@ class EmailService {
 
     // Verify connection (optional in development)
     try {
-      if (process.env.SMTP_USER && process.env.SMTP_PASS && process.env.SMTP_USER !== 'support@indiansinghana.com') {
+      if (process.env.SMTP_USER && process.env.SMTP_PASS && process.env.SMTP_USER !== 'cards@indiansinghana.com') {
         await this.transporter.verify();
         console.log('✅ Email service initialized successfully');
       } else {
@@ -262,7 +262,7 @@ class EmailService {
 
       // Send immediately
       const mailOptions = {
-        from: `"Indians in Ghana" <${process.env.SMTP_USER || 'support@indiansinghana.com'}>`,
+        from: `"Indians in Ghana" <${process.env.SMTP_USER || 'cards@indiansinghana.com'}>`,
         to,
         subject,
         text,
@@ -387,7 +387,7 @@ class EmailService {
 
   async sendQueuedEmail(queuedEmail) {
     const mailOptions = {
-      from: `"Indians in Ghana" <${process.env.SMTP_USER || 'support@indiansinghana.com'}>`,
+      from: `"Indians in Ghana" <${process.env.SMTP_USER || 'cards@indiansinghana.com'}>`,
       to: queuedEmail.recipient,
       subject: queuedEmail.subject,
       text: queuedEmail.text_content,

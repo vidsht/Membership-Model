@@ -241,7 +241,7 @@ class NotificationService {
           email: recipientEmail,
           tempPassword: (userData && userData.tempPassword) || '',
           loginUrl: `${process.env.FRONTEND_URL}/login`,
-          supportEmail: process.env.SUPPORT_EMAIL || 'support@indiansinghana.com'
+          supportEmail: process.env.SUPPORT_EMAIL || 'cards@indiansinghana.com'
         }
       });
 

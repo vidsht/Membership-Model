@@ -997,9 +997,6 @@ const MerchantDashboard = () => {
         <div className="plan-info-card">
           <div className="card-header">
             <h2><i className="fas fa-crown"></i> Current Plan</h2>
-            <button className="btn btn-accent btn-sm">
-              <i className="fas fa-arrow-up"></i> Upgrade
-            </button>
           </div>
           <div className="plan-details">
             <div className="plan-name">
@@ -1101,9 +1098,6 @@ const MerchantDashboard = () => {
         <div className="recent-redemptions-section">
           <div className="card-header">
             <h2><i className="fas fa-history"></i> Recent Redemptions</h2>
-            <button className="btn btn-outline btn-sm">
-              <i className="fas fa-external-link-alt"></i> View All
-            </button>
           </div>
           <div className="redemptions-list">
             {recentRedemptions.slice((recentRedemptionsPage - 1) * itemsPerPage, recentRedemptionsPage * itemsPerPage).map((redemption, index) => (
@@ -1366,7 +1360,7 @@ const MerchantDashboard = () => {
         <div className="redemption-requests-section">
           <div className="section-header">
             <h2>
-              <i className="fas fa-hand-holding"></i> Redemption Requests
+               Redemption Requests
               {redemptionRequests.length > 0 && (
                 <span className="request-count">{redemptionRequests.length}</span>
               )}

@@ -6,6 +6,15 @@ const { auth, admin } = require('../middleware/auth');
 const db = require('../db');
 const { generateMembershipNumber } = require('../utils/membershipGenerator');
 const NotificationHooks = require('../services/notificationHooks-integrated');
+const { 
+  logActivity, 
+  ACTIVITY_TYPES, 
+  logDealApproval, 
+  logDealRejection, 
+  logUserStatusChange,
+  logMerchantStatusChange,
+  logPlanExpiry 
+} = require('../utils/activityLogger');
 const router = express.Router();
 
 // Utility function to promisify db.query
@@ -154,11 +163,21 @@ router.get('/stats', auth, admin, async (req, res) => {
 
 router.get('/activities', auth, admin, async (req, res) => {
   try {
-    const limit = parseInt(req.query.limit) || 20;
-    const dateRange = parseInt(req.query.dateRange) || 30;
+    const limit = parseInt(req.query.limit) || 50;
+    const offset = parseInt(req.query.offset) || 0;
+    const type = req.query.type; // Filter by activity type
+
+    let whereClause = 'WHERE 1=1';
+    const params = [];
+
+    if (type && type !== 'all') {
+      whereClause += ' AND type = ?';
+      params.push(type);
+    }
 
     try {
-      const activities = await queryAsync(`
+      // Try to get activities from the new activity logging system
+      let activitiesQuery = `
         SELECT
           id,
           type,
@@ -168,21 +187,26 @@ router.get('/activities', auth, admin, async (req, res) => {
           userName,
           userEmail,
           userType,
-          timestamp AS createdAt,
+          metadata,
+          timestamp,
           icon
         FROM activities
-        WHERE timestamp >= DATE_SUB(NOW(), INTERVAL ? DAY)
+        ${whereClause}
         ORDER BY timestamp DESC
-        LIMIT ?
-      `, [dateRange, limit]);
+        LIMIT ? OFFSET ?
+      `;
+      
+      params.push(limit, offset);
+      const activities = await queryAsync(activitiesQuery, params);
 
       const formatted = activities.map(act => ({
         id: act.id,
         type: act.type,
         title: act.title,
         description: act.description,
-        createdAt: act.createdAt,
+        timestamp: act.timestamp,
         icon: act.icon,
+        metadata: act.metadata ? JSON.parse(act.metadata) : null,
         user: act.userId ? {
           id: act.userId,
           fullName: act.userName,
@@ -191,11 +215,26 @@ router.get('/activities', auth, admin, async (req, res) => {
         } : null
       }));
 
-      return res.json({ success: true, activities: formatted });
-    } catch (activitiesError) {
-      const activities = [];
+      // Get total count for pagination
+      const countResult = await queryAsync(`SELECT COUNT(*) as total FROM activities ${whereClause}`, params.slice(0, -2));
+      const total = countResult[0]?.total || 0;
 
-      // FIXED: Use correct date column - createdAt instead of created_at for main query
+      return res.json({ 
+        success: true, 
+        activities: formatted,
+        total,
+        page: Math.floor(offset / limit) + 1,
+        totalPages: Math.ceil(total / limit),
+        hasMore: offset + limit < total
+      });
+    } catch (activitiesError) {
+      console.warn('Activities table not available, falling back to legacy data:', activitiesError);
+      
+      // Fallback to legacy activity data from various tables
+      const activities = [];
+      const dateRange = 30; // Last 30 days
+
+      // Recent user registrations
       const recentUsers = await queryAsync(`
         SELECT id, fullName, email, userType, createdAt, status
         FROM users
@@ -208,47 +247,96 @@ router.get('/activities', auth, admin, async (req, res) => {
       recentUsers.forEach(user => {
         activities.push({
           id: `user_${user.id}`,
-          type: user.userType === 'merchant' ? 'business_registered' : 'user_registered',
+          type: user.userType === 'merchant' ? 'merchant_registered' : 'user_registered',
           title: user.userType === 'merchant' ? 'New Business Registration' : 'New User Registration',
           description: `${user.fullName} registered as a ${user.userType}`,
           user: {
-            name: user.fullName,
+            id: user.id,
+            fullName: user.fullName,
             email: user.email,
-            type: user.userType
+            userType: user.userType
           },
           timestamp: user.createdAt,
           icon: user.userType === 'merchant' ? 'store' : 'user-plus'
         });
       });
 
-      const recentPlanAssignments = await queryAsync(`
-        SELECT id, fullName, email, membershipType, planAssignedAt, userType
-        FROM users
-        WHERE planAssignedAt >= DATE_SUB(NOW(), INTERVAL ? DAY)
-        ORDER BY planAssignedAt DESC
-        LIMIT ?
-      `, [dateRange, Math.min(limit, 10)]);
+      // Recent deal activities
+      try {
+        const recentDeals = await queryAsync(`
+          SELECT d.id, d.title, d.status, d.createdAt, d.updatedAt, u.fullName, u.email
+          FROM deals d
+          LEFT JOIN users u ON d.merchantId = u.id
+          WHERE d.updatedAt >= DATE_SUB(NOW(), INTERVAL ? DAY)
+          ORDER BY d.updatedAt DESC
+          LIMIT ?
+        `, [dateRange, Math.min(limit, 15)]);
 
-      recentPlanAssignments.forEach(user => {
-        activities.push({
-          id: `plan_${user.id}`,
-          type: 'plan_assigned',
-          title: 'Plan Assignment',
-          description: `${user.fullName} was assigned ${user.membershipType} plan`,
-          user: {
-            name: user.fullName,
-            email: user.email,
-            type: user.userType
-          },
-          timestamp: user.planAssignedAt,
-          icon: 'crown'
+        recentDeals.forEach(deal => {
+          activities.push({
+            id: `deal_${deal.id}`,
+            type: `deal_${deal.status}`,
+            title: `Deal ${deal.status.charAt(0).toUpperCase() + deal.status.slice(1)}`,
+            description: `Deal "${deal.title}" ${deal.status}${deal.fullName ? ` by ${deal.fullName}` : ''}`,
+            user: deal.fullName ? {
+              fullName: deal.fullName,
+              email: deal.email,
+              userType: 'merchant'
+            } : null,
+            timestamp: deal.updatedAt,
+            icon: deal.status === 'active' ? 'check-circle' : deal.status === 'rejected' ? 'x-circle' : 'clock'
+          });
         });
-      });
+      } catch (dealsError) {
+        console.warn('Could not fetch deal activities:', dealsError);
+      }
 
+      // Recent redemption activities
+      try {
+        const recentRedemptions = await queryAsync(`
+          SELECT r.id, r.status, r.createdAt, r.updatedAt, u.fullName as userName, u.email as userEmail,
+                 m.fullName as merchantName, d.title as dealTitle
+          FROM deal_redemptions r
+          LEFT JOIN users u ON r.userId = u.id
+          LEFT JOIN users m ON r.merchantId = m.id
+          LEFT JOIN deals d ON r.dealId = d.id
+          WHERE r.updatedAt >= DATE_SUB(NOW(), INTERVAL ? DAY)
+          ORDER BY r.updatedAt DESC
+          LIMIT ?
+        `, [dateRange, Math.min(limit, 10)]);
+
+        recentRedemptions.forEach(redemption => {
+          activities.push({
+            id: `redemption_${redemption.id}`,
+            type: `redemption_${redemption.status}`,
+            title: `Redemption ${redemption.status.charAt(0).toUpperCase() + redemption.status.slice(1)}`,
+            description: `${redemption.userName} ${redemption.status} redemption for "${redemption.dealTitle}"${redemption.merchantName ? ` at ${redemption.merchantName}` : ''}`,
+            user: redemption.userName ? {
+              fullName: redemption.userName,
+              email: redemption.userEmail,
+              userType: 'user'
+            } : null,
+            timestamp: redemption.updatedAt,
+            icon: redemption.status === 'approved' ? 'check-circle' : redemption.status === 'rejected' ? 'x-circle' : 'clock'
+          });
+        });
+      } catch (redemptionsError) {
+        console.warn('Could not fetch redemption activities:', redemptionsError);
+      }
+
+      // Sort all activities by timestamp
       activities.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
       const limitedActivities = activities.slice(0, limit);
 
-      return res.json({ success: true, activities: limitedActivities });
+      return res.json({ 
+        success: true, 
+        activities: limitedActivities,
+        total: activities.length,
+        page: 1,
+        totalPages: 1,
+        hasMore: false,
+        note: 'Using legacy activity data - install activities table for enhanced tracking'
+      });
     }
   } catch (err) {
     console.error('Error fetching activities:', err);
@@ -827,6 +915,9 @@ router.put('/users/:id/status', auth, admin, async (req, res) => {
     if (result.affectedRows === 0) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
+
+    // Log user status change activity
+    await logUserStatusChange(req, userId, status, req.body.reason || 'User status changed by admin');
 
     if (await tableExists('activities')) {
       try {
@@ -1959,6 +2050,9 @@ router.post('/partners/:id/approve', auth, admin, async (req, res) => {
       return res.status(404).json({ success: false, message: 'Partner not found' });
     }
 
+    // Log merchant status change activity
+    await logMerchantStatusChange(req, merchantId, 'approved', 'Partner approved by admin');
+
     // Send profile status update notification
     NotificationHooks.onProfileStatusChange(merchantId, 'approved', 'Your business profile has been approved by admin.')
       .then(emailResult => {
@@ -1992,6 +2086,9 @@ router.post('/partners/:id/reject', auth, admin, async (req, res) => {
     if (result.affectedRows === 0) {
       return res.status(404).json({ success: false, message: 'Partner not found' });
     }
+
+    // Log merchant status change activity
+    await logMerchantStatusChange(req, merchantId, 'rejected', reason || 'Partner rejected by admin');
 
     // Send profile status update notification
     NotificationHooks.onProfileStatusChange(merchantId, 'rejected', reason || 'Your business profile was not approved. Please contact support for more information.')
@@ -2788,6 +2885,9 @@ router.patch('/deals/:id/approve', auth, admin, async (req, res) => {
     // Update deal status to active
     await queryAsync('UPDATE deals SET status = ? WHERE id = ?', ['active', dealId]);
 
+    // Log deal approval activity
+    await logDealApproval(req, dealId, 'Deal approved by admin');
+
     // TODO: Send notification to merchant about deal approval
     // For now, we'll add a basic notification entry if notifications table exists
     if (await tableExists('notifications')) {
@@ -2848,6 +2948,9 @@ router.patch('/deals/:id/reject', auth, admin, async (req, res) => {
 
   // Update deal status to rejected and save rejection reason
   await queryAsync('UPDATE deals SET status = ?, rejection_reason = ? WHERE id = ?', ['rejected', reason || '', dealId]);
+
+    // Log deal rejection activity
+    await logDealRejection(req, dealId, reason || 'Deal rejected by admin');
 
     // TODO: Send notification to merchant about deal rejection
     // For now, we'll add a basic notification entry if notifications table exists

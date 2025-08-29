@@ -6,7 +6,7 @@
 }
 
 .hero-section {
-  background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+  background: linear-gradient(135deg, #FFF0C4 0%, #E8C999 100%);
   color: white;
   padding: 100px 0 80px;
   text-align: center;
@@ -35,15 +35,18 @@
 
 .hero-content h1 {
   font-size: 3.5rem;
+  color: #560B0B;
   font-weight: bold;
   margin-bottom: 20px;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .hero-content p {
+  color: white;
   font-size: 1.3rem;
   margin-bottom: 30px;
   opacity: 0.95;
+  text-shadow: 2px 2px 4px #E3C092;
 }
 
 .cta-button {
@@ -129,7 +132,7 @@
 
 .benefit-card h3 {
   font-size: 1.5rem;
-  color: #2c3e50;
+  color: #771313;
   margin-bottom: 15px;
   font-weight: bold;
 }
@@ -368,7 +371,7 @@
 .cta-section {
   text-align: center;
   margin-top: 80px;
-  background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+  background: linear-gradient(135deg, #CABD99 0%, #ad9b6a 100%);
   color: white;
   padding: 60px 40px;
   border-radius: 20px;

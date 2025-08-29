@@ -89,7 +89,7 @@ const Header = () => {
         <div className="logo">
           <Link to="/" aria-label="Home">
             <img 
-              src="/logo1.jpeg" 
+              src="/logo1.png" 
               alt="logo" 
               className="logo-img"
             />

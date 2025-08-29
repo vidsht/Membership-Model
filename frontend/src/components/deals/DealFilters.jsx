@@ -64,108 +64,129 @@ const DealFilters = ({ filters, plans = [], onFilterChange, onSearch }) => {
 
   return (
     <section className="user-filters" aria-label="Deal Filters">
-      <div className="user-filters__main-row">
-        <div className="user-filters__search-container">
-          <i className="fas fa-search" aria-hidden="true"></i>
-          <input
-            type="text"
-            name="search"
-            value={filters.search || ''}
-            onChange={handleInputChange}
-            onKeyUp={(e) => e.key === 'Enter' && handleSearchSubmit(e)}
-            placeholder="Search by deal title, business, or category..."
-            aria-label="Search deals"
-          />
-        </div>
-        
-        <div className="user-filters__category-container">
-          <select 
-            id="category" 
-            name="category" 
-            value={filters.category || 'all'} 
-            onChange={handleInputChange}
-            aria-label="Deal category"
-            className="user-filters__category-select"
-          >
-            <option value="all">All Categories</option>
-            {getDealCategoryOptions().map(option => (
-              <option key={option.value} value={option.value}>{option.label}</option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      <div className="user-filters__status-buttons">
+      <div className="user-filters__toggle-row">
         <button
-          className={`user-filters__status-btn ${filters.status === 'all' ? 'active' : ''}`}
-          onClick={() => handleStatusFilter('all')}
-          aria-label="Show all deals"
+          className="user-filters__toggle-btn"
+          onClick={() => setShowFilters((prev) => !prev)}
+          aria-label={showFilters ? 'Hide filters' : 'Show filters'}
         >
-          <i className="fas fa-list" aria-hidden="true"></i>
-          All Deals
-        </button>
-        <button
-          className={`user-filters__status-btn ${filters.status === 'active' ? 'active' : ''}`}
-          onClick={() => handleStatusFilter('active')}
-          aria-label="Show active deals"
-        >
-          <i className="fas fa-check-circle" aria-hidden="true"></i>
-          Active
-        </button>
-        <button
-          className={`user-filters__status-btn ${filters.status === 'expired' ? 'active' : ''}`}
-          onClick={() => handleStatusFilter('expired')}
-          aria-label="Show expired deals"
-        >
-          <i className="fas fa-times-circle" aria-hidden="true"></i>
-          Expired
-        </button>
-        <button
-          className={`user-filters__status-btn ${filters.status === 'upcoming' ? 'active' : ''}`}
-          onClick={() => handleStatusFilter('upcoming')}
-          aria-label="Show upcoming deals"
-        >
-          <i className="fas fa-clock" aria-hidden="true"></i>
-          Upcoming
-        </button>
-      </div>
-
-      <div className="user-filters__filters-container">
-        <div className="user-filters__filters-header">
-
-          {hasActiveFilters() && (
-            <button 
-              className="user-filters__btn-reset-small" 
-              onClick={clearFilters}
-              aria-label="Clear all filters"
-            >
-              <i className="fas fa-times" aria-hidden="true"></i>
-              Clear All
-            </button>
+          {showFilters ? (
+            <>
+              <i className="fas fa-eye-slash"></i> Hide Filters
+            </>
+          ) : (
+            <>
+              <i className="fas fa-eye"></i> Show Filters
+            </>
           )}
-        </div>
-        
-        {showFilters && hasActiveFilters() && (
-          <div className="user-filters__active-filters" aria-label="Active filters">
-            {filters.status !== 'all' && (
-              <div className="user-filters__filter-tag">
-                <span>Status: {filters.status}</span>
-                <button aria-label="Clear status filter" onClick={() => onFilterChange({ status: 'all' })}>
+        </button>
+      </div>
+      {showFilters && (
+        <>
+          <div className="user-filters__main-row">
+            <div className="user-filters__search-container">
+              <i className="fas fa-search" aria-hidden="true"></i>
+              <input
+                type="text"
+                name="search"
+                value={filters.search || ''}
+                onChange={handleInputChange}
+                onKeyUp={(e) => e.key === 'Enter' && handleSearchSubmit(e)}
+                placeholder="Search by deal title, business, or category..."
+                aria-label="Search deals"
+              />
+            </div>
+            
+            <div className="user-filters__category-container">
+              <select 
+                id="category" 
+                name="category" 
+                value={filters.category || 'all'} 
+                onChange={handleInputChange}
+                aria-label="Deal category"
+                className="user-filters__category-select"
+              >
+                <option value="all">All Categories</option>
+                {getDealCategoryOptions().map(option => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="user-filters__status-buttons">
+            <button
+              className={`user-filters__status-btn ${filters.status === 'all' ? 'active' : ''}`}
+              onClick={() => handleStatusFilter('all')}
+              aria-label="Show all deals"
+            >
+              <i className="fas fa-list" aria-hidden="true"></i>
+              All Deals
+            </button>
+            <button
+              className={`user-filters__status-btn ${filters.status === 'active' ? 'active' : ''}`}
+              onClick={() => handleStatusFilter('active')}
+              aria-label="Show active deals"
+            >
+              <i className="fas fa-check-circle" aria-hidden="true"></i>
+              Active
+            </button>
+            <button
+              className={`user-filters__status-btn ${filters.status === 'expired' ? 'active' : ''}`}
+              onClick={() => handleStatusFilter('expired')}
+              aria-label="Show expired deals"
+            >
+              <i className="fas fa-times-circle" aria-hidden="true"></i>
+              Expired
+            </button>
+            <button
+              className={`user-filters__status-btn ${filters.status === 'upcoming' ? 'active' : ''}`}
+              onClick={() => handleStatusFilter('upcoming')}
+              aria-label="Show upcoming deals"
+            >
+              <i className="fas fa-clock" aria-hidden="true"></i>
+              Upcoming
+            </button>
+          </div>
+
+          <div className="user-filters__filters-container">
+            <div className="user-filters__filters-header">
+
+              {hasActiveFilters() && (
+                <button 
+                  className="user-filters__btn-reset-small" 
+                  onClick={clearFilters}
+                  aria-label="Clear all filters"
+                >
                   <i className="fas fa-times" aria-hidden="true"></i>
+                  Clear All
                 </button>
-              </div>
-            )}
-            {filters.category !== 'all' && (
-              <div className="user-filters__filter-tag">
-                <span>Category: {filters.category}</span>
-                <button aria-label="Clear category filter" onClick={() => onFilterChange({ category: 'all' })}>
-                  <i className="fas fa-times" aria-hidden="true"></i>
-                </button>
+              )}
+            </div>
+            
+            {showFilters && hasActiveFilters() && (
+              <div className="user-filters__active-filters" aria-label="Active filters">
+                {filters.status !== 'all' && (
+                  <div className="user-filters__filter-tag">
+                    <span>Status: {filters.status}</span>
+                    <button aria-label="Clear status filter" onClick={() => onFilterChange({ status: 'all' })}>
+                      <i className="fas fa-times" aria-hidden="true"></i>
+                    </button>
+                  </div>
+                )}
+                {filters.category !== 'all' && (
+                  <div className="user-filters__filter-tag">
+                    <span>Category: {filters.category}</span>
+                    <button aria-label="Clear category filter" onClick={() => onFilterChange({ category: 'all' })}>
+                      <i className="fas fa-times" aria-hidden="true"></i>
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
-        )}
-      </div>
+        </>
+      )}
     </section>
   );
 };

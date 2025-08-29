@@ -168,7 +168,7 @@ class EmailService {
 
       // Prepare email options
       const mailOptions = {
-        from: `${process.env.SMTP_FROM_NAME || 'Indians in Ghana'} <${process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER || 'tvidushi1234@gmail.com'}>`,
+        from: `${process.env.SMTP_FROM_NAME || 'Indians in Ghana'} <${process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER || 'cards@indiansinghana.com'}>`,
         to: to,
         subject: subject,
         html: htmlContent,
@@ -342,7 +342,7 @@ class EmailService {
 
           // Send email
           const mailOptions = {
-            from: `${process.env.SMTP_FROM_NAME || 'Indians in Ghana'} <${process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER || 'support@indiansinghana.com'}>`,
+            from: `${process.env.SMTP_FROM_NAME || 'Indians in Ghana'} <${process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER || 'cards@indiansinghana.com'}>`,
             to: email.recipient,
             subject: email.subject,
             html: email.html_content,

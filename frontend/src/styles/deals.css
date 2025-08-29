@@ -4,7 +4,7 @@
 .deals-hero {
   position: relative;
   padding: 3rem 0 3rem 0;
-  background: linear-gradient(135deg, #FFF0C4 0%, #E8C999 100%);
+  background: linear-gradient(135deg, #FFF0C4 0%, #E8C999 100%);;
   color: #3E0703;
   display: flex;
   align-items: center;
@@ -19,7 +19,6 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, rgba(28, 46, 66, 0.4), rgba(58, 80, 107, 0.3));
   z-index: 1;
 }
 
@@ -69,7 +68,7 @@
 /* Deal Cards Grid */
 .deals-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(500px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
   gap: 2rem;
   padding: 2rem;
   margin: 0 auto;
@@ -952,9 +951,6 @@
   .deals-grid {
     grid-template-columns: 1fr;
   }
-  .deals-page {
-    padding: 1rem 0.2rem;
-  }
   .deal-business-info, .business-meta {
     display: block !important;
     min-width: 0;
@@ -1228,6 +1224,10 @@
   .modal-footer .btn {
     width: 100%;
   }
+
+  .discount-value{
+    font-size: 0.2rem;
+  }
 }
 
 /* Redemption Modal Styles - Confirmation Modal */
@@ -1253,7 +1253,7 @@
 }
 
 /* Modal Layout - New Grid Structure */
-.modal-content-grid {
+.deal-detail-modal .modal-content-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 2rem;
@@ -1647,12 +1647,11 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
-  .modal-content-grid {
+  .deal-detail-modal .modal-content-grid {
     grid-template-columns: 1fr;
     gap: 1.5rem;
     padding: 1.5rem;
-    margin: 1rem;
-    max-height: 90vh;
+    max-height: 49vh;
   }
   
   .modal-close {
@@ -2038,6 +2037,10 @@
   /* Ensure modal doesn't overflow vertically on small devices */
   .modal-content {
     max-height: 85vh;
+  }
+
+  .discount-value{
+    font-size: 12px;
   }
 }
 

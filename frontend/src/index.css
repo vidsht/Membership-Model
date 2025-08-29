@@ -56,13 +56,13 @@ body {
 .logo {
     display: flex;
     align-items: center;
+    justify-content: flex-start;
     gap: 15px;
 }
 
 .logo img {
-    height: 40px;
-    width: 170px;
-    background: white;
+    height: 60px;
+    width: 250px;
 } 
 
 nav ul {
@@ -227,7 +227,7 @@ nav a:hover, nav a.active {
 }
 
 .form-footer a {
-    color: var(--primary);
+    color: #660C0C;
     text-decoration: none;
     font-weight: 600;
 }
@@ -292,6 +292,7 @@ nav a:hover, nav a.active {
     font-weight: 700;
     color: var(--dark);
     display: flex;
+    justify-content: center;
     align-items: center;
     gap: 10px;
 }
@@ -902,7 +903,7 @@ input:focus, select:focus, textarea:focus {
 }
 
 .section-header h2 {
-    color: var(--primary);
+    color: white;
     font-size: 1.5rem;
 }
 

@@ -4,6 +4,7 @@ const { auth } = require('../middleware/auth');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const { logDealView, logRedemptionRequest, logDealStatusChange } = require('../utils/activityLogger');
 
 const router = express.Router();
 
@@ -419,8 +420,11 @@ router.get('/:id', checkDealAccess, async (req, res) => {
       return res.status(403).json({ message: 'This deal has expired' });
     }
 
-    // Increment view count
-    await queryAsync('UPDATE deals SET views = views + 1 WHERE id = ?', [dealId]);
+    // Increment view count and log activity
+    await queryAsync('UPDATE deals SET views = COALESCE(views, 0) + 1 WHERE id = ?', [dealId]);
+    
+    // Log deal view activity
+    await logDealView(dealId, user.id, deal.title, 'deal_details_page');
 
     res.json({ success: true, deal });
   } catch (error) {
@@ -593,6 +597,11 @@ router.post('/:id/redeem', checkDealAccess, (req, res) => {
 
             // Get redemption ID and send notification to merchant
             const redemptionId = result.insertId;
+            
+            // Log redemption request activity
+            logRedemptionRequest(userId, dealId, deal.title, deal.businessId).catch(err => {
+              console.warn('Error logging redemption request activity:', err);
+            });
             
             // Get merchant information from the deal's business
             db.query('SELECT userId FROM businesses WHERE businessId = ?', [deal.businessId], (merchantErr, merchantResults) => {

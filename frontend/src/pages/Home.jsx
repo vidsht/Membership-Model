@@ -394,7 +394,7 @@ const Home = () => {
               </div>
               <h3 className="feature-title">1,000+ Exclusive Offers & Deals Will Be Listed</h3>
               <p className="feature-description">Over 1,000 exclusive offers and curated deals will be listed, providing meaningful value and everyday savings for our Indian community in Ghana.</p>
-              <a href="/about" className="feature-link">Learn More <i className="fas fa-arrow-right"></i></a>
+              <a href="/deals" className="feature-link">Learn More <i className="fas fa-arrow-right"></i></a>
             </div>
             <div className="feature-card">
               <div className="feature-icon">
@@ -402,7 +402,7 @@ const Home = () => {
               </div>
               <h3 className="feature-title">100+ Trusted Partner Businesses Will Be Onboard</h3>
               <p className="feature-description">Over 25 major sectors will be covered, ensuring members enjoy benefits across every essential area of life</p>
-              <a href="/unified-registration" className="feature-link">View Benefits <i className="fas fa-arrow-right"></i></a>
+              <a href="/business-directory" className="feature-link">View Benefits <i className="fas fa-arrow-right"></i></a>
             </div>
             <div className="feature-card">
               <div className="feature-icon">
@@ -586,7 +586,7 @@ const Home = () => {
                 <div className="partner-author-avatar">S</div>
                 <div className="partner-author-info">
                   <span className="partner-author-name">Dr. Shumaila</span>
-                  <span className="partner-author-role">Founder, Jacob Dental Centre</span>
+                  <span className="partner-author-role">Jacob Dental Centre</span>
                 </div>
               </div>
             </div>

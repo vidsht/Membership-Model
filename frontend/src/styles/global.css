@@ -75,10 +75,6 @@ a {
   transition: color var(--transition-fast);
 }
 
-a:hover {
-  color: var(--primary-light);
-}
-
 button, .btn {
   cursor: pointer;
   font-family: var(--font-family);
@@ -125,21 +121,27 @@ header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--space-sm);
-  margin: 0 auto;
+  padding: 0; /* no padding at all so content is flush with edges */
+  margin: 0; /* remove auto-centering margins */
+  width: 100%;
 }
 
 /* Logo styling */
 .logo {
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
+  gap: 0;
+  margin: 0; /* no margin */
+  padding: 0; /* no padding */
 }
 
 .logo-img {
-  height: 100 px;
-  border-radius: 4px;
-  box-shadow: var(--shadow-sm);
+  height: 100px;
+  display: block; /* remove inline whitespace */
+  margin: 0;
+  padding: 0;
+  border-radius: 0; /* remove radius if truly flush requested */
+  box-shadow: none; /* remove shadow to be flush */
   transition: transform var(--transition-fast);
 }
 
@@ -179,7 +181,8 @@ header {
 
 .main-nav ul li a:hover, .main-nav ul li a.active {
   color: white;
-  background-color: rgba(255, 255, 255, 0.15); 
+  background: linear-gradient(135deg, #DFB98D, #b1916e);
+  box-shadow: 0 2px 8px rgba(223, 185, 141, 0.12);
 }
 
 .main-nav ul li a.active {
@@ -201,7 +204,7 @@ header {
 }
 
 .merchant-link {
-  color: var(--accent-light) !important;
+  color: white !important;
 }
 
 .admin-link {
@@ -328,6 +331,7 @@ header {
   box-shadow: var(--shadow-sm);
   border: 1px solid transparent;
   font-weight: 400;
+  color: #660B05;
 }
 
 .login-btn:hover {
@@ -396,7 +400,7 @@ footer {
 }
 
 .footer-column ul li a:hover {
-  color: var(--accent-light);
+  color: #E8C999;
 }
 
 .footer-social-icons{
@@ -501,9 +505,8 @@ color: white;
   }
 
 .logo img {
-    height: 30px;
+    height: 50px;
     width: 100px;
-    background: white;
 } 
 
   .auth-buttons {
@@ -564,7 +567,7 @@ color: white;
     top: 100%;
     left: 0;
     right: 0;
-    background: linear-gradient(to bottom, rgba(13,19,58,0.98), rgba(58,80,107,0.98));
+    background: linear-gradient(to right, #8E1616, #661212, #4b0707);
     display: none;
     flex-direction: column;
     padding: var(--space-md);

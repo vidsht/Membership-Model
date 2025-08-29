@@ -147,7 +147,7 @@ export const withPlanAccess = (WrappedComponent, requiredFeature = 'general') =>
               <button 
                 className="btn-contact-admin"
                 onClick={() => {
-                  window.location.href = 'mailto:admin@indiansinghana.com?subject=Plan Renewal Request';
+                  window.location.href = 'mailto:cards@indiansinghana.com?subject=Plan Renewal Request';
                 }}
               >
                 <i className="fas fa-envelope"></i>

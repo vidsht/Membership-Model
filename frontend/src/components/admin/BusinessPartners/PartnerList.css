@@ -361,7 +361,7 @@
 }
 
 .btn-outline:hover {
-  background-color: var(--primary-color);
+  background-color:#771313;
   color: white;
 }
 

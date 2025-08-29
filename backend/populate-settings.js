@@ -12,7 +12,7 @@ const insertSettings = [
   ['social_media', 'whatsapp_group_required', 'false', 'boolean'],
   ['social_media', 'whatsapp_group_url', 'https://chat.whatsapp.com/indiansinghana', 'string'],
   ['system', 'site_name', 'Indians in Ghana', 'string'],
-  ['system', 'admin_email', 'admin@indiansinghana.com', 'string'],
+  ['system', 'admin_email', 'cards@indiansinghana.com', 'string'],
   ['system', 'registration_enabled', 'true', 'boolean'],
   ['system', 'maintenance_mode', 'false', 'boolean'],
   ['system', 'login_image_url', '', 'string'],

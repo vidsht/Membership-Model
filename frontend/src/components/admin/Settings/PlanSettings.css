@@ -312,8 +312,8 @@
 }
 
 .plan-key {
-  background: var(--primary-light);
-  color: var(--primary);
+  background:#FFD166;
+  color: #4C0707;
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
   font-family: monospace;

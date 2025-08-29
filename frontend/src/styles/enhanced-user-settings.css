@@ -6,8 +6,8 @@
 }
 
 .user-profile-header-section {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: linear-gradient(135deg, #FFF0C4 0%, #E8C999 100%);
+  color: #5E0F0F;
   padding: 2.5rem;
   margin-bottom: 2rem;
   box-shadow: 0 10px 40px rgba(102, 126, 234, 0.2);
@@ -83,7 +83,7 @@
 }
 
 .user-profile-tab-button.user-profile-tab-active {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  background: linear-gradient(135deg, #7b1d1d 0%, #570C0C 100%);
   color: #ffffff;
   font-weight: 600;
   transform: translateX(4px);
@@ -91,7 +91,7 @@
 }
 
 .user-profile-tab-button.user-profile-tab-active::before {
-  background: #1d4ed8;
+  background: #F3DCB1;
 }
 
 .user-profile-tab-icon {
@@ -524,7 +524,7 @@
   }
 
   .user-profile-tab-button.user-profile-tab-active {
-    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    background: linear-gradient(135deg, #7b1d1d 0%, #570C0C 100%);
     color: #ffffff;
   }
 }
@@ -649,7 +649,11 @@
 }
 
 .user-settings-main-title{
-    color: white;
+    color: #560B0B;
+}
+
+.user-settings-main-description {
+    color: #560B0B;
 }
 
 .settings-card-component {
@@ -1941,9 +1945,6 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
-  .enhanced-user-settings-container {
-    padding: 1rem;
-  }
 
   .user-profile-header-section {
     padding: 1.5rem;
@@ -2015,7 +2016,7 @@
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
   .enhanced-user-settings-container {
-    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    background: linear-gradient(to right,#8E1616,#661212,#4b0707);
   }
 
   .user-settings-content-wrapper,
