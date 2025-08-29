@@ -26,13 +26,14 @@
 }
 
 .terms-hero {
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.9) 0%, rgba(118, 75, 162, 0.9) 100%);
+  background: linear-gradient(135deg, #E2C394 0%, #bd9e71 100%);
   padding: 4rem 0 2rem;
   color: white;
   text-align: center;
 }
 
 .terms-hero-content h1 {
+  color: #5A0D0D;
   font-size: 2.5rem;
   font-weight: 700;
   margin-bottom: 1rem;
@@ -43,10 +44,11 @@
 }
 
 .terms-hero-content h1 i {
-  color: #ffd700;
+  color: #5A0D0D;
 }
 
 .terms-hero-content p {
+  color: #5A0D0D;
   font-size: 1.2rem;
   margin-bottom: 2rem;
   opacity: 0.9;

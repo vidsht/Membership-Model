@@ -775,7 +775,7 @@ color: #7b1fa2;
 .modal-content {
   background: white;
   border-radius: 12px;
-  max-height: 90vh;
+  max-height: 95vh;
   overflow-y: auto;
   width: 100%;
   max-width: 600px;

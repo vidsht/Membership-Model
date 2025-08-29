@@ -10,6 +10,8 @@ const BusinessDirectory = () => {
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [showBusinessModal, setShowBusinessModal] = useState(false);
+  const [selectedBusiness, setSelectedBusiness] = useState(null);
   const { getMerchantLogoUrl } = useImageUrl();
   
   // Get unique categories from businesses (match Home page logic)
@@ -120,7 +122,7 @@ const BusinessDirectory = () => {
               const id = business.businessId || business.id || idx;
               // Show badge for all for now (or use business.isVerified if available)
               return (
-              <div key={id} className="business-card-directory">
+              <div key={id} className="business-card-directory" onClick={() => { setSelectedBusiness(business); setShowBusinessModal(true); }} style={{cursor: 'pointer'}}>
                 <div className="business-card-header">
                   <div className="business-logo-container">
                     <SmartImage
@@ -180,6 +182,76 @@ const BusinessDirectory = () => {
               );
             })
           )}
+        </div>
+      )}
+
+      {/* Business Detail Modal Overlay */}
+      {showBusinessModal && selectedBusiness && (
+        <div className="modal-overlay business-modal-overlay">
+          <div className="modal-content business-detail-modal">
+            <div className="modal-header-compact">
+              <h3 className="modal-title">{selectedBusiness.businessName || selectedBusiness.name}</h3>
+              <button className="close-btn" onClick={() => setShowBusinessModal(false)}>
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            <div className="modal-body-compact">
+              <div className="modal-content-grid">
+                {/* Left Section: Logo, Name, Category, Description */}
+                <div className="modal-left-section">
+                  <div className="modal-section">
+                    <div className="business-logo-modal">
+                      <SmartImage
+                        src={getMerchantLogoUrl(selectedBusiness)}
+                        alt={`${selectedBusiness.businessName || selectedBusiness.name} Logo`}
+                        className="logo-image"
+                        maxRetries={3}
+                      />
+                    </div>
+                    <h4>{selectedBusiness.businessName || selectedBusiness.name}</h4>
+                    <p className="business-category-modal">
+                      <i className="fas fa-briefcase"></i> {selectedBusiness.businessCategory || selectedBusiness.category || selectedBusiness.sector || 'General'}
+                    </p>
+                  </div>
+                  <div className="modal-section">
+                    <h4>Description</h4>
+                    <p className="business-description-modal">{selectedBusiness.businessDescription || selectedBusiness.description || 'No description available.'}</p>
+                  </div>
+                </div>
+                {/* Right Section: Contact, Address, Website */}
+                <div className="modal-right-section">
+                  <div className="modal-section">
+                    <h4>Contact Information</h4>
+                    <div className="business-contact-modal">
+                      {selectedBusiness.businessPhone || selectedBusiness.phone ? (
+                        <div className="contact-item-modal">
+                          <i className="fas fa-phone"></i> {selectedBusiness.businessPhone || selectedBusiness.phone}
+                        </div>
+                      ) : null}
+                      {selectedBusiness.businessEmail || selectedBusiness.email ? (
+                        <div className="contact-item-modal">
+                          <i className="fas fa-envelope"></i> {selectedBusiness.businessEmail || selectedBusiness.email}
+                        </div>
+                      ) : null}
+                      {selectedBusiness.businessAddress || selectedBusiness.address ? (
+                        <div className="contact-item-modal">
+                          <i className="fas fa-map-marker-alt"></i> {selectedBusiness.businessAddress || selectedBusiness.address}
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                  {selectedBusiness.website && (
+                    <div className="modal-section">
+                      <h4>Website</h4>
+                      <a href={selectedBusiness.website} target="_blank" rel="noopener noreferrer" className="business-website-modal">
+                        <i className="fas fa-globe"></i> {selectedBusiness.website}
+                      </a>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

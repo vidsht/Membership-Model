@@ -5,13 +5,14 @@
 }
 
 .disclaimer-hero {
-  background: linear-gradient(135deg, rgba(255, 123, 123, 0.9) 0%, rgba(232, 67, 147, 0.9) 100%);
+  background: linear-gradient(135deg, #D8AD84 0%, #d6a576 100%);
   padding: 4rem 0 2rem;
   color: white;
   text-align: center;
 }
 
 .disclaimer-hero-content h1 {
+  color: #570C0C;
   font-size: 2.5rem;
   font-weight: 700;
   margin-bottom: 1rem;
@@ -26,6 +27,7 @@
 }
 
 .disclaimer-hero-content p {
+  color: #570C0C;
   font-size: 1.2rem;
   margin-bottom: 2rem;
   opacity: 0.9;
@@ -76,7 +78,7 @@
 }
 
 .disclaimer-section h2 {
-  color: #e84393;
+  color: #570C0C;
   font-size: 1.4rem;
   font-weight: 600;
   margin-bottom: 1rem;
@@ -259,7 +261,7 @@
 .quick-nav h3,
 .disclaimer-summary h3,
 .legal-notice h3 {
-  color: #e84393;
+  color: #570C0C;
   font-size: 1.1rem;
   font-weight: 600;
   margin-bottom: 1rem;
@@ -319,7 +321,7 @@
 }
 
 .legal-notice a {
-  color: #e84393;
+  color: #570C0C;
   text-decoration: none;
   font-weight: 500;
 }

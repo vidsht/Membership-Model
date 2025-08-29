@@ -1,6 +1,6 @@
 /* Enhanced Unified Registration Styles with Website Color Scheme */
 .unified-registration-card {
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+  background: linear-gradient(135deg, #510909 0%, #911c1c 100%);
   border-radius: var(--border-radius-lg);
   box-shadow: var(--shadow-lg);
   overflow: hidden;
@@ -142,7 +142,7 @@ html {
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  background: linear-gradient(135deg, rgba(58, 80, 107, 0.05) 0%, rgba(28, 46, 66, 0.05) 100%);
+  background: linear-gradient(135deg, #FFF0C4 0%, #bca96e 100%);
   border-right: 1px solid var(--neutral-light);
 }
 
@@ -154,7 +154,7 @@ html {
 .unified-form-header h2 {
   font-size: var(--h2-size);
   font-weight: 700;
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+  background: linear-gradient(135deg, #782828 0%, #4C0808 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -166,13 +166,13 @@ html {
 }
 
 .unified-form-header h2 i {
-  color: var(--primary-color);
+  color: #4C0808;
   font-size: 1.8rem;
-  -webkit-text-fill-color: var(--primary-color);
+  -webkit-text-fill-color: #4C0808;
 }
 
 .unified-form-header p {
-  color: var(--neutral-medium);
+  color: #4C0808;
   font-size: 1.1rem;
   line-height: 1.5;
 }
@@ -188,7 +188,7 @@ html {
 }
 
 .unified-benefits-box h3 {
-  color: var(--primary-color);
+  color: #4C0808;
   margin-bottom: 20px;
   font-size: var(--h3-size);
   font-weight: 600;
@@ -215,7 +215,7 @@ html {
 }
 
 .unified-benefits-box li i {
-  color: var(--accent-color);
+  color: #4C0808;
   font-size: 1.2rem;
   margin-right: 12px;
   width: 20px;

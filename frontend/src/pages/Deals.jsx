@@ -651,110 +651,38 @@ const Deals = () => {
                     </div>
                   )}
                 </div>
-              </div>
-            </div>
-                <p className="deal-description-detail">{selectedDeal.description}</p>
 
-                {/* Pricing Information */}
-                {(selectedDeal.originalPrice || selectedDeal.discountedPrice) && (
-                  <div className="deal-pricing-detail">
-                    <h4>Pricing</h4>
-                    <div className="pricing-info">
-                      {selectedDeal.originalPrice && (
-                        <div className="price-row">
-                          <span className="price-label">Original Price:</span>
-                          <span className="original-price-detail">GHS {parseFloat(selectedDeal.originalPrice).toFixed(2)}</span>
-                        </div>
-                      )}
-                      {selectedDeal.discountedPrice && (
-                        <div className="price-row">
-                          <span className="price-label">Discounted Price:</span>
-                          <span className="discounted-price-detail">GHS {parseFloat(selectedDeal.discountedPrice).toFixed(2)}</span>
-                        </div>
-                      )}
-                      {selectedDeal.originalPrice && selectedDeal.discountedPrice && (
-                        <div className="price-row savings-row">
-                          <span className="price-label">You Save:</span>
-                          <span className="savings-detail">GHS {(parseFloat(selectedDeal.originalPrice) - parseFloat(selectedDeal.discountedPrice)).toFixed(2)}</span>
-                        </div>
-                      )}
+                {/* Modal Footer - Now inside the grid */}
+                <div className="modal-footer-compact">
+                  {/* Notification/Status Display */}
+                  {redeemStatus[selectedDeal.id] && (
+                    <div className="modal-footer-info">
+                      <div className="redemption-status">
+                        <span>{redeemStatus[selectedDeal.id]}</span>
+                      </div>
                     </div>
-                  </div>
-                )}
-
-                {/* Deal Information */}
-                <div className="deal-info-detail">
-                  <h4>Deal Information</h4>
-                  <div className="info-grid">
-                    {selectedDeal.discount && (
-                      <div className="info-item">
-                        <i className="fas fa-percentage"></i>
-                        <span>{selectedDeal.discount}{selectedDeal.discountType === 'percentage' ? '%' : ' GHS'} Discount</span>
-                      </div>
-                    )}
-                    {selectedDeal.couponCode && (
-                      <div className="info-item">
-                        <i className="fas fa-ticket-alt"></i>
-                        <span>Coupon Code: <strong>{selectedDeal.couponCode}</strong></span>
-                      </div>
-                    )}
-                    {(selectedDeal.expiration_date || selectedDeal.expirationDate || selectedDeal.validUntil) && (
-                      <div className="info-item">
-                        <i className="fas fa-calendar-times"></i>
-                        <span>
-                          Expires: {new Date(selectedDeal.expiration_date || selectedDeal.expirationDate || selectedDeal.validUntil).toLocaleDateString('en-GB', {
-                            day: '2-digit',
-                            month: 'long',
-                            year: 'numeric'
-                          })}
-                        </span>
-                      </div>
-                    )}
-                    {selectedDeal.validFrom && (
-                      <div className="info-item">
-                        <i className="fas fa-calendar-check"></i>
-                        <span>Valid From: {new Date(selectedDeal.validFrom).toLocaleDateString('en-GB', {
-                          day: '2-digit',
-                          month: 'long',
-                          year: 'numeric'
-                        })}</span>
-                      </div>
-                    )}
-                    {selectedDeal.maxRedemptions && (
-                      <div className="info-item">
-                        <i className="fas fa-users"></i>
-                        <span>Limited to {selectedDeal.maxRedemptions} redemptions</span>
-                      </div>
-                    )}
+                  )}
+                  
+                  <div className="modal-actions">
+                    <button
+                      className="btn btn-secondary"
+                      onClick={() => setShowDetailModal(false)}
+                    >
+                      Close
+                    </button>
+                    <button
+                      className={`btn btn-primary ${!user || !canRedeem(user, selectedDeal.minPlanPriority, plans) ? 'disabled' : ''}`}
+                      disabled={!user || !canRedeem(user, selectedDeal.minPlanPriority, plans)}
+                      onClick={() => {
+                        setShowDetailModal(false);
+                        handleRedeem(selectedDeal.id, selectedDeal.minPlanPriority);
+                      }}
+                    >
+                      <i className="fas fa-gift"></i>
+                      Redeem Deal
+                    </button>
                   </div>
                 </div>
-
-            <div className="modal-footer-compact">
-              {/* Notification/Status Display */}
-              {redeemStatus[selectedDeal.id] && (
-                <div className="redemption-status">
-                  <span>{redeemStatus[selectedDeal.id]}</span>
-                </div>
-              )}
-              
-              <div className="modal-actions">
-                <button 
-                  className="btn btn-secondary" 
-                  onClick={() => setShowDetailModal(false)}
-                >
-                  Close
-                </button>
-                <button
-                  className={`btn btn-primary ${!user || !canRedeem(user, selectedDeal.minPlanPriority, plans) ? 'disabled' : ''}`}
-                  disabled={!user || !canRedeem(user, selectedDeal.minPlanPriority, plans)}
-                  onClick={() => {
-                    setShowDetailModal(false);
-                    handleRedeem(selectedDeal.id, selectedDeal.minPlanPriority);
-                  }}
-                >
-                  <i className="fas fa-gift"></i>
-                  Redeem Deal
-                </button>
               </div>
             </div>
           </div>
