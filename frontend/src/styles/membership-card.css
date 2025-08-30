@@ -6,7 +6,6 @@
   align-items: center;
   padding: 20px;
   background: linear-gradient(135deg, var(--neutral-lightest) 0%, #c3cfe2 100%);
-  min-height: 100vh;
 }
 
 .loading-spinner {

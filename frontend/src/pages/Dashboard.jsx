@@ -93,10 +93,95 @@ const Dashboard = () => {
       <div className="dashboard-grid">
         {/* Membership Card/Certificate Section */}
         <div className="dashboard-section">
-          <h2>
-            {user.userType === 'merchant' ? 'Your Business Certificate' : 'Your Membership Card'}
-          </h2>
           {user.userType === 'merchant' ? <MerchantCertificate /> : <MembershipCard />}
+        </div>
+
+        {/* Benefits Section */}
+        <div className="benefits-section">
+          <div className="benefits-header">
+            <h2>
+              <i className={`fas ${user.userType === 'merchant' ? 'fa-handshake' : 'fa-gift'}`}></i>
+              {user.userType === 'merchant' ? 'Merchant Benefits' : 'Member Benefits'}
+            </h2>
+            <p>
+              {user.userType === 'merchant' 
+                ? 'Exclusive advantages for business partners' 
+                : 'Exclusive privileges for community members'
+              }
+            </p>
+          </div>
+          
+          <div className="benefits-grid">
+            {user.userType === 'merchant' ? (
+              <>
+                <div className="benefit-card">
+                  <div className="benefit-icon">
+                    <i className="fas fa-store"></i>
+                  </div>
+                  <h3>Business Listing</h3>
+                  <p>Get your business featured in our comprehensive directory, reaching thousands of community members actively seeking your services.</p>
+                </div>
+                
+                <div className="benefit-card">
+                  <div className="benefit-icon">
+                    <i className="fas fa-tags"></i>
+                  </div>
+                  <h3>Deal Creation</h3>
+                  <p>Create and manage exclusive deals for community members, boosting your customer base and increasing brand loyalty.</p>
+                </div>
+                
+                <div className="benefit-card">
+                  <div className="benefit-icon">
+                    <i className="fas fa-chart-line"></i>
+                  </div>
+                  <h3>Analytics Dashboard</h3>
+                  <p>Access detailed insights about your business performance, customer engagement, and deal redemption analytics.</p>
+                </div>
+                
+                <div className="benefit-card">
+                  <div className="benefit-icon">
+                    <i className="fas fa-users"></i>
+                  </div>
+                  <h3>Community Network</h3>
+                  <p>Connect with fellow merchants, participate in business events, and grow your network within the Indian community.</p>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="benefit-card">
+                  <div className="benefit-icon">
+                    <i className="fas fa-percent"></i>
+                  </div>
+                  <h3>Exclusive Discounts</h3>
+                  <p>Enjoy significant savings at over 100 partner businesses across Ghana with exclusive member-only discounts and special offers.</p>
+                </div>
+                
+                <div className="benefit-card">
+                  <div className="benefit-icon">
+                    <i className="fas fa-calendar-alt"></i>
+                  </div>
+                  <h3>Priority Event Access</h3>
+                  <p>Get VIP access and early bird pricing for cultural festivals, networking events, and community gatherings throughout the year.</p>
+                </div>
+                
+                <div className="benefit-card">
+                  <div className="benefit-icon">
+                    <i className="fas fa-hands-helping"></i>
+                  </div>
+                  <h3>Community Support</h3>
+                  <p>Access our network of support services including legal assistance, medical referrals, and cultural integration programs.</p>
+                </div>
+                
+                <div className="benefit-card">
+                  <div className="benefit-icon">
+                    <i className="fas fa-id-card"></i>
+                  </div>
+                  <h3>Digital Identity</h3>
+                  <p>A recognized form of identity within the Indian community in Ghana, with emergency support services and community verification.</p>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -74,6 +74,7 @@ const Contact = () => {
             fontSize: '3rem',
             fontWeight: '700',
             marginBottom: '1rem',
+            color: '#550B0B',
             textShadow: '0 2px 4px rgba(0, 0, 0, 0.3)'
           }}>
             Contact Us
@@ -81,46 +82,12 @@ const Contact = () => {
           <p style={{
             fontSize: '1.2rem',
             marginBottom: '2rem',
+            color: '#550B0B',
             opacity: '0.9'
           }}>
-             We'd love to hear from you! Whether you have questions, suggestions, or need assistance, 
+            We'd love to hear from you! Whether you have questions, suggestions, or need assistance, 
             our team is here to help you make the most of your membership.
           </p>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            gap: '3rem',
-            marginTop: '2rem'
-          }}>
-            <div style={{ textAlign: 'center' }}>
-              <span style={{
-                display: 'block',
-                fontSize: '2.5rem',
-                fontWeight: '700',
-                marginBottom: '0.5rem'
-              }}>24hrs</span>
-              <span style={{
-                fontSize: '0.9rem',
-                opacity: '0.8',
-                textTransform: 'uppercase',
-                letterSpacing: '1px'
-              }}>Response Time</span>
-            </div>
-            <div style={{ textAlign: 'center' }}>
-              <span style={{
-                display: 'block',
-                fontSize: '2.5rem',
-                fontWeight: '700',
-                marginBottom: '0.5rem'
-              }}>24/7</span>
-              <span style={{
-                fontSize: '0.9rem',
-                opacity: '0.8',
-                textTransform: 'uppercase',
-                letterSpacing: '1px'
-              }}>WhatsApp Support</span>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -148,8 +115,8 @@ const Contact = () => {
             
             {/* Contact Information */}
             <div className="contact-info">
-              <h3 className="section-title">
-                <i className="fas fa-map-marker-alt" style={{ color: 'var(--primary)', marginRight: '10px' }}></i>
+              <h3 style={{ color: '#4C0808', marginRight: '10px' }}>
+                <i className="fas fa-map-marker-alt" style={{ color: '#4C0808', marginRight: '10px' }}></i>
                 Get In Touch
               </h3>
               
@@ -164,10 +131,10 @@ const Contact = () => {
                   marginBottom: '15px',
                   borderLeft: '4px solid var(--primary)'
                 }}>
-                  <i className="fas fa-phone" style={{ fontSize: '1.5rem', color: 'var(--primary)' }}></i>
+                  <i className="fas fa-phone" style={{ fontSize: '1.5rem', color: '#4C0808' }}></i>
                   <div>
-                    <strong>Phone</strong>
-                    <p style={{ margin: '0', color: '#666' }}>+233 (0) 57 232 3912</p>
+                    <strong style={{ color: '#4C0808' }}>Phone</strong>
+                    <p style={{ margin: '0', color: '#666' }}>+233 57 232 3912</p>
                     <small>Mon-Fri, 9:00 AM - 6:00 PM</small>
                   </div>
                 </div>
@@ -184,7 +151,7 @@ const Contact = () => {
                 }}>
                   <i className="fas fa-envelope" style={{ fontSize: '1.5rem', color: 'var(--secondary)' }}></i>
                   <div>
-                    <strong>Email</strong>
+                    <strong style={{ color: '#4C0808' }}>Email</strong>
                     <p style={{ margin: '0', color: '#666' }}>cards@indiansinghana.com</p>
                     <small>We respond within 24 hours</small>
                   </div>
@@ -202,31 +169,9 @@ const Contact = () => {
                 }}>
                   <i className="fab fa-whatsapp" style={{ fontSize: '1.5rem', color: 'var(--success)' }}></i>
                   <div>
-                    <strong>WhatsApp</strong>
-                    <p style={{ margin: '0', color: '#666' }}>+233 (0) 57 232 3912</p>
+                    <strong style={{ color: '#4C0808' }}>WhatsApp</strong>
+                    <p style={{ margin: '0', color: '#666' }}>+233 57 232 3912</p>
                     <small>Quick support available</small>
-                  </div>
-                </div>
-
-                <div className="contact-method" style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '15px',
-                  padding: '15px',
-                  background: 'var(--light)',
-                  borderRadius: 'var(--border-radius-btn)',
-                  marginBottom: '15px',
-                  borderLeft: '4px solid var(--accent)'
-                }}>
-                  <i className="fas fa-map-marker-alt" style={{ fontSize: '1.5rem', color: 'var(--accent)' }}></i>
-                  <div>
-                    <strong>Office Address</strong>
-                    <p style={{ margin: '0', color: '#666' }}>
-                      123 Community Street<br />
-                      East Legon, Accra<br />
-                      Ghana
-                    </p>
-                    <small>Visits by appointment only</small>
                   </div>
                 </div>
               </div>
@@ -235,7 +180,7 @@ const Contact = () => {
               <div className="social-links" style={{ marginTop: '30px' }}>
                 <h4 style={{ marginBottom: '15px' }}>Follow Us</h4>
                 <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
-                  <a href="#" className="social-link" style={{
+                  <a href="https://www.facebook.com/profile.php?id=61565930895123" className="social-link" style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: '8px',
@@ -249,7 +194,7 @@ const Contact = () => {
                     <i className="fab fa-facebook"></i>
                     Facebook
                   </a>
-                  <a href="#" className="social-link" style={{
+                  <a href="https://www.instagram.com/indians_in_ghana" className="social-link" style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: '8px',
@@ -263,7 +208,7 @@ const Contact = () => {
                     <i className="fab fa-instagram"></i>
                     Instagram
                   </a>
-                  <a href="#" className="social-link" style={{
+                  <a href="https://www.youtube.com/channel/UCh0RgaDreZwXpo3nbMAoEYw" className="social-link" style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: '8px',
@@ -277,101 +222,22 @@ const Contact = () => {
                     <i className="fab fa-youtube"></i>
                     YouTube
                   </a>
+                  <a href="https://whatsapp.com/channel/0029Vb67LBOG3R3k14CA7y03" className="social-link" style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '10px 15px',
+                    background: '#0CD7A2',
+                    color: 'white',
+                    textDecoration: 'none',
+                    borderRadius: 'var(--border-radius-btn)',
+                    transition: 'all 0.3s ease'
+                  }}>
+                    <i className="fab fa-whatsapp"></i>
+                    Whatsapp Channel
+                  </a>
                 </div>
               </div>
-            </div>
-
-            {/* Contact Form */}
-            <div className="contact-form">
-              <h3 className="section-title">
-                <i className="fas fa-paper-plane" style={{ color: 'var(--secondary)', marginRight: '10px' }}></i>
-                Send Us a Message
-              </h3>
-              
-              <form onSubmit={handleSubmit} style={{ marginTop: '20px' }}>
-                <div className="form-group">
-                  <label htmlFor="name">Full Name *</label>
-                  <input
-                    type="text"
-                    id="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    placeholder="Enter your full name"
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="email">Email Address *</label>
-                  <input
-                    type="email"
-                    id="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    placeholder="Enter your email address"
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="phone">Phone Number</label>
-                  <input
-                    type="tel"
-                    id="phone"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    placeholder="e.g., +233 24 123 4567"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="subject">Subject *</label>
-                  <select
-                    id="subject"
-                    value={formData.subject}
-                    onChange={handleInputChange}
-                    required
-                  >
-                    <option value="">Select a subject</option>
-                    <option value="membership">Membership Questions</option>
-                    <option value="technical">Technical Support</option>
-                    <option value="deals">Deals & Offers</option>
-                    <option value="events">Events & Programs</option>
-                    <option value="business">Business Partnership</option>
-                    <option value="feedback">Feedback & Suggestions</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="message">Message *</label>
-                  <textarea
-                    id="message"
-                    value={formData.message}
-                    onChange={handleInputChange}
-                    placeholder="Please provide details about your inquiry..."
-                    rows="5"
-                    required
-                  ></textarea>
-                </div>
-
-                <button 
-                  type="submit" 
-                  className="btn btn-primary btn-block"
-                  disabled={loading}
-                  style={{ marginTop: '20px' }}
-                >
-                  {loading ? (
-                    <>
-                      <i className="fas fa-spinner fa-spin"></i> Sending...
-                    </>
-                  ) : (
-                    <>
-                      <i className="fas fa-paper-plane"></i> Send Message
-                    </>
-                  )}
-                </button>
-              </form>
             </div>
           </div>
 
@@ -379,23 +245,22 @@ const Contact = () => {
 
           {/* Emergency Contact */}
           <div className="emergency-contact" style={{
-            background: 'linear-gradient(135deg, var(--danger), #d6345f)',
+            background: 'linear-gradient(135deg, #E1D2AA, #d6bd77ff)',
             color: 'white',
             padding: '20px',
             borderRadius: 'var(--border-radius-card)',
             textAlign: 'center',
             marginTop: '30px'
           }}>
-            <h4 style={{ marginBottom: '10px' }}>
+            <h4 style={{ marginBottom: '10px', color: '#4C0808' }}>
               <i className="fas fa-exclamation-triangle"></i> Emergency Contact
             </h4>
-            <p style={{ marginBottom: '10px' }}>
+            <p style={{ marginBottom: '10px', color: '#4C0808' }}>
               For urgent community matters or emergencies affecting our members:
             </p>
-            <p style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>
-              <i className="fas fa-phone"></i> +233 (0) 57 232 3912
+            <p style={{ fontSize: '1.2rem', fontWeight: 'bold',color: '#4C0808' }}>
+              <i className="fas fa-phone"></i> +233 57 232 3912
             </p>
-            <small>Available 24/7 for genuine emergencies only</small>
           </div>
         </div>
       </div>

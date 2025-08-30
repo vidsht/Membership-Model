@@ -84,7 +84,7 @@
 
 .benefits-header h2 {
   font-size: 2.8rem;
-  color: #2c3e50;
+  color: #4D0808;
   margin-bottom: 20px;
   font-weight: bold;
 }
@@ -426,9 +426,13 @@
   }
   
   .benefits-header h2 {
-    font-size: 2.2rem;
+    font-size: 1.5rem;
   }
-  
+
+  .benefits-header p {
+    font-size: 1rem;
+  }
+
   .benefits-grid {
     grid-template-columns: 1fr;
     gap: 20px;
