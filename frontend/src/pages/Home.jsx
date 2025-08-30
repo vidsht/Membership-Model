@@ -753,12 +753,29 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Our Community Associations Section */}
-      <section className="community-section">
-        <div className="features-header">
-          <h2>Our Community Associations</h2>
-          <p>Representing the diversity and unity of Indians in Ghana</p>
+      <section className="cta">
+        <div className="cta-container">
+          <h2>Join Our Community Today</h2>
+          <p>Be part of a growing network of Indians in Ghana and unlock exclusive benefits</p>
+          <div className="cta-buttons">
+            <Link to="/unified-registration" className="btn btn-primary">
+              <i className="fas fa-user-plus"></i> Join Now
+            </Link>
+            <Link to="/login" className="btn btn-secondary">
+              <i className="fas fa-sign-in-alt"></i> Sign In
+            </Link>
+          </div>
+        </div>
+      </section>
 
+      {/* Community Associations Section */}
+      <section className="community-section">
+        <div className="community-section-container">
+          <div className="community-section-header">
+            <h2>Our Community Associations</h2>
+            <p>Representing the diversity and unity of Indians in Ghana</p>
+          </div>
+          
           <div className="communities-container">
             {/* Big Bengalies in Ghana */}
             <div className="community-card">
@@ -938,25 +955,29 @@ const Home = () => {
               <img src="https://indiansinghana.com/wp-content/uploads/2025/07/Rajasthan-Association-Logo.jpg" alt="Rajasthan Association of Ghana" className="community-logo" />
               <h3 className="community-name">Rajasthan Association of Ghana</h3>
             </div>
+            
+            <div className="community-card">
+              <img src="https://indiansinghana.com/wp-content/uploads/2025/07/SAG_Logo1.jpg" alt="Sindhi Association of Ghana" className="community-logo" />
+              <h3 className="community-name">Sindhi Association of Ghana</h3>
+            </div>
+            
+            <div className="community-card">
+              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/Utkala-Association-of-Ghana-Logo.jpg" alt="Utkala Ghana Association" className="community-logo" />
+              <h3 className="community-name">Utkala Ghana Association</h3>
+            </div>
+            
+            <div className="community-card">
+              <img src="https://indiansinghana.com/wp-content/uploads/2025/06/Uttarakhand-Association-of-Ghana-Logo.jpg" alt="Uttarakhand Association of Ghana" className="community-logo" />
+              <h3 className="community-name">Uttarakhand Association of Ghana</h3>
+            </div>
+            
+            <div className="community-card">
+              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/0i1hnewV_400x400.jpg" alt="World Malayalee Federation" className="community-logo" />
+              <h3 className="community-name">World Malayalee Federation</h3>
+            </div>
           </div>
         </div>
       </section>
-
-      <section className="cta">
-        <div className="cta-container">
-          <h2>Join Our Community Today</h2>
-          <p>Be part of a growing network of Indians in Ghana and unlock exclusive benefits</p>
-          <div className="cta-buttons">
-            <Link to="/unified-registration" className="btn btn-primary">
-              <i className="fas fa-user-plus"></i> Join Now
-            </Link>
-            <Link to="/login" className="btn btn-secondary">
-              <i className="fas fa-sign-in-alt"></i> Sign In
-            </Link>
-          </div>
-        </div>
-      </section>       
-
 
       {/* Community Statistics Section */}
       {adminSettings.features?.show_community_statistics !== false && (

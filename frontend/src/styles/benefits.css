@@ -42,11 +42,12 @@
 }
 
 .hero-content p {
-  color: white;
-  font-size: 1.3rem;
+  color: #560B0B;
+  font-size: 1.45rem;
   margin-bottom: 30px;
   opacity: 0.95;
-  text-shadow: 2px 2px 4px #E3C092;
+  text-shadow: 1px 1px 1.5px rgba(0, 0, 0, 0.363);
+  font-weight: 600;
 }
 
 .cta-button {

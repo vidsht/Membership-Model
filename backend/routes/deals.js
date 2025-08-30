@@ -170,9 +170,12 @@ router.get('/', async (req, res) => {
     // Simplified query to show all active and non-expired deals to everyone
     const dealsQuery = `
       SELECT d.*, b.businessName, b.businessCategory, b.businessAddress,
-             b.businessPhone, b.businessEmail, b.website, b.logo as businessLogo
+             b.businessPhone, b.businessEmail, b.website, 
+             u.profilePhoto as businessLogo, u.profilePicture as businessLogoUrl,
+             u.fullName as businessOwnerName
       FROM deals d
       LEFT JOIN businesses b ON d.businessId = b.businessId
+      LEFT JOIN users u ON b.userId = u.id
       WHERE d.status = 'active'
         AND (d.validUntil IS NULL OR d.validUntil >= CURDATE())
         AND (d.expiration_date IS NULL OR d.expiration_date >= CURDATE())
@@ -227,9 +230,11 @@ router.get('/public', async (req, res) => {
              d.validFrom, d.validUntil, d.expiration_date, d.status, d.created_at,
              d.termsConditions, d.views, d.redemptions, d.minPlanPriority,
              b.businessName, b.businessCategory, b.businessAddress, b.businessPhone,
-             b.businessEmail, b.website, b.logo as businessLogo
+             b.businessEmail, b.website, 
+             u.profilePhoto as businessLogo, u.profilePicture as businessLogoUrl
       FROM deals d
       LEFT JOIN businesses b ON d.businessId = b.businessId
+      LEFT JOIN users u ON b.userId = u.id
       WHERE d.status = 'active'
         AND (d.validUntil IS NULL OR d.validUntil >= CURDATE())
         AND (d.expiration_date IS NULL OR d.expiration_date >= CURDATE())
@@ -343,9 +348,11 @@ router.get('/:id', checkDealAccess, async (req, res) => {
 
     const dealQuery = `
       SELECT d.*, b.businessName, b.businessCategory, b.businessAddress, b.businessPhone, b.businessEmail,
+             u.profilePhoto as businessLogo, u.profilePicture as businessLogoUrl,
              p.name as requiredPlanName, p.priority as requiredPriority
       FROM deals d
       JOIN businesses b ON d.businessId = b.businessId
+      LEFT JOIN users u ON b.userId = u.id
       LEFT JOIN plans p ON d.requiredPlanPriority = p.priority AND p.type = 'user'
       WHERE d.id = ?
     `;
@@ -386,6 +393,7 @@ router.get('/:id', checkDealAccess, async (req, res) => {
       businessAddress: d.businessAddress || '',
       businessPhone: d.businessPhone || '',
       businessEmail: d.businessEmail || '',
+      businessLogo: d.businessLogo || d.businessLogoUrl || '',
       // Add any other fields as needed
       // ...
     };

@@ -1,3 +1,172 @@
+/* Community Associations Section */
+.community-section {
+  margin: 60px 0;
+  background: rgba(212, 175, 55, 0.03);
+  border-radius: 15px;
+  padding: 40px 20px;
+  overflow: hidden;
+  position: relative;
+}
+
+.community-section-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.community-section-header {
+  margin-bottom: 40px;
+}
+
+.community-section-header h2 {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 800;
+  font-size: 2.2rem;
+  color: #8B0000;
+  margin-bottom: 15px;
+  position: relative;
+}
+
+.community-section-header h2:after {
+  content: '';
+  display: block;
+  width: 80px;
+  height: 4px;
+  background: linear-gradient(to right, #8B0000, #D4AF37);
+  margin: 15px auto;
+  border-radius: 2px;
+}
+
+.community-section-header p {
+  font-size: 1.2rem;
+  color: #555;
+  max-width: 700px;
+  margin: 0 auto;
+  font-weight: 500;
+}
+
+.communities-container {
+  display: flex;
+  animation: scrollCommunities 40s linear infinite;
+  width: calc(150px * 36); /* Width of each card * number of duplicates */
+}
+
+@keyframes scrollCommunities {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(calc(-150px * 18)); } /* Move by width of 18 cards */
+}
+
+.community-card {
+  min-width: 150px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 15px;
+  margin-right: 20px;
+  transition: all 0.3s ease;
+}
+
+.community-logo {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #8B0000;
+  padding: 5px;
+  background: white;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  margin-bottom: 15px;
+  transition: transform 0.3s ease;
+}
+
+.community-name {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 600;
+  font-size: 1rem;
+  color: #8B0000;
+  text-align: center;
+  line-height: 1.4;
+}
+
+.community-card:hover {
+  transform: scale(1.05);
+}
+
+.community-card:hover .community-logo {
+  transform: scale(1.1);
+}
+
+/* Mobile and Tablet Responsive Styles */
+@media (max-width: 768px) {
+  .community-section {
+    margin: 40px 0;
+    padding: 30px 15px;
+  }
+  
+  .community-section-header h2 {
+    font-size: 1.8rem;
+  }
+  
+  .community-section-header p {
+    font-size: 1.1rem;
+  }
+  
+  .community-card {
+    min-width: 130px;
+  }
+  
+  .community-logo {
+    width: 100px;
+    height: 100px;
+  }
+  
+  .communities-container {
+    width: calc(130px * 36); /* Adjust width for mobile */
+  }
+  
+  @keyframes scrollCommunities {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(calc(-130px * 18)); } /* Adjust movement for mobile */
+  }
+}
+
+@media (max-width: 480px) {
+  .community-section {
+    margin: 30px 0;
+    padding: 25px 10px;
+  }
+  
+  .community-section-header h2 {
+    font-size: 1.5rem;
+  }
+  
+  .community-section-header p {
+    font-size: 1rem;
+  }
+  
+  .community-card {
+    min-width: 110px;
+  }
+  
+  .community-logo {
+    width: 80px;
+    height: 80px;
+  }
+  
+  .community-name {
+    font-size: 0.85rem;
+  }
+  
+  .communities-container {
+    width: calc(110px * 36); /* Adjust width for small mobile */
+  }
+  
+  @keyframes scrollCommunities {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(calc(-110px * 18)); } /* Adjust movement for small mobile */
+  }
+}
+
 /* Membership Benefits Parallax Section */
 .membership-benefits-alt {
   position: relative;
@@ -33,11 +202,6 @@
   max-width: var(--container-md);
   margin: 0 auto;
   padding: 0 var(--space-lg);
-}
-
-@keyframes scrollCommunities {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(calc(-150px * 18)); } /* Move by width of 18 cards */
 }
 
 /* Improved Alternating Layout for Membership Benefits Section */
@@ -224,7 +388,7 @@
 .hero {
   position: relative;
   height: 100vh;
-  background-image: url('https://images.pexels.com/photos/3280130/pexels-photo-3280130.jpeg');
+  background-image: url('/background.jpg');
   background-attachment: fixed;
   background-position: center;
   background-repeat: no-repeat;
@@ -466,7 +630,6 @@
 .features-header {
   text-align: center;
   margin-bottom: 4rem;
-  padding: 0 var(--space-lg);
 }
 
 .features-header h2 {
@@ -759,7 +922,7 @@
   font-size: 1.1rem;
 }
 
-/* Business Carousel Styles */
+/* Business Carousel Styles - Enhanced */
 .business-carousel-container {
   position: relative;
   margin: 3rem 0;
@@ -914,7 +1077,7 @@
   font-size: 0.8rem;
 }
 
-/* Carousel Controls */
+/* Enhanced Carousel Controls */
 .carousel-controls {
   display: flex;
   justify-content: center;
@@ -2014,101 +2177,8 @@
   }
 }
 
-/* Community Associations Section */
-.community-section::before { 
-  content: ''; 
-  position: absolute; 
-  top: 0; 
-  left: 0; 
-  width: 100%; 
-  height: 10px; 
-  background: linear-gradient(to right, #3E0703, #4b120e, #680903); 
-}
-
-.community-section {
-  background: rgba(212, 175, 55, 0.03);
-  border-radius: 15px;
-  padding: 90px;
-  overflow: hidden;
-  position: relative;
-}
-
-.community-section .container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 var(--space-lg);
-}
-
-.community-section .section-title {
-  text-align: center;
-  font-family: 'Inter', sans-serif;
-  font-weight: 800;
-  font-size: 2.2rem;
-  color: #8B0000;
-  margin: 40px 0 30px;
-  position: relative;
-}
-
-.community-section .section-title:after {
-  content: '';
-  display: block;
-  width: 80px;
-  height: 4px;
-  background: linear-gradient(to right, #8B0000, #D4AF37);
-  margin: 15px auto;
-  border-radius: 2px;
-}
-
-.community-section .section-subtitle {
-  text-align: center;
-  font-size: 1.2rem;
-  color: #555;
-  max-width: 700px;
-  margin: 0 auto 40px;
-  font-weight: 500;
-}
-
-.communities-container {
-  display: flex;
-  animation: scrollCommunities 40s linear infinite;
-  width: calc(150px * 36);
-  margin-top:5rem;
-  /* Ensure overflow hidden for loop effect */
-  overflow: hidden;
-}
-
-@keyframes scrollCommunities {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
-
-@media (max-width: 1024px) {
-  .communities-container {
-    width: 100%;
-    animation: scrollCommunitiesMobile 40s linear infinite;
-    overflow: hidden;
-  }
-}
-
-@keyframes scrollCommunitiesMobile {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-60%); }
-}
-
-@media (max-width: 768px) {
-  .communities-container {
-    width: 100%;
-    animation: scrollCommunitiesMobile 40s linear infinite;
-    overflow: hidden;
-  }
-}
 
 @media (max-width: 480px) {
-  .communities-container {
-    width: 100%;
-    animation: scrollCommunitiesMobile 40s linear infinite;
-    overflow: hidden;
-  }
 
   .features-header h2{
     margin-top: 2rem;
@@ -2117,133 +2187,6 @@
 
   .features-header p {
     font-size: 1rem;
-  }
-}
-
-.community-card {
-  min-width: 150px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 15px;
-  margin-right: 20px;
-  transition: all 0.3s ease;
-}
-
-.community-logo {
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 3px solid #8B0000;
-  padding: 5px;
-  background: white;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-  margin-bottom: 15px;
-}
-
-.community-name {
-  font-family: 'Inter', sans-serif;
-  font-weight: 600;
-  font-size: 1rem;
-  color: #8B0000;
-  text-align: center;
-  line-height: 1.4;
-}
-
-.community-card:hover {
-  transform: scale(1.05);
-}
-
-/* Responsive Design for Community Associations */
-@media (max-width: 1024px) {
-  .community-section {
-    padding: 40px;
-    border-radius: 12px;
-  }
-  .community-section .container {
-    padding: 0 1.5rem;
-  }
-  .communities-container {
-    margin-top: 2.5rem;
-    flex-wrap: nowrap;
-    gap: 1.5rem;
-    animation: scrollCommunities 40s linear infinite;
-    width: 100%;
-    justify-content: center;
-  }
-}
-
-@media (max-width: 768px) {
-  .community-section {
-    padding: 20px;
-    border-radius: 10px;
-  }
-  .community-section .section-title {
-    font-size: 1.5rem;
-    margin: 25px 0 18px;
-  }
-  .community-section .section-subtitle {
-    font-size: 1rem;
-    margin-bottom: 25px;
-  }
-  .communities-container {
-    flex-wrap: nowrap;
-    gap: 1rem;
-    margin-top: 1.5rem;
-    animation: scrollCommunities 40s linear infinite;
-    width: 100%;
-    justify-content: center;
-  }
-  .community-card {
-    min-width: 110px;
-    padding: 10px;
-    margin-right: 10px;
-  }
-  .community-logo {
-    width: 80px;
-    height: 80px;
-    padding: 3px;
-  }
-  .community-name {
-    font-size: 0.85rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .community-section {
-    padding: 10px;
-    border-radius: 8px;
-  }
-  .community-section .section-title {
-    font-size: 1.1rem;
-    margin: 15px 0 10px;
-  }
-  .community-section .section-subtitle {
-    font-size: 0.9rem;
-    margin-bottom: 15px;
-  }
-  .communities-container {
-    gap: 0.5rem;
-    margin-top: 1rem;
-    animation: scrollCommunities 40s linear infinite;
-    width: 100%;
-    align-items: center;
-    justify-content: center;
-  }
-  .community-card {
-    min-width: 90px;
-    padding: 6px;
-    margin-right: 0;
-    margin-bottom: 8px;
-  }
-  .community-logo {
-    width: 60px;
-    height: 60px;
-    padding: 2px;
-  }
-  .community-name {
-    font-size: 0.75rem;
   }
 }
 
