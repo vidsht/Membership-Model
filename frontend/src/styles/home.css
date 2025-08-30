@@ -21,7 +21,7 @@
 .community-section-header h2 {
   font-family: 'Montserrat', sans-serif;
   font-weight: 800;
-  font-size: 2.2rem;
+  font-size: 3rem;
   color: #8B0000;
   margin-bottom: 15px;
   position: relative;
@@ -39,7 +39,7 @@
 
 .community-section-header p {
   font-size: 1.2rem;
-  color: #555;
+  color: #8B0000;
   max-width: 700px;
   margin: 0 auto;
   font-weight: 500;
@@ -137,7 +137,7 @@
   }
   
   .community-section-header h2 {
-    font-size: 1.5rem;
+    font-size: 2rem;
   }
   
   .community-section-header p {
@@ -410,6 +410,9 @@
   height: 100%;
   background: linear-gradient(135deg, #ebd2b644, #bd9e7b42);
   z-index: 1;
+  backdrop-filter: blur(2.5px);
+  -webkit-backdrop-filter: blur(2px);
+  pointer-events: none;
 }
 
 .hero-content {
@@ -491,10 +494,8 @@
   top: 0;
   left: 0;
   width: 100%;
-  height: 100%;
-  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="75" cy="75" r="1" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
-  opacity: 0.5;
-  z-index: 1;
+  height: 10px;
+  background: linear-gradient(to right, #3E0703, #4b120e, #680903);
 }
 
 .stats-container {
@@ -513,7 +514,7 @@
 }
 
 .stats-header h2 {
-  font-size: 2.5rem;
+  font-size: 3rem;
   margin-bottom: 10px;
   color: #771313;
   font-weight: 800;
@@ -587,7 +588,7 @@
 .stat-number {
   font-size: 3.5rem;
   font-weight: 900;
-  color: #6D28D9;
+  color: #8B0000;
   margin-bottom: 10px;
   line-height: 1;
   background: linear-gradient(135deg, #6D28D9, #9333EA);
@@ -1403,6 +1404,19 @@
     min-width: 140px;
     padding: 10px 20px;
     font-size: 0.9rem;
+  }
+
+  .stats-header h2{
+    font-size: 2rem;
+  }
+
+  .stats-header p{
+    font-size: 1rem;
+  }
+
+  .stats-grid{
+    display: flex;
+    flex-direction: row;
   }
 }
 
