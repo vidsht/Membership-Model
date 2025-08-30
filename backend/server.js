@@ -5,8 +5,13 @@ const session = require('express-session');
 const path = require('path');
 require('dotenv').config();
 const uploadRouter = require('./routes/upload');
+const seoMiddleware = require('./middleware/seoMiddleware');
+const { setupPerformanceOptimizations, setupPerformanceFlagEndpoint } = require('./middleware/performanceMiddleware');
 
 const app = express();
+
+// Setup performance optimizations BEFORE other middleware
+setupPerformanceOptimizations(app);
 
 // CORS configuration for credentials
 
@@ -29,6 +34,9 @@ app.options('*', cors(corsOptions));
 // Basic middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// SEO Middleware - Apply globally with environment-aware settings
+app.use(seoMiddleware.conditional);
 
 // **IMPORTANT: Serve static files BEFORE other routes - MOVE THIS UP**
 const uploadsPath = process.env.UPLOADS_PATH || path.join(__dirname, 'uploads');
@@ -118,36 +126,39 @@ const { promisify } = require('util');
 const queryAsync = promisify(db.query).bind(db);
 
 // Basic routes
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/users', require('./routes/users'));
+app.use('/api/auth', seoMiddleware.protected, require('./routes/auth'));
+app.use('/api/users', seoMiddleware.protected, require('./routes/users'));
 
 // Mount merchant routes
-app.use('/api/merchant', require('./routes/merchant'));
+app.use('/api/merchant', seoMiddleware.protected, require('./routes/merchant'));
 
 // Public deals route for users
-app.use('/api/deals', require('./routes/deals'));
-app.use('/api/plans', require('./routes/plans'));
+app.use('/api/deals', seoMiddleware.api, require('./routes/deals'));
+app.use('/api/plans', seoMiddleware.api, require('./routes/plans'));
 
 // Admin routes
-app.use('/api/admin', require('./routes/admin'));
-app.use('/api/admin', require('./routes/roles'));
+app.use('/api/admin', seoMiddleware.blockAll, require('./routes/admin'));
+app.use('/api/admin', seoMiddleware.blockAll, require('./routes/roles'));
 
 // Migration routes (for database schema updates)
-app.use('/api/migration', require('./routes/migration'));
+app.use('/api/migration', seoMiddleware.blockAll, require('./routes/migration'));
 
 // Email admin routes
 const emailAdminRoutes = require('./routes/emailAdmin');
-app.use('/api/admin/email', emailAdminRoutes);
+app.use('/api/admin/email', seoMiddleware.blockAll, emailAdminRoutes);
 
 // Public admin endpoints that don't require authentication
-app.use('/api/admin', require('./routes/admin')); // This ensures public routes work
+app.use('/api/admin', seoMiddleware.blockAll, require('./routes/admin')); // This ensures public routes work
 
 // Upload routes
-app.use('/api/upload', require('./routes/upload'));
+app.use('/api/upload', seoMiddleware.api, require('./routes/upload'));
+
+// Performance flag management endpoint
+setupPerformanceFlagEndpoint(app);
 
 
 // Health check
-app.get('/api/health', (req, res) => {
+app.get('/api/health', seoMiddleware.api, (req, res) => {
   res.json({ 
     status: 'OK', 
     timestamp: new Date().toISOString(),
@@ -156,7 +167,7 @@ app.get('/api/health', (req, res) => {
 });
 
 // Public businesses endpoint for home page
-app.get('/api/businesses', async (req, res) => {
+app.get('/api/businesses', seoMiddleware.api, async (req, res) => {
   try {
     const businesses = await queryAsync(`
       SELECT

@@ -1,0 +1,34 @@
+# robots.txt for Indians in Ghana Membership Portal
+# Default allow configuration with sitemaps
+
+User-agent: *
+Disallow:
+Allow: /
+Sitemap: https://membership.indiansinghana.com/sitemap.xml
+
+# Optional blocks for private areas (commented out by default)
+# Uncomment and modify as needed for restricted sections:
+
+# Admin areas
+# User-agent: *
+# Disallow: /admin/
+# Disallow: /dashboard/admin/
+
+# Search and API endpoints
+# User-agent: *
+# Disallow: /api/
+# Disallow: /search/
+
+# User-specific areas that should not be indexed
+# User-agent: *
+# Disallow: /dashboard/
+# Disallow: /profile/
+# Disallow: /settings/
+
+# Temporary or staging paths
+# User-agent: *
+# Disallow: /temp/
+# Disallow: /staging/
+
+# Note: Do not use robots.txt for "noindex" directives
+# Use meta robots tags or X-Robots-Tag headers instead

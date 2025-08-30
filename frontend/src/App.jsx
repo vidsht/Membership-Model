@@ -1,7 +1,10 @@
 import React, { useState, useCallback } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider } from './contexts/AuthContext';
 import { NotificationProvider } from './contexts/NotificationContext';
+import PerformanceOptimizer, { PerformanceDevTools, usePerformanceOptimizations } from './components/PerformanceOptimizer';
+import { usePerformanceValidation } from './utils/performanceValidation';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -51,6 +54,10 @@ function AppContent() {
   const location = useLocation();
   const hideHeaderRoutes = ['/login', '/unified-registration'];
   const showHeader = !hideHeaderRoutes.includes(location.pathname);
+  
+  // Initialize performance optimizations and validation
+  usePerformanceOptimizations();
+  usePerformanceValidation();
 
   return (
     <div className="app">
@@ -234,21 +241,26 @@ function AppContent() {
       </main>
       {showHeader && <Footer />}
       <Toast />
+      <PerformanceDevTools />
     </div>
   );
 }
 
 function App() {
   return (
-    <Router>
-      <ErrorBoundary>
-        <AuthProvider>
-          <NotificationProvider>
-            <AppContent />
-          </NotificationProvider>
-        </AuthProvider>
-      </ErrorBoundary>
-    </Router>
+    <HelmetProvider>
+      <Router>
+        <ErrorBoundary>
+          <PerformanceOptimizer>
+            <AuthProvider>
+              <NotificationProvider>
+                <AppContent />
+              </NotificationProvider>
+            </AuthProvider>
+          </PerformanceOptimizer>
+        </ErrorBoundary>
+      </Router>
+    </HelmetProvider>
   );
 }
 

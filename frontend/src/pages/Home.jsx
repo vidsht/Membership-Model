@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useImageUrl, SmartImage, DefaultAvatar } from '../hooks/useImageUrl.jsx';
+import { IndexablePage } from '../components/SEOHead';
 import api from '../services/api';
 import '../styles/global.css';
 import '../styles/home.css';
@@ -1016,6 +1017,14 @@ const Home = () => {
            </div>
          </section>
       )}
+
+      {/* SEO Meta Tags */}
+      <IndexablePage 
+        title="Indians in Ghana - Connect, Thrive, Belong"
+        description="Join Ghana's premier Indian community network. Access exclusive deals, connect with local businesses, and be part of a thriving community of Indians living in Ghana."
+        keywords="Indians in Ghana, Indian community Ghana, Indian business directory Ghana, exclusive deals Ghana, Indian expats Ghana"
+        canonicalUrl="https://membership.indiansinghana.com"
+      />
 
       {/* ...footer is rendered after this in the layout... */}
     </div>

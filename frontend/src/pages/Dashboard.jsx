@@ -1,5 +1,6 @@
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { PrivatePage } from '../components/SEOHead';
 import MembershipCard from '../components/MembershipCard';
 import MerchantCertificate from '../components/MerchantCertificate';
 import PlanExpiryBanner from '../components/PlanExpiryBanner';
@@ -184,6 +185,12 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* SEO Meta Tags for Dashboard */}
+      <PrivatePage 
+        title="Dashboard - Indians in Ghana Membership"
+        description="Access your membership dashboard, view exclusive deals, and manage your Indian community membership in Ghana."
+      />
     </div>
   );
 };
