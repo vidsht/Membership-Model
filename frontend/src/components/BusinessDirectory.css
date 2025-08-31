@@ -136,7 +136,7 @@
 .directory-filters i {
   position: absolute;
   left: var(--space-md);
-  top: 40%;
+  top: 35%;
   transform: translateY(-20%); 
   transform: translateX(-30%); 
 }
@@ -599,6 +599,9 @@
     grid-template-columns: 1fr;
     gap: 1.2rem;
   }
+  .directory-filters i{
+    top:25%;
+  }
 }
 
 @media (max-width: 580px) {
@@ -631,6 +634,9 @@
   .business-detail-modal .modal-body-compact {
     padding: 0.7rem 0.5rem;
   }
+  .directory-filters i{
+    top:25%;
+  }
 }
 
 @media (max-width: 768px) {
@@ -641,9 +647,15 @@
     width: 64px;
     height: 64px;
   }
+  .directory-filters i{
+    top:25%;
+  }
 }
 
 @media (max-width: 600px) {
+  .directory-filters i{
+    top:25%;
+  }
   .businesses-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;

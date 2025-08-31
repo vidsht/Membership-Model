@@ -9,7 +9,7 @@ const BusinessBenefits = () => {
         <div className="hero-content">
           <h1>Business Benefits</h1>
           <p>Unlock exclusive advantages for your business with Indians in Ghana membership</p>
-          <Link to="/merchant/register" className="cta-button">
+          <Link to="/unified-registration" className="cta-button">
             Register Your Business
           </Link>
         </div>

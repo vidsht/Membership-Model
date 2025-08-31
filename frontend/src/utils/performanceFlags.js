@@ -26,7 +26,7 @@ const SAFE_ROUTES = [
   '/plans',              // Plans/pricing page
   '/contact',            // Contact page
   '/login',              // Login page
-  '/register',           // Registration page
+  '/unified-registration',           // Registration page
 ];
 
 // Routes/components to EXCLUDE from optimization (QR/barcode/image critical paths)

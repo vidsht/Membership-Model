@@ -339,7 +339,7 @@ const Login = () => {
                           </td>
                           <td className="input-cell">
                             <div className="login-links">
-                              <Link to="/register">New User? Register</Link>
+                              <Link to="/unified-registration">New User? Register</Link>
                               <Link to="/forgot-password">Forgot Password?</Link>
                             </div>
                           </td>
@@ -405,7 +405,7 @@ const Login = () => {
                         <tr>
                           <td colSpan="2" className="footer-cell">
                             <div className="form-footer">
-                              <p>New Business? <Link to="/register">Register as Merchant</Link></p>
+                              <p>New Business? <Link to="/unified-registration">Register as Merchant</Link></p>
                               <p><small>Join 500+ businesses serving the Indian community in Ghana</small></p>
                             </div>
                           </td>

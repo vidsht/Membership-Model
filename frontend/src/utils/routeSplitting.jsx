@@ -210,12 +210,12 @@ export function useRouteOptimization() {
 		if (currentPath === '/') {
 			// From home, users might go to login, register, or plans
 			preloadRouteComponent('/login', 'Login');
-			preloadRouteComponent('/register', 'Register');
+			preloadRouteComponent('/unified-registration', 'Register');
 			preloadRouteComponent('/plans', 'Plans');
 		} else if (currentPath === '/login') {
 			// From login, users might go to dashboard or home
 			preloadRouteComponent('/', 'Home');
-		} else if (currentPath === '/register') {
+		} else if (currentPath === '/unified-registration') {
 			// From register, users might go to login or plans
 			preloadRouteComponent('/login', 'Login');
 			preloadRouteComponent('/plans', 'Plans');
@@ -269,7 +269,7 @@ export function OptimizedLink({ to, children, onMouseEnter, ...props }) {
 				'/plans': 'Plans',
 				'/contact': 'Contact',
 				'/login': 'Login',
-				'/register': 'Register'
+				'/unified-registration': 'Register'
 			};
       
 			const componentName = routeMap[to];

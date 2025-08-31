@@ -173,7 +173,7 @@ const MerchantRegister = () => {
     <div className="page active">
       <div className="registration-card">
         <div className="registration-tabs">
-          <Link to="/register" className="tab-btn">
+          <Link to="/unified-registration" className="tab-btn">
             <i className="fas fa-user"></i> Member Registration
           </Link>
           <button 

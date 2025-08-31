@@ -9,7 +9,7 @@ const MemberBenefits = () => {
         <div className="hero-content">
           <h1>Member Benefits</h1>
           <p>Discover exclusive benefits and opportunities as a member of Indians in Ghana</p>
-          <Link to="/register" className="cta-button">
+          <Link to="/unified-registration" className="cta-button">
             Become a Member
           </Link>
         </div>
@@ -86,107 +86,6 @@ const MemberBenefits = () => {
             <p>Connect with Indian doctors and healthcare professionals in Ghana for medical support.</p>
           </div>
         </div>
-
-        {/* <div className="membership-tiers">
-          <h2>Membership Plans</h2>
-          <div className="tiers-grid">
-            <div className="tier-card basic">
-              <h3>Basic</h3>
-              <div className="price">Free</div>
-              <ul>
-                <li>Access to community directory</li>
-                <li>Basic event notifications</li>
-                <li>Member forum access</li>
-                <li>Monthly newsletter</li>
-              </ul>
-              <Link to="/register" className="tier-button">Join Free</Link>
-            </div>
-
-            <div className="tier-card premium">
-              <h3>Premium</h3>
-              <div className="price">GHS 30/month</div>
-              <ul>
-                <li>Everything in Basic</li>
-                <li>Exclusive discounts and deals</li>
-                <li>Priority event booking</li>
-                <li>Premium support services</li>
-                <li>Family plan options</li>
-              </ul>
-              <Link to="/register" className="tier-button">Upgrade Now</Link>
-            </div>
-
-            <div className="tier-card family">
-              <h3>Family</h3>
-              <div className="price">GHS 75/month</div>
-              <ul>
-                <li>Everything in Premium</li>
-                <li>Coverage for up to 5 family members</li>
-                <li>Family event invitations</li>
-                <li>Children's program access</li>
-                <li>Spouse job search assistance</li>
-              </ul>
-              <Link to="/register" className="tier-button">Get Family Plan</Link>
-            </div>
-          </div>
-        </div>
-
-        <div className="featured-benefits">
-          <h2>Featured Member Benefits</h2>
-          <div className="featured-grid">
-            <div className="featured-card">
-              <h3>Diwali Celebration Package</h3>
-              <p>Get 20% discount on Diwali shopping, exclusive access to community Diwali events, and complimentary traditional sweets delivery.</p>
-              <span className="benefit-tag">Seasonal</span>
-            </div>
-
-            <div className="featured-card">
-              <h3>New Arrival Support</h3>
-              <p>Comprehensive assistance for new Indian arrivals including airport pickup, temporary accommodation help, and orientation sessions.</p>
-              <span className="benefit-tag">Support</span>
-            </div>
-
-            <div className="featured-card">
-              <h3>Business Directory Access</h3>
-              <p>Complete directory of Indian-owned businesses in Ghana with verified contact information and exclusive member discounts.</p>
-              <span className="benefit-tag">Directory</span>
-            </div>
-
-            <div className="featured-card">
-              <h3>Emergency Assistance</h3>
-              <p>24/7 emergency helpline for urgent situations, medical emergencies, and crisis support within the community.</p>
-              <span className="benefit-tag">Emergency</span>
-            </div>
-          </div>
-        </div> */}
-{/* 
-        <div className="testimonials-section">
-          <h2>What Our Members Say</h2>
-          <div className="testimonials-grid">
-            <div className="testimonial-card">
-              <p>"Being a member has made my life in Ghana so much easier. The community support and discounts have been incredibly valuable."</p>
-              <div className="testimonial-author">
-                <strong>Meera Reddy</strong>
-                <span>Software Engineer</span>
-              </div>
-            </div>
-
-            <div className="testimonial-card">
-              <p>"The networking opportunities have been amazing. I've made lifelong friends and found great business connections through this platform."</p>
-              <div className="testimonial-author">
-                <strong>Vikram Singh</strong>
-                <span>Business Consultant</span>
-              </div>
-            </div>
-
-            <div className="testimonial-card">
-              <p>"When I first arrived in Ghana, the community support was overwhelming. The new arrival assistance program helped me settle in quickly."</p>
-              <div className="testimonial-author">
-                <strong>Anita Krishnan</strong>
-                <span>Teacher</span>
-              </div>
-            </div>
-          </div>
-        </div> */}
 
         <div className="cta-section">
           <h2>Ready to Join Our Community?</h2>

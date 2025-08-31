@@ -171,7 +171,7 @@ const About = () => {
             make meaningful connections, and celebrate our culture together.
           </p>
           <div className="cta-buttons">
-            <a href="/register" className="cta-button-primary">
+            <a href="//unified-registration" className="cta-button-primary">
               <i className="fas fa-user-plus"></i> Register Now
             </a>
             <a href="/contact" className="cta-button-secondary">

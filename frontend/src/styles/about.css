@@ -16,7 +16,6 @@
   backdrop-filter: blur(10px);
   overflow: hidden;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .hero-image-grid {
@@ -110,8 +109,7 @@
 }
 
 .community-img-container{
-   overflow: hidden;
-  position: relative;
+  overflow: hidden;
   padding-top: 4rem;
    margin-right: 25px;
 }
@@ -140,7 +138,7 @@
 .benefit-icon {
   width: 80px;
   height: 80px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #8A1515 0%, #550B0B 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -154,12 +152,16 @@
   font-size: 2rem;
 }
 
+.benefit-text {
+  height: 555px;
+}
+
 .benefit-text h3 {
   font-size: 2rem;
   font-weight: 700;
   color: #333;
   margin-bottom: 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #8A1515 0%, #560B0B 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -263,7 +265,7 @@
 .section-title-centered {
   font-size: 2.8rem;
   font-weight: 700;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #891515 0%, #560B0B 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -276,9 +278,9 @@
 }
 
 .section-title-centered i {
-  color: #667eea;
+  color: #891515;
   font-size: 2.5rem;
-  -webkit-text-fill-color: #667eea;
+  -webkit-text-fill-color: #891515;
 }
 
 .initiatives-grid {
@@ -329,7 +331,7 @@
 .initiative-card h3 {
   font-size: 1.4rem;
   font-weight: 600;
-  color: #333;
+  color: #560B0B;
   margin-bottom: 15px;
 }
 
@@ -340,7 +342,7 @@
 
 /* Contact CTA - Enhanced */
 .contact-cta {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #E0BA8E 0%, #ab875e 100%);
   color: white;
   text-align: center;
   padding: 80px 40px;
@@ -353,6 +355,16 @@
   margin-bottom: 20px;
   display: flex;
   align-items: center;
+  color: #560C0C;
+    background: rgba(255,255,255,0.85);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(102,126,234,0.07);
+    margin-top: 10px;
+    margin-bottom: 20px;
+    padding: 20px 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   justify-content: center;
   gap: 15px;
 }
@@ -387,7 +399,7 @@
 
 .cta-button-primary {
   background: white;
-  color: #667eea;
+  color: #560C0C;
 }
 
 .cta-button-primary:hover {
@@ -419,12 +431,6 @@
     flex-direction: column !important;
   }
   
-  .benefit-content {
-    padding-right: 0 !important;
-    padding-left: 0 !important;
-    margin-bottom: 30px;
-  }
-  
   .benefit-visual {
     padding-left: 0 !important;
     padding-right: 0 !important;
@@ -435,7 +441,7 @@
   }
   
   .benefit-text h3 {
-    font-size: 1.6rem;
+    font-size: 1rem;
   }
   
   .section-title-centered {
@@ -455,5 +461,84 @@
     font-size: 2rem;
     flex-direction: column;
     gap: 10px;
+  }
+}
+/* Extra Mobile Breakpoint */
+@media (max-width: 480px) {
+  .hero-content-about {
+    padding: 20px 5px;
+  }
+  .hero-content-about h1 {
+    font-size: 1.5rem;
+  }
+  .hero-content-about p {
+    font-size: 1rem;
+    max-width: 95vw;
+  }
+  .hero-image-grid {
+    grid-template-columns: 1fr;
+    height: 180px;
+  }
+  .about-intro .membership-benefits-alt-about {
+    padding: 1.2rem 0 1rem 0;
+  }
+  .about-intro .membership-benefits-alt-header-about h2 {
+    font-size: 1.3rem;
+  }
+  .about-intro .membership-benefits-alt-header-about p {
+    font-size: 1rem;
+    margin-left: 5px;
+    margin-right: 5px;
+  }
+  .community-img-container {
+    width: 310px;
+    height: 363px;
+    padding-top: 2rem;
+    margin-right: 0;
+  }
+  .membership-benefits-alt-rows-about {
+    padding: 0 5px;
+  }
+  .benefit-text{
+    width: 300px;
+    height: 300px;
+  }
+  .benefit-text h3 {
+    font-size: 1.3rem;
+  }
+  .benefit-text p {
+    font-size: 0.5rem;
+  }
+  .benefit-icon {
+    width: 50px;
+    height: 50px;
+    margin-bottom: 10px;
+  }
+  .initiative-card {
+    padding: 15px;
+  }
+  .initiative-card h3 {
+    font-size: 1rem;
+  }
+  .initiative-card p {
+    font-size: 0.95rem;
+  }
+  .contact-cta {
+    padding: 40px 10px;
+  }
+  .contact-cta h3 {
+    font-size: 1.2rem;
+  }
+  .contact-cta p {
+    font-size: 1rem;
+    margin-bottom: 20px;
+  }
+  .cta-button-primary, .cta-button-secondary {
+    padding: 10px 15px;
+    font-size: 0.95rem;
+  }
+  .membership-benefits-alt-container-about{
+  display: flex;
+  flex-direction: column;
   }
 }
