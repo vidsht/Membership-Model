@@ -96,7 +96,7 @@
 }
 
 .terms-html-content h3 {
-  color: #667eea;
+  color: #510909;
   font-size: 1.3rem;
   font-weight: 600;
   margin: 2rem 0 1rem;
@@ -159,7 +159,6 @@
 }
 
 .action-buttons .btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
 }
@@ -201,7 +200,7 @@
 
 .quick-nav h3,
 .terms-summary h3 {
-  color: #667eea;
+  color: #570C14;
   font-size: 1.1rem;
   font-weight: 600;
   margin-bottom: 1rem;

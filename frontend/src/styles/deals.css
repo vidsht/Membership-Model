@@ -121,7 +121,7 @@
   color: white;
   padding: 0.4rem 0.8rem;
   border-radius: 15px;
-  font-size: 0.75rem;
+  font-size: 0.5rem;
   font-weight: 600;
   z-index: 2;
   display: flex;
@@ -636,7 +636,8 @@
 }
 
 .btn-view-details:hover {
-  background: linear-gradient(135deg, #A01818, #5A0909);
+  background: linear-gradient(135deg, #DBB68A, #c59963);
+  color: #3E0703;
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(141, 21, 21, 0.4);
 }
@@ -1317,7 +1318,7 @@
 .modal-title {
   font-size: 1.8rem;
   font-weight: 700;
-  color: #1e293b;
+  color: #5B0E0E;
   margin: 0 0 0.5rem 0;
   line-height: 1.3;
 }

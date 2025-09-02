@@ -135,11 +135,11 @@ const Disclaimer = () => {
 
             <div className="disclaimer-actions">
               <div className="action-buttons">
-                <Link to="/" className="btn btn-secondary">
+                <Link to="/" className="btn btn-secondary-home">
                   <i className="fas fa-home"></i>
                   Back to Home
                 </Link>
-                <Link to="/contact" className="btn btn-primary">
+                <Link to="/contact" className="btn btn-primary-home">
                   <i className="fas fa-envelope"></i>
                   Contact Support
                 </Link>

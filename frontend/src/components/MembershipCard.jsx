@@ -199,12 +199,9 @@ const MembershipCard = () => {
       }
 
       const html2canvas = await import('html2canvas');
-
-      // Small wait to allow images (including replaced object URL) to render
       await new Promise(resolve => setTimeout(resolve, 500));
-
       const canvas = await html2canvas.default(cardRef.current, {
-        scale: 2,
+        scale: window.devicePixelRatio || 2,
         backgroundColor: '#ffffff',
         useCORS: true,
         allowTaint: true,
@@ -213,31 +210,17 @@ const MembershipCard = () => {
         scrollX: 0,
         scrollY: 0
       });
-
-      // Verify canvas has content
       if (canvas.width === 0 || canvas.height === 0) {
         throw new Error('Canvas is empty');
       }
-
-      // Use toBlob + object URL for download
-      canvas.toBlob((blob) => {
-        if (!blob) {
-          showNotification('Failed to generate card image', 'error');
-          return;
-        }
-
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.download = `membership-card-${user.membershipNumber || 'download'}.png`;
-        link.href = url;
-
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-
-        showNotification('Card downloaded successfully!', 'success');
-      }, 'image/png', 1.0);
+      // Use toDataURL for download (matches certificate logic)
+      const link = document.createElement('a');
+      link.download = `membership-card-${user.membershipNumber || 'download'}.png`;
+      link.href = canvas.toDataURL('image/png', 1.0);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showNotification('Card downloaded successfully!', 'success');
     } catch (error) {
       console.error('Error downloading card:', error);
       showNotification('Failed to download card. Please try again.', 'error');
@@ -574,27 +557,27 @@ const MembershipCard = () => {
           {/* Right Column - Personal Information */}
           <div className="right-column">
             <div className="info-field">
-              <span className="info-label-card">Name :</span>
+              <span className="info-label-card">Name : </span>
               <span className="info-value-card name-value">{user.fullName}</span>
             </div>
 
             <div className="info-field">
-              <span className="info-label-card">Mobile Number :</span>
+              <span className="info-label-card">Mobile Number : </span>
               <span className="info-value-card mobile-value">{user.phone || 'Not provided'}</span>
             </div>
 
             <div className="info-field">
-              <span className="info-label-card">Date of Issue :</span>
+              <span className="info-label-card">Date of Issue : </span>
               <span className="info-value-card">{formatDate(user.statusUpdatedAt || user.created_at)}</span>
             </div>
 
             <div className="info-field">
-              <span className="info-label-card">Date of Expiry :</span>
+              <span className="info-label-card">Date of Expiry : </span>
               <span className="info-value-card">{getExpiryDate()}</span>
             </div>
 
             <div className="info-field">
-              <span className="info-label-card">Blood Group :</span>
+              <span className="info-label-card">Blood Group : </span>
               <span className="info-value-card blood-group-value">{user.bloodGroup || 'N/A'}</span>
             </div>
           </div>

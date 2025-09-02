@@ -573,7 +573,7 @@ const UnifiedRegistration = () => {
   return (
     <>
       {/* Back to Home floating button */}
-          <Link to="/" style={{
+          <Link className="back-home" to="/" style={{
           position: 'fixed',
           top: '18px',
           right: '24px',
@@ -592,7 +592,7 @@ const UnifiedRegistration = () => {
           border: '1px solid #e2e8f0',
           transition: 'background 0.2s'
         }}>
-          <i className="fas fa-home" style={{ fontSize: '1.1rem', marginRight: '2px' }}></i>
+          <i className="fas fa-home home-icon" style={{ fontSize: '1.1rem', marginRight: '2px' }}></i>
           Home
         </Link>
         

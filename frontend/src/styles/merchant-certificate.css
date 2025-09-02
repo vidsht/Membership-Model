@@ -39,20 +39,6 @@
   z-index: 1;
 }
 
-/* Decorative curved elements */
-.merchant-certificate-a4::after {
-  content: '';
-  position: absolute;
-  top: 30px;
-  right: 30px;
-  width: 150px;
-  height: 150px;
-  background: linear-gradient(135deg, #8B0000 0%, #FFD700 50%, #8B0000 100%);
-  clip-path: ellipse(75px 75px at 100% 0%);
-  opacity: 0.6;
-  z-index: 1;
-}
-
 /* Certificate Header */
 .certificate-header {
   display: flex;
@@ -358,7 +344,7 @@
 }
 
 .certificate-actions .btn-secondary {
-  background: linear-gradient(135deg, #6c757d, #495057);
+  background: linear-gradient(135deg, #DCB68B, #cfa26d);
   color: white;
 }
 
@@ -587,18 +573,13 @@
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 
-.certificate-actions .btn-primary {
-  background: linear-gradient(135deg, #2c5aa0, #1e3f73);
-  color: white;
-}
-
 .certificate-actions .btn-success {
   background: linear-gradient(135deg, #25d366, #1da851);
   color: white;
 }
 
 .certificate-actions .btn-secondary {
-  background: linear-gradient(135deg, #6c757d, #5a6268);
+  background: linear-gradient(135deg, #DCB68B, #c59d70);
   color: white;
 }
 

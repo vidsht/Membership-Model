@@ -94,7 +94,7 @@ const MemberBenefits = () => {
             <Link to="/unified-registration" className="cta-button primary">
               Become a Member
             </Link>
-            <Link to="/contact" className="cta-button secondary">
+            <Link to="/about" className="cta-button secondary">
               Learn More
             </Link>
           </div>

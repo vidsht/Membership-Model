@@ -83,14 +83,29 @@ const Header = () => {
     return location.pathname === path ? 'nav-link active' : 'nav-link';
   };
 
+  // Responsive logo logic
+  const [logoSrc, setLogoSrc] = useState('/logo1.png');
+  useEffect(() => {
+    function handleResize() {
+      if (window.innerWidth <= 1024) {
+        setLogoSrc('/logo.png');
+      } else {
+        setLogoSrc('/logo1.png');
+      }
+    }
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   return (
     <header className={`${scrolled ? 'scrolled' : ''} ${headerHidden ? 'header--hidden' : 'header--visible'}`.trim()}>
       <div className="header-content">
         <div className="logo">
           <Link to="/" aria-label="Home">
             <img 
-              src="/logo1.png" 
-              alt="logo" 
+              src={logoSrc}
+              alt="logo"
               className="logo-img"
             />
           </Link>

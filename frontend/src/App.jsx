@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider } from './contexts/AuthContext';
@@ -49,6 +49,14 @@ import QuickEditDealLimit from './components/admin/BusinessPartners/QuickEditDea
 import MerchantDetailEdit from './components/admin/BusinessPartners/MerchantDetailEdit';
 import MerchantManagementEnhanced from './components/admin/BusinessPartners/MerchantManagementEnhanced';
 
+// ScrollToTop component
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
+}
 
 function AppContent() {
   const location = useLocation();
@@ -60,189 +68,192 @@ function AppContent() {
   usePerformanceValidation();
 
   return (
-    <div className="app">
-      {showHeader && <Header />}
-      <main className="main-content">
-        <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<UnifiedLogin />} />
-          <Route path="/unified-registration" element={<UnifiedRegistration />} />
-          <Route path="/business-directory" element={<BusinessDirectory />} />
-          <Route path="/deals" element={<Deals />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/terms" element={<Terms />} />
-          <Route path="/disclaimer" element={<Disclaimer />} />
-          <Route path="/business-benefits" element={<BusinessBenefits />} />
-          <Route path="/member-benefits" element={<MemberBenefits />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password/:token" element={<ResetPassword />} />
+    <>
+      <ScrollToTop />
+      <div className="app">
+        {showHeader && <Header />}
+        <main className="main-content">
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<UnifiedLogin />} />
+            <Route path="/unified-registration" element={<UnifiedRegistration />} />
+            <Route path="/business-directory" element={<BusinessDirectory />} />
+            <Route path="/deals" element={<Deals />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/disclaimer" element={<Disclaimer />} />
+            <Route path="/business-benefits" element={<BusinessBenefits />} />
+            <Route path="/member-benefits" element={<MemberBenefits />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password/:token" element={<ResetPassword />} />
 
-          {/* Protected Routes */}
-          <Route path="/dashboard" element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/merchant-dashboard" element={
-            <ProtectedRoute>
-              <MerchantDashboard />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/settings" element={
-            <ProtectedRoute>
-              <UserSettings />
-            </ProtectedRoute>
-          } />
+            {/* Protected Routes */}
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/merchant-dashboard" element={
+              <ProtectedRoute>
+                <MerchantDashboard />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/settings" element={
+              <ProtectedRoute>
+                <UserSettings />
+              </ProtectedRoute>
+            } />
 
-          {/* Admin Routes */}
-          <Route path="/admin" element={
-            <AdminRoute>
-              <AdminDashboard />
-            </AdminRoute>
-          } />
-          
-          <Route path="/admin/users" element={
-            <AdminRoute>
-              <UserManagement />
-            </AdminRoute>
-          } />
+            {/* Admin Routes */}
+            <Route path="/admin" element={
+              <AdminRoute>
+                <AdminDashboard />
+              </AdminRoute>
+            } />
+            
+            <Route path="/admin/users" element={
+              <AdminRoute>
+                <UserManagement />
+              </AdminRoute>
+            } />
 
-          <Route path="/admin/users/create" element={
-            <AdminRoute>
-              <UserForm />
-            </AdminRoute>
-          } />
+            <Route path="/admin/users/create" element={
+              <AdminRoute>
+                <UserForm />
+              </AdminRoute>
+            } />
 
-          <Route path="/admin/users/:userId" element={
-            <AdminRoute>
-              <UserDetailPage />
-            </AdminRoute>
-          } />
+            <Route path="/admin/users/:userId" element={
+              <AdminRoute>
+                <UserDetailPage />
+              </AdminRoute>
+            } />
 
-          <Route path="/admin/users/:userId/details" element={
-            <AdminRoute>
-              <UserDetailEdit />
-            </AdminRoute>
-          } />
+            <Route path="/admin/users/:userId/details" element={
+              <AdminRoute>
+                <UserDetailEdit />
+              </AdminRoute>
+            } />
 
-          <Route path="/admin/users/:userId/edit" element={
-            <AdminRoute>
-              <UserForm />
-            </AdminRoute>
-          } />
+            <Route path="/admin/users/:userId/edit" element={
+              <AdminRoute>
+                <UserForm />
+              </AdminRoute>
+            } />
 
-          <Route path="/admin/users/:userId/assign-plan" element={
-            <AdminRoute>
-              <PlanAssignment />
-            </AdminRoute>
-          } />
-          
-          {/* Business Partner Routes */}
-          <Route path="/admin/partners" element={
-            <AdminRoute>
-              <MerchantManagementEnhanced />
-            </AdminRoute>
-          } />
-          
-          <Route path="/admin/partners/register" element={
-            <AdminRoute>
-              <PartnerRegistration />
-            </AdminRoute>
-          } />
-          
-          <Route path="/admin/partners/:id/edit" element={
-            <AdminRoute>
-              <PartnerRegistration />
-            </AdminRoute>
-          } />
-          
-          <Route path="/admin/partners/:id" element={
-            <AdminRoute>
-              <PartnerDetail />
-            </AdminRoute>
-          } />
-          
-          <Route path="/admin/partners/:id/details" element={
-            <AdminRoute>
-              <PartnerDetail />
-            </AdminRoute>
-          } />
-          
-          <Route path="/admin/partners/:id/detail-edit" element={
-            <AdminRoute>
-              <MerchantDetailEdit />
-            </AdminRoute>
-          } />
-          
-          <Route path="/admin/partners/:id/quick-edit" element={
-            <AdminRoute>
-              <QuickEditDealLimit />
-            </AdminRoute>
-          } />
-          
-          <Route path="/admin/settings" element={
-            <AdminRoute>
-              <AdminSettings />
-            </AdminRoute>
-          } />
-          
-          <Route path="/admin/plans-settings" element={
-            <AdminRoute>
-              <PlanSettings />
-            </AdminRoute>
-          } />
-          
-          <Route path="/admin/plan-assignment" element={
-            <AdminRoute>
-              <PlanAssignment />
-            </AdminRoute>
-          } />
-          
-          <Route path="/admin/plan-management" element={
-            <AdminRoute>
-              <PlanManagement />
-            </AdminRoute>
-          } />
-          
-          <Route path="/admin/plan-management/users/:userId/assign-plan" element={
-            <AdminRoute>
-              <PlanAssignment />
-            </AdminRoute>
-          } />
-          
-          <Route path="/admin/deals/create" element={
-            <AdminRoute>
-              <DealForm />
-            </AdminRoute>
-          } />
-          
-          <Route path="/admin/deals/:dealId" element={
-            <AdminRoute>
-              <DealDetail />
-            </AdminRoute>
-          } />
-          
-          <Route path="/admin/deals/:dealId/edit" element={
-            <AdminRoute>
-              <DealForm />
-            </AdminRoute>
-          } />
-          
-          <Route path="/admin/activities" element={
-            <AdminRoute>
-              <Activities />
-            </AdminRoute>
-          } />
-        </Routes>
-      </main>
-      {showHeader && <Footer />}
-      <Toast />
-      <PerformanceDevTools />
-    </div>
+            <Route path="/admin/users/:userId/assign-plan" element={
+              <AdminRoute>
+                <PlanAssignment />
+              </AdminRoute>
+            } />
+            
+            {/* Business Partner Routes */}
+            <Route path="/admin/partners" element={
+              <AdminRoute>
+                <MerchantManagementEnhanced />
+              </AdminRoute>
+            } />
+            
+            <Route path="/admin/partners/register" element={
+              <AdminRoute>
+                <PartnerRegistration />
+              </AdminRoute>
+            } />
+            
+            <Route path="/admin/partners/:id/edit" element={
+              <AdminRoute>
+                <PartnerRegistration />
+              </AdminRoute>
+            } />
+            
+            <Route path="/admin/partners/:id" element={
+              <AdminRoute>
+                <PartnerDetail />
+              </AdminRoute>
+            } />
+            
+            <Route path="/admin/partners/:id/details" element={
+              <AdminRoute>
+                <PartnerDetail />
+              </AdminRoute>
+            } />
+            
+            <Route path="/admin/partners/:id/detail-edit" element={
+              <AdminRoute>
+                <MerchantDetailEdit />
+              </AdminRoute>
+            } />
+            
+            <Route path="/admin/partners/:id/quick-edit" element={
+              <AdminRoute>
+                <QuickEditDealLimit />
+              </AdminRoute>
+            } />
+            
+            <Route path="/admin/settings" element={
+              <AdminRoute>
+                <AdminSettings />
+              </AdminRoute>
+            } />
+            
+            <Route path="/admin/plans-settings" element={
+              <AdminRoute>
+                <PlanSettings />
+              </AdminRoute>
+            } />
+            
+            <Route path="/admin/plan-assignment" element={
+              <AdminRoute>
+                <PlanAssignment />
+              </AdminRoute>
+            } />
+            
+            <Route path="/admin/plan-management" element={
+              <AdminRoute>
+                <PlanManagement />
+              </AdminRoute>
+            } />
+            
+            <Route path="/admin/plan-management/users/:userId/assign-plan" element={
+              <AdminRoute>
+                <PlanAssignment />
+              </AdminRoute>
+            } />
+            
+            <Route path="/admin/deals/create" element={
+              <AdminRoute>
+                <DealForm />
+              </AdminRoute>
+            } />
+            
+            <Route path="/admin/deals/:dealId" element={
+              <AdminRoute>
+                <DealDetail />
+              </AdminRoute>
+            } />
+            
+            <Route path="/admin/deals/:dealId/edit" element={
+              <AdminRoute>
+                <DealForm />
+              </AdminRoute>
+            } />
+            
+            <Route path="/admin/activities" element={
+              <AdminRoute>
+                <Activities />
+              </AdminRoute>
+            } />
+          </Routes>
+        </main>
+        {showHeader && <Footer />}
+        <Toast />
+        <PerformanceDevTools />
+      </div>
+    </>
   );
 }
 

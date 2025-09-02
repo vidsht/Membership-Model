@@ -395,7 +395,7 @@ const Home = () => {
               </div>
               <h3 className="feature-title">1,000+ Exclusive Offers & Deals Will Be Listed</h3>
               <p className="feature-description">Over 1,000 exclusive offers and curated deals will be listed, providing meaningful value and everyday savings for our Indian community in Ghana.</p>
-              <a href="/deals" className="feature-link">Learn More <i className="fas fa-arrow-right"></i></a>
+              <a href="/deals" className="feature-link">View Deals <i className="fas fa-arrow-right"></i></a>
             </div>
             <div className="feature-card">
               <div className="feature-icon">
@@ -403,7 +403,7 @@ const Home = () => {
               </div>
               <h3 className="feature-title">100+ Trusted Partner Businesses Will Be Onboard</h3>
               <p className="feature-description">Over 25 major sectors will be covered, ensuring members enjoy benefits across every essential area of life</p>
-              <a href="/business-directory" className="feature-link">View Benefits <i className="fas fa-arrow-right"></i></a>
+              <a href="/business-directory" className="feature-link">Explore Business <i className="fas fa-arrow-right"></i></a>
             </div>
             <div className="feature-card">
               <div className="feature-icon">
@@ -759,10 +759,10 @@ const Home = () => {
           <h2>Join Our Community Today</h2>
           <p>Be part of a growing network of Indians in Ghana and unlock exclusive benefits</p>
           <div className="cta-buttons">
-            <Link to="/unified-registration" className="btn btn-primary">
+            <Link to="/unified-registration" className="btn btn-primary-join">
               <i className="fas fa-user-plus"></i> Join Now
             </Link>
-            <Link to="/login" className="btn btn-secondary">
+            <Link to="/login" className="btn btn-secondary-join">
               <i className="fas fa-sign-in-alt"></i> Sign In
             </Link>
           </div>

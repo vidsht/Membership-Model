@@ -651,6 +651,7 @@
 }
 
 .forgot-password:hover {
+  color:#a77b38;
   text-decoration: underline;
 }
 

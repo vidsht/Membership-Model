@@ -97,7 +97,7 @@ const ForgotPassword = () => {
           )}
           
           <div style={{ marginTop: '20px', textAlign: 'center' }}>
-            <Link to="/login" style={{ color: '#3b82f6' }}>
+            <Link to="/login" style={{ color: '#821515' }}>
               <i className="fas fa-arrow-left"></i> Back to Login
             </Link>
           </div>

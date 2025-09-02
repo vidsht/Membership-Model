@@ -195,6 +195,7 @@
 }
 
 .action-buttons .btn {
+  background: #5B0E0E;
   padding: 0.8rem 1.5rem;
   border-radius: 8px;
   text-decoration: none;
@@ -205,24 +206,31 @@
   transition: all 0.3s ease;
 }
 
-.action-buttons .btn-secondary {
-  background: #6c757d;
-  color: white;
-  border: none;
-}
-
-.action-buttons .btn-secondary:hover {
-  background: #5a6268;
+.action-buttons .btn:hover {
+  background: #E3C192;
+  color: #5B0E0E;
   transform: translateY(-2px);
 }
 
-.action-buttons .btn-primary {
-  background: linear-gradient(135deg, #ff7b7b 0%, #e84393 100%);
+.action-buttons .btn-secondary-home {
+  background: #5B0E0E;
   color: white;
   border: none;
 }
 
-.action-buttons .btn-primary:hover {
+.action-buttons .btn-secondary-home:hover {
+  background: #E3C192;
+  color: #5B0E0E;
+  transform: translateY(-2px);
+}
+
+.action-buttons .btn-primary-home {
+  background: linear-gradient(135deg,  0% #5B0E0E, #5B0E0E 100%);
+  color: white;
+  border: none;
+}
+
+.action-buttons .btn-primary-home:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 15px rgba(232, 67, 147, 0.3);
 }

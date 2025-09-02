@@ -886,16 +886,20 @@ const MerchantDashboard = () => {
             <p>Your business is currently under review by our admin team. Once approved, you'll have access to:</p>
             <div className="pending-features">
               <div className="pending-feature">
-                <i className="fas fa-chart-bar"></i> Business Analytics
+                <i className="fas fa-chart-bar"></i>
+                Business Analytics
               </div>
               <div className="pending-feature">
-                <i className="fas fa-tags"></i> Deal Management
+                <i className="fas fa-tags"></i>
+                Deal Management
               </div>
               <div className="pending-feature">
-                <i className="fas fa-users"></i> Customer Insights
+                <i className="fas fa-users"></i>
+                Customer Insights
               </div>
               <div className="pending-feature">
-                <i className="fas fa-crown"></i> Premium Features
+                <i className="fas fa-crown"></i>
+                Premium Features
               </div>
             </div>
           </div>
@@ -2024,47 +2028,11 @@ const MerchantDashboard = () => {
                             <strong><i className="fas fa-user"></i> Full Name:</strong>
                             <span>{memberVerificationResult.fullName}</span>
                           </div>
-                          
                           <div className="info-item">
                             <strong><i className="fas fa-id-card"></i> Membership Number:</strong>
                             <span>{memberVerificationResult.membershipNumber}</span>
                           </div>
-                          
-                          <div className="info-item">
-                            <strong><i className="fas fa-crown"></i> Membership Type:</strong>
-                            <span className="membership-type">
-                              {memberVerificationResult.membershipType || 'Basic'}
-                            </span>
-                          </div>
-                          
-                          <div className="info-item">
-                            <strong><i className="fas fa-calendar-alt"></i> Plan Expiry:</strong>
-                            <span className={memberVerificationResult.planExpiryDate ? 'expiry-date' : 'no-expiry'}>
-                              {/* Plan expiry removed as per backend change */}
-                            </span>
-                          </div>
-                          
-                          <div className="info-item">
-                            <strong><i className="fas fa-phone"></i> Contact:</strong>
-                            <span>{memberVerificationResult.phone || 'Not provided'}</span>
-                          </div>
-                          
-                          <div className="info-item">
-                            <strong><i className="fas fa-envelope"></i> Email:</strong>
-                            <span>{memberVerificationResult.email || 'Not provided'}</span>
-                          </div>
                         </div>
-
-                        {/* Plan Details if available */}
-                        {memberVerificationResult.planName && (
-                          <div className="plan-details">
-                            <h5><i className="fas fa-star"></i> Plan Details</h5>
-                            <div className="plan-info">
-                              <span className="plan-name">{memberVerificationResult.planName}</span>
-                              <span className="plan-priority">Priority: {memberVerificationResult.planPriority || 'N/A'}</span>
-                            </div>
-                          </div>
-                        )}
 
                         {/* Verification timestamp */}
                         <div className="verification-timestamp">

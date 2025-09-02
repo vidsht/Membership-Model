@@ -58,7 +58,7 @@ html {
   padding: 18px 25px;
   border: none;
   background: transparent;
-  color: var(--primary-color);
+  color: #8D1515;
   font-weight: 600;
   font-size: 1rem;
   cursor: pointer;
@@ -84,7 +84,7 @@ html {
 }
 
 .tab-btn:hover:not(.active) {
-  background: rgba(102, 126, 234, 0.1);
+  background: #fbecbf9d;
   transform: translateY(-1px);
 }
 
@@ -465,7 +465,8 @@ html {
 
 .register-button:hover:not(:disabled),
 .register-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #A01818, #5A0909);
+  background: #FBDB93;
+  color: #4d0505;
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(141, 21, 21, 0.4);
 }
@@ -567,6 +568,12 @@ html {
   border: solid white;
   border-width: 0 2px 2px 0;
   transform: rotate(45deg);
+}
+
+/* Home icon hover effect for registration/login */
+.back-home:hover {
+  filter: drop-shadow(0 0 6px #660B05);
+  transform: scale(1.15);
 }
 
 /* Responsive Design */

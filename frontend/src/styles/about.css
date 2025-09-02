@@ -398,24 +398,26 @@
 }
 
 .cta-button-primary {
-  background: white;
-  color: #560C0C;
+  background: #560C0C;
+  color: white;
 }
 
 .cta-button-primary:hover {
-  background: #f8f9ff;
+  background: white;
+  color: #560C0C;
   transform: translateY(-2px);
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
 }
 
 .cta-button-secondary {
-  background: transparent;
+  background: #560C0C;
   color: white;
   border: 2px solid rgba(255, 255, 255, 0.3);
 }
 
 .cta-button-secondary:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: white;
+  color: #560C0C;
   border-color: rgba(255, 255, 255, 0.5);
   transform: translateY(-2px);
 }

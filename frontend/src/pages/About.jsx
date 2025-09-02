@@ -39,7 +39,7 @@ const About = () => {
           <div className="hero-content-about">
             <h1>About Indians in Ghana</h1>
             <p>
-              Connecting, celebrating, and empowering the vibrant Indian community across Ghana since 2010
+              Connecting, celebrating, and empowering the vibrant Indian community across Ghana since 2022
             </p>
           </div>
         </div>
@@ -171,7 +171,7 @@ const About = () => {
             make meaningful connections, and celebrate our culture together.
           </p>
           <div className="cta-buttons">
-            <a href="//unified-registration" className="cta-button-primary">
+            <a href="/unified-registration" className="cta-button-primary">
               <i className="fas fa-user-plus"></i> Register Now
             </a>
             <a href="/contact" className="cta-button-secondary">
