@@ -79,6 +79,10 @@ const Deals = () => {
     search: ''
   });
   const [loading, setLoading] = useState(true);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const dealsPerPage = 6; // Show 6 deals per page
   const [redeemStatus, setRedeemStatus] = useState({});
 
   // Redemption confirmation modal state
@@ -156,7 +160,19 @@ const Deals = () => {
     }
     
     setFilteredDeals(result);
+    setCurrentPage(1); // Reset to first page when filters change
   }, [filters, deals, plans]);
+
+  // Calculate pagination values
+  const totalPages = Math.ceil(filteredDeals.length / dealsPerPage);
+  const startIndex = (currentPage - 1) * dealsPerPage;
+  const endIndex = startIndex + dealsPerPage;
+  const currentDeals = filteredDeals.slice(startIndex, endIndex);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const fetchDeals = async () => {
     setLoading(true);
@@ -297,7 +313,7 @@ const Deals = () => {
         <div className="no-deals">No deals available.</div>
       ) : (
         <div className="deals-grid">
-          {filteredDeals.map(deal => {
+          {currentDeals.map(deal => {
             const shortDescription = deal.description?.length > 100 
               ? `${deal.description.substring(0, 100)}...` 
               : deal.description;
@@ -446,11 +462,47 @@ const Deals = () => {
                 )}
               </div>
             </div>
-          )})}
+          );
+        })}
+        
+        {/* Pagination Controls */}
+        {totalPages > 1 && (
+          <div className="pagination-container">
+            <div className="pagination">
+              <button
+                className={`pagination-btn ${currentPage === 1 ? 'disabled' : ''}`}
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                <i className="fas fa-chevron-left"></i>
+              </button>
+              
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                <button
+                  key={page}
+                  className={`pagination-btn ${currentPage === page ? 'active' : ''}`}
+                  onClick={() => handlePageChange(page)}
+                >
+                  {page}
+                </button>
+              ))}
+              
+              <button
+                className={`pagination-btn ${currentPage === totalPages ? 'disabled' : ''}`}
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                <i className="fas fa-chevron-right"></i>
+              </button>
+            </div>
+            
+            <div className="pagination-info">
+              Showing {startIndex + 1}-{Math.min(endIndex, filteredDeals.length)} of {filteredDeals.length} deals
+            </div>
+          </div>
+        )}
         </div>
       )}
-      
-      {/* Redemption Confirmation Modal */}
       {showRedemptionModal && selectedDeal && (
         <div className="modal-overlay">
           <div className="modal-content redemption-modal">

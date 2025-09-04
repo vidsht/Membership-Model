@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider } from './contexts/AuthContext';
@@ -9,45 +9,48 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import ErrorBoundary from './components/ErrorBoundary';
 import Toast from './components/Toast';
+import ProtectedRoute from './components/ProtectedRoute';
+import AdminRoute from './components/admin/AdminRoute';
+
+// Critical routes - load immediately
 import Home from './pages/Home';
 import UnifiedLogin from './pages/UnifiedLogin';
 import UnifiedRegistration from './pages/UnifiedRegistration';
-import BusinessDirectory from './components/BusinessDirectory';
-import Deals from './pages/Deals';
-// import Register from './pages/UserRegister';
-// import RegisterClean from './pages/RegisterClean';
-// import MerchantRegister from './pages/MerchantRegister';
-import MerchantDashboard from './pages/MerchantDashboard';
-import Dashboard from './pages/Dashboard';
-import UserSettings from './pages/UserSettings';
-import About from './pages/About';
-import Contact from './pages/Contact';
-import Terms from './pages/Terms';
-import Disclaimer from './pages/Disclaimer';
-import BusinessBenefits from './pages/BusinessBenefits';
-import MemberBenefits from './pages/MemberBenefits';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
-import ProtectedRoute from './components/ProtectedRoute';
-import AdminRoute from './components/admin/AdminRoute';
-import AdminDashboard from './components/admin/AdminDashboard';
-import UserManagement from './components/admin/UserManagement/UserManagement';
-import UserForm from './components/admin/UserManagement/UserForm';
-import UserDetailPage from './components/admin/UserManagement/UserDetailPage';
-import UserDetailEdit from './components/admin/UserManagement/UserDetailEdit';
-import AdminSettings from './components/admin/Settings/AdminSettings';
-import PlanSettings from './components/admin/Settings/PlanSettings';
-import PlanAssignment from './components/admin/PlanManagement/PlanAssignment';
-import PlanManagement from './components/admin/PlanManagement/PlanManagement';
-import DealList from './components/admin/DealManagement/DealList';
-import DealForm from './components/admin/DealManagement/DealForm';
-import DealDetail from './components/admin/DealManagement/DealDetail';
-import Activities from './components/admin/Activities/Activities';
-import PartnerRegistration from './components/admin/BusinessPartners/PartnerRegistration';
-import PartnerDetail from './components/admin/BusinessPartners/PartnerDetail';
-import QuickEditDealLimit from './components/admin/BusinessPartners/QuickEditDealLimit';
-import MerchantDetailEdit from './components/admin/BusinessPartners/MerchantDetailEdit';
-import MerchantManagementEnhanced from './components/admin/BusinessPartners/MerchantManagementEnhanced';
+import Dashboard from './pages/Dashboard';
+import MerchantDashboard from './pages/MerchantDashboard';
+
+// Lazy load non-critical routes for better performance
+const BusinessDirectory = lazy(() => import('./components/BusinessDirectory'));
+const Deals = lazy(() => import('./pages/Deals'));
+const UserSettings = lazy(() => import('./pages/UserSettings'));
+const About = lazy(() => import('./pages/About'));
+const Contact = lazy(() => import('./pages/Contact'));
+const Terms = lazy(() => import('./pages/Terms'));
+const Disclaimer = lazy(() => import('./pages/Disclaimer'));
+const BusinessBenefits = lazy(() => import('./pages/BusinessBenefits'));
+const MemberBenefits = lazy(() => import('./pages/MemberBenefits'));
+
+// Admin routes - lazy loaded
+const AdminDashboard = lazy(() => import('./components/admin/AdminDashboard'));
+const UserManagement = lazy(() => import('./components/admin/UserManagement/UserManagement'));
+const UserForm = lazy(() => import('./components/admin/UserManagement/UserForm'));
+const UserDetailPage = lazy(() => import('./components/admin/UserManagement/UserDetailPage'));
+const UserDetailEdit = lazy(() => import('./components/admin/UserManagement/UserDetailEdit'));
+const AdminSettings = lazy(() => import('./components/admin/Settings/AdminSettings'));
+const PlanSettings = lazy(() => import('./components/admin/Settings/PlanSettings'));
+const PlanAssignment = lazy(() => import('./components/admin/PlanManagement/PlanAssignment'));
+const PlanManagement = lazy(() => import('./components/admin/PlanManagement/PlanManagement'));
+const DealList = lazy(() => import('./components/admin/DealManagement/DealList'));
+const DealForm = lazy(() => import('./components/admin/DealManagement/DealForm'));
+const DealDetail = lazy(() => import('./components/admin/DealManagement/DealDetail'));
+const Activities = lazy(() => import('./components/admin/Activities/Activities'));
+const PartnerRegistration = lazy(() => import('./components/admin/BusinessPartners/PartnerRegistration'));
+const PartnerDetail = lazy(() => import('./components/admin/BusinessPartners/PartnerDetail'));
+const QuickEditDealLimit = lazy(() => import('./components/admin/BusinessPartners/QuickEditDealLimit'));
+const MerchantDetailEdit = lazy(() => import('./components/admin/BusinessPartners/MerchantDetailEdit'));
+const MerchantManagementEnhanced = lazy(() => import('./components/admin/BusinessPartners/MerchantManagementEnhanced'));
 
 // ScrollToTop component
 function ScrollToTop() {
@@ -67,6 +70,20 @@ function AppContent() {
   usePerformanceOptimizations();
   usePerformanceValidation();
 
+  // Loading fallback component for lazy routes
+  const LazyFallback = () => (
+    <div style={{ 
+      padding: '2rem', 
+      textAlign: 'center',
+      minHeight: '200px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }}>
+      <div>Loading...</div>
+    </div>
+  );
+
   return (
     <>
       <ScrollToTop />
@@ -78,14 +95,46 @@ function AppContent() {
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<UnifiedLogin />} />
             <Route path="/unified-registration" element={<UnifiedRegistration />} />
-            <Route path="/business-directory" element={<BusinessDirectory />} />
-            <Route path="/deals" element={<Deals />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/terms" element={<Terms />} />
-            <Route path="/disclaimer" element={<Disclaimer />} />
-            <Route path="/business-benefits" element={<BusinessBenefits />} />
-            <Route path="/member-benefits" element={<MemberBenefits />} />
+            <Route path="/business-directory" element={
+              <Suspense fallback={<LazyFallback />}>
+                <BusinessDirectory />
+              </Suspense>
+            } />
+            <Route path="/deals" element={
+              <Suspense fallback={<LazyFallback />}>
+                <Deals />
+              </Suspense>
+            } />
+            <Route path="/about" element={
+              <Suspense fallback={<LazyFallback />}>
+                <About />
+              </Suspense>
+            } />
+            <Route path="/contact" element={
+              <Suspense fallback={<LazyFallback />}>
+                <Contact />
+              </Suspense>
+            } />
+            <Route path="/terms" element={
+              <Suspense fallback={<LazyFallback />}>
+                <Terms />
+              </Suspense>
+            } />
+            <Route path="/disclaimer" element={
+              <Suspense fallback={<LazyFallback />}>
+                <Disclaimer />
+              </Suspense>
+            } />
+            <Route path="/business-benefits" element={
+              <Suspense fallback={<LazyFallback />}>
+                <BusinessBenefits />
+              </Suspense>
+            } />
+            <Route path="/member-benefits" element={
+              <Suspense fallback={<LazyFallback />}>
+                <MemberBenefits />
+              </Suspense>
+            } />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password/:token" element={<ResetPassword />} />
 
@@ -98,153 +147,203 @@ function AppContent() {
             
             <Route path="/merchant-dashboard" element={
               <ProtectedRoute>
-                <MerchantDashboard />
+                <Suspense fallback={<LazyFallback />}>
+                  <MerchantDashboard />
+                </Suspense>
               </ProtectedRoute>
             } />
             
             <Route path="/settings" element={
               <ProtectedRoute>
-                <UserSettings />
+                <Suspense fallback={<LazyFallback />}>
+                  <UserSettings />
+                </Suspense>
               </ProtectedRoute>
             } />
 
             {/* Admin Routes */}
             <Route path="/admin" element={
               <AdminRoute>
-                <AdminDashboard />
+                <Suspense fallback={<LazyFallback />}>
+                  <AdminDashboard />
+                </Suspense>
               </AdminRoute>
             } />
             
             <Route path="/admin/users" element={
               <AdminRoute>
-                <UserManagement />
+                <Suspense fallback={<LazyFallback />}>
+                  <UserManagement />
+                </Suspense>
               </AdminRoute>
             } />
 
             <Route path="/admin/users/create" element={
               <AdminRoute>
-                <UserForm />
+                <Suspense fallback={<LazyFallback />}>
+                  <UserForm />
+                </Suspense>
               </AdminRoute>
             } />
 
             <Route path="/admin/users/:userId" element={
               <AdminRoute>
-                <UserDetailPage />
+                <Suspense fallback={<LazyFallback />}>
+                  <UserDetailPage />
+                </Suspense>
               </AdminRoute>
             } />
 
             <Route path="/admin/users/:userId/details" element={
               <AdminRoute>
-                <UserDetailEdit />
+                <Suspense fallback={<LazyFallback />}>
+                  <UserDetailEdit />
+                </Suspense>
               </AdminRoute>
             } />
 
             <Route path="/admin/users/:userId/edit" element={
               <AdminRoute>
-                <UserForm />
+                <Suspense fallback={<LazyFallback />}>
+                  <UserForm />
+                </Suspense>
               </AdminRoute>
             } />
 
             <Route path="/admin/users/:userId/assign-plan" element={
               <AdminRoute>
-                <PlanAssignment />
+                <Suspense fallback={<LazyFallback />}>
+                  <PlanAssignment />
+                </Suspense>
               </AdminRoute>
             } />
             
             {/* Business Partner Routes */}
             <Route path="/admin/partners" element={
               <AdminRoute>
-                <MerchantManagementEnhanced />
+                <Suspense fallback={<LazyFallback />}>
+                  <MerchantManagementEnhanced />
+                </Suspense>
               </AdminRoute>
             } />
             
             <Route path="/admin/partners/register" element={
               <AdminRoute>
-                <PartnerRegistration />
+                <Suspense fallback={<LazyFallback />}>
+                  <PartnerRegistration />
+                </Suspense>
               </AdminRoute>
             } />
             
             <Route path="/admin/partners/:id/edit" element={
               <AdminRoute>
-                <PartnerRegistration />
+                <Suspense fallback={<LazyFallback />}>
+                  <PartnerRegistration />
+                </Suspense>
               </AdminRoute>
             } />
             
             <Route path="/admin/partners/:id" element={
               <AdminRoute>
-                <PartnerDetail />
+                <Suspense fallback={<LazyFallback />}>
+                  <PartnerDetail />
+                </Suspense>
               </AdminRoute>
             } />
             
             <Route path="/admin/partners/:id/details" element={
               <AdminRoute>
-                <PartnerDetail />
+                <Suspense fallback={<LazyFallback />}>
+                  <PartnerDetail />
+                </Suspense>
               </AdminRoute>
             } />
             
             <Route path="/admin/partners/:id/detail-edit" element={
               <AdminRoute>
-                <MerchantDetailEdit />
+                <Suspense fallback={<LazyFallback />}>
+                  <MerchantDetailEdit />
+                </Suspense>
               </AdminRoute>
             } />
             
             <Route path="/admin/partners/:id/quick-edit" element={
               <AdminRoute>
-                <QuickEditDealLimit />
+                <Suspense fallback={<LazyFallback />}>
+                  <QuickEditDealLimit />
+                </Suspense>
               </AdminRoute>
             } />
             
             <Route path="/admin/settings" element={
               <AdminRoute>
-                <AdminSettings />
+                <Suspense fallback={<LazyFallback />}>
+                  <AdminSettings />
+                </Suspense>
               </AdminRoute>
             } />
             
             <Route path="/admin/plans-settings" element={
               <AdminRoute>
-                <PlanSettings />
+                <Suspense fallback={<LazyFallback />}>
+                  <PlanSettings />
+                </Suspense>
               </AdminRoute>
             } />
             
             <Route path="/admin/plan-assignment" element={
               <AdminRoute>
-                <PlanAssignment />
+                <Suspense fallback={<LazyFallback />}>
+                  <PlanAssignment />
+                </Suspense>
               </AdminRoute>
             } />
             
             <Route path="/admin/plan-management" element={
               <AdminRoute>
-                <PlanManagement />
+                <Suspense fallback={<LazyFallback />}>
+                  <PlanManagement />
+                </Suspense>
               </AdminRoute>
             } />
             
             <Route path="/admin/plan-management/users/:userId/assign-plan" element={
               <AdminRoute>
-                <PlanAssignment />
+                <Suspense fallback={<LazyFallback />}>
+                  <PlanAssignment />
+                </Suspense>
               </AdminRoute>
             } />
             
             <Route path="/admin/deals/create" element={
               <AdminRoute>
-                <DealForm />
+                <Suspense fallback={<LazyFallback />}>
+                  <DealForm />
+                </Suspense>
               </AdminRoute>
             } />
             
             <Route path="/admin/deals/:dealId" element={
               <AdminRoute>
-                <DealDetail />
+                <Suspense fallback={<LazyFallback />}>
+                  <DealDetail />
+                </Suspense>
               </AdminRoute>
             } />
             
             <Route path="/admin/deals/:dealId/edit" element={
               <AdminRoute>
-                <DealForm />
+                <Suspense fallback={<LazyFallback />}>
+                  <DealForm />
+                </Suspense>
               </AdminRoute>
             } />
             
             <Route path="/admin/activities" element={
               <AdminRoute>
-                <Activities />
+                <Suspense fallback={<LazyFallback />}>
+                  <Activities />
+                </Suspense>
               </AdminRoute>
             } />
           </Routes>

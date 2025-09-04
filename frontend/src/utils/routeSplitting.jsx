@@ -93,15 +93,11 @@ const LazyRouteComponents = {
  * Eagerly loaded components (critical paths that must not be lazy loaded)
  */
 const EagerComponents = {
-	// QR/Barcode critical components - NEVER lazy load these
-	MembershipCard: React.lazy(() => import('../components/MembershipCard.jsx')),
-	MerchantCertificate: React.lazy(() => import('../components/MerchantCertificate.jsx')),
-  
-	// Image processing components
-	ImageUpload: React.lazy(() => import('../components/common/ImageUpload.jsx')),
+	// Image processing components - only if not statically imported elsewhere
+	// ImageUpload: React.lazy(() => import('../components/common/ImageUpload.jsx')), // Removed - statically imported in UserSettings
   
 	// Dashboard and admin (contain critical functionality)
-	Dashboard: React.lazy(() => import('../pages/Dashboard.jsx')),
+	// Dashboard: React.lazy(() => import('../pages/Dashboard.jsx')), // Removed - statically imported as critical component
 	AdminDashboard: React.lazy(() => import('../components/admin/AdminDashboard.jsx')),
 	MerchantDashboard: React.lazy(() => import('../pages/MerchantDashboard.jsx')),
   

@@ -14,6 +14,8 @@ const MerchantDashboard = () => {
   const { getDealBannerUrl } = useImageUrl(); 
   const [deals, setDeals] = useState([]);
   const [plans, setPlans] = useState([]);
+  const [currentMerchantPlan, setCurrentMerchantPlan] = useState(null);
+  const [upgradeRecommendations, setUpgradeRecommendations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showDealForm, setShowDealForm] = useState(false);
   const [showBusinessForm, setShowBusinessForm] = useState(false);
@@ -77,11 +79,35 @@ const MerchantDashboard = () => {
     fetchPlans();
   }, []);
 
-  // Fetch user plans for access level display
+  // Fetch merchant plans for access level display
   const fetchPlans = async () => {
     try {
-      const plansResponse = await getAllPlans('user', true);
-      setPlans(Array.isArray(plansResponse) ? plansResponse : plansResponse.plans || []);
+      // Fetch merchant plans (not user plans!) for merchant upgrade recommendations
+      const plansResponse = await getAllPlans('merchant', true);
+      const allPlans = Array.isArray(plansResponse) ? plansResponse : plansResponse.plans || [];
+      setPlans(allPlans);
+      
+      // Find current merchant's plan
+      const userPlanType = user?.membershipType || user?.membership || 'basic';
+      
+      // Primary matching should be by plan key, which matches membershipType
+      const foundPlan = allPlans.find(plan => 
+        plan.key?.toLowerCase() === userPlanType.toLowerCase()
+      ) || allPlans.find(plan => 
+        plan.name?.toLowerCase() === userPlanType.toLowerCase()
+      ) || allPlans.find(plan => 
+        plan.type === userPlanType
+      );
+      
+      setCurrentMerchantPlan(foundPlan);
+
+      // Get upgrade recommendations (plans with higher priority)
+      const currentPriority = foundPlan?.priority || 0;
+      const recommendations = allPlans
+        .filter(plan => plan.priority > currentPriority && plan.isActive)
+        .sort((a, b) => a.priority - b.priority)
+        .slice(0, 3); // Show max 3 upgrade options
+      setUpgradeRecommendations(recommendations);
     } catch (error) {
       console.error('Error fetching plans:', error);
       setPlans([]);
@@ -189,6 +215,63 @@ const MerchantDashboard = () => {
 
   const isBasicPlan = (membershipType) => {
     return membershipType === 'basic' || !membershipType;
+  };
+
+  // Get merchant benefits based on plan data
+  const getMerchantBenefits = (planData) => {
+    // If we have plan data from the API, use its benefits
+    if (planData?.benefits && Array.isArray(planData.benefits)) {
+      return planData.benefits;
+    }
+
+    // Fallback to hardcoded benefits based on plan name/type
+    const planName = planData?.name?.toLowerCase() || planData?.type?.toLowerCase() || 'basic';
+    
+    switch (planName) {
+      case 'platinum':
+      case 'platinum_business':
+      case 'featured':
+        return [
+          'Unlimited deal creation and management',
+          'Premium business listing with featured placement',
+          'Advanced analytics and customer insights',
+          'Priority customer support and account management',
+          'Featured logo placement on homepage',
+          'Monthly performance reports and recommendations',
+          'Community networking events access',
+          'Enhanced business profile customization'
+        ];
+      case 'gold':
+      case 'gold_business':
+      case 'premium':
+        return [
+          'Up to 20 deals per month',
+          'Enhanced business listing with priority placement',
+          'Basic analytics dashboard and insights',
+          'Community networking access',
+          'Email marketing support',
+          'Monthly newsletter feature',
+          'Business profile customization'
+        ];
+      case 'silver':
+      case 'silver_business':
+        return [
+          'Up to 10 deals per month',
+          'Standard business listing',
+          'Basic business profile',
+          'Community directory inclusion',
+          'Event notifications',
+          'Standard customer support'
+        ];
+      default:
+        return [
+          'Up to 5 deals per month',
+          'Basic business listing',
+          'Community directory access',
+          'Basic customer support',
+          'Event notifications'
+        ];
+    }
   };
 
   // Pagination helper component
@@ -1096,6 +1179,61 @@ const MerchantDashboard = () => {
           </button>
         </div>
       </div>
+
+      {/* Merchant Plan Upgrade Recommendations */}
+      {upgradeRecommendations.length > 0 && (
+        <div className="upgrade-section">
+          <div className="upgrade-header">
+            <h2>
+              <i className="fas fa-rocket"></i>
+              Grow Your Business
+            </h2>
+            <p>Unlock more features and reach more customers with an upgraded plan</p>
+          </div>
+          
+          <div className="upgrade-plans-grid">
+            {upgradeRecommendations.map((plan) => (
+              <div key={plan.id} className="upgrade-plan-card merchant-upgrade">
+                <div className="plan-header">
+                  <h3>{plan.name}</h3>
+                  <div className="plan-price">
+                    <span className="currency">{plan.currency}</span>
+                    <span className="amount">{plan.price}</span>
+                    <span className="period">/{plan.billingCycle}</span>
+                  </div>
+                </div>
+                
+                <div className="plan-benefits">
+                  <h4>What You'll Get:</h4>
+                  <ul>
+                    {getMerchantBenefits(plan).slice(0, 5).map((benefit, index) => (
+                      <li key={index}>
+                        <i className="fas fa-check"></i>
+                        {benefit}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                
+                <div className="plan-features-highlight">
+                  <div className="feature-comparison">
+                    <div className="current-vs-upgrade">
+                      <span className="current-label">Current: {currentMerchantPlan?.name || 'Basic'}</span>
+                      <i className="fas fa-arrow-right"></i>
+                      <span className="upgrade-label">Upgrade: {plan.name}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <button className="btn-upgrade-plan">
+                  <i className="fas fa-arrow-up"></i>
+                  Upgrade to {plan.name}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Recent Redemptions */}
       {recentRedemptions && recentRedemptions.length > 0 && (

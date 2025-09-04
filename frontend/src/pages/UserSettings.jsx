@@ -956,7 +956,7 @@ const RedemptionHistoryTab = () => {
                 ></div>
               </div>
               <span className="progress-text">
-                {redemptionsUsed} / {userRedemptionLimit === -1 ? 'Unlimited' : userRedemptionLimit}
+                {usedForProgress} / {userRedemptionLimit === -1 ? 'Unlimited' : userRedemptionLimit}
               </span>
               {isCustomLimit && (
                 <small className="limit-explanation">

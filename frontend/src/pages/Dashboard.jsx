@@ -1,13 +1,53 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { PrivatePage } from '../components/SEOHead';
 import MembershipCard from '../components/MembershipCard';
 import MerchantCertificate from '../components/MerchantCertificate';
 import PlanExpiryBanner from '../components/PlanExpiryBanner';
+import { getAllPlans } from '../services/api';
 import '../styles/MerchantDashboard.css'; // Import for status-alert styles
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const [plans, setPlans] = useState([]);
+  const [currentPlan, setCurrentPlan] = useState(null);
+  const [upgradeRecommendations, setUpgradeRecommendations] = useState([]);
+
+  useEffect(() => {
+    const fetchPlans = async () => {
+      try {
+        const plansData = await getAllPlans('user');
+        setPlans(plansData);
+        
+        // Find current user's plan
+        const userPlanType = user?.membershipType || user?.membership || 'basic';
+        
+        // Primary matching should be by plan key, which matches membershipType
+        const foundPlan = plansData.find(plan => 
+          plan.key?.toLowerCase() === userPlanType.toLowerCase()
+        ) || plansData.find(plan => 
+          plan.name?.toLowerCase() === userPlanType.toLowerCase()
+        ) || plansData.find(plan => 
+          plan.type === userPlanType
+        );
+        setCurrentPlan(foundPlan);
+
+        // Get upgrade recommendations (plans with higher priority)
+        const currentPriority = foundPlan?.priority || 0;
+        const recommendations = plansData
+          .filter(plan => plan.priority > currentPriority && plan.isActive)
+          .sort((a, b) => a.priority - b.priority)
+          .slice(0, 3); // Show max 3 upgrade options
+        setUpgradeRecommendations(recommendations);
+      } catch (error) {
+        console.error('Error fetching plans:', error);
+      }
+    };
+
+    if (user) {
+      fetchPlans();
+    }
+  }, [user]);
 
   if (!user) {
     return (
@@ -18,31 +58,96 @@ const Dashboard = () => {
     );
   }
 
-  const getMembershipBenefits = (type) => {
-    switch (type) {
-      case 'silver':
-        return [
-          'Priority event booking',
-          'Monthly newsletter',
-          'Enhanced member profile',
-          'Digital membership card',
-          'Community event updates'
-        ];
-      case 'gold':
-        return [
-          'VIP event access',
-          'Direct community contact',
-          'Premium member support',
-          'All Silver benefits',
-          'Exclusive member perks'
-        ];
-      default:
-        return [
-          'Basic membership card',
-          'Community event updates',
-          'Member directory access',
-          'Newsletter subscription'
-        ];
+  const getMembershipBenefits = (planData, userType) => {
+    // If we have plan data from the API, use its benefits
+    if (planData?.benefits && Array.isArray(planData.benefits)) {
+      return planData.benefits;
+    }
+
+    // Fallback to hardcoded benefits based on plan name/type
+    const planName = planData?.name?.toLowerCase() || planData?.type?.toLowerCase() || 'basic';
+    
+    if (userType === 'merchant') {
+      switch (planName) {
+        case 'platinum':
+        case 'platinum_business':
+        case 'featured':
+          return [
+            'Premium business listing with featured placement',
+            'Unlimited deal creation and promotion',
+            'Advanced analytics and customer insights',
+            'Priority customer support',
+            'Community networking events access',
+            'Monthly performance reports',
+            'Featured logo placement on homepage'
+          ];
+        case 'gold':
+        case 'gold_business':
+        case 'premium':
+          return [
+            'Enhanced business listing',
+            'Up to 20 deals per month',
+            'Basic analytics dashboard',
+            'Community networking access',
+            'Email marketing support',
+            'Monthly newsletter feature'
+          ];
+        case 'silver':
+        case 'silver_business':
+          return [
+            'Standard business listing',
+            'Up to 10 deals per month',
+            'Basic business profile',
+            'Community directory inclusion',
+            'Event notifications'
+          ];
+        default:
+          return [
+            'Basic business listing',
+            'Up to 5 deals per month',
+            'Community directory access',
+            'Basic customer support'
+          ];
+      }
+    } else {
+      // Regular user benefits
+      switch (planName) {
+        case 'platinum':
+        case 'lifetime':
+          return [
+            'Unlimited exclusive deals access',
+            'VIP event access and priority booking',
+            'Concierge support services',
+            'Digital membership card with premium design',
+            'Community networking events',
+            'Travel assistance and discounts',
+            'Priority customer support'
+          ];
+        case 'gold':
+          return [
+            'Access to premium deals (up to 50% off)',
+            'Priority event booking',
+            'Enhanced member support',
+            'Digital membership card',
+            'Monthly community newsletter',
+            'Networking event invitations'
+          ];
+        case 'silver':
+          return [
+            'Access to standard deals (up to 30% off)',
+            'Event notifications and booking',
+            'Digital membership card',
+            'Community directory access',
+            'Basic member support'
+          ];
+        default:
+          return [
+            'Basic membership card',
+            'Community event updates',
+            'Member directory access',
+            'Newsletter subscription'
+          ];
+      }
     }
   };
 
@@ -102,7 +207,7 @@ const Dashboard = () => {
           <div className="benefits-header">
             <h2>
               <i className={`fas ${user.userType === 'merchant' ? 'fa-handshake' : 'fa-gift'}`}></i>
-              {user.userType === 'merchant' ? 'Merchant Benefits' : 'Member Benefits'}
+              Your {currentPlan?.name || 'Current'} Plan Benefits
             </h2>
             <p>
               {user.userType === 'merchant' 
@@ -113,77 +218,71 @@ const Dashboard = () => {
           </div>
           
           <div className="benefits-grid">
-            {user.userType === 'merchant' ? (
-              <>
-                <div className="benefit-card">
-                  <div className="benefit-icon">
-                    <i className="fas fa-store"></i>
-                  </div>
-                  <h3>Business Listing</h3>
-                  <p>Get your business featured in our comprehensive directory, reaching thousands of community members actively seeking your services.</p>
+            {getMembershipBenefits(currentPlan, user.userType).map((benefit, index) => (
+              <div key={index} className="benefit-card">
+                <div className="benefit-icon">
+                  <i className={`fas ${
+                    benefit.includes('VIP') || benefit.includes('Priority') ? 'fa-crown' :
+                    benefit.includes('deal') || benefit.includes('Deal') ? 'fa-tags' :
+                    benefit.includes('event') || benefit.includes('Event') ? 'fa-calendar-alt' :
+                    benefit.includes('support') || benefit.includes('Support') ? 'fa-headset' :
+                    benefit.includes('analytics') || benefit.includes('Analytics') ? 'fa-chart-line' :
+                    benefit.includes('card') || benefit.includes('Card') ? 'fa-id-card' :
+                    benefit.includes('listing') || benefit.includes('Listing') ? 'fa-store' :
+                    'fa-check-circle'
+                  }`}></i>
                 </div>
-                
-                <div className="benefit-card">
-                  <div className="benefit-icon">
-                    <i className="fas fa-tags"></i>
-                  </div>
-                  <h3>Deal Creation</h3>
-                  <p>Create and manage exclusive deals for community members, boosting your customer base and increasing brand loyalty.</p>
-                </div>
-                
-                <div className="benefit-card">
-                  <div className="benefit-icon">
-                    <i className="fas fa-chart-line"></i>
-                  </div>
-                  <h3>Analytics Dashboard</h3>
-                  <p>Access detailed insights about your business performance, customer engagement, and deal redemption analytics.</p>
-                </div>
-                
-                <div className="benefit-card">
-                  <div className="benefit-icon">
-                    <i className="fas fa-users"></i>
-                  </div>
-                  <h3>Community Network</h3>
-                  <p>Connect with fellow merchants, participate in business events, and grow your network within the Indian community.</p>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="benefit-card">
-                  <div className="benefit-icon">
-                    <i className="fas fa-percent"></i>
-                  </div>
-                  <h3>Exclusive Discounts</h3>
-                  <p>Enjoy significant savings at over 100 partner businesses across Ghana with exclusive member-only discounts and special offers.</p>
-                </div>
-                
-                <div className="benefit-card">
-                  <div className="benefit-icon">
-                    <i className="fas fa-calendar-alt"></i>
-                  </div>
-                  <h3>Priority Event Access</h3>
-                  <p>Get VIP access and early bird pricing for cultural festivals, networking events, and community gatherings throughout the year.</p>
-                </div>
-                
-                <div className="benefit-card">
-                  <div className="benefit-icon">
-                    <i className="fas fa-hands-helping"></i>
-                  </div>
-                  <h3>Community Support</h3>
-                  <p>Access our network of support services including legal assistance, medical referrals, and cultural integration programs.</p>
-                </div>
-                
-                <div className="benefit-card">
-                  <div className="benefit-icon">
-                    <i className="fas fa-id-card"></i>
-                  </div>
-                  <h3>Digital Identity</h3>
-                  <p>A recognized form of identity within the Indian community in Ghana, with emergency support services and community verification.</p>
-                </div>
-              </>
-            )}
+                <h3>{benefit.split(' ').slice(0, 3).join(' ')}</h3>
+                <p>{benefit}</p>
+              </div>
+            ))}
           </div>
         </div>
+
+        {/* Upgrade Recommendations Section */}
+        {upgradeRecommendations.length > 0 && (
+          <div className="upgrade-section">
+            <div className="upgrade-header">
+              <h2>
+                <i className="fas fa-arrow-up"></i>
+                Upgrade Your Plan
+              </h2>
+              <p>Unlock more benefits and exclusive features with a higher plan</p>
+            </div>
+            
+            <div className="upgrade-plans-grid">
+              {upgradeRecommendations.map((plan) => (
+                <div key={plan.id} className="upgrade-plan-card">
+                  <div className="plan-header">
+                    <h3>{plan.name}</h3>
+                    <div className="plan-price">
+                      <span className="currency">{plan.currency}</span>
+                      <span className="amount">{plan.price}</span>
+                      <span className="period">/{plan.billingCycle}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="plan-benefits">
+                    <h4>Additional Benefits:</h4>
+                    <ul>
+                      {getMembershipBenefits(plan, user.userType).slice(0, 4).map((benefit, index) => (
+                        <li key={index}>
+                          <i className="fas fa-check"></i>
+                          {benefit}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  
+                  <button className="btn-upgrade-plan">
+                    <i className="fas fa-arrow-up"></i>
+                    Upgrade to {plan.name}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* SEO Meta Tags for Dashboard */}

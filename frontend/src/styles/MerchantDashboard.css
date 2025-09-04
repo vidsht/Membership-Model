@@ -2453,3 +2453,255 @@ background: white;
     justify-content: space-between;
   }
 }
+
+/* Upgrade Section Styles */
+.upgrade-section {
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border-radius: 16px;
+  padding: 2rem;
+  margin-top: 2rem;
+  border: 2px solid #e5e7eb;
+}
+
+.upgrade-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.upgrade-header h2 {
+  color: #1f2937;
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.upgrade-header h2 i {
+  color: #3b82f6;
+}
+
+.upgrade-header p {
+  color: #6b7280;
+  font-size: 1.1rem;
+}
+
+.upgrade-plans-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.upgrade-plan-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  border: 2px solid #e5e7eb;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.upgrade-plan-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #3b82f6, #1d4ed8);
+}
+
+.upgrade-plan-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(59, 130, 246, 0.15);
+  border-color: #3b82f6;
+}
+
+.plan-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.plan-header h3 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 0.75rem;
+}
+
+.plan-price {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.25rem;
+}
+
+.plan-price .currency {
+  font-size: 1rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.plan-price .amount {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #3b82f6;
+}
+
+.plan-price .period {
+  font-size: 1rem;
+  color: #6b7280;
+}
+
+.plan-benefits {
+  margin-bottom: 2rem;
+}
+
+.plan-benefits h4 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 1rem;
+}
+
+.plan-benefits ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.plan-benefits li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.95rem;
+  color: #4b5563;
+  line-height: 1.5;
+}
+
+.plan-benefits li i {
+  color: #10b981;
+  margin-top: 0.125rem;
+  flex-shrink: 0;
+}
+
+.btn-upgrade-plan {
+  width: 100%;
+  padding: 0.875rem 1.5rem;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.btn-upgrade-plan:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+}
+
+.btn-upgrade-plan:active {
+  transform: translateY(0);
+}
+
+/* Merchant-specific upgrade styles */
+.upgrade-plan-card.merchant-upgrade {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border: 2px solid #e5e7eb;
+}
+
+.upgrade-plan-card.merchant-upgrade::before {
+  background: linear-gradient(90deg, #10b981, #059669);
+}
+
+.upgrade-plan-card.merchant-upgrade:hover {
+  border-color: #10b981;
+  box-shadow: 0 10px 25px rgba(16, 185, 129, 0.15);
+}
+
+.plan-features-highlight {
+  margin: 1.5rem 0;
+  padding: 1rem;
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  border-radius: 8px;
+  border: 1px solid #a7f3d0;
+}
+
+.feature-comparison {
+  text-align: center;
+}
+
+.current-vs-upgrade {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.current-label {
+  color: #6b7280;
+  padding: 0.25rem 0.75rem;
+  background: #f3f4f6;
+  border-radius: 6px;
+}
+
+.upgrade-label {
+  color: #065f46;
+  padding: 0.25rem 0.75rem;
+  background: #a7f3d0;
+  border-radius: 6px;
+}
+
+.current-vs-upgrade i {
+  color: #10b981;
+  font-size: 1.1rem;
+}
+
+.merchant-upgrade .btn-upgrade-plan {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.merchant-upgrade .btn-upgrade-plan:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+}
+
+@media (max-width: 768px) {
+  .upgrade-section {
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+  }
+  
+  .upgrade-plans-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .upgrade-plan-card {
+    padding: 1.25rem;
+  }
+  
+  .current-vs-upgrade {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .current-vs-upgrade i {
+    transform: rotate(90deg);
+  }
+}

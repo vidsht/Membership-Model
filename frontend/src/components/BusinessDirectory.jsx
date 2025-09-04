@@ -13,6 +13,8 @@ const BusinessDirectory = () => {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [showBusinessModal, setShowBusinessModal] = useState(false);
   const [selectedBusiness, setSelectedBusiness] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const businessesPerPage = 6;
   const { getMerchantLogoUrl } = useImageUrl();
   const { dynamicFields, isLoading: dynamicLoading } = useDynamicFields();
 
@@ -57,6 +59,22 @@ const BusinessDirectory = () => {
     const matchesCategory = selectedCategory === '' || category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredBusinesses.length / businessesPerPage);
+  const startIndex = (currentPage - 1) * businessesPerPage;
+  const endIndex = startIndex + businessesPerPage;
+  const currentBusinesses = filteredBusinesses.slice(startIndex, endIndex);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filter, selectedCategory]);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
 
   return (
@@ -127,7 +145,7 @@ const BusinessDirectory = () => {
               <p>No businesses found matching your criteria.</p>
             </div>
           ) : (
-            filteredBusinesses.map((business, idx) => {
+            currentBusinesses.map((business, idx) => {
               const name = business.businessName || business.name || '';
               const desc = business.businessDescription || business.description || '';
               const category = business.businessCategory || business.category || business.sector || 'General';
@@ -199,6 +217,42 @@ const BusinessDirectory = () => {
               );
             })
           )}
+        </div>
+      )}
+
+      {/* Pagination Controls */}
+      {filteredBusinesses.length > businessesPerPage && (
+        <div className="pagination-container">
+          <div className="pagination">
+            <button 
+              className={`pagination-btn ${currentPage === 1 ? 'disabled' : ''}`}
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+            >
+              ‹ Prev
+            </button>
+            
+            {Array.from({ length: totalPages }, (_, index) => index + 1).map(page => (
+              <button
+                key={page}
+                className={`pagination-btn ${currentPage === page ? 'active' : ''}`}
+                onClick={() => handlePageChange(page)}
+              >
+                {page}
+              </button>
+            ))}
+            
+            <button 
+              className={`pagination-btn ${currentPage === totalPages ? 'disabled' : ''}`}
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+            >
+              Next ›
+            </button>
+          </div>
+          <div className="pagination-info">
+            Showing {startIndex + 1}-{Math.min(endIndex, filteredBusinesses.length)} of {filteredBusinesses.length} businesses
+          </div>
         </div>
       )}
 

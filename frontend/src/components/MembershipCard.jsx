@@ -41,29 +41,11 @@ const MembershipCard = () => {
     if (user && user.membershipNumber) {
       // Small delay to ensure DOM elements are ready
       setTimeout(async () => {
-        // Generate QR Code with multiple fallback approaches
+        // Generate QR Code using lazy-loaded libraries
         if (qrCodeRef.current && cardSettings.show_qr_code) {
           let qrGenerated = false;
           
-          // Method 1: Try window.QRCode (qrcode library)
-          if (!qrGenerated && typeof window !== 'undefined' && window.QRCode) {
-            try {
-              qrCodeRef.current.innerHTML = '';
-              new window.QRCode(qrCodeRef.current, {
-                text: user.membershipNumber.toString(),
-                width: 100,
-                height: 100,
-                colorDark: "#000000",
-                colorLight: "#ffffff",
-                correctLevel: window.QRCode.CorrectLevel.H
-              });
-              qrGenerated = true;
-            } catch (error) {
-              console.error('QRCode library error:', error);
-            }
-          }
-          
-          // Method 2: Use the installed 'qrcode' package via dynamic import (preferred)
+          // Method 1: Use the installed 'qrcode' package via dynamic import (preferred)
           if (!qrGenerated) {
             try {
               const QR = await import('qrcode');
@@ -81,8 +63,29 @@ const MembershipCard = () => {
             }
           }
           
-          // Method 3: Try qrcode-generator (legacy global)
-          if (!qrGenerated && typeof window !== 'undefined' && window.qrCode) {
+          // Method 2: Try window.QRCode (qrcode library) - lazy loaded
+          if (!qrGenerated && window.loadQRCode) {
+            try {
+              await window.loadQRCode();
+              if (window.QRCode) {
+                qrCodeRef.current.innerHTML = '';
+                new window.QRCode(qrCodeRef.current, {
+                  text: user.membershipNumber.toString(),
+                  width: 100,
+                  height: 100,
+                  colorDark: "#000000",
+                  colorLight: "#ffffff",
+                  correctLevel: window.QRCode.CorrectLevel.H
+                });
+                qrGenerated = true;
+              }
+            } catch (error) {
+              console.error('QRCode library error:', error);
+            }
+          }
+          
+          // Method 3: Try qrcode-generator (legacy global) - lazy loaded
+          if (!qrGenerated && window.qrCode) {
             try {
               const qr = window.qrCode(4, 'M');
               qr.addData(user.membershipNumber.toString());
@@ -99,8 +102,8 @@ const MembershipCard = () => {
               
               ctx.fillStyle = '#ffffff';
               ctx.fillRect(0, 0, 100, 100);
-              ctx.fillStyle = '#000000';
               
+              ctx.fillStyle = '#000000';
               for (let row = 0; row < moduleCount; row++) {
                 for (let col = 0; col < moduleCount; col++) {
                   if (qr.isDark(row, col)) {
@@ -135,23 +138,33 @@ const MembershipCard = () => {
           }
         }
 
-        // Generate Barcode using the clean membership number
-        if (typeof window !== 'undefined' && window.JsBarcode && barcodeRef.current && cardSettings.show_barcode) {
-          try {
-            window.JsBarcode(barcodeRef.current, user.membershipNumber.toString(), {
-              format: "CODE128",
-              width: 1,
-              height: 25,
-              displayValue: false,
-              margin: 0
-            });
-          } catch (error) {
-            console.error('Barcode generation error:', error);
-            // Fallback: show membership number as text
+        // Generate Barcode using lazy-loaded JSBarcode
+        if (barcodeRef.current && cardSettings.show_barcode) {
+          let barcodeGenerated = false;
+          
+          // Try JSBarcode - lazy loaded
+          if (!barcodeGenerated && window.loadJSBarcode) {
+            try {
+              await window.loadJSBarcode();
+              if (window.JsBarcode) {
+                window.JsBarcode(barcodeRef.current, user.membershipNumber.toString(), {
+                  format: "CODE128",
+                  width: 1,
+                  height: 25,
+                  displayValue: false,
+                  margin: 0
+                });
+                barcodeGenerated = true;
+              }
+            } catch (error) {
+              console.error('JsBarcode error:', error);
+            }
+          }
+          
+          // Fallback: show membership number as text
+          if (!barcodeGenerated) {
             barcodeRef.current.innerHTML = `<text x="50%" y="50%" text-anchor="middle" font-size="8" fill="black">${user.membershipNumber}</text>`;
           }
-        } else {
-          console.log('Barcode library not available or settings disabled');
         }
       }, 100);
     }
@@ -201,22 +214,22 @@ const MembershipCard = () => {
       const html2canvas = await import('html2canvas');
       await new Promise(resolve => setTimeout(resolve, 500));
       const canvas = await html2canvas.default(cardRef.current, {
-        scale: window.devicePixelRatio || 2,
+        scale: 3,
         backgroundColor: '#ffffff',
         useCORS: true,
         allowTaint: true,
-        width: 600,
-        height: 350,
+        width: 900,
+        height: 525,
         scrollX: 0,
         scrollY: 0
       });
       if (canvas.width === 0 || canvas.height === 0) {
         throw new Error('Canvas is empty');
       }
-      // Use toDataURL for download (matches certificate logic)
+      // Use toDataURL for download - changed to JPG format with high quality
       const link = document.createElement('a');
-      link.download = `membership-card-${user.membershipNumber || 'download'}.png`;
-      link.href = canvas.toDataURL('image/png', 1.0);
+      link.download = `membership-card-${user.membershipNumber || 'download'}.jpg`;
+      link.href = canvas.toDataURL('image/jpeg', 0.95);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);

@@ -128,95 +128,95 @@ const Home = () => {
   }, [premiumPartners.length]);
 
   useEffect(() => {
+    const fetchWithTimeout = (promise, ms = 5000) => {
+      const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms));
+      return Promise.race([promise, timeout]);
+    };
+
     const fetchData = async () => {
       try {
-        // Fetch businesses (public data)
-        const businessResponse = await api.get('/businesses');
-        setBusinesses(businessResponse.data);        // Fetch public admin settings
-        console.log('🏢 Fetched businesses:', businessResponse.data);
-        console.log('🔍 Business logos:', businessResponse.data.map(b => ({
-          name: b.businessName || b.name,
-          logo: b.logo,
-          logoUrl: b.logoUrl,
-          merchantLogo: b.merchantLogo
-        })));
+        setLoading(true);
 
-        try {
-          const settingsResponse = await api.get('/admin/settings/public');
-          if (settingsResponse.data.success) {
-            console.log('✅ Admin settings received:', settingsResponse.data.settings);
-            console.log('📱 Social media requirements:', settingsResponse.data.settings.socialMediaRequirements);
-            console.log('🎛️ Features:', settingsResponse.data.settings.features);
-            setAdminSettings(settingsResponse.data.settings);
-          }
-        } catch (error) {
-          // Use default settings if admin settings not accessible
-          console.log('❌ Admin settings error:', error);
-          console.log('Using default settings');
-        }// Fetch real stats - use admin endpoint for authenticated users, public endpoint for everyone else
-        try {
-          let statsResponse;
-          if (isAuthenticated) {
-            // For authenticated users, try admin stats first
-            try {
-              statsResponse = await api.get('/admin/stats');
-              if (statsResponse.data.success) {
-                setStats({
-                  totalMembers: statsResponse.data.stats.totalUsers || 0,
-                  activeBusinesses: statsResponse.data.stats.activeBusinesses || 0,
-                  exclusiveDeals: statsResponse.data.stats.totalDeals || 0,
-                  pendingApprovals: statsResponse.data.stats.pendingApprovals || 0
-                });
-              } else {
-                throw new Error('Admin stats failed');
-              }
-            } catch (adminError) {
-              // Fallback to public stats if admin stats fail
-              console.log('Admin stats failed, using public stats');
-              statsResponse = await api.get('/deals/home-stats');
-              if (statsResponse.data.success) {
-                setStats({
-                  totalMembers: statsResponse.data.stats.totalMembers || 0,
-                  activeBusinesses: statsResponse.data.stats.totalBusinesses || 0,
-                  exclusiveDeals: statsResponse.data.stats.totalDeals || 0,
-                  pendingApprovals: 0 // Not available in public stats
-                });
-              }
-            }
-          } else {
-            // For public users, use the public home stats endpoint
-            statsResponse = await api.get('/deals/home-stats');
-            if (statsResponse.data.success) {
-              setStats({
-                totalMembers: statsResponse.data.stats.totalMembers || 0,
-                activeBusinesses: statsResponse.data.stats.totalBusinesses || 0,
-                exclusiveDeals: statsResponse.data.stats.totalDeals || 0,
-                pendingApprovals: 0 // Not available in public stats
-              });
-            } else {
-              throw new Error('Failed to fetch public stats');
-            }
-          }
-        } catch (error) {
-          console.error('Error fetching stats:', error);
-          // Fallback to minimal default stats only if all endpoints fail
-          setStats({
-            totalMembers: 0,
-            activeBusinesses: 0,
-            exclusiveDeals: 0,
-            pendingApprovals: 0
-          });
+        // Priority 1: Critical above-the-fold data (businesses for hero/carousel)
+        const criticalData = await Promise.allSettled([
+          fetchWithTimeout(api.get('/businesses'), 3000), // Faster timeout for critical data
+          fetchWithTimeout(api.get('/admin/settings/public'), 3000)
+        ]);
+
+        // Process critical data immediately
+        if (criticalData[0].status === 'fulfilled') {
+          setBusinesses(criticalData[0].value.data || []);
+          console.log('✅ Critical: Fetched', criticalData[0].value.data?.length || 0, 'businesses');
+        } else {
+          console.warn('Critical businesses fetch failed:', criticalData[0].reason);
+          setBusinesses([]); // fail gracefully
         }
 
+        if (criticalData[1].status === 'fulfilled' && criticalData[1].value.data?.success) {
+          setAdminSettings(criticalData[1].value.data.settings);
+          console.log('✅ Critical: Admin settings loaded');
+        } else {
+          console.log('Using default admin settings (public settings failed or absent)');
+        }
+
+        // Show initial content immediately
+        setLoading(false);
+
+        // Priority 2: Non-critical below-the-fold data (stats) - schedule after first paint
+        requestIdleCallback(() => {
+          fetchStatsAsync();
+        }, { timeout: 1000 });
+
       } catch (error) {
-        console.error('Error fetching data:', error);
-      } finally {
+        console.error('Critical data fetch failed:', error);
         setLoading(false);
       }
     };
 
+    const fetchStatsAsync = async () => {
+      try {
+        if (isAuthenticated) {
+          // try admin stats but with short timeout
+          try {
+            const adminStats = await fetchWithTimeout(api.get('/admin/stats'), 3000);
+            if (adminStats.data?.success) {
+              setStats({
+                totalMembers: adminStats.data.stats.totalUsers || 0,
+                activeBusinesses: adminStats.data.stats.activeBusinesses || 0,
+                exclusiveDeals: adminStats.data.stats.totalDeals || 0,
+                pendingApprovals: adminStats.data.stats.pendingApprovals || 0
+              });
+              return;
+            }
+          } catch (e) {
+            console.log('Admin stats failed or timed out, falling back to public stats');
+          }
+        }
+
+        // Public stats fallback (also with a modest timeout)
+        const publicStats = await fetchWithTimeout(api.get('/deals/home-stats'), 4000);
+        if (publicStats.data?.success) {
+          setStats({
+            totalMembers: publicStats.data.stats.totalMembers || 0,
+            activeBusinesses: publicStats.data.stats.totalBusinesses || 0,
+            exclusiveDeals: publicStats.data.stats.totalDeals || 0,
+            pendingApprovals: 0
+          });
+        }
+      } catch (err) {
+        console.error('Stats fetch failed:', err);
+        // Set default stats if all fail
+        setStats({
+          totalMembers: 0,
+          activeBusinesses: 0,
+          exclusiveDeals: 0,
+          pendingApprovals: 0
+        });
+      }
+    };
+
     fetchData();
-  }, []);
+  }, [isAuthenticated]);
 
   const groupedBusinesses = businesses.reduce((acc, business) => {
     if (!acc[business.sector]) {
@@ -269,11 +269,9 @@ const Home = () => {
       {(() => {
   const showSocialHome = adminSettings.features?.show_social_media_home === true;
   const hasSocialPlatforms = Object.keys(adminSettings.socialMediaRequirements || {}).length > 0;
-        console.log('🔍 Social Media Debug:', {
+        console.log('🔍 Social Media:', {
           showSocialHome,
           hasSocialPlatforms,
-          features: adminSettings.features,
-          socialMediaRequirements: adminSettings.socialMediaRequirements,
           shouldShow: showSocialHome && hasSocialPlatforms
         });
   return showSocialHome && hasSocialPlatforms;
@@ -780,200 +778,200 @@ const Home = () => {
           <div className="communities-container">
             {/* Big Bengalies in Ghana */}
             <div className="community-card">
-              <img src="https://indiansinghana.com/wp-content/uploads/2025/07/Big-Bengalis-in-Ghana-Logo.jpg" alt="Big Bengalies in Ghana" className="community-logo" />
+              <img src="https://indiansinghana.com/wp-content/uploads/2025/07/Big-Bengalis-in-Ghana-Logo.jpg" alt="Big Bengalies in Ghana" className="community-logo" width="120" height="120" loading="lazy" />
               <h3 className="community-name">Big Bengalies in Ghana</h3>
             </div>
             
             {/* Bhojpuri Association of Ghana */}
             <div className="community-card">
-              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/Bhojpuri-Logo.jpg" alt="Bhojpuri Association of Ghana" className="community-logo" />
+              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/Bhojpuri-Logo.jpg" alt="Bhojpuri Association of Ghana" className="community-logo" width="120" height="120" loading="lazy" />
               <h3 className="community-name">Bhojpuri Association of Ghana</h3>
             </div>
             
             {/* Ghana Indian Malayalee Association */}
             <div className="community-card">
-              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/GIMA-Logo.jpg" alt="Ghana Indian Malayalee Association" className="community-logo" />
+              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/GIMA-Logo.jpg" alt="Ghana Indian Malayalee Association" className="community-logo" width="120" height="120" loading="lazy" />
               <h3 className="community-name">Ghana Indian Malayalee Association</h3>
             </div>
             
             {/* Ghana Tamil Association */}
             <div className="community-card">
-              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/GTA-Logo-671d149a82a14.jpg" alt="Ghana Tamil Association" className="community-logo" />
+              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/GTA-Logo-671d149a82a14.jpg" alt="Ghana Tamil Association" className="community-logo" width="120" height="120" loading="lazy" />
               <h3 className="community-name">Ghana Tamil Association</h3>
             </div>
             
             {/* Gujarati Association of Ghana */}
             <div className="community-card">
-              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/Gujarati-Association-of-Ghana-Logo.jpg" alt="Gujarati Association of Ghana" className="community-logo" />
+              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/Gujarati-Association-of-Ghana-Logo.jpg" alt="Gujarati Association of Ghana" className="community-logo" width="120" height="120" loading="lazy" />
               <h3 className="community-name">Gujarati Association of Ghana</h3>
             </div>
             
             {/* Hindu Swayamsevak Sangh */}
             <div className="community-card">
-              <img src="https://indiansinghana.com/wp-content/uploads/2025/06/Hindu-Swayamsevak-Sangh-HSS-Logo.jpg" alt="Hindu Swayamsevak Sangh" className="community-logo" />
+              <img src="https://indiansinghana.com/wp-content/uploads/2025/06/Hindu-Swayamsevak-Sangh-HSS-Logo.jpg" alt="Hindu Swayamsevak Sangh" className="community-logo" width="120" height="120" loading="lazy" />
               <h3 className="community-name">Hindu Swayamsevak Sangh</h3>
             </div>
             
             {/* Indian Association of Ghana */}
             <div className="community-card">
-              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/IAG-Logo.jpg" alt="Indian Association of Ghana" className="community-logo" />
+              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/IAG-Logo.jpg" alt="Indian Association of Ghana" className="community-logo" width="120" height="120" loading="lazy" />
               <h3 className="community-name">Indian Association of Ghana</h3>
             </div>
             
             {/* Indian Telugu Association of Ghana */}
             <div className="community-card">
-              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/iTAG-Logo.jpg" alt="Indian Telugu Association of Ghana" className="community-logo" />
+              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/iTAG-Logo.jpg" alt="Indian Telugu Association of Ghana" className="community-logo" width="120" height="120" loading="lazy" />
               <h3 className="community-name">Indian Telugu Association of Ghana</h3>
             </div>
             
             {/* Indian Women's Association */}
             <div className="community-card">
-              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/Indian-Womens-Accociation-Accra.jpeg" alt="Indian Women's Association" className="community-logo" />
+              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/Indian-Womens-Accociation-Accra.jpeg" alt="Indian Women's Association" className="community-logo" width="120" height="120" loading="lazy" />
               <h3 className="community-name">Indian Women's Association</h3>
             </div>
             
             {/* Karnataka Sangha Ghana */}
             <div className="community-card">
-              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/Karnataka-Sangha-Ghana.jpg" alt="Karnataka Sangha Ghana" className="community-logo" />
+              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/Karnataka-Sangha-Ghana.jpg" alt="Karnataka Sangha Ghana" className="community-logo" width="120" height="120" loading="lazy" />
               <h3 className="community-name">Karnataka Sangha Ghana</h3>
             </div>
             
             {/* Kumasi Indian Association */}
             <div className="community-card">
-              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/KIA-Logo.png" alt="Kumasi Indian Association" className="community-logo" />
+              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/KIA-Logo.png" alt="Kumasi Indian Association" className="community-logo" width="120" height="120" loading="lazy" />
               <h3 className="community-name">Kumasi Indian Association</h3>
             </div>
             
             {/* Maharashtra Mandal Ghana */}
             <div className="community-card">
-              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/WhatsApp-Image-2024-06-06-at-12.10.49_33fd33d7.jpg" alt="Maharashtra Mandal Ghana" className="community-logo" />
+              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/WhatsApp-Image-2024-06-06-at-12.10.49_33fd33d7.jpg" alt="Maharashtra Mandal Ghana" className="community-logo" width="120" height="120" loading="lazy" />
               <h3 className="community-name">Maharashtra Mandal Ghana</h3>
             </div>
             
             {/* Punjabi Association of Ghana */}
             <div className="community-card">
-              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/Punjabi-Association-of-Ghana-Logo-1.jpg" alt="Punjabi Association of Ghana" className="community-logo" />
+              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/Punjabi-Association-of-Ghana-Logo-1.jpg" alt="Punjabi Association of Ghana" className="community-logo" width="120" height="120" loading="lazy" />
               <h3 className="community-name">Punjabi Association of Ghana</h3>
             </div>
             
             {/* Rajasthan Association of Ghana */}
             <div className="community-card">
-              <img src="https://indiansinghana.com/wp-content/uploads/2025/07/Rajasthan-Association-Logo.jpg" alt="Rajasthan Association of Ghana" className="community-logo" />
+              <img src="https://indiansinghana.com/wp-content/uploads/2025/07/Rajasthan-Association-Logo.jpg" alt="Rajasthan Association of Ghana" className="community-logo" width="120" height="120" loading="lazy" />
               <h3 className="community-name">Rajasthan Association of Ghana</h3>
             </div>
             
             {/* Sindhi Association of Ghana */}
             <div className="community-card">
-              <img src="https://indiansinghana.com/wp-content/uploads/2025/07/SAG_Logo1.jpg" alt="Sindhi Association of Ghana" className="community-logo" />
+              <img src="https://indiansinghana.com/wp-content/uploads/2025/07/SAG_Logo1.jpg" alt="Sindhi Association of Ghana" className="community-logo" width="120" height="120" loading="lazy" />
               <h3 className="community-name">Sindhi Association of Ghana</h3>
             </div>
             
             {/* Utkala Ghana Association */}
             <div className="community-card">
-              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/Utkala-Association-of-Ghana-Logo.jpg" alt="Utkala Ghana Association" className="community-logo" />
+              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/Utkala-Association-of-Ghana-Logo.jpg" alt="Utkala Ghana Association" className="community-logo" width="120" height="120" loading="lazy" />
               <h3 className="community-name">Utkala Ghana Association</h3>
             </div>
             
             {/* Uttarakhand Association of Ghana */}
             <div className="community-card">
-              <img src="https://indiansinghana.com/wp-content/uploads/2025/06/Uttarakhand-Association-of-Ghana-Logo.jpg" alt="Uttarakhand Association of Ghana" className="community-logo" />
+              <img src="https://indiansinghana.com/wp-content/uploads/2025/06/Uttarakhand-Association-of-Ghana-Logo.jpg" alt="Uttarakhand Association of Ghana" className="community-logo" width="120" height="120" loading="lazy" />
               <h3 className="community-name">Uttarakhand Association of Ghana</h3>
             </div>
             
             {/* World Malayalee Federation */}
             <div className="community-card">
-              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/0i1hnewV_400x400.jpg" alt="World Malayalee Federation" className="community-logo" />
+              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/0i1hnewV_400x400.jpg" alt="World Malayalee Federation" className="community-logo" width="120" height="120" loading="lazy" />
               <h3 className="community-name">World Malayalee Federation</h3>
             </div>
             
             {/* Duplicates for continuous scrolling */}
             <div className="community-card">
-              <img src="https://indiansinghana.com/wp-content/uploads/2025/07/Big-Bengalis-in-Ghana-Logo.jpg" alt="Big Bengalies in Ghana" className="community-logo" />
+              <img src="https://indiansinghana.com/wp-content/uploads/2025/07/Big-Bengalis-in-Ghana-Logo.jpg" alt="Big Bengalies in Ghana" className="community-logo" width="120" height="120" loading="lazy" />
               <h3 className="community-name">Big Bengalies in Ghana</h3>
             </div>
             
             <div className="community-card">
-              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/Bhojpuri-Logo.jpg" alt="Bhojpuri Association of Ghana" className="community-logo" />
+              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/Bhojpuri-Logo.jpg" alt="Bhojpuri Association of Ghana" className="community-logo" width="120" height="120" loading="lazy" />
               <h3 className="community-name">Bhojpuri Association of Ghana</h3>
             </div>
             
             <div className="community-card">
-              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/GIMA-Logo.jpg" alt="Ghana Indian Malayalee Association" className="community-logo" />
+              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/GIMA-Logo.jpg" alt="Ghana Indian Malayalee Association" className="community-logo" width="120" height="120" loading="lazy" />
               <h3 className="community-name">Ghana Indian Malayalee Association</h3>
             </div>
             
             <div className="community-card">
-              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/GTA-Logo-671d149a82a14.jpg" alt="Ghana Tamil Association" className="community-logo" />
+              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/GTA-Logo-671d149a82a14.jpg" alt="Ghana Tamil Association" className="community-logo" width="120" height="120" loading="lazy" />
               <h3 className="community-name">Ghana Tamil Association</h3>
             </div>
             
             <div className="community-card">
-              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/Gujarati-Association-of-Ghana-Logo.jpg" alt="Gujarati Association of Ghana" className="community-logo" />
+              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/Gujarati-Association-of-Ghana-Logo.jpg" alt="Gujarati Association of Ghana" className="community-logo" width="120" height="120" loading="lazy" />
               <h3 className="community-name">Gujarati Association of Ghana</h3>
             </div>
             
             <div className="community-card">
-              <img src="https://indiansinghana.com/wp-content/uploads/2025/06/Hindu-Swayamsevak-Sangh-HSS-Logo.jpg" alt="Hindu Swayamsevak Sangh" className="community-logo" />
+              <img src="https://indiansinghana.com/wp-content/uploads/2025/06/Hindu-Swayamsevak-Sangh-HSS-Logo.jpg" alt="Hindu Swayamsevak Sangh" className="community-logo" width="120" height="120" loading="lazy" />
               <h3 className="community-name">Hindu Swayamsevak Sangh</h3>
             </div>
             
             <div className="community-card">
-              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/IAG-Logo.jpg" alt="Indian Association of Ghana" className="community-logo" />
+              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/IAG-Logo.jpg" alt="Indian Association of Ghana" className="community-logo" width="120" height="120" loading="lazy" />
               <h3 className="community-name">Indian Association of Ghana</h3>
             </div>
             
             <div className="community-card">
-              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/iTAG-Logo.jpg" alt="Indian Telugu Association of Ghana" className="community-logo" />
+              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/iTAG-Logo.jpg" alt="Indian Telugu Association of Ghana" className="community-logo" width="120" height="120" loading="lazy" />
               <h3 className="community-name">Indian Telugu Association of Ghana</h3>
             </div>
             
             <div className="community-card">
-              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/Indian-Womens-Accociation-Accra.jpeg" alt="Indian Women's Association" className="community-logo" />
+              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/Indian-Womens-Accociation-Accra.jpeg" alt="Indian Women's Association" className="community-logo" width="120" height="120" loading="lazy" />
               <h3 className="community-name">Indian Women's Association</h3>
             </div>
             
             <div className="community-card">
-              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/Karnataka-Sangha-Ghana.jpg" alt="Karnataka Sangha Ghana" className="community-logo" />
+              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/Karnataka-Sangha-Ghana.jpg" alt="Karnataka Sangha Ghana" className="community-logo" width="120" height="120" loading="lazy" />
               <h3 className="community-name">Karnataka Sangha Ghana</h3>
             </div>
             
             <div className="community-card">
-              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/KIA-Logo.png" alt="Kumasi Indian Association" className="community-logo" />
+              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/KIA-Logo.png" alt="Kumasi Indian Association" className="community-logo" width="120" height="120" loading="lazy" />
               <h3 className="community-name">Kumasi Indian Association</h3>
             </div>
             
             <div className="community-card">
-              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/WhatsApp-Image-2024-06-06-at-12.10.49_33fd33d7.jpg" alt="Maharashtra Mandal Ghana" className="community-logo" />
+              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/WhatsApp-Image-2024-06-06-at-12.10.49_33fd33d7.jpg" alt="Maharashtra Mandal Ghana" className="community-logo" width="120" height="120" loading="lazy" />
               <h3 className="community-name">Maharashtra Mandal Ghana</h3>
             </div>
             
             <div className="community-card">
-              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/Punjabi-Association-of-Ghana-Logo-1.jpg" alt="Punjabi Association of Ghana" className="community-logo" />
+              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/Punjabi-Association-of-Ghana-Logo-1.jpg" alt="Punjabi Association of Ghana" className="community-logo" width="120" height="120" loading="lazy" />
               <h3 className="community-name">Punjabi Association of Ghana</h3>
             </div>
             
             <div className="community-card">
-              <img src="https://indiansinghana.com/wp-content/uploads/2025/07/Rajasthan-Association-Logo.jpg" alt="Rajasthan Association of Ghana" className="community-logo" />
+              <img src="https://indiansinghana.com/wp-content/uploads/2025/07/Rajasthan-Association-Logo.jpg" alt="Rajasthan Association of Ghana" className="community-logo" width="120" height="120" loading="lazy" />
               <h3 className="community-name">Rajasthan Association of Ghana</h3>
             </div>
             
             <div className="community-card">
-              <img src="https://indiansinghana.com/wp-content/uploads/2025/07/SAG_Logo1.jpg" alt="Sindhi Association of Ghana" className="community-logo" />
+              <img src="https://indiansinghana.com/wp-content/uploads/2025/07/SAG_Logo1.jpg" alt="Sindhi Association of Ghana" className="community-logo" width="120" height="120" loading="lazy" />
               <h3 className="community-name">Sindhi Association of Ghana</h3>
             </div>
             
             <div className="community-card">
-              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/Utkala-Association-of-Ghana-Logo.jpg" alt="Utkala Ghana Association" className="community-logo" />
+              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/Utkala-Association-of-Ghana-Logo.jpg" alt="Utkala Ghana Association" className="community-logo" width="120" height="120" loading="lazy" />
               <h3 className="community-name">Utkala Ghana Association</h3>
             </div>
             
             <div className="community-card">
-              <img src="https://indiansinghana.com/wp-content/uploads/2025/06/Uttarakhand-Association-of-Ghana-Logo.jpg" alt="Uttarakhand Association of Ghana" className="community-logo" />
+              <img src="https://indiansinghana.com/wp-content/uploads/2025/06/Uttarakhand-Association-of-Ghana-Logo.jpg" alt="Uttarakhand Association of Ghana" className="community-logo" width="120" height="120" loading="lazy" />
               <h3 className="community-name">Uttarakhand Association of Ghana</h3>
             </div>
             
             <div className="community-card">
-              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/0i1hnewV_400x400.jpg" alt="World Malayalee Federation" className="community-logo" />
+              <img src="https://indiansinghana.com/wp-content/uploads/2024/10/0i1hnewV_400x400.jpg" alt="World Malayalee Federation" className="community-logo" width="120" height="120" loading="lazy" />
               <h3 className="community-name">World Malayalee Federation</h3>
             </div>
           </div>
