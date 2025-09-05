@@ -529,9 +529,9 @@
 
 .pagination-btn.active,
 .pagination-btn.btn-primary {
-  background: #007bff;
+  background: #520A0A;
+  border-color: #702b2b;
   color: white;
-  border-color: #007bff;
 }
 
 .pagination-dots {

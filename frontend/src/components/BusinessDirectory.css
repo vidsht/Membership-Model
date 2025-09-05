@@ -248,7 +248,7 @@
 
 .business-category {
   font-size: 0.97rem;
-  color: #3b82f6;
+  color: #520A0A;
   font-weight: 600;
   margin-bottom: 7px;
   display: inline-flex;
@@ -274,6 +274,8 @@
   margin-top: 2px;
   margin-bottom: 8px;
   display: flex;
+    align-items: center;
+  justify-content: center;
   gap: 13px;
   font-size: 1.25rem;
   color: #64748b;
@@ -281,7 +283,7 @@
 
 .contact-item {
   background: #f3f7fa;
-  color: #3b82f6;
+  color: #520A0A;
   border-radius: 50%;
   width: 35px;
   height: 35px;
@@ -293,8 +295,8 @@
 }
 
 .contact-item:hover {
-  color: #fff;
-  background: #3b82f6;
+  color: white;
+  background: #d6b784;
 }
 
 .business-actions {
@@ -504,6 +506,11 @@
 .business-website-modal:hover {
   background: #dbeafe;
   color: #1d4ed8;
+}
+
+.business-card-directory .business-logo-container {
+    width: 80px;
+    height: 80px;
 }
 
 @media (max-width: 900px) {
@@ -781,8 +788,8 @@
 }
 
 .pagination-btn.active {
-  background: #3b82f6;
-  border-color: #3b82f6;
+  background: #520A0A;
+  border-color: #702b2b;
   color: white;
   font-weight: 600;
 }

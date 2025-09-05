@@ -670,16 +670,22 @@
   justify-content: center;
   align-items: center;
   gap: 8px;
+  color: #660B05;
 }
 
 .login-btn:hover {
   background: linear-gradient(135deg, #E8C999, #7D0A0A);
   transform: translateY(-2px);
   box-shadow: white;
+    color: white;
 }
 
 .login-btn:active {
   transform: translateY(0);
+}
+
+.login-btn {
+    color: #660B05;
 }
 
 .login-btn:disabled {
@@ -691,6 +697,7 @@
 
 .login-btn i {
   font-size: 18px;
+  color: #660B05;
 }
 
 /* Login Footer */

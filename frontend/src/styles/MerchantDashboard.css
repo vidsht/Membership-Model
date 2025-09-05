@@ -1258,12 +1258,11 @@ background: white;
 }
 
 .btn-primary {
-  background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
   color: white;
 }
 
 .btn-secondary {
-  background: linear-gradient(45deg, #f093fb 0%, #f5576c 100%);
+  background: linear-gradient(45deg, #D3AE85 0%, #d8a366 100%);
   color: white;
 }
 
@@ -1274,12 +1273,12 @@ background: white;
 
 .btn-outline {
   background: transparent;
-  color: #667eea;
-  border: 2px solid #667eea;
+  color: #5B0E0E;
+  border: 2px solid #5B0E0E;
 }
 
 .btn-outline:hover {
-  background: #667eea;
+  background: #5B0E0E;
   color: white;
 }
 
@@ -1389,7 +1388,7 @@ background: white;
   }
   
   .stat-card {
-    padding: 1.5rem;
+    padding: 1rem;
   }
   
   .stat-icon {
@@ -1452,7 +1451,7 @@ background: white;
   align-items: center;
   padding: 2rem;
   border-bottom: 1px solid #e0e6ed;
-  background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(45deg, #520A0A 0%, #5B0E0E 100%);
   color: white;
   border-radius: 15px 15px 0 0;
 }

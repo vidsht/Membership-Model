@@ -164,7 +164,7 @@ const BusinessDirectory = () => {
                       src={getMerchantLogoUrl(business)}
                       alt={`${name} Logo`}
                       placeholder={
-                        <div className="image-fallback" style={{display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgb(243, 244, 246)', color: 'rgb(156, 163, 175)', fontSize: '14px', borderRadius: '8px', width: '100%', height: '100%'}}>
+                        <div className="image-fallback" style={{display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgb(243, 244, 246)', color: '#D4BA90', fontSize: '14px', borderRadius: '8px', width: '57px', height: '100%'}}>
                           <div className="logo-placeholder"><span>{name.charAt(0) || 'P'}</span></div>
                         </div>
                       }

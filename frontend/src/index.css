@@ -37,7 +37,6 @@ body {
 
  header {
     color: white;
-    padding: 2px 0;
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     position: sticky;
     top: 0;
@@ -99,7 +98,7 @@ nav a:hover, nav a.active {
     gap: 10px;
 }
 
-.auth-btn {
+/* .auth-btn {
     padding: 8px 10px;
     border-radius: var(--border-radius-btn);
     background: var(--accent);
@@ -121,7 +120,7 @@ nav a:hover, nav a.active {
     background: #e67e22;
     transform: translateY(-2px);
     box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-}
+} */
 
 .page {
     display: none !important;
@@ -299,7 +298,6 @@ nav a:hover, nav a.active {
 
 .card-icon {
     font-size: 1.8rem;
-    color: var(--accent);
 }
 
 .form-group {

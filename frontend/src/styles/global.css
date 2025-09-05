@@ -112,11 +112,6 @@ header {
   color: white;
 }
 
-/* header.scrolled {
-  box-shadow: var(--shadow-lg);
-  background: linear-gradient(to right, var(--primary-dark), var(--primary-color));
-} */
-
 .header-content {
   display: flex;
   justify-content: space-between;
@@ -310,7 +305,7 @@ header {
   gap: var(--space-sm);
 }
 
-.auth-btn {
+/* .auth-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -339,7 +334,7 @@ header {
   color: white;
   box-shadow: white;
   transform: translateY(-1px);
-}
+} */
 
 .logout-btn {
   color: white;
