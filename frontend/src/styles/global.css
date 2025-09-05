@@ -116,8 +116,8 @@ header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0; /* no padding at all so content is flush with edges */
-  margin: 0; /* remove auto-centering margins */
+  padding: 0 100px;
+  margin: 0; 
   width: 100%;
 }
 
@@ -675,14 +675,14 @@ color: white;
 }
 
 .btn-primary:hover {
-  background: linear-gradient(135deg, #A01818, #5A0909);
+  background: #CFAB82;
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(141, 21, 21, 0.4);
 }
 
 .btn-secondary {
   background-color: transparent;
-  color: var(--primary-color);
+  color: #CEAA81;
   border: 1px solid var(--primary-color);
 }
 

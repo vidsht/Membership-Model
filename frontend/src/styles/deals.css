@@ -352,8 +352,8 @@
 }
 
 .business-category {
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  color: white;
+  background: linear-gradient(135deg, #CFAB82, #d9a66c);
+  color: #4D0707;
   padding: 0.3rem 0.8rem;
   border-radius: 15px;
   font-weight: 600;
@@ -1259,7 +1259,6 @@
   grid-template-columns: 1fr 1fr;
   gap: 2rem;
   padding: 2rem;
-  max-width: 900px;
   width: 100%;
   background: white;
   border-radius: 20px;
@@ -1651,7 +1650,7 @@
   .deal-detail-modal .modal-content-grid {
     grid-template-columns: 1fr;
     gap: 1.5rem;
-    padding: 1.5rem;
+    padding: 0.3rem;
     max-height: 49vh;
   }
   
@@ -2161,13 +2160,6 @@
   box-shadow: 0 8px 28px rgba(141,21,21,0.18);
   border: none;
 }
-
-.deal-detail_modal .modal-actions .btn.btn-secondary {
-  background: transparent;
-  border: 1px solid rgba(14,20,30,0.06);
-  color: #4C0808;
-}
-
 
 .deal-detail-modal .modal-actions .btn.btn-primary:hover {
   background: linear-gradient(135deg, #D7A770, #ab8457);

@@ -1120,14 +1120,6 @@ const renderTabContent = () => {
                   />
                 </div>
               </div>
-
-              <div className="password-requirements">
-                <h4>Password Requirements:</h4>
-                <ul>
-                  <li>At least 6 characters long</li>
-                  <li>Both passwords must match</li>
-                </ul>
-              </div>
             </div>
 
             <div className="form-action-buttons">

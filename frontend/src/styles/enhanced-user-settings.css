@@ -842,13 +842,13 @@
 }
 
 /* Enhanced Primary Button for Password Update */
-.enhanced-primary-button {
+.enhanced-primary-button {  
   padding: 1rem 2.5rem;
-  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  background: linear-gradient(135deg, #771B1B 0%, #601010 100%);
   color: white;
   border: none;
   border-radius: 12px;
-  font-size: 1rem;
+  font-size: 0.8rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -857,6 +857,7 @@
   justify-content: center;
   gap: 0.5rem;
   box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3);
+  margin-top: 20px;
   min-width: 160px;
   position: relative;
   overflow: hidden;
@@ -876,7 +877,8 @@
 .enhanced-primary-button:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 30px rgba(59, 130, 246, 0.4);
-  background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+  background: linear-gradient(135deg, #CFAB82 0%, #f2ba7a 100%);
+  color: #500A0A;
 }
 
 .enhanced-primary-button:hover::before {
@@ -1328,6 +1330,7 @@
 .business-name {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 10px;
   font-weight: 600;
   color: #374151;
@@ -2221,7 +2224,7 @@
 }
 
 .modal-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #7e2727 0%, #510909 100%);
   color: white;
   padding: 1.5rem 2rem;
   display: flex;
@@ -2344,16 +2347,15 @@
 }
 
 .btn-secondary {
-  background: #6b7280;
+  background: #CEAA81;
   color: white;
 }
 
 .btn-secondary:hover {
-  background: #4b5563;
+  background: #4D0707;
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
 }
 

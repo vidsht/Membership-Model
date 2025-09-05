@@ -258,7 +258,7 @@
 .stat-card {
   background: white;
   border-radius: 12px;
-  padding: 1.5rem;
+  padding: 15px;
   display: flex;
   align-items: center;
   gap: 1rem;

@@ -275,7 +275,7 @@ html {
 }
 
 .form-section h3 {
-  color: var(--primary-color);
+  color: #712323;
   font-size: var(--h3-size);
   font-weight: 600;
   margin-bottom: 20px;
@@ -291,9 +291,18 @@ html {
   font-size: 1.2rem;
 }
 
+.form-section a{
+  color: #630B0B;
+}
+
+.form-section a:hover {
+  color: #4d0505;
+  text-decoration: underline;
+}
+
 .form-group {
   margin-bottom: 20px;
-}
+}  
 
 .form-group label {
   display: block;

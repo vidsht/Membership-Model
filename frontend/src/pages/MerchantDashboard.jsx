@@ -1256,9 +1256,9 @@ const MerchantDashboard = () => {
                       {new Date(redemption.redeemed_at || redemption.redeemedAt).toLocaleDateString()}
                     </span>
                   </div>
-                </div>
-                <div className="redemption-status">
-                  <span className="status-badge success">Redeemed</span>
+                  <div className="redemption-status">
+                    <span className="status-badge success">Redeemed</span>
+                  </div>
                 </div>
               </div>
             ))}

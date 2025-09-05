@@ -158,12 +158,12 @@
 }
 
 .modal-footer .btn-secondary {
-  background: #6c757d;
+  background: #CEAA81;
   color: white;
 }
 
 .modal-footer .btn-secondary:hover {
-  background: #545b62;
+  background: #4F0808;
 }
 
 .status-badge {

@@ -760,7 +760,7 @@ const Home = () => {
             <Link to="/unified-registration" className="btn btn-primary-join">
               <i className="fas fa-user-plus"></i> Join Now
             </Link>
-            <Link to="/login" className="btn btn-secondary-join">
+            <Link to="/login" className="btn-secondary-join">
               <i className="fas fa-sign-in-alt"></i> Sign In
             </Link>
           </div>

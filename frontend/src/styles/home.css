@@ -542,7 +542,7 @@
 
 .stat-card {
   background: white;
-  padding: 40px 30px;
+  padding: 20px 20px;
   border-radius: 20px;
   text-align: center;
   box-shadow: 0 10px 40px rgba(0,0,0,0.08);
@@ -1321,6 +1321,20 @@
 .cta .btn-secondary-join {
   background-color: white;
   color: #6D28D9;
+   min-width: 180px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 25px;
+    border: none;
+    border-radius: var(--border-radius-btn);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+    box-shadow: var(--box-shadow-light);
 }
 
 .cta .btn-secondary-join:hover {

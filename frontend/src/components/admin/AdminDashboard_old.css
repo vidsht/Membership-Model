@@ -166,7 +166,7 @@
 .stat-card {
   background: white;
   border-radius: 0.5rem;
-  padding: 1.5rem;
+  padding: 15px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
   display: flex;
   align-items: center;

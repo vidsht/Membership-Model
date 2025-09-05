@@ -144,7 +144,7 @@
 }
 
 .btn-secondary:hover {
-  background-color: #e5e7eb;
+  background: linear-gradient(135deg, #8D1515, #4C0808);
 }
 
 .file-input-alternative {

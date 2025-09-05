@@ -37,6 +37,7 @@ body {
 
  header {
     color: white;
+    padding: 2px 0;
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     position: sticky;
     top: 0;
@@ -55,13 +56,12 @@ body {
 .logo {
     display: flex;
     align-items: center;
-    justify-content: flex-start;
     gap: 15px;
 }
 
 .logo img {
-    height: 60px;
-    width: 250px;
+    height: 40px;
+    width: 170px;
 } 
 
 nav ul {
@@ -98,7 +98,7 @@ nav a:hover, nav a.active {
     gap: 10px;
 }
 
-/* .auth-btn {
+.auth-btn {
     padding: 8px 10px;
     border-radius: var(--border-radius-btn);
     background: var(--accent);
@@ -120,7 +120,7 @@ nav a:hover, nav a.active {
     background: #e67e22;
     transform: translateY(-2px);
     box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-} */
+}
 
 .page {
     display: none !important;
@@ -226,7 +226,7 @@ nav a:hover, nav a.active {
 }
 
 .form-footer a {
-    color: #660C0C;
+    color: var(--primary);
     text-decoration: none;
     font-weight: 600;
 }
@@ -291,13 +291,13 @@ nav a:hover, nav a.active {
     font-weight: 700;
     color: var(--dark);
     display: flex;
-    justify-content: center;
     align-items: center;
     gap: 10px;
 }
 
 .card-icon {
     font-size: 1.8rem;
+    color: var(--accent);
 }
 
 .form-group {
@@ -372,8 +372,8 @@ input:focus, select:focus, textarea:focus {
     justify-content: center;
     gap: 8px;
     padding: 12px 25px;
-    background-color: var(--accent);
-    color: var(--dark);
+    background: linear-gradient(135deg, #8D1515, #4C0808);
+    color: white;
     border: none;
     border-radius: var(--border-radius-btn);
     font-size: 1rem;
@@ -385,7 +385,8 @@ input:focus, select:focus, textarea:focus {
 }
 
 .btn:hover {
-    background-color: #e67e22;
+    background: #D4AC80;
+    color: #4D0707;
     transform: translateY(-3px);
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
 }
@@ -405,13 +406,12 @@ input:focus, select:focus, textarea:focus {
 }
 
 .btn-secondary {
-    background-color: #5B0E0E;
+    background-color: #CEAA81;
     color: white;
 }
 
 .btn-secondary:hover {
-    background-color: white;
-    color: #5B0E0E;
+    background-color: #d6345f;
 }
 
 .btn-success {
@@ -902,7 +902,6 @@ input:focus, select:focus, textarea:focus {
 }
 
 .section-header h2 {
-    color: white;
     font-size: 1.5rem;
 }
 
@@ -912,7 +911,7 @@ input:focus, select:focus, textarea:focus {
     gap: 20px;
 }
 
-.deal-card {
+/* .deal-card {
     border: 1px solid #e0e0e0;
     border-radius: var(--border-radius-card);
     padding: 20px;
@@ -923,7 +922,7 @@ input:focus, select:focus, textarea:focus {
 .deal-card:hover {
     box-shadow: var(--box-shadow-medium);
     transform: translateY(-2px);
-}
+} */
 
 .deal-header {
     display: flex;
