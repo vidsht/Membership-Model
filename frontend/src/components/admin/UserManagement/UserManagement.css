@@ -5,7 +5,6 @@
 /* Main Container */
 .user-management,
 .user-management-container {
-  padding: 2rem;
   background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
   min-height: 100vh;
   position: relative;
@@ -975,11 +974,6 @@
    =================================== */
 
 @media (max-width: 1200px) {
-  .user-management,
-  .user-management-container {
-    padding: 1.5rem;
-  }
-  
   .user-stats-bar {
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     gap: 1rem;
@@ -988,10 +982,6 @@
 }
 
 @media (max-width: 968px) {
-  .user-management,
-  .user-management-container {
-    padding: 1rem;
-  }
   
   .user-stats-bar {
     grid-template-columns: repeat(2, 1fr);
@@ -1103,10 +1093,6 @@
 }
 
 @media (max-width: 480px) {
-  .user-management,
-  .user-management-container {
-    padding: 0.5rem;
-  }
   
   .user-stats-bar {
     margin: 0 -0.5rem 1rem -0.5rem;
@@ -1264,6 +1250,32 @@
   to { box-shadow: 0 0 15px rgba(255, 163, 38, 0.8); }
 }
 
+/* ===================================
+   SERIAL NUMBER COLUMN STYLING
+   =================================== */
+
+.serial-column {
+  width: 60px !important;
+  min-width: 60px !important;
+  max-width: 60px !important;
+  text-align: center !important;
+  padding: 0.75rem 0.5rem !important;
+}
+
+.serial-number {
+  text-align: center;
+  font-weight: 600;
+  color: #64748b;
+  font-size: 0.875rem;
+  padding: 0.75rem 0.5rem;
+  background: rgba(100, 116, 139, 0.05);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+}
+
 /* Responsive adjustments for redemption limit column */
 @media (max-width: 768px) {
   .redemption-limit-info {
@@ -1275,5 +1287,16 @@
   
   .btn-mini {
     align-self: flex-start;
+  }
+
+  .serial-column {
+    width: 50px !important;
+    min-width: 50px !important;
+    max-width: 50px !important;
+  }
+
+  .serial-number {
+    font-size: 0.75rem;
+    padding: 0.5rem 0.25rem;
   }
 }

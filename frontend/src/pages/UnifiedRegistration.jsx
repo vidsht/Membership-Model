@@ -597,6 +597,11 @@ const UnifiedRegistration = () => {
         </Link>
         
     <div className="registration-card unified-registration-card">
+      <div className="registration-toggle-info">
+        <p className="toggle-instruction">
+          (Toggle between <strong>Member</strong> and <strong>Merchant</strong> registration types)
+        </p>
+      </div>
       <div className="registration-tabs unified-tabs">
         <button
           className={`tab-btn${activeTab === 'member' ? ' active' : ''}`}

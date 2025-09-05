@@ -181,72 +181,50 @@ const MembershipCard = () => {
       return;
     }
 
-    let tempObjectUrl = null;
-    let imgEl = null;
-    let originalSrc = null;
-
     try {
-      // If there's an uploaded profile image, fetch it and set a same-origin object URL
-      const profileUrl = getProfileImageUrl(user);
-      if (profileUrl) {
-        try {
-          const resp = await fetch(profileUrl, { mode: 'cors' });
-          if (resp && resp.ok) {
-            const blob = await resp.blob();
-            tempObjectUrl = URL.createObjectURL(blob);
-
-            // Find the profile image in the card (SmartImage uses className "profile-image")
-            imgEl = cardRef.current.querySelector('img.profile-image');
-            if (imgEl) {
-              originalSrc = imgEl.src;
-              imgEl.src = tempObjectUrl;
-              // Ensure image has finished decoding
-              if (imgEl.decode) await imgEl.decode();
-            }
-          } else {
-            console.warn('Failed to fetch profile image for download, status:', resp && resp.status);
-          }
-        } catch (fetchErr) {
-          console.warn('Error fetching profile image for download:', fetchErr);
-        }
-      }
-
+      // Import html2canvas dynamically
       const html2canvas = await import('html2canvas');
-      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Wait a bit to ensure all elements are rendered
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
       const canvas = await html2canvas.default(cardRef.current, {
-        scale: 3,
+        scale: 2,
         backgroundColor: '#ffffff',
         useCORS: true,
         allowTaint: true,
         width: 900,
         height: 525,
         scrollX: 0,
-        scrollY: 0
+        scrollY: 0,
+        logging: false,
+        removeContainer: true,
+        onclone: (clonedDoc) => {
+          // Ensure all fonts and styles are applied
+          const clonedElement = clonedDoc.querySelector('[data-card-ref="true"]') || clonedDoc.body.firstChild;
+          if (clonedElement) {
+            clonedElement.style.transform = 'none';
+            clonedElement.style.webkitTransform = 'none';
+          }
+        }
       });
+
       if (canvas.width === 0 || canvas.height === 0) {
         throw new Error('Canvas is empty');
       }
-      // Use toDataURL for download - changed to JPG format with high quality
+
+      // Use PNG format like certificate for better quality
       const link = document.createElement('a');
-      link.download = `membership-card-${user.membershipNumber || 'download'}.jpg`;
-      link.href = canvas.toDataURL('image/jpeg', 0.95);
+      link.download = `membership-card-${user.membershipNumber || 'download'}.png`;
+      link.href = canvas.toDataURL('image/png');
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      
       showNotification('Card downloaded successfully!', 'success');
     } catch (error) {
       console.error('Error downloading card:', error);
       showNotification('Failed to download card. Please try again.', 'error');
-    } finally {
-      // Restore original image src and revoke temporary object URL
-      try {
-        if (imgEl && originalSrc !== undefined) {
-          imgEl.src = originalSrc;
-        }
-        if (tempObjectUrl) URL.revokeObjectURL(tempObjectUrl);
-      } catch (restoreErr) {
-        console.warn('Error restoring profile image after download:', restoreErr);
-      }
     }
   };
 
@@ -495,6 +473,7 @@ const MembershipCard = () => {
       <div 
         ref={cardRef}
         className="membership-card-new"
+        data-card-ref="true"
       >
         {/* Header Section */}
         <div className="card-header-new">

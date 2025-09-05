@@ -196,6 +196,7 @@ const UserTable = ({
                     disabled={users.length === 0}
                   />
                 </th>
+                <th className="serial-column">S.No.</th>
                 <th>User</th>
                 <th>Contact</th>
                 <th>Type</th>
@@ -210,7 +211,7 @@ const UserTable = ({
             <tbody>
               {users.length === 0 ? (
                 <tr>
-                  <td colSpan="10" className="no-data">
+                  <td colSpan="11" className="no-data">
                     <div className="no-data-content no-merchants">
                       <i className="fas fa-users fa-3x"></i>
                       <h3>No Users Found</h3>
@@ -219,7 +220,7 @@ const UserTable = ({
                   </td>
                 </tr>
               ) : (
-                users.map((user) => (
+                users.map((user, index) => (
                   <tr key={user.id}>
                     <td>
                       <input
@@ -227,6 +228,9 @@ const UserTable = ({
                         checked={selectedUsers.includes(user.id)}
                         onChange={() => onUserSelect(user.id)}
                       />
+                    </td>
+                    <td className="serial-number">
+                      {((pagination?.page || 1) - 1) * (pagination?.limit || 20) + index + 1}
                     </td>
                     <td>
                       <div className="user-cell business-info">

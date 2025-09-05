@@ -983,7 +983,7 @@ const Home = () => {
         <section className="stats">
           <div className="stats-container">
             <div className="stats-header">
-              <h2><i className="fas fa-chart-bar"></i> Community Statistics</h2>
+              <h2> Membership Program Statistics</h2>
               <p>Real-time insights into our growing community</p>
             </div>
             <div className="stats-grid">

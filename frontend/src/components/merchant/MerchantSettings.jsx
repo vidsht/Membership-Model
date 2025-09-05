@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNotification } from '../../contexts/NotificationContext';
+import { useDynamicFields } from '../../hooks/useDynamicFields';
 import ImageUpload from '../common/ImageUpload';
 import { useImageUrl } from '../../hooks/useImageUrl.jsx';
 import api from '../../services/api';
@@ -10,8 +11,10 @@ const MerchantSettings = () => {
   const { user, updateUser } = useAuth();
   const { showNotification } = useNotification();
   const { getMerchantLogoUrl } = useImageUrl();
+  const { getBusinessCategoryOptions } = useDynamicFields();
   const [business, setBusiness] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [categories, setCategories] = useState([]);
   const [formData, setFormData] = useState({
     businessName: '',
     businessDescription: '',
@@ -37,12 +40,66 @@ const MerchantSettings = () => {
     }
   }, [user]);
 
+  // Fetch dynamic categories
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const categoryOptions = await getBusinessCategoryOptions();
+        setCategories(categoryOptions);
+      } catch (error) {
+        console.error('Failed to fetch categories:', error);
+        // Fallback to static categories
+        setCategories([
+          { value: 'restaurant', label: 'Restaurant & Food' },
+          { value: 'retail', label: 'Retail & Shopping' },
+          { value: 'services', label: 'Professional Services' },
+          { value: 'healthcare', label: 'Healthcare' },
+          { value: 'technology', label: 'Technology' },
+          { value: 'finance', label: 'Finance' },
+          { value: 'real-estate', label: 'Real Estate' },
+          { value: 'automotive', label: 'Automotive' },
+          { value: 'education', label: 'Education' },
+          { value: 'entertainment', label: 'Entertainment' },
+          { value: 'other', label: 'Other' }
+        ]);
+      }
+    };
+
+    fetchCategories();
+  }, [getBusinessCategoryOptions]);
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    
+    // Handle website field with special validation
+    if (name === 'website') {
+      let processedValue = value;
+      
+      // Remove https:// if user enters it
+      if (processedValue.startsWith('https://')) {
+        processedValue = processedValue.replace('https://', '');
+      }
+      
+      // Remove http:// if user enters it
+      if (processedValue.startsWith('http://')) {
+        processedValue = processedValue.replace('http://', '');
+      }
+      
+      // Ensure it starts with www. if not empty and doesn't already start with www.
+      if (processedValue && !processedValue.startsWith('www.')) {
+        processedValue = 'www.' + processedValue;
+      }
+      
+      setFormData(prev => ({
+        ...prev,
+        [name]: processedValue
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -172,17 +229,11 @@ const MerchantSettings = () => {
                     onChange={handleInputChange}
                   >
                     <option value="">Select Category</option>
-                    <option value="restaurant">Restaurant & Food</option>
-                    <option value="retail">Retail & Shopping</option>
-                    <option value="services">Professional Services</option>
-                    <option value="healthcare">Healthcare</option>
-                    <option value="technology">Technology</option>
-                    <option value="finance">Finance</option>
-                    <option value="real-estate">Real Estate</option>
-                    <option value="automotive">Automotive</option>
-                    <option value="education">Education</option>
-                    <option value="entertainment">Entertainment</option>
-                    <option value="other">Other</option>
+                    {categories.map((category) => (
+                      <option key={category.value} value={category.value}>
+                        {category.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -254,12 +305,12 @@ const MerchantSettings = () => {
                   Website
                 </label>
                 <input
-                  type="url"
+                  type="text"
                   name="website"
                   className="form-control"
                   value={formData.website}
                   onChange={handleInputChange}
-                  placeholder="https://yourbusiness.com"
+                  placeholder="www.yourwebsite.com"
                 />
               </div>
 

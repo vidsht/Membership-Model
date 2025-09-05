@@ -33,14 +33,39 @@ html {
   z-index: 0;
 }
 
+/* Registration Toggle Info */
+.registration-toggle-info {
+  text-align: center;
+  padding: 15px 20px 5px 20px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  margin: 10px 10px 0 10px;
+  border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
+  z-index: 2;
+  position: relative;
+}
+
+.toggle-instruction {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #64748b;
+  font-style: italic;
+  opacity: 0.8;
+}
+
+.toggle-instruction strong {
+  color: #510909;
+  font-weight: 600;
+}
+
 .unified-tabs {
   display: flex;
   position: relative;
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
   padding: 15px;
-  border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
-  margin: 10px 10px 0 10px;
+  border-radius: 0 0 0 0;
+  margin: 0 10px 0 10px;
   z-index: 2;
 }
 
@@ -296,7 +321,7 @@ html {
 }
 
 .form-section a:hover {
-  color: #4d0505;
+  color: #cdae51;
   text-decoration: underline;
 }
 
@@ -507,14 +532,14 @@ html {
 }
 
 .login-link {
-  color: var(--primary-color);
+  color: #520A0A;
   text-decoration: none;
   font-weight: 600;
 }
 
 .login-link:hover {
   text-decoration: underline;
-  color: var(--primary-dark);
+  color: #cdae51;
 }
 
 /* Checkbox Container */

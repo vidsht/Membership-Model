@@ -1006,3 +1006,43 @@
   white-space: normal;
   word-wrap: break-word;
 }
+
+/* ===================================
+   SERIAL NUMBER COLUMN STYLING
+   =================================== */
+
+.serial-column {
+  width: 60px !important;
+  min-width: 60px !important;
+  max-width: 60px !important;
+  text-align: center !important;
+  padding: 0.75rem 0.5rem !important;
+}
+
+.serial-number {
+  text-align: center;
+  font-weight: 600;
+  color: #64748b;
+  font-size: 0.875rem;
+  padding: 0.75rem 0.5rem;
+  background: rgba(100, 116, 139, 0.05);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .serial-column {
+    width: 50px !important;
+    min-width: 50px !important;
+    max-width: 50px !important;
+  }
+
+  .serial-number {
+    font-size: 0.75rem;
+    padding: 0.5rem 0.25rem;
+  }
+}
