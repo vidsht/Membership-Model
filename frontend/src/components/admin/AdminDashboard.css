@@ -8,8 +8,8 @@
 
 /* Sidebar Styling */
 .admin-sidebar {
-  width: 280px;
-  background: linear-gradient(135deg, #3c50a7 0%, #334861 100%);
+  width: 240px;
+    background: linear-gradient(135deg, #8D1515 0%, #520A0A 100%);
   color: white;
   display: flex;
   flex-direction: column;
@@ -147,7 +147,7 @@
   margin: 0;
   display: flex;
   flex-direction: column;
-  max-width: 9%;
+  max-width: 96%;
 }
 
 .admin-header {
@@ -458,7 +458,7 @@
 
 .action-buttons {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(100px, 5fr));
   gap: 1rem;
 }
 

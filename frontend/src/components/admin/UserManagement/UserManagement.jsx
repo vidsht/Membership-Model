@@ -70,7 +70,7 @@ const UserManagement = () => {
 
   const [pagination, setPagination] = useState({
     page: 1,
-    limit: 20,
+    limit: 10,
     total: 0,
     totalPages: 0
   });
@@ -321,10 +321,17 @@ const UserManagement = () => {
         });
 
         setUsers(processedUsers);
+        // Defensive: always set totalPages to at least 1, and compute if missing
+        const total = paginationData.total || response.data.total || 0;
+        const limit = paginationData.limit || response.data.limit || pagination.limit || 10;
+        let totalPages = paginationData.totalPages || response.data.totalPages;
+        if (!totalPages) {
+          totalPages = Math.ceil(total / limit) || 1;
+        }
         setPagination(prev => ({
           ...prev,
-          total: paginationData.total || response.data.total || 0,
-          totalPages: paginationData.totalPages || response.data.totalPages || 1
+          total,
+          totalPages: totalPages < 1 ? 1 : totalPages
         }));
 
       } else {
@@ -823,19 +830,6 @@ const UserManagement = () => {
             </div>
           </div>
         </div>
-      )}
-
-      {/* Modal for Delete and Plan Assignment only */}
-      {modalState.isOpen && (
-        <UserModal
-          type={modalState.type}
-          user={modalState.user}
-          title={modalState.title}
-          referenceData={referenceData}
-          selectedUsers={selectedUsers}
-          onClose={closeModal}
-          onSubmit={null}
-        />
       )}
 
       {/* Quick Edit Redemption Limit Modal */}

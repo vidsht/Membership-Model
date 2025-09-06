@@ -181,15 +181,40 @@ const MembershipCard = () => {
       return;
     }
 
+    let tempObjectUrl = null;
+    let imgEl = null;
+    let originalSrc = null;
+
     try {
-      // Import html2canvas dynamically
+      // If there's an uploaded profile image, fetch it and set a same-origin object URL
+      const profileUrl = getProfileImageUrl(user);
+      if (profileUrl) {
+        try {
+          const resp = await fetch(profileUrl, { mode: 'cors' });
+          if (resp && resp.ok) {
+            const blob = await resp.blob();
+            tempObjectUrl = URL.createObjectURL(blob);
+
+            // Find the profile image in the card (SmartImage uses className "profile-image")
+            imgEl = cardRef.current.querySelector('img.profile-image');
+            if (imgEl) {
+              originalSrc = imgEl.src;
+              imgEl.src = tempObjectUrl;
+              // Ensure image has finished decoding
+              if (imgEl.decode) await imgEl.decode();
+            }
+          } else {
+            console.warn('Failed to fetch profile image for download, status:', resp && resp.status);
+          }
+        } catch (fetchErr) {
+          console.warn('Error fetching profile image for download:', fetchErr);
+        }
+      }
+
       const html2canvas = await import('html2canvas');
-      
-      // Wait a bit to ensure all elements are rendered
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
+      await new Promise(resolve => setTimeout(resolve, 500));
       const canvas = await html2canvas.default(cardRef.current, {
-        scale: 2,
+        scale: 4, // Increased from 3 to 4 for higher quality
         backgroundColor: '#ffffff',
         useCORS: true,
         allowTaint: true,
@@ -197,34 +222,33 @@ const MembershipCard = () => {
         height: 525,
         scrollX: 0,
         scrollY: 0,
-        logging: false,
-        removeContainer: true,
-        onclone: (clonedDoc) => {
-          // Ensure all fonts and styles are applied
-          const clonedElement = clonedDoc.querySelector('[data-card-ref="true"]') || clonedDoc.body.firstChild;
-          if (clonedElement) {
-            clonedElement.style.transform = 'none';
-            clonedElement.style.webkitTransform = 'none';
-          }
-        }
+        logging: false, // Disable console logs
+        removeContainer: true // Clean up
       });
-
       if (canvas.width === 0 || canvas.height === 0) {
         throw new Error('Canvas is empty');
       }
-
-      // Use PNG format like certificate for better quality
+      // Use toDataURL for download - JPEG format with high quality for crisp image
       const link = document.createElement('a');
-      link.download = `membership-card-${user.membershipNumber || 'download'}.png`;
-      link.href = canvas.toDataURL('image/png');
+      link.download = `membership-card-${user.membershipNumber || 'download'}.jpg`;
+      link.href = canvas.toDataURL('image/jpeg', 0.98); // Increased quality from 0.95 to 0.98
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      
       showNotification('Card downloaded successfully!', 'success');
     } catch (error) {
       console.error('Error downloading card:', error);
       showNotification('Failed to download card. Please try again.', 'error');
+    } finally {
+      // Restore original image src and revoke temporary object URL
+      try {
+        if (imgEl && originalSrc !== undefined) {
+          imgEl.src = originalSrc;
+        }
+        if (tempObjectUrl) URL.revokeObjectURL(tempObjectUrl);
+      } catch (restoreErr) {
+        console.warn('Error restoring profile image after download:', restoreErr);
+      }
     }
   };
 
@@ -246,14 +270,16 @@ const MembershipCard = () => {
       await new Promise(resolve => setTimeout(resolve, 500));
       
       const canvas = await html2canvas.default(cardRef.current, {
-        scale: 2,
+        scale: 3, // High scale for sharing
         backgroundColor: '#ffffff',
         useCORS: true,
         allowTaint: true,
-        width: 600,
-        height: 350,
+        width: 900,
+        height: 525,
         scrollX: 0,
-        scrollY: 0
+        scrollY: 0,
+        logging: false,
+        removeContainer: true
       });
 
       // Verify canvas has content
@@ -262,26 +288,24 @@ const MembershipCard = () => {
       }
 
       // Convert to blob
-      canvas.toBlob((blob) => {
-        if (!blob) {
-          throw new Error('Failed to create image blob');
-        }
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            throw new Error('Failed to create image blob');
+          }
 
-        if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([blob], 'membership-card.png', { type: 'image/png' })] })) {
-          const file = new File([blob], 'membership-card.png', { type: 'image/png' });
-          navigator.share({
-            title: 'My Indians in Ghana Membership Card',
-            text: `I'm a proud member of Indians in Ghana! 🇮🇳🇬🇭\nMember #${user.membershipNumber}`,
-            files: [file]
-          });
-        } else {
-          // Fallback to WhatsApp web link
-          const message = encodeURIComponent(`I'm a proud member of Indians in Ghana! 🇮🇳🇬🇭\nMember #${user.membershipNumber}\n\nJoin our community: ${window.location.origin}`);
-          window.open(`https://wa.me/?text=${message}`, '_blank');
-        }
-      }, 'image/png', 1.0);
-
-      showNotification('Sharing card...', 'info');
+          if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([blob], 'membership-card.jpg', { type: 'image/jpeg' })] })) {
+            const file = new File([blob], 'membership-card.jpg', { type: 'image/jpeg' });
+            navigator.share({
+              title: 'My Indians in Ghana Membership Card',
+              text: `I'm a proud member of Indians in Ghana! 🇮🇳🇬🇭\nMember #${user.membershipNumber}`,
+              files: [file]
+            });
+          } else {
+            // Fallback to WhatsApp web link
+            const message = encodeURIComponent(`I'm a proud member of Indians in Ghana! 🇮🇳🇬🇭\nMember #${user.membershipNumber}\n\nJoin our community: ${window.location.origin}`);
+            window.open(`https://wa.me/?text=${message}`, '_blank');
+          }
+        }, 'image/jpeg', 0.95);      showNotification('Sharing card...', 'info');
     } catch (error) {
       console.error('Error sharing card:', error);
       // Fallback to text sharing
@@ -310,14 +334,16 @@ const MembershipCard = () => {
         await new Promise(resolve => setTimeout(resolve, 500));
         
         const canvas = await html2canvas.default(cardRef.current, {
-          scale: 2,
+          scale: 3, // High scale for sharing
           backgroundColor: '#ffffff',
           useCORS: true,
           allowTaint: true,
-          width: 600,
-          height: 350,
+          width: 900,
+          height: 525,
           scrollX: 0,
-          scrollY: 0
+          scrollY: 0,
+          logging: false,
+          removeContainer: true
         });
 
         // Verify canvas has content
@@ -330,8 +356,8 @@ const MembershipCard = () => {
             throw new Error('Failed to create image blob');
           }
 
-          if (navigator.canShare && navigator.canShare({ files: [new File([blob], 'membership-card.png', { type: 'image/png' })] })) {
-            const file = new File([blob], 'membership-card.png', { type: 'image/png' });
+          if (navigator.canShare && navigator.canShare({ files: [new File([blob], 'membership-card.jpg', { type: 'image/jpeg' })] })) {
+            const file = new File([blob], 'membership-card.jpg', { type: 'image/jpeg' });
             await navigator.share({
               title: 'My Indians in Ghana Membership Card',
               text: `I'm a proud member of Indians in Ghana! 🇮🇳🇬🇭\nMember #${user.membershipNumber}`,
@@ -345,7 +371,7 @@ const MembershipCard = () => {
             });
           }
           showNotification('Card shared successfully!', 'success');
-        }, 'image/png', 1.0);
+        }, 'image/jpeg', 0.95);
       } else {
         // Fallback for browsers that don't support Web Share API
         const shareText = `I'm a proud member of Indians in Ghana! 🇮🇳🇬🇭\nMember #${user.membershipNumber}\n\nJoin our community: ${window.location.origin}`;
@@ -473,7 +499,6 @@ const MembershipCard = () => {
       <div 
         ref={cardRef}
         className="membership-card-new"
-        data-card-ref="true"
       >
         {/* Header Section */}
         <div className="card-header-new">

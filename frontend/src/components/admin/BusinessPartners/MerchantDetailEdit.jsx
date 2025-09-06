@@ -712,30 +712,6 @@ const MerchantDetailEdit = () => {
                   )}
                 </div>
 
-                <div className="detail-item">
-                  <label>Community</label>
-                  {editMode ? (
-                    <select
-                      value={formData.community}
-                      onChange={(e) => handleInputChange('community', e.target.value)}
-                      className="edit-input"
-                    >
-                      <option value="">Select community</option>
-                      {fieldsLoading ? (
-                        <option disabled>Loading communities...</option>
-                      ) : (
-                        getCommunityOptions().map(option => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))
-                      )}
-                    </select>
-                  ) : (
-                    <span>{merchant.community || 'N/A'}</span>
-                  )}
-                </div>
-
                 <div className="detail-item full-width">
                   <label>Personal Address</label>
                   {editMode ? (

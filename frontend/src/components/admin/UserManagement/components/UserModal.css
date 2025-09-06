@@ -50,7 +50,6 @@
 
 .users-table td,
 .merchants-table td {
-  padding: 1rem;
   border-bottom: 1px solid #f1f3f4;
   vertical-align: middle;
   transition: background-color 0.2s ease;
@@ -74,6 +73,21 @@
   height: 18px;
   cursor: pointer;
   accent-color: #007bff;
+} 
+
+/* Serial Number Column */
+.serial-column {
+  width: 70px;
+  text-align: center;
+  font-weight: 600;
+  color: #6c757d;
+}
+
+.serial-number {
+  text-align: center;
+  font-weight: 500;
+  color: #6c757d;
+  font-size: 0.875rem;
 }
 
 /* ===================================
@@ -683,11 +697,7 @@
     padding: 1rem 0.75rem;
     font-size: 0.8rem;
   }
-  
-  .users-table td,
-  .merchants-table td {
-    padding: 0.75rem;
-  }
+
   
   .user-cell,
   .business-info.user-info {

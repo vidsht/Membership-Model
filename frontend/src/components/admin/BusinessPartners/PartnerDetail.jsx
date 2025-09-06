@@ -75,9 +75,6 @@ const PartnerDetail = () => {
       <div className="modal-header">
         <h3>Business Partner Details</h3>
         <div className="header-actions">
-          <button className="btn btn-primary" onClick={handleEdit}>
-            <i className="fas fa-edit"></i> Edit Partner
-          </button>
           <button className="btn-close" onClick={handleClose}>
             <i className="fas fa-times"></i>
           </button>

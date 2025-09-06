@@ -2,32 +2,17 @@
 import React, { useState } from 'react';
 import './BulkActions.css';
 
-const BulkActions = ({ selectedCount, onBulkAction, onBulkDelete }) => {
-  const [isOpen, setIsOpen] = useState(false);
+const BulkActions = ({ selectedCount, onBulkAction, onClearSelection }) => {
   const [loading, setLoading] = useState(false);
 
   const handleBulkAction = async (action) => {
+    if (selectedCount === 0) return;
     if (window.confirm(`Are you sure you want to ${action} ${selectedCount} selected user(s)?`)) {
       setLoading(true);
       try {
         await onBulkAction(action);
-        setIsOpen(false);
       } catch (error) {
         console.error('Bulk action error:', error);
-      } finally {
-        setLoading(false);
-      }
-    }
-  };
-
-  const handleBulkDelete = async () => {
-    if (onBulkDelete) {
-      try {
-        setLoading(true);
-        await onBulkDelete();
-        setIsOpen(false);
-      } catch (error) {
-        console.error('Bulk delete error:', error);
       } finally {
         setLoading(false);
       }
@@ -67,51 +52,48 @@ const BulkActions = ({ selectedCount, onBulkAction, onBulkDelete }) => {
         </div>
         
         <div className="bulk-actions-controls">
-          <div className="dropdown">
+          <div className="left-group">
             <button
-              onClick={() => setIsOpen(!isOpen)}
-              className="btn btn-primary dropdown-toggle"
+              className="bulk-action-btn primary"
+              onClick={() => handleBulkAction('approve')}
               disabled={loading || selectedCount === 0}
+              title="Approve selected users"
             >
-              <i className="fas fa-cog"></i>
-              Bulk Actions
-              <i className={`fas fa-chevron-${isOpen ? 'up' : 'down'}`}></i>
+              <i className="fas fa-check"></i>
+              Approve
             </button>
-            
-            {isOpen && (
-              <div className="dropdown-menu show">
-                <div className="dropdown-header">
-                  Choose an action for {selectedCount} selected user{selectedCount !== 1 ? 's' : ''}
-                </div>
-                
-                {bulkActions.map((action) => (
-                  <button
-                    key={action.key}
-                    onClick={() => handleBulkAction(action.key)}
-                    className={`dropdown-item ${action.className}`}
-                    disabled={loading}
-                    title={action.description}
-                  >
-                    <i className={`fas ${action.icon}`}></i>
-                    {action.label}
-                  </button>
-                ))}
-                
-                <div className="dropdown-divider"></div>
-                
-                {/* Delete Selected button removed to prevent user deletion from admin bulk actions */}
-              </div>
-            )}
+
+            <button
+              className="bulk-action-btn warning"
+              onClick={() => handleBulkAction('suspend')}
+              disabled={loading || selectedCount === 0}
+              title="Suspend selected users"
+            >
+              <i className="fas fa-ban"></i>
+              Suspend
+            </button>
+
+            <button
+              className="bulk-action-btn danger"
+              onClick={() => handleBulkAction('reject')}
+              disabled={loading || selectedCount === 0}
+              title="Reject selected users"
+            >
+              <i className="fas fa-times"></i>
+              Reject
+            </button>
           </div>
-          
-          <button
-            onClick={() => setIsOpen(false)}
-            className="btn btn-secondary"
-            disabled={loading}
-          >
-            <i className="fas fa-times"></i>
-            Clear Selection
-          </button>
+
+          <div className="right-group">
+            <button
+              onClick={() => onClearSelection && onClearSelection()}
+              className="bulk-btn"
+              disabled={loading}
+            >
+              <i className="fas fa-times"></i>
+              Clear Selection
+            </button>
+          </div>
         </div>
       </div>
       

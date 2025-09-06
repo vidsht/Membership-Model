@@ -457,7 +457,7 @@ const PartnerRegistration = () => {
                 type="url"
                 id="website"
                 name="website"
-                placeholder="https://example.com"
+                placeholder="www.example.com"
                 value={formData.website}
                 onChange={handleChange}
                 onBlur={(e) => setFormData(prev => ({ ...prev, website: sanitizeWebsite(prev.website) }))}

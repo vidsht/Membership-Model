@@ -361,6 +361,70 @@
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
+/* Inline bulk-action buttons */
+.bulk-action-btn {
+  padding: 0.6rem 0.9rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.08);
+  color: white;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: all 160ms ease-in-out;
+}
+
+.bulk-action-btn.primary {
+  background: linear-gradient(135deg,#3b82f6,#1d4ed8);
+  box-shadow: 0 8px 20px rgba(59,130,246,0.12);
+}
+
+.bulk-action-btn.warning {
+  background: linear-gradient(135deg,#f59e0b,#d97706);
+  box-shadow: 0 8px 20px rgba(245,158,11,0.08);
+}
+
+.bulk-action-btn.danger {
+  background: linear-gradient(135deg,#ef4444,#dc2626);
+  box-shadow: 0 8px 20px rgba(239,68,68,0.08);
+}
+
+.bulk-action-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* right group clear button */
+.bulk-btn {
+  padding: 0.4rem 0.8rem;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.12);
+  color: white;
+  border: 1px solid rgba(255,255,255,0.18);
+  font-weight: 600;
+}
+
+/* keep responsive behavior */
+@media (max-width: 768px) {
+  .bulk-actions-controls {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .bulk-action-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  .right-group {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+}
+
 /* Responsive Design */
 @media (max-width: 968px) {
   .bulk-actions {

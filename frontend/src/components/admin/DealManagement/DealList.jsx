@@ -27,6 +27,12 @@ const DealList = ({ onTabChange }) => {
     pendingDeals: 0
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0
+  });
   const [filters, setFilters] = useState({
     status: 'all',
     category: 'all',
@@ -48,7 +54,7 @@ const DealList = ({ onTabChange }) => {
 
   useEffect(() => {
     fetchDeals();
-  }, [filters]);
+  }, [filters, pagination.page, pagination.limit]);
 
   const fetchInitialData = async () => {
     try {
@@ -78,7 +84,10 @@ const DealList = ({ onTabChange }) => {
   const fetchDeals = async () => {
     try {
       setIsLoading(true);
-      const params = {};
+      const params = {
+        page: pagination.page,
+        limit: pagination.limit
+      };
       
       if (filters.status !== 'all') params.status = filters.status;
       if (filters.category !== 'all') params.category = filters.category;
@@ -96,12 +105,20 @@ const DealList = ({ onTabChange }) => {
       
       const response = await api.get('/admin/deals', { params });
       const dealsData = response.data.deals || [];
+      const paginationData = response.data;
+      
       setDeals(dealsData);
+      setPagination(prev => ({
+        ...prev,
+        total: paginationData.total || 0,
+        totalPages: Math.ceil((paginationData.total || 0) / pagination.limit)
+      }));
       calculateStats(dealsData);
     } catch (error) {
       console.error('Error fetching deals:', error);
       showNotification('Error loading deals. Please try again.', 'error');
       setDeals([]);
+      setPagination(prev => ({ ...prev, total: 0, totalPages: 0 }));
     } finally {
       setIsLoading(false);
     }
@@ -121,10 +138,21 @@ const DealList = ({ onTabChange }) => {
 
   const handleFilterChange = (newFilters) => {
     setFilters(prev => ({ ...prev, ...newFilters }));
+    setPagination(prev => ({ ...prev, page: 1 })); // Reset to first page when filters change
+  };
+
+  const handlePageChange = (page) => {
+    setPagination(prev => ({ ...prev, page }));
+  };
+
+  const handlePageSizeChange = (limit) => {
+    setPagination(prev => ({ ...prev, limit, page: 1 }));
   };
 
   const handleSearch = () => {
-    fetchDeals();  };
+    setPagination(prev => ({ ...prev, page: 1 })); // Reset to first page on search
+    fetchDeals();
+  };
   
   const handleStatusChange = async (dealId, newStatus) => {
     try {      
@@ -636,6 +664,86 @@ const DealList = ({ onTabChange }) => {
           >
             Create First Deal
           </button>        </div>
+      )}
+      
+      {/* Pagination */}
+      {pagination && (
+        (() => {
+          const total = (typeof pagination.total === 'number' ? pagination.total : (deals && deals.length) || 0);
+          const limit = pagination.limit || 20;
+          let totalPages = pagination.totalPages || Math.max(1, Math.ceil(total / limit));
+          if (totalPages < 1) totalPages = 1;
+          const currentPage = Math.min(Math.max(1, pagination.page || 1), totalPages);
+          const startPage = Math.max(1, currentPage - 2);
+          const endPage = Math.min(totalPages, currentPage + 2);
+  
+          const pageButtons = [];
+          if (startPage > 1) {
+            pageButtons.push(
+              <button key={1} onClick={() => handlePageChange(1)} className="pagination-btn btn btn-sm btn-secondary" disabled={total === 0}>1</button>
+            );
+            if (startPage > 2) pageButtons.push(<span key="dots1" className="pagination-dots">...</span>);
+          }
+          for (let i = startPage; i <= endPage; i++) {
+            pageButtons.push(
+              <button
+                key={i}
+                onClick={() => handlePageChange(i)}
+                className={`pagination-btn btn btn-sm ${i === currentPage ? 'btn-primary active' : 'btn-secondary'}`}
+                disabled={total === 0}
+              >
+                {i}
+              </button>
+            );
+          }
+          if (endPage < totalPages) {
+            if (endPage < totalPages - 1) pageButtons.push(<span key="dots2" className="pagination-dots">...</span>);
+            pageButtons.push(
+              <button key={totalPages} onClick={() => handlePageChange(totalPages)} className="pagination-btn btn btn-sm btn-secondary" disabled={total === 0}>{totalPages}</button>
+            );
+          }
+  
+          return (
+            <div className="table-pagination pagination-container">
+              <div className="pagination-info">
+                {total === 0
+                  ? 'No deals to display.'
+                  : `Showing ${((currentPage - 1) * limit) + 1} to ${Math.min(currentPage * limit, total)} of ${total} deals`}
+              </div>
+              <div className="pagination-controls">
+                <button
+                  onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+                  disabled={currentPage <= 1 || total === 0}
+                  className="pagination-btn btn btn-sm btn-secondary"
+                >
+                  <i className="fas fa-chevron-left"></i>
+                </button>
+  
+                {pageButtons}
+  
+                <button
+                  onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage >= totalPages || total === 0}
+                  className="pagination-btn btn btn-sm btn-secondary"
+                >
+                  <i className="fas fa-chevron-right"></i>
+                </button>
+              </div>
+              <div className="page-size-selector">
+                <select
+                  value={limit}
+                  onChange={(e) => handlePageSizeChange(parseInt(e.target.value))}
+                  disabled={total === 0}
+                >
+                  <option value={10}>10 per page</option>
+                  <option value={20}>20 per page</option>
+                  <option value={50}>50 per page</option>
+                  <option value={100}>100 per page</option>
+                </select>
+              </div>
+            </div>
+          );
+        })()
       )}
       
       {/* Modal for delete confirmations only */}

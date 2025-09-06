@@ -695,7 +695,6 @@ input:focus, select:focus, textarea:focus {
     box-shadow: var(--box-shadow-medium);
     border-radius: var(--border-radius-btn);
     opacity: 0;
-    visibility: hidden;
     transform: translateY(-10px);
     transition: all 0.3s ease;
     z-index: 1000;

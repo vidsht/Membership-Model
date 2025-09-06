@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
+import { useDynamicFields } from '../hooks/useDynamicFields';
 import { merchantApi, getNotifications, markNotificationAsRead, markAllNotificationsAsRead, getRedemptionRequests, approveRedemptionRequest, rejectRedemptionRequest, getAllPlans } from '../services/api';
 import MerchantDealForm from '../components/MerchantDealForm';
 import PlanExpiryBanner from '../components/PlanExpiryBanner';
@@ -12,6 +13,7 @@ const MerchantDashboard = () => {
   const { user } = useAuth();
   const { showNotification } = useNotification();
   const { getDealBannerUrl } = useImageUrl(); 
+  const { getBusinessCategoryOptions } = useDynamicFields();
   const [deals, setDeals] = useState([]);
   const [plans, setPlans] = useState([]);
   const [currentMerchantPlan, setCurrentMerchantPlan] = useState(null);
@@ -1632,13 +1634,33 @@ const MerchantDashboard = () => {
             <form onSubmit={async (e) => {
               e.preventDefault();
               const formData = new FormData(e.target);
+              
+              // Process website field with validation logic (similar to UnifiedRegistration)
+              let websiteValue = formData.get('website');
+              if (websiteValue) {
+                // Remove https:// if user enters it
+                if (websiteValue.startsWith('https://')) {
+                  websiteValue = websiteValue.replace('https://', '');
+                }
+                
+                // Remove http:// if user enters it
+                if (websiteValue.startsWith('http://')) {
+                  websiteValue = websiteValue.replace('http://', '');
+                }
+                
+                // Ensure it starts with www. if not empty and doesn't already start with www.
+                if (websiteValue && !websiteValue.startsWith('www.')) {
+                  websiteValue = 'www.' + websiteValue;
+                }
+              }
+              
               const businessData = {
                 businessName: formData.get('businessName'),
                 businessCategory: formData.get('businessCategory'),
                 businessAddress: formData.get('businessAddress'),
                 businessPhone: formData.get('businessPhone'),
                 businessEmail: formData.get('businessEmail'),
-                website: formData.get('website'),
+                website: websiteValue, // Use processed website value
                 businessLicense: formData.get('businessLicense'),
                 taxId: formData.get('taxId'),
                 businessDescription: formData.get('businessDescription')
@@ -1667,13 +1689,23 @@ const MerchantDashboard = () => {
 
                 <div className="form-group">
                   <label htmlFor="businessCategory">Category *</label>
-                  <input
-                    type="text"
-                    id="businessCategory"
-                    name="businessCategory"
-                    defaultValue={businessInfo.businessCategory || ''}
-                    required
-                  />
+                  <div className="select-with-icon" style={{ position: 'relative' }}>
+                    <select
+                      id="businessCategory"
+                      name="businessCategory"
+                      defaultValue={businessInfo.businessCategory || ''}
+                      required
+                      style={{ paddingRight: '36px' }}
+                    >
+                      <option value="">Select Category</option>
+                      {getBusinessCategoryOptions().map((category) => (
+                        <option key={category.value} value={category.value}>
+                          {category.label}
+                        </option>
+                      ))}
+                    </select>
+                    <i className="fas fa-chevron-down dropdown-arrow" style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}></i>
+                  </div>
                 </div>
 
                 <div className="form-group full-width">
@@ -1709,11 +1741,11 @@ const MerchantDashboard = () => {
                 <div className="form-group">
                   <label htmlFor="website">Website</label>
                   <input
-                    type="url"
+                    type="text"
                     id="website"
                     name="website"
                     defaultValue={businessInfo.website || ''}
-                    placeholder="https://"
+                    placeholder="www.yourwebsite.com"
                   />
                 </div>
 

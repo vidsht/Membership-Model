@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../../services/api';
 import { useNotification } from '../../../contexts/NotificationContext';
@@ -17,6 +17,16 @@ const MerchantManagementEnhanced = () => {
   const [viewMode, setViewMode] = useState('cards'); // 'table' or 'cards'
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Stats calculation - similar to user management
+  const stats = useMemo(() => {
+    const totalMerchants = merchants.length;
+    const pendingApprovals = merchants.filter(merchant => merchant.status === 'pending').length;
+    const activeMerchants = merchants.filter(merchant => merchant.status === 'approved').length;
+    const suspendedMerchants = merchants.filter(merchant => merchant.status === 'suspended').length;
+    const rejectedMerchants = merchants.filter(merchant => merchant.status === 'rejected').length;
+    return { totalMerchants, pendingApprovals, activeMerchants, suspendedMerchants, rejectedMerchants };
+  }, [merchants]);
   const [selectedMerchant, setSelectedMerchant] = useState(null);
   const [showAddMerchant, setShowAddMerchant] = useState(false);
   const [showMerchantDetails, setShowMerchantDetails] = useState(false);
@@ -628,6 +638,30 @@ const MerchantManagementEnhanced = () => {
         </div>
       </div>
 
+      {/* Merchant Statistics Bar - Matching User Management Style */}
+      <div className="merchant-stats-bar">
+        <div className="merchant-stat">
+          <div className="stat-label">Total Merchants</div>
+          <div className="stat-value">{stats.totalMerchants}</div>
+        </div>
+        <div className="merchant-stat">
+          <div className="stat-label">Pending Approvals</div>
+          <div className="stat-value">{stats.pendingApprovals}</div>
+        </div>
+        <div className="merchant-stat">
+          <div className="stat-label">Active Merchants</div>
+          <div className="stat-value">{stats.activeMerchants}</div>
+        </div>
+        <div className="merchant-stat">
+          <div className="stat-label">Suspended</div>
+          <div className="stat-value">{stats.suspendedMerchants}</div>
+        </div>
+        <div className="merchant-stat">
+          <div className="stat-label">Rejected</div>
+          <div className="stat-value">{stats.rejectedMerchants}</div>
+        </div>
+      </div>
+
       {/* Merchant Add/Edit Modal */}
       {showAddMerchant && (
         <div className="modal-overlay" onClick={handleCancelEdit}>
@@ -847,6 +881,7 @@ const MerchantManagementEnhanced = () => {
                   onChange={handleSelectAll}
                 />
               </th>
+              <th className="serial-column">S.No</th>
               <th>Business</th>
               <th>Owner</th>
               <th>Contact</th>
@@ -860,7 +895,7 @@ const MerchantManagementEnhanced = () => {
             </tr>
           </thead>
           <tbody>
-            {merchants.map(merchant => (
+            {merchants.map((merchant, index) => (
               <tr key={merchant.id}>
                 <td>
                   <input
@@ -868,6 +903,9 @@ const MerchantManagementEnhanced = () => {
                     checked={selectedMerchants.includes(merchant.id)}
                     onChange={() => handleMerchantSelect(merchant.id)}
                   />
+                </td>
+                <td className="serial-number">
+                  {((pagination?.page || 1) - 1) * (pagination?.limit || 10) + index + 1}
                 </td>
                 <td>
                   <div className="business-info">

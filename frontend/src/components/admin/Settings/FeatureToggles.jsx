@@ -26,6 +26,21 @@ const FeatureToggles = ({ settings, onSettingChange }) => {
             <div className="toggle-description">
               Allow new users to register for the platform
             </div>
+            <div className="toggle-instructions">
+              <small style={{ 
+                color: '#666', 
+                fontStyle: 'italic', 
+                display: 'block', 
+                marginTop: '8px', 
+                padding: '8px 12px', 
+                backgroundColor: '#f8f9fa', 
+                borderRadius: '4px',
+                border: '1px solid #e9ecef'
+              }}>
+                <strong>How it works:</strong> When enabled, users can access registration forms and create new accounts. 
+                When disabled, registration forms will display a "Registration currently closed" message.
+              </small>
+            </div>
           </div>          <label className="toggle-switch">
             <input
               type="checkbox"
@@ -42,6 +57,21 @@ const FeatureToggles = ({ settings, onSettingChange }) => {
             <div className="toggle-description">
               Automatically approve users who register for the free Community plan
             </div>
+            <div className="toggle-instructions">
+              <small style={{ 
+                color: '#666', 
+                fontStyle: 'italic', 
+                display: 'block', 
+                marginTop: '8px', 
+                padding: '8px 12px', 
+                backgroundColor: '#f8f9fa', 
+                borderRadius: '4px',
+                border: '1px solid #e9ecef'
+              }}>
+                <strong>How it works:</strong> When enabled, users selecting the free Community plan will be automatically 
+                activated without manual review. Paid plans still require approval unless overridden by other settings.
+              </small>
+            </div>
           </div>          <label className="toggle-switch">
             <input
               type="checkbox"
@@ -57,6 +87,21 @@ const FeatureToggles = ({ settings, onSettingChange }) => {
             <span className="toggle-label">Require Manual Approval</span>
             <div className="toggle-description">
               Require admin approval for new user registrations (except auto-approved)
+            </div>
+            <div className="toggle-instructions">
+              <small style={{ 
+                color: '#666', 
+                fontStyle: 'italic', 
+                display: 'block', 
+                marginTop: '8px', 
+                padding: '8px 12px', 
+                backgroundColor: '#f8f9fa', 
+                borderRadius: '4px',
+                border: '1px solid #e9ecef'
+              }}>
+                <strong>How it works:</strong> When enabled, all new registrations (except those auto-approved above) 
+                will be placed in a pending state and require admin review in the User Management section.
+              </small>
             </div>
           </div>          <label className="toggle-switch">
             <input

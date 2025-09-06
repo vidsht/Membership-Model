@@ -546,7 +546,6 @@ const PartnerList = () => {
                       onChange={toggleSelectAll}
                     />
                   </th>
-                  <th className="serial-column">S.No.</th>
                   <th>Business Name</th>
                   <th>Owner</th>
                   <th>Contact</th>
@@ -560,16 +559,13 @@ const PartnerList = () => {
                 </tr>
               </thead>
               <tbody>
-                {partners.map((partner, index) => (
+                {partners.map(partner => (
                   <tr key={partner.id}>                    <td>
                       <input
                         type="checkbox"
                         checked={selectedPartners.includes(partner.id || partner._id)}
                         onChange={() => toggleSelectPartner(partner.id || partner._id)}
                       />
-                    </td>
-                    <td className="serial-number">
-                      {(pagination.currentPage - 1) * pagination.pageSize + index + 1}
                     </td>                    <td>
                       <div className="user-name-cell">
                         <div className="user-avatar">

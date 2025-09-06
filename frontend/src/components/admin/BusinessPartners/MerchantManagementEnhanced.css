@@ -5,6 +5,46 @@
   min-height: 100vh;
 }
 
+/* Merchant Statistics Bar */
+.merchant-stats-bar {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.merchant-stat {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  flex: 1;
+  min-width: 200px;
+  text-align: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.merchant-stat:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.merchant-stat .stat-label {
+  font-size: 0.875rem;
+  color: #666;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.merchant-stat .stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #2c3e50;
+  line-height: 1;
+}
+
 /* Header */
 .merchant-management-header {
   display: flex;
@@ -234,13 +274,28 @@ color: #7b1fa2;
 }
 
 .merchants-table td {
-  padding: 1rem;
+  padding: 0.5rem;
   border-bottom: 1px solid #dee2e6;
   vertical-align: top;
 }
 
 .merchants-table tbody tr:hover {
   background: #f8f9fa;
+}
+
+/* Serial Number Column */
+.merchants-table .serial-column {
+  width: 70px;
+  text-align: center;
+  font-weight: 600;
+  color: #6c757d;
+}
+
+.merchants-table .serial-number {
+  text-align: center;
+  font-weight: 500;
+  color: #6c757d;
+  font-size: 0.875rem;
 }
 
 /* Business Info */
@@ -575,7 +630,7 @@ color: #7b1fa2;
 
 /* Business Info */
 .business-info {
-  padding: 1.5rem;
+  padding: 0.5rem;
   flex-grow: 1;
   display: flex;
   flex-direction: column;
@@ -854,7 +909,7 @@ color: #7b1fa2;
 
 .detail-item {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   margin-bottom: 1rem;
 }
 
@@ -866,7 +921,7 @@ color: #7b1fa2;
 }
 
 .detail-item span {
-  color: #6c757d;
+  color: #1f2937;
   padding: 0.5rem 0;
 }
 

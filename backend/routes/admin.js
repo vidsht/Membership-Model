@@ -789,7 +789,7 @@ router.put('/users/:id', auth, admin, async (req, res) => {
     const allowedFields = [
       'fullName', 'email', 'phone', 'address', 'dob', 'community',
       'country', 'state', 'city', 'membershipType', 'status',
-      'userCategory', 'currentPlan'
+      'userCategory', 'currentPlan', 'bloodGroup'
     ];
 
     // Check if customRedemptionLimit column exists before adding it to allowed fields
@@ -1021,9 +1021,9 @@ router.put('/users/:id/password', auth, admin, async (req, res) => {
 router.post('/users/:id/assign-plan', auth, admin, async (req, res) => {
   try {
     const userId = parseInt(req.params.id);
-    const { planKey, planId } = req.body;
+    const { planKey, planId, expiryDate } = req.body;
 
-    console.log('🎯 Plan assignment request:', { userId, planKey, planId });
+    console.log('🎯 Plan assignment request:', { userId, planKey, planId, expiryDate });
 
     if (!userId || isNaN(userId)) {
       return res.status(400).json({ success: false, message: 'Valid user ID is required.' });
@@ -1092,29 +1092,38 @@ router.post('/users/:id/assign-plan', auth, admin, async (req, res) => {
 
     // STEP 3: Update user with validated plan
 
-    // Calculate validationDate based on billingCycle
+    // Calculate validationDate based on expiryDate if provided, otherwise use billingCycle
     let validationDate = new Date();
-    const billingCycle = (planDetails && planDetails.billingCycle) ? planDetails.billingCycle.toLowerCase() : 'yearly';
-    switch (billingCycle) {
-      case 'monthly':
-        validationDate.setMonth(validationDate.getMonth() + 1);
-        break;
-      case 'quarterly':
-        validationDate.setMonth(validationDate.getMonth() + 3);
-        break;
-      case 'yearly':
-      case 'annual':
-        validationDate.setFullYear(validationDate.getFullYear() + 1);
-        break;
-      case 'lifetime':
-        validationDate = null;
-        break;
-      case 'weekly':
-        validationDate.setDate(validationDate.getDate() + 7);
-        break;
-      default:
-        validationDate.setFullYear(validationDate.getFullYear() + 1);
-        break;
+    
+    if (expiryDate) {
+      // Use the provided expiry date from frontend
+      // Parse the date and set it to end of day to avoid timezone issues
+      validationDate = new Date(expiryDate + 'T23:59:59');
+      console.log('📅 Using custom expiry date:', expiryDate, '→', validationDate);
+    } else {
+      // Fall back to calculating based on billingCycle
+      const billingCycle = (planDetails && planDetails.billingCycle) ? planDetails.billingCycle.toLowerCase() : 'yearly';
+      switch (billingCycle) {
+        case 'monthly':
+          validationDate.setMonth(validationDate.getMonth() + 1);
+          break;
+        case 'quarterly':
+          validationDate.setMonth(validationDate.getMonth() + 3);
+          break;
+        case 'yearly':
+        case 'annual':
+          validationDate.setFullYear(validationDate.getFullYear() + 1);
+          break;
+        case 'lifetime':
+          validationDate = null;
+          break;
+        case 'weekly':
+          validationDate.setDate(validationDate.getDate() + 7);
+          break;
+        default:
+          validationDate.setFullYear(validationDate.getFullYear() + 1);
+          break;
+      }
     }
 
     let updateQuery, updateParams;

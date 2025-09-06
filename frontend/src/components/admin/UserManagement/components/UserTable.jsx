@@ -72,24 +72,29 @@ const UserTable = ({
   // handlePlanChange removed (plan assignment logic)
 
   const renderPagination = () => {
-    if (!pagination || pagination.totalPages <= 1) return null;
+    if (!pagination) return null;
+
+    const total = (typeof pagination.total === 'number' ? pagination.total : (users && users.length) || 0);
+    const limit = pagination.limit || 20;
+    let totalPages = pagination.totalPages || Math.max(1, Math.ceil(total / limit));
+    if (totalPages < 1) totalPages = 1;
+    const currentPage = Math.min(Math.max(1, pagination.page || 1), totalPages);
 
     const pages = [];
-    const { page: currentPage, totalPages } = pagination;
 
     // Previous button
     pages.push(
       <button
         key="prev"
-        onClick={() => onPageChange(currentPage - 1)}
-        disabled={currentPage <= 1}
+        onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+        disabled={currentPage <= 1 || total === 0}
         className="pagination-btn btn btn-sm btn-secondary"
       >
         <i className="fas fa-chevron-left"></i>
       </button>
     );
 
-    // Page numbers
+    // Page numbers (show a small window around current page)
     const startPage = Math.max(1, currentPage - 2);
     const endPage = Math.min(totalPages, currentPage + 2);
 
@@ -99,6 +104,7 @@ const UserTable = ({
           key={1}
           onClick={() => onPageChange(1)}
           className="pagination-btn btn btn-sm btn-secondary"
+          disabled={total === 0}
         >
           1
         </button>
@@ -114,6 +120,7 @@ const UserTable = ({
           key={i}
           onClick={() => onPageChange(i)}
           className={`pagination-btn btn btn-sm ${i === currentPage ? 'btn-primary active' : 'btn-secondary'}`}
+          disabled={total === 0}
         >
           {i}
         </button>
@@ -129,6 +136,7 @@ const UserTable = ({
           key={totalPages}
           onClick={() => onPageChange(totalPages)}
           className="pagination-btn btn btn-sm btn-secondary"
+          disabled={total === 0}
         >
           {totalPages}
         </button>
@@ -139,8 +147,8 @@ const UserTable = ({
     pages.push(
       <button
         key="next"
-        onClick={() => onPageChange(currentPage + 1)}
-        disabled={currentPage >= totalPages}
+        onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+        disabled={currentPage >= totalPages || total === 0}
         className="pagination-btn btn btn-sm btn-secondary"
       >
         <i className="fas fa-chevron-right"></i>
@@ -150,15 +158,18 @@ const UserTable = ({
     return (
       <div className="table-pagination pagination-container">
         <div className="pagination-info">
-          Showing {((currentPage - 1) * pagination.limit) + 1} to {Math.min(currentPage * pagination.limit, pagination.total)} of {pagination.total} users
+          {total === 0
+            ? 'No users to display.'
+            : `Showing ${((currentPage - 1) * limit) + 1} to ${Math.min(currentPage * limit, total)} of ${total} users`}
         </div>
         <div className="pagination-controls">
           {pages}
         </div>
         <div className="page-size-selector">
-          <select 
-            value={pagination.limit} 
+          <select
+            value={limit}
             onChange={(e) => onPageSizeChange(parseInt(e.target.value))}
+            disabled={total === 0}
           >
             <option value={10}>10 per page</option>
             <option value={20}>20 per page</option>
@@ -196,7 +207,7 @@ const UserTable = ({
                     disabled={users.length === 0}
                   />
                 </th>
-                <th className="serial-column">S.No.</th>
+                <th className="serial-column">S.No</th>
                 <th>User</th>
                 <th>Contact</th>
                 <th>Type</th>

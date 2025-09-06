@@ -310,7 +310,6 @@
 .bulk-actions button {
   padding: 0.5rem 1rem;
   border: 1px solid #dee2e6;
-  background: white;
   color: #495057;
   border-radius: 8px;
   font-weight: 500;
@@ -324,7 +323,92 @@
   border-color: #0c905d;
 }
 
-/* Responsive Design */
+/* Bulk actions - improved controls layout (new class: bulk-actions-controls) */
+.bulk-actions-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(180deg, #ffffff, #fbfdff);
+  border: 1px solid #e9ecef;
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(2,6,23,0.04);
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.bulk-actions-controls .left-group,
+.bulk-actions-controls .right-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.bulk-actions-controls .selection-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #374151;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.bulk-actions-controls .selection-info i {
+  color: #0c905d;
+  font-size: 1.05rem;
+}
+
+.bulk-actions-controls .bulk-btn {
+  padding: 0.5rem 0.9rem;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #111827;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 160ms ease-in-out;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.bulk-actions-controls .bulk-btn.primary {
+  background: linear-gradient(135deg,#3b82f6,#1d4ed8);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 8px 20px rgba(59,130,246,0.12);
+}
+
+.bulk-actions-controls .bulk-btn.danger {
+  background: linear-gradient(135deg,#ef4444,#dc2626);
+  color: #fff;
+  border-color: transparent;
+}
+
+.bulk-actions-controls .bulk-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.bulk-actions-controls .search-input {
+  padding: 0.45rem 0.6rem;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  min-width: 220px;
+  font-size: 0.95rem;
+}
+
+.bulk-actions-controls .bulk-dropdown {
+  padding: 0.45rem 0.6rem;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  font-weight: 600;
+}
+
 @media (max-width: 768px) {
   .approval-queue {
     padding: 1rem;
@@ -355,5 +439,20 @@
   .filters {
     flex-direction: column;
     align-items: stretch;
+  }
+  
+  .bulk-actions-controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+  .bulk-actions-controls .left-group,
+  .bulk-actions-controls .right-group {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .bulk-actions-controls .search-input {
+    width: 100%;
+    min-width: 0;
   }
 }
