@@ -289,7 +289,7 @@ const Activities = () => {
                   </td>
                   <td>
                     <div style={{ fontSize: '0.875rem' }}>
-                      {formatTimeAgo(activity.createdAt)}
+                      {formatTimeAgo(activity.timestamp || activity.createdAt)}
                     </div>
                   </td>
                   <td>

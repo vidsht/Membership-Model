@@ -65,9 +65,7 @@ const MerchantManagementEnhanced = () => {
     status: '',
     category: '',
     membershipType: '',
-    state: '',
     dateFrom: '',
-    dateTo: '',
     planStatus: '',
     dealLimit: ''
   });
@@ -511,8 +509,15 @@ const MerchantManagementEnhanced = () => {
     try {
       showNotification('Preparing merchant export...', 'info');
 
-      // Request the full export (ignore local filters/pagination so we get all data)
-      const url = `/admin/partners/export`;
+      // Build query params with current filters (like UserManagement does)
+      const queryParams = new URLSearchParams();
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value && value !== 'all' && (typeof value !== 'string' || value.trim() !== '')) {
+          queryParams.set(key, value);
+        }
+      });
+
+      const url = `/admin/partners/export?${queryParams}`;
 
       const response = await api.get(url, {
         responseType: 'blob'
@@ -568,7 +573,7 @@ const MerchantManagementEnhanced = () => {
       const message = err.response?.data?.message || 'Failed to export merchants';
       showNotification(message, 'error');
     }
-  }, [showNotification]);
+  }, [showNotification, filters]);
 
   // Single useEffect for component mounting (reduced logging)
   useEffect(() => {
@@ -813,38 +818,15 @@ const MerchantManagementEnhanced = () => {
                   <option value="premium_business">Premium Business</option>
                 </select>
               </div>
-              <div className="filter-group">
-                <select
-                  value={filters.state}
-                  onChange={(e) => handleFilterChange('state', e.target.value)}
-                  className="filter-select"
-                >
-                  <option value="">All States</option>
-                  {getStateOptions().map(state => (
-                    <option key={state.value} value={state.value}>
-                      {state.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="filter-group">
-                <input
-                  type="date"
-                  placeholder="From Date"
-                  value={filters.dateFrom}
-                  onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
-                  className="filter-input"
-                />
-              </div>
-              <div className="filter-group">
-                <input
-                  type="date"
-                  placeholder="To Date"
-                  value={filters.dateTo}
-                  onChange={(e) => handleFilterChange('dateTo', e.target.value)}
-                  className="filter-input"
-                />
-              </div>
+               <div className="filter-group">
+                 <input
+                   type="date"
+                   placeholder="From Date"
+                   value={filters.dateFrom}
+                   onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
+                   className="filter-input"
+                 />
+               </div>
               <div className="filter-group">
                 <select
                   value={filters.planStatus}

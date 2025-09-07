@@ -38,8 +38,7 @@ const PartnerList = () => {
     status: searchParams.get('status') || 'all',
     category: 'all',
     search: '',
-    dateFrom: '',
-    dateTo: ''
+    dateFrom: ''
   });
   
   // Pagination
@@ -66,10 +65,6 @@ const PartnerList = () => {
       
       if (filters.dateFrom) {
         queryParams.append('dateFrom', filters.dateFrom);
-      }
-      
-      if (filters.dateTo) {
-        queryParams.append('dateTo', filters.dateTo);
       }
       
       const response = await api.get(`/admin/partners?${queryParams}`);
@@ -505,21 +500,13 @@ const PartnerList = () => {
                   onChange={(e) => setFilters({ ...filters, dateFrom: e.target.value })}
                 />
               </div>
-              
-              <div className="filter-group">
-                <label>To:</label>
-                <input
-                  type="date"
-                  value={filters.dateTo}                  onChange={(e) => setFilters({ ...filters, dateTo: e.target.value })}
-                />
-              </div>
             </div>
             
             <div className="filter-actions">
               <button 
                 type="button" 
                 className="btn-clear"
-                onClick={() => handleFilterChange({ status: 'all', category: 'all', search: '', dateFrom: '', dateTo: '' })}
+                onClick={() => handleFilterChange({ status: 'all', category: 'all', search: '', dateFrom: '' })}
               >
                 <i className="fas fa-times"></i>
                 Clear Filters
@@ -706,7 +693,7 @@ const PartnerList = () => {
             <p>No partners found matching the current filters</p>
             <button 
               className="btn-outline" 
-              onClick={() => handleFilterChange({ status: 'all', category: 'all', search: '', dateFrom: '', dateTo: '' })}
+              onClick={() => handleFilterChange({ status: 'all', category: 'all', search: '', dateFrom: '' })}
             >
               Clear Filters
             </button>

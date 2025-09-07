@@ -356,6 +356,7 @@ router.get('/users', auth, admin, async (req, res) => {
       dateFrom,
       dateTo,
       planExpired,
+      planStatus,
       page = 1,
       limit = 20
     } = req.query;
@@ -374,7 +375,11 @@ router.get('/users', auth, admin, async (req, res) => {
       params.push(userType);
     }
 
-
+    // Membership Plan filter
+    if (membershipType && membershipType !== 'all') {
+      whereClause += ' AND u.membershipType = ?';
+      params.push(membershipType);
+    }
 
     if (community && community !== 'all') {
       whereClause += ' AND u.community = ?';
@@ -387,8 +392,33 @@ router.get('/users', auth, admin, async (req, res) => {
       params.push(searchTerm, searchTerm, searchTerm, searchTerm);
     }
 
+    // Registered From date filter
+    if (dateFrom) {
+      whereClause += ' AND DATE(u.createdAt) >= ?';
+      params.push(dateFrom);
+    }
 
+    // Registered To date filter (keeping for backward compatibility)
+    if (dateTo) {
+      whereClause += ' AND DATE(u.createdAt) <= ?';
+      params.push(dateTo);
+    }
 
+    // Plan Status filter (replaces old planExpired)
+    if (planStatus && planStatus !== 'all') {
+      if (planStatus === 'active') {
+        whereClause += ' AND (u.validationDate IS NULL OR u.validationDate >= NOW())';
+      } else if (planStatus === 'expired') {
+        whereClause += ' AND u.validationDate IS NOT NULL AND u.validationDate < NOW()';
+      } else if (planStatus === 'expiring_soon') {
+        // Plans expiring within 30 days
+        whereClause += ' AND u.validationDate IS NOT NULL AND u.validationDate >= NOW() AND u.validationDate <= DATE_ADD(NOW(), INTERVAL 30 DAY)';
+      } else if (planStatus === 'no_plan') {
+        whereClause += ' AND u.validationDate IS NULL';
+      }
+    }
+
+    // Legacy planExpired support
     if (planExpired && planExpired !== 'all') {
       if (planExpired === 'yes') {
         whereClause += ' AND u.validationDate < NOW()';
@@ -504,8 +534,12 @@ router.get('/users/export', auth, admin, async (req, res) => {
     const {
       status,
       userType,
+      membershipType,
       community,
-      search
+      search,
+      dateFrom,
+      dateTo,
+      planStatus
     } = req.query;
 
     let whereClause = 'WHERE 1=1';
@@ -521,6 +555,12 @@ router.get('/users/export', auth, admin, async (req, res) => {
       params.push(userType);
     }
 
+    // Membership Plan filter
+    if (membershipType && membershipType !== 'all') {
+      whereClause += ' AND u.membershipType = ?';
+      params.push(membershipType);
+    }
+
     if (community && community !== 'all') {
       whereClause += ' AND u.community = ?';
       params.push(community);
@@ -530,6 +570,30 @@ router.get('/users/export', auth, admin, async (req, res) => {
       whereClause += ' AND (u.fullName LIKE ? OR u.email LIKE ? OR u.phone LIKE ? OR u.membershipNumber LIKE ?)';
       const searchTerm = `%${search.trim()}%`;
       params.push(searchTerm, searchTerm, searchTerm, searchTerm);
+    }
+
+    // Date filters
+    if (dateFrom) {
+      whereClause += ' AND DATE(u.createdAt) >= ?';
+      params.push(dateFrom);
+    }
+
+    if (dateTo) {
+      whereClause += ' AND DATE(u.createdAt) <= ?';
+      params.push(dateTo);
+    }
+
+    // Plan Status filter
+    if (planStatus && planStatus !== 'all') {
+      if (planStatus === 'active') {
+        whereClause += ' AND (u.validationDate IS NULL OR u.validationDate >= NOW())';
+      } else if (planStatus === 'expired') {
+        whereClause += ' AND u.validationDate IS NOT NULL AND u.validationDate < NOW()';
+      } else if (planStatus === 'expiring_soon') {
+        whereClause += ' AND u.validationDate IS NOT NULL AND u.validationDate >= NOW() AND u.validationDate <= DATE_ADD(NOW(), INTERVAL 30 DAY)';
+      } else if (planStatus === 'no_plan') {
+        whereClause += ' AND u.validationDate IS NULL';
+      }
     }
 
     // Select additional fields requested: address, dob, validationDate, bloodGroup
@@ -1600,6 +1664,9 @@ router.get('/partners', auth, admin, async (req, res) => {
     const {
       status,
       category,
+      membershipType,
+      planStatus,
+      dealLimit,
       search,
       dateFrom,
       dateTo,
@@ -1614,6 +1681,12 @@ router.get('/partners', auth, admin, async (req, res) => {
     if (status && status !== 'all') {
       whereClause += ' AND u.status = ?';
       params.push(status);
+    }
+
+    // Membership Type filter
+    if (membershipType && membershipType !== 'all') {
+      whereClause += ' AND u.membershipType = ?';
+      params.push(membershipType);
     }
 
     if (search && search.trim()) {
@@ -1635,6 +1708,29 @@ router.get('/partners', auth, admin, async (req, res) => {
     if (category && category !== 'all') {
       whereClause += ' AND b.businessCategory = ?';
       params.push(category);
+    }
+
+    // Plan Status filter
+    if (planStatus && planStatus !== 'all') {
+      if (planStatus === 'active') {
+        whereClause += ' AND (u.validationDate IS NULL OR u.validationDate >= NOW())';
+      } else if (planStatus === 'expired') {
+        whereClause += ' AND u.validationDate IS NOT NULL AND u.validationDate < NOW()';
+      } else if (planStatus === 'expiring_soon') {
+        // Plans expiring within 30 days
+        whereClause += ' AND u.validationDate IS NOT NULL AND u.validationDate >= NOW() AND u.validationDate <= DATE_ADD(NOW(), INTERVAL 30 DAY)';
+      }
+    }
+
+    // Deal Limit filter
+    if (dealLimit && dealLimit !== 'all') {
+      if (dealLimit === 'custom') {
+        whereClause += ' AND b.customDealLimit IS NOT NULL';
+      } else if (dealLimit === 'default') {
+        whereClause += ' AND b.customDealLimit IS NULL';
+      } else if (dealLimit === 'unlimited') {
+        whereClause += ' AND (b.customDealLimit = 0 OR p.max_deals_per_month = 0)';
+      }
     }
 
     // Check if businesses table exists
@@ -2265,6 +2361,165 @@ router.post('/partners/bulk-action', auth, admin, async (req, res) => {
   } catch (err) {
     console.error('Error performing bulk partner action:', err);
     res.status(500).json({ success: false, message: 'Server error performing bulk partner action' });
+  }
+});
+
+// Export partners to CSV
+router.get('/partners/export', auth, admin, async (req, res) => {
+  try {
+    const {
+      status,
+      category,
+      membershipType,
+      planStatus,
+      dealLimit,
+      search,
+      dateFrom,
+      dateTo
+    } = req.query;
+
+    let whereClause = 'WHERE u.userType = "merchant"';
+    const params = [];
+
+    // Apply same filters as main partners route
+    if (status && status !== 'all') {
+      whereClause += ' AND u.status = ?';
+      params.push(status);
+    }
+
+    if (membershipType && membershipType !== 'all') {
+      whereClause += ' AND u.membershipType = ?';
+      params.push(membershipType);
+    }
+
+    if (search && search.trim()) {
+      whereClause += ' AND (u.fullName LIKE ? OR u.email LIKE ? OR b.businessName LIKE ? OR u.phone LIKE ?)';
+      const searchTerm = `%${search.trim()}%`;
+      params.push(searchTerm, searchTerm, searchTerm, searchTerm);
+    }
+
+    if (dateFrom) {
+      whereClause += ' AND DATE(u.createdAt) >= ?';
+      params.push(dateFrom);
+    }
+
+    if (dateTo) {
+      whereClause += ' AND DATE(u.createdAt) <= ?';
+      params.push(dateTo);
+    }
+
+    if (category && category !== 'all') {
+      whereClause += ' AND b.businessCategory = ?';
+      params.push(category);
+    }
+
+    if (planStatus && planStatus !== 'all') {
+      if (planStatus === 'active') {
+        whereClause += ' AND (u.validationDate IS NULL OR u.validationDate >= NOW())';
+      } else if (planStatus === 'expired') {
+        whereClause += ' AND u.validationDate IS NOT NULL AND u.validationDate < NOW()';
+      } else if (planStatus === 'expiring_soon') {
+        whereClause += ' AND u.validationDate IS NOT NULL AND u.validationDate >= NOW() AND u.validationDate <= DATE_ADD(NOW(), INTERVAL 30 DAY)';
+      }
+    }
+
+    if (dealLimit && dealLimit !== 'all') {
+      if (dealLimit === 'custom') {
+        whereClause += ' AND b.customDealLimit IS NOT NULL';
+      } else if (dealLimit === 'default') {
+        whereClause += ' AND b.customDealLimit IS NULL';
+      } else if (dealLimit === 'unlimited') {
+        whereClause += ' AND (b.customDealLimit = 0 OR p.max_deals_per_month = 0)';
+      }
+    }
+
+    // Check if businesses table exists
+    const businessTableExists = await tableExists('businesses');
+    
+    let exportQuery;
+    if (businessTableExists) {
+      exportQuery = `
+        SELECT 
+          u.id, u.fullName, u.email, u.phone, u.address, u.community, 
+          u.membershipType, u.status, u.createdAt, u.lastLogin, u.validationDate,
+          b.businessId, b.businessName, b.businessDescription, b.businessCategory,
+          b.businessAddress, b.businessPhone, b.businessEmail, b.website,
+          b.customDealLimit,
+          p.name as planName, p.price as planPrice, p.billingCycle, p.currency
+        FROM users u
+        LEFT JOIN businesses b ON u.id = b.userId
+        LEFT JOIN plans p ON u.membershipType = p.key
+        ${whereClause}
+        ORDER BY u.createdAt DESC
+      `;
+    } else {
+      exportQuery = `
+        SELECT 
+          u.id, u.fullName, u.email, u.phone, u.address, u.community, 
+          u.membershipType, u.status, u.createdAt, u.lastLogin, u.validationDate,
+          NULL as businessId, NULL as businessName, NULL as businessDescription, 
+          NULL as businessCategory, NULL as businessAddress, NULL as businessPhone, 
+          NULL as businessEmail, NULL as website, NULL as customDealLimit,
+          p.name as planName, p.price as planPrice, p.billingCycle, p.currency
+        FROM users u
+        LEFT JOIN plans p ON u.membershipType = p.key
+        ${whereClause}
+        ORDER BY u.createdAt DESC
+      `;
+    }
+
+    const partners = await queryAsync(exportQuery, params);
+
+    // Convert to CSV
+    const csvHeader = 'ID,Full Name,Email,Phone,Community,Membership Type,Status,Business Name,Business Category,Business Address,Business Phone,Business Email,Website,Custom Deal Limit,Plan Name,Plan Price,Registration Date,Last Login,Plan Valid Till\n';
+    
+    const csvRows = partners.map(partner => {
+      const formatValue = (value) => {
+        if (value === null || value === undefined) return '';
+        if (typeof value === 'string' && value.includes(',')) return `"${value}"`;
+        return value;
+      };
+
+      const formatDate = (date) => {
+        if (!date) return '';
+        try {
+          return new Date(date).toLocaleDateString('en-US');
+        } catch {
+          return '';
+        }
+      };
+
+      return [
+        formatValue(partner.id),
+        formatValue(partner.fullName),
+        formatValue(partner.email),
+        formatValue(partner.phone),
+        formatValue(partner.community),
+        formatValue(partner.membershipType),
+        formatValue(partner.status),
+        formatValue(partner.businessName),
+        formatValue(partner.businessCategory),
+        formatValue(partner.businessAddress),
+        formatValue(partner.businessPhone),
+        formatValue(partner.businessEmail),
+        formatValue(partner.website),
+        formatValue(partner.customDealLimit),
+        formatValue(partner.planName),
+        formatValue(partner.planPrice),
+        formatDate(partner.createdAt),
+        formatDate(partner.lastLogin),
+        formatDate(partner.validationDate)
+      ].join(',');
+    }).join('\n');
+
+    const csvContent = csvHeader + csvRows;
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename=partners-export-${new Date().toISOString().split('T')[0]}.csv`);
+    res.send(csvContent);
+  } catch (err) {
+    console.error('Error exporting partners:', err);
+    res.status(500).json({ success: false, message: 'Server error exporting partners' });
   }
 });
 

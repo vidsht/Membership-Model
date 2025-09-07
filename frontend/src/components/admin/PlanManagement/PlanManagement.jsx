@@ -67,9 +67,9 @@ const PlanManagement = () => {
         // Fetch users
         const usersResponse = await api.get('/admin/users?userType=user');
         setUsers(usersResponse.data.users || []);
-          // Fetch merchants
-        const merchantsResponse = await api.get('/admin/users?userType=merchant');
-        setMerchants(merchantsResponse.data.users || []);
+          // Fetch merchants using the partners endpoint which includes business info
+        const merchantsResponse = await api.get('/admin/partners');
+        setMerchants(merchantsResponse.data.merchants || []);
         
         // Fetch analytics data
         try {
@@ -95,9 +95,9 @@ const PlanManagement = () => {
         }).length || 0;
         
         // Count expiring merchants
-        const expiringMerchants = merchantsResponse.data.users?.filter(merchant => {
-          if (!merchant.planExpiryDate) return false;
-          const expiryDate = new Date(merchant.planExpiryDate);
+        const expiringMerchants = merchantsResponse.data.merchants?.filter(merchant => {
+          if (!merchant.validationDate) return false;
+          const expiryDate = new Date(merchant.validationDate);
           return expiryDate >= now && expiryDate <= sevenDaysFromNow;
         }).length || 0;
         

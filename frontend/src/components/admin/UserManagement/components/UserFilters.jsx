@@ -107,45 +107,33 @@ const UserFilters = ({
               </select>
             </div>
 
-            {/* Membership Plan Filter */}
+            {/* Membership Plan Filter (dynamic from referenceData.plans) */}
             <div className="filter-group">
               <label htmlFor="membershipType">Membership Plan</label>
               <select
                 id="membershipType"
                 value={filters.membershipType || 'all'}
                 onChange={(e) => handleFilterChange('membershipType', e.target.value)}
+                disabled={fieldsLoading || loading}
               >
                 <option value="all">All Plans</option>
-                <option value="community">Community</option>
-                <option value="silver">Silver</option>
-                <option value="gold">Gold</option>
-                <option value="basic_business">Basic Business</option>
-                <option value="premium_business">Premium Business</option>
-                {referenceData?.plans?.map(plan => (
-                  <option key={plan.key} value={plan.key}>
-                    {plan.name || plan.key}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Blood Group Filter */}
-            <div className="filter-group">
-              <label htmlFor="bloodGroup">Blood Group</label>
-              <select
-                id="bloodGroup"
-                value={filters.bloodGroup || 'all'}
-                onChange={(e) => handleFilterChange('bloodGroup', e.target.value)}
-              >
-                <option value="all">All Blood Groups</option>
-                <option value="A+">A+</option>
-                <option value="A-">A-</option>
-                <option value="B+">B+</option>
-                <option value="B-">B-</option>
-                <option value="AB+">AB+</option>
-                <option value="AB-">AB-</option>
-                <option value="O+">O+</option>
-                <option value="O-">O-</option>
+                {(fieldsLoading || loading) ? (
+                  <option disabled>Loading plans...</option>
+                ) : referenceData?.plans && referenceData.plans.length > 0 ? (
+                  referenceData.plans.map(plan => (
+                    <option key={plan.key || plan.id} value={plan.key || plan.id}>
+                      {plan.name || plan.key || `Plan ${plan.id}`}
+                    </option>
+                  ))
+                ) : (
+                  <>
+                    <option value="community">Community</option>
+                    <option value="silver">Silver</option>
+                    <option value="gold">Gold</option>
+                    <option value="basic_business">Basic Business</option>
+                    <option value="premium_business">Premium Business</option>
+                  </>
+                )}
               </select>
             </div>
 
@@ -157,16 +145,6 @@ const UserFilters = ({
                 type="date"
                 value={filters.dateFrom || ''}
                 onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
-              />
-            </div>
-
-            <div className="filter-group">
-              <label htmlFor="dateTo">Registered To</label>
-              <input
-                id="dateTo"
-                type="date"
-                value={filters.dateTo || ''}
-                onChange={(e) => handleFilterChange('dateTo', e.target.value)}
               />
             </div>
 

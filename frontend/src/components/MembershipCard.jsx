@@ -214,12 +214,12 @@ const MembershipCard = () => {
       const html2canvas = await import('html2canvas');
       await new Promise(resolve => setTimeout(resolve, 500));
       const canvas = await html2canvas.default(cardRef.current, {
-        scale: 3, // Reduced from 4 to 3 for better balance of quality and file size
+        scale: 2, // Reduced to match certificate for consistent quality
         backgroundColor: '#ffffff',
         useCORS: true,
         allowTaint: true,
-        width: 900,
-        height: 525,
+        width: cardRef.current.offsetWidth, // Use actual card dimensions
+        height: cardRef.current.offsetHeight, // Use actual card dimensions
         scrollX: 0,
         scrollY: 0,
         logging: false, // Disable console logs
@@ -270,12 +270,12 @@ const MembershipCard = () => {
       await new Promise(resolve => setTimeout(resolve, 500));
       
       const canvas = await html2canvas.default(cardRef.current, {
-        scale: 3, // High scale for sharing
+        scale: 2, // Consistent with download function
         backgroundColor: '#ffffff',
         useCORS: true,
         allowTaint: true,
-        width: 900,
-        height: 525,
+        width: cardRef.current.offsetWidth,
+        height: cardRef.current.offsetHeight,
         scrollX: 0,
         scrollY: 0,
         logging: false,
@@ -334,12 +334,12 @@ const MembershipCard = () => {
         await new Promise(resolve => setTimeout(resolve, 500));
         
         const canvas = await html2canvas.default(cardRef.current, {
-          scale: 3, // High scale for sharing
+          scale: 2, // Consistent configuration
           backgroundColor: '#ffffff',
           useCORS: true,
           allowTaint: true,
-          width: 900,
-          height: 525,
+          width: cardRef.current.offsetWidth,
+          height: cardRef.current.offsetHeight,
           scrollX: 0,
           scrollY: 0,
           logging: false,
