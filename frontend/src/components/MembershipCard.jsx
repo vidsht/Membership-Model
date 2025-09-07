@@ -14,16 +14,15 @@ const MembershipCard = () => {
   const qrCodeRef = useRef();
   const barcodeRef = useRef();
   const cardRef = useRef();
+  // readiness flags for dynamic content (QR / Barcode)
+  const [qrReady, setQrReady] = useState(false);
+  const [barcodeReady, setBarcodeReady] = useState(false);
   const [cardSettings, setCardSettings] = useState({
     show_qr_code: true,
     show_barcode: true,
     allow_download: true,
     allow_share: true
   });
-
-  // Readiness flags for dynamic content (QR / Barcode)
-  const [qrReady, setQrReady] = useState(false);
-  const [barcodeReady, setBarcodeReady] = useState(false);
 
   useEffect(() => {
     // Fetch card settings from admin
@@ -45,10 +44,6 @@ const MembershipCard = () => {
     if (user && user.membershipNumber) {
       // Small delay to ensure DOM elements are ready
       setTimeout(async () => {
-        // Initialize readiness based on whether the elements are expected
-        // If the card does not show QR/barcode, mark them ready so they don't block capture
-        setQrReady(!cardSettings.show_qr_code);
-        setBarcodeReady(!cardSettings.show_barcode);
         // Generate QR Code using lazy-loaded libraries
         if (qrCodeRef.current && cardSettings.show_qr_code) {
           let qrGenerated = false;
@@ -65,8 +60,6 @@ const MembershipCard = () => {
               });
               qrCodeRef.current.innerHTML = '';
               qrCodeRef.current.appendChild(canvas);
-              // Mark QR ready after canvas is appended
-              setQrReady(true);
               qrGenerated = true;
             } catch (error) {
               console.error('qrcode (npm) toCanvas error:', error);
@@ -87,8 +80,6 @@ const MembershipCard = () => {
                   colorLight: "#ffffff",
                   correctLevel: window.QRCode.CorrectLevel.H
                 });
-                // The library appends an element (img/canvas) synchronously; mark ready
-                setQrReady(true);
                 qrGenerated = true;
               }
             } catch (error) {
@@ -126,8 +117,6 @@ const MembershipCard = () => {
               
               qrCodeRef.current.innerHTML = '';
               qrCodeRef.current.appendChild(canvas);
-              // Mark QR ready after drawing
-              setQrReady(true);
               qrGenerated = true;
             } catch (error) {
               console.error('qrcode-generator error:', error);
@@ -138,23 +127,22 @@ const MembershipCard = () => {
           if (!qrGenerated) {
             try {
               const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(user.membershipNumber.toString())}`;
-              // Create an image element and wait for it to load before marking ready
+              // Append an actual image element (crossOrigin) and wait for it to load before marking ready
               const img = document.createElement('img');
               img.crossOrigin = 'anonymous';
-              img.width = 100;
-              img.height = 100;
               img.alt = 'QR Code';
-              img.style.background = 'white';
+              img.style.width = '100px';
+              img.style.height = '100px';
               img.onload = () => {
                 setQrReady(true);
               };
               img.onerror = () => {
-                // If image fails, still fallback to text
-                setQrReady(true);
+                console.error('QR image failed to load');
+                // leave qrReady false so download is gated
               };
+              img.src = qrUrl;
               qrCodeRef.current.innerHTML = '';
               qrCodeRef.current.appendChild(img);
-              img.src = qrUrl;
               qrGenerated = true;
             } catch (error) {
               console.error('QR API service error:', error);
@@ -164,7 +152,23 @@ const MembershipCard = () => {
           // Final fallback: Show membership number as text
           if (!qrGenerated) {
             console.log('All QR methods failed, showing text fallback');
-            qrCodeRef.current.innerHTML = `<div style="background: white; color: black; padding: 10px; font-size: 10px; text-align: center; border-radius: 4px; width: 100px; height: 100px; display: flex; align-items: center; justify-content: center; word-break: break-all;">${user.membershipNumber}</div>`;
+            const fallback = document.createElement('div');
+            fallback.style.background = 'white';
+            fallback.style.color = 'black';
+            fallback.style.padding = '10px';
+            fallback.style.fontSize = '10px';
+            fallback.style.textAlign = 'center';
+            fallback.style.borderRadius = '4px';
+            fallback.style.width = '100px';
+            fallback.style.height = '100px';
+            fallback.style.display = 'flex';
+            fallback.style.alignItems = 'center';
+            fallback.style.justifyContent = 'center';
+            fallback.style.wordBreak = 'break-all';
+            fallback.textContent = user.membershipNumber;
+            qrCodeRef.current.innerHTML = '';
+            qrCodeRef.current.appendChild(fallback);
+            // Mark QR as ready since there is no external resource
             setQrReady(true);
           }
         }
@@ -185,9 +189,9 @@ const MembershipCard = () => {
                   displayValue: false,
                   margin: 0
                 });
-                // Mark barcode as ready after rendering
-                setBarcodeReady(true);
                 barcodeGenerated = true;
+                // JSBarcode writes synchronously to the SVG element, mark ready
+                setBarcodeReady(true);
               }
             } catch (error) {
               console.error('JsBarcode error:', error);
@@ -196,12 +200,18 @@ const MembershipCard = () => {
           
           // Fallback: show membership number as text
           if (!barcodeGenerated) {
-            barcodeRef.current.innerHTML = `<text x="50%" y="50%" text-anchor="middle" font-size="8" fill="black">${user.membershipNumber}</text>`;
+            barcodeRef.current.innerHTML = '';
+            const svgText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            svgText.setAttribute('x', '50%');
+            svgText.setAttribute('y', '50%');
+            svgText.setAttribute('text-anchor', 'middle');
+            svgText.setAttribute('font-size', '8');
+            svgText.setAttribute('fill', 'black');
+            svgText.textContent = user.membershipNumber;
+            barcodeRef.current.appendChild(svgText);
+            // Mark barcode as ready since the fallback is immediate
             setBarcodeReady(true);
           }
-        } else {
-        // If barcode not requested, ensure readiness isn't blocked
-        if (!cardSettings.show_barcode) setBarcodeReady(true);
         }
       }, 100);
     }
@@ -213,19 +223,18 @@ const MembershipCard = () => {
       return;
     }
 
-    if (!cardRef.current) {
-      showNotification('Card is not ready for download. Please wait.', 'error');
-      return;
-    }
-
-    // Ensure dynamic elements are ready
+    // Gate on readiness of dynamic content
     if (cardSettings.show_qr_code && !qrReady) {
       showNotification('Preparing QR...', 'info');
       return;
     }
-
     if (cardSettings.show_barcode && !barcodeReady) {
       showNotification('Preparing barcode...', 'info');
+      return;
+    }
+
+    if (!cardRef.current) {
+      showNotification('Card is not ready for download. Please wait.', 'error');
       return;
     }
 
@@ -234,6 +243,11 @@ const MembershipCard = () => {
     let originalSrc = null;
 
     try {
+      // Optionally wait for fonts to be ready to avoid mid-capture reflow
+      if (document.fonts && document.fonts.ready) {
+        await document.fonts.ready;
+      }
+
       // If there's an uploaded profile image, fetch it and set a same-origin object URL
       const profileUrl = getProfileImageUrl(user);
       if (profileUrl) {
@@ -259,22 +273,19 @@ const MembershipCard = () => {
         }
       }
 
-      // Wait for webfonts to be ready to avoid reflow during capture
-      if (document.fonts && document.fonts.ready) {
-        await document.fonts.ready;
-      }
+      const html2canvas = await import('html2canvas');
 
-      const rect = cardRef.current.getBoundingClientRect();
+      // Measure the element precisely
+      const node = cardRef.current;
+      const rect = node.getBoundingClientRect();
       const width = Math.round(rect.width);
       const height = Math.round(rect.height);
 
-      const html2canvas = await import('html2canvas');
-      // Small delay to let last-paint finish for appended images/canvases
-      await new Promise(resolve => setTimeout(resolve, 150));
+      // Small pause to ensure layout settled
+      await new Promise(resolve => setTimeout(resolve, 100));
 
-      const canvas = await html2canvas.default(cardRef.current, {
+      const canvas = await html2canvas.default(node, {
         scale: 2,
-        backgroundColor: '#ffffff',
         useCORS: true,
         allowTaint: true,
         width,
@@ -282,7 +293,6 @@ const MembershipCard = () => {
         x: 0,
         y: 0,
         scrollX: 0,
-        // Try to neutralize scrolling to avoid white bands
         scrollY: -window.scrollY,
         logging: false,
         removeContainer: true
@@ -292,8 +302,9 @@ const MembershipCard = () => {
         throw new Error('Canvas is empty');
       }
 
+      // Trigger PNG download
       const link = document.createElement('a');
-      link.download = `membership-card-${user?.membershipNumber || 'download'}.png`;
+      link.download = `membership-card-${user.membershipNumber || 'download'}.png`;
       link.href = canvas.toDataURL('image/png');
       document.body.appendChild(link);
       link.click();
@@ -562,7 +573,6 @@ const MembershipCard = () => {
       <div 
         ref={cardRef}
         className="membership-card-new"
-        style={{ background: '#fff', position: 'relative', overflow: 'hidden' }}
       >
         {/* Header Section */}
         <div className="card-header-new">
@@ -668,18 +678,9 @@ const MembershipCard = () => {
       {/* Card Actions */}
       <div className="card-actions">
         {cardSettings.allow_download && (
-          // Only enable download when dynamic content is ready
-          (() => {
-            const ready = (!cardSettings.show_qr_code || qrReady) && (!cardSettings.show_barcode || barcodeReady);
-            return (
-              <>
-                <button className="btn btn-primary" onClick={downloadCard} disabled={!ready}>
-                  <i className="fas fa-download"></i> Download Card
-                </button>
-                {!ready && <span style={{ marginLeft: 8, color: '#666' }}>Preparing…</span>}
-              </>
-            );
-          })()
+          <button className="btn btn-primary" onClick={downloadCard} disabled={!( (!cardSettings.show_qr_code || qrReady) && (!cardSettings.show_barcode || barcodeReady) )}>
+            <i className="fas fa-download"></i> Download Card
+          </button>
         )}
         {cardSettings.allow_share && (
           <button className="btn btn-success" onClick={shareToWhatsApp}>
