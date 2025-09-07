@@ -618,7 +618,7 @@ router.get('/users/:id', auth, admin, async (req, res) => {
         u.id, u.fullName, u.email, u.phone, u.address, u.community, u.membershipType,
         u.userType, u.userCategory, u.status, u.createdAt, u.lastLogin, u.dob,
         u.country, u.state, u.city, u.planAssignedAt, u.planAssignedBy, u.currentPlan,
-        u.membershipNumber, u.validationDate, u.updated_at, u.profilePicture`;
+        u.membershipNumber, u.validationDate, u.updated_at, u.profilePicture, u.bloodGroup`;
 
     // Check if customRedemptionLimit column exists
     const customRedemptionColumnExists = await queryAsync(`
@@ -1100,6 +1100,15 @@ router.post('/users/:id/assign-plan', auth, admin, async (req, res) => {
       // Parse the date and set it to end of day to avoid timezone issues
       validationDate = new Date(expiryDate + 'T23:59:59');
       console.log('📅 Using custom expiry date:', expiryDate, '→', validationDate);
+      
+      // Validate the parsed date
+      if (isNaN(validationDate.getTime())) {
+        console.error('❌ Invalid date format received:', expiryDate);
+        return res.status(400).json({ 
+          success: false, 
+          message: 'Invalid expiry date format. Please use YYYY-MM-DD format.' 
+        });
+      }
     } else {
       // Fall back to calculating based on billingCycle
       const billingCycle = (planDetails && planDetails.billingCycle) ? planDetails.billingCycle.toLowerCase() : 'yearly';
@@ -1165,8 +1174,12 @@ router.post('/users/:id/assign-plan', auth, admin, async (req, res) => {
       currentPlan: finalPlanKey,
       planAssignedBy: adminUserId,
       userId: userId,
-      validationDate: validationDate
+      validationDate: validationDate,
+      validationDateFormatted: validationDate ? validationDate.toISOString().slice(0, 19).replace('T', ' ') : null
     });
+
+    console.log('📝 SQL Query:', updateQuery);
+    console.log('📝 SQL Params:', updateParams);
 
     const result = await queryAsync(updateQuery, updateParams);
 
@@ -1626,6 +1639,7 @@ router.get('/partners', auth, admin, async (req, res) => {
 
     // Check if businesses table exists
     const businessTableExists = await tableExists('businesses');
+    console.log('🏢 Businesses table exists:', businessTableExists);
     
     let query;
     if (businessTableExists) {
@@ -1667,6 +1681,7 @@ router.get('/partners', auth, admin, async (req, res) => {
 
     params.push(parseInt(limit), parseInt(offset));
     const merchants = await queryAsync(query, params);
+    console.log('👥 Found merchants:', merchants.length, 'first merchant businessName:', merchants[0]?.businessName);
 
     // Get total count
     let countQuery = `SELECT COUNT(*) as total FROM users u`;

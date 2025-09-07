@@ -219,6 +219,13 @@ const MerchantDashboard = () => {
     return membershipType === 'basic' || !membershipType;
   };
 
+  // Helper function to check if contact info should be hidden for lower tier plans
+  const shouldHideContactInfo = (membershipType) => {
+    const planLevel = getUserPlanLevel(membershipType);
+    // Hide contact info for basic and silver (premium) plans, show for gold+ (featured) plans
+    return planLevel === 'basic' || planLevel === 'premium';
+  };
+
   // Get merchant benefits based on plan data
   const getMerchantBenefits = (planData) => {
     // If we have plan data from the API, use its benefits
@@ -1249,8 +1256,20 @@ const MerchantDashboard = () => {
                 <div className="redemption-info">
                   <div className="user-info">
                     <i className="fas fa-user-circle"></i>
-                    <span className="user-name">{redemption.fullName}</span>
-                    <span className="membership-number">#{redemption.membershipNumber}</span>
+                    {!shouldHideContactInfo(userInfo?.membershipType) ? (
+                      <>
+                        <span className="user-name">{redemption.fullName}</span>
+                        <span className="membership-number">#{redemption.membershipNumber}</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="user-name-hidden">Customer</span>
+                        <span className="upgrade-hint">
+                          <i className="fas fa-lock"></i>
+                          Upgrade to view details
+                        </span>
+                      </>
+                    )}
                   </div>
                   <div className="deal-info">
                     <span className="deal-title">{redemption.dealTitle}</span>
@@ -1549,14 +1568,27 @@ const MerchantDashboard = () => {
                           </div>
                           <div className="customer-info">
                             <div className="customer-details">
-                              <div className="customer-name">
-                                <i className="fas fa-user"></i>
-                                <strong>{request.userName || 'Customer'}</strong>
-                              </div>
-                              <div className="customer-contact">
-                                <i className="fas fa-phone"></i>
-                                <span>{request.phone || 'Phone not available'}</span>
-                              </div>
+                              {!shouldHideContactInfo(userInfo?.membershipType) ? (
+                                <>
+                                  <div className="customer-name">
+                                    <i className="fas fa-user"></i>
+                                    <strong>{request.userName || 'Customer'}</strong>
+                                  </div>
+                                  <div className="customer-contact">
+                                    <i className="fas fa-phone"></i>
+                                    <span>{request.phone || 'Phone not available'}</span>
+                                  </div>
+                                </>
+                              ) : (
+                                <div className="customer-private">
+                                  <i className="fas fa-user-shield"></i>
+                                  <strong>Customer Information</strong>
+                                  <span className="upgrade-note">
+                                    <i className="fas fa-lock"></i>
+                                    Upgrade to Gold+ to view customer details
+                                  </span>
+                                </div>
+                              )}
                               {request.membershipNumber && (
                                 <div className="membership-number">
                                   <i className="fas fa-id-card"></i>
@@ -2083,7 +2115,15 @@ const MerchantDashboard = () => {
                             {dealAnalyticsData.redemptions.slice(0, 20).map(redemption => (
                               <tr key={redemption.id}>
                                 <td>{new Date(redemption.redemption_date).toLocaleDateString()}</td>
-                                <td>{redemption.user_name}</td>
+                                <td>
+                                  {!shouldHideContactInfo(userInfo?.membershipType) ? (
+                                    redemption.user_name
+                                  ) : (
+                                    <span className="private-info">
+                                      <i className="fas fa-lock"></i> Private
+                                    </span>
+                                  )}
+                                </td>
                                 <td>
                                   <span className={`plan-badge ${redemption.user_plan?.toLowerCase()}`}>
                                     {redemption.user_plan || 'N/A'}
@@ -2095,10 +2135,18 @@ const MerchantDashboard = () => {
                                   </span>
                                 </td>
                                 <td>
-                                  {redemption.user_phone && (
-                                    <a href={`tel:${redemption.user_phone}`} className="contact-link">
-                                      <i className="fas fa-phone"></i> {redemption.user_phone}
-                                    </a>
+                                  {!shouldHideContactInfo(userInfo?.membershipType) ? (
+                                    redemption.user_phone ? (
+                                      <a href={`tel:${redemption.user_phone}`} className="contact-link">
+                                        <i className="fas fa-phone"></i> {redemption.user_phone}
+                                      </a>
+                                    ) : (
+                                      <span className="no-contact">Not available</span>
+                                    )
+                                  ) : (
+                                    <span className="private-contact">
+                                      <i className="fas fa-lock"></i> Upgrade to view
+                                    </span>
                                   )}
                                 </td>
                               </tr>

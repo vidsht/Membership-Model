@@ -409,6 +409,12 @@
   font-weight: 600;
 }
 
+.header-stats{
+  display: flex;
+  flex-direction: row;
+  gap: 1.5rem;
+}
+
 @media (max-width: 768px) {
   .approval-queue {
     padding: 1rem;

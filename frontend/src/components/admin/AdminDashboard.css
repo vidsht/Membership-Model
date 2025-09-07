@@ -462,36 +462,41 @@
   gap: 1rem;
 }
 
-.action-btn {
-  background: white;
-  border: 2px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 1rem;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  transition: all 0.3s ease;
-  font-size: 0.9rem;
-  color: #374151;
-}
-
-.action-btn:hover {
-  border-color: #3b82f6;
-  background: #eff6ff;
-  transform: translateY(-2px);
-}
+/* Action button styles are defined later in the enhanced section */
 
 .action-btn i {
   font-size: 1.5rem;
   color: #3b82f6;
+  transition: all 0.3s ease;
 }
 
-.action-btn.users:hover { border-color: #667eea; background: #f0f4ff; }
-.action-btn.merchants:hover { border-color: #f5576c; background: #fef7f7; }
-.action-btn.deals:hover { border-color: #059669; background: #f0fdf4; }
-.action-btn.plans:hover { border-color: #d97706; background: #fffbeb; }
+.action-btn:hover i {
+  transform: scale(1.1);
+}
+
+.action-btn.users:hover { 
+  border-color: #667eea; 
+  background: linear-gradient(135deg, #f0f4ff 0%, #e0e7ff 100%); 
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.15);
+}
+
+.action-btn.merchants:hover { 
+  border-color: #f5576c; 
+  background: linear-gradient(135deg, #fef7f7 0%, #fce7e7 100%); 
+  box-shadow: 0 8px 25px rgba(245, 87, 108, 0.15);
+}
+
+.action-btn.deals:hover { 
+  border-color: #059669; 
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); 
+  box-shadow: 0 8px 25px rgba(5, 150, 105, 0.15);
+}
+
+.action-btn.plans:hover { 
+  border-color: #d97706; 
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); 
+  box-shadow: 0 8px 25px rgba(217, 119, 6, 0.15);
+}
 
 /* Tab Content */
 .tab-content {
@@ -502,6 +507,63 @@
   text-align: center;
   color: #6b7280;
   font-size: 1.1rem;
+}
+
+/* Admin Content Animations */
+.admin-content {
+  flex: 1;
+  animation: slideInFromTop 0.5s ease-out;
+}
+
+@keyframes slideInFromTop {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Enhanced Quick Actions Hover Effects */
+.action-btn {
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 1rem;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 0.9rem;
+  color: #374151;
+  position: relative;
+  overflow: hidden;
+}
+
+.action-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  transition: left 0.5s;
+}
+
+.action-btn:hover::before {
+  left: 100%;
+}
+
+.action-btn:hover {
+  border-color: #3b82f6;
+  background: #eff6ff;
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15);
 }
 
 /* Responsive Design */

@@ -333,9 +333,17 @@
   border-bottom: 1px solid #e5e7eb;
 }
 
+.section-header h2 {
+  color: white;
+}
+
+.section-header p {
+  color: white;
+}
+
 .section-header h3 {
   margin: 0;
-  color: #1f2937;
+  color: white;
   font-size: 1.125rem;
   font-weight: 600;
   display: flex;

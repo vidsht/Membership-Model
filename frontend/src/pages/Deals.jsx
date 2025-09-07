@@ -312,195 +312,194 @@ const Deals = () => {
       ) : filteredDeals.length === 0 ? (
         <div className="no-deals">No deals available.</div>
       ) : (
-        <div className="deals-grid">
-          {currentDeals.map(deal => {
-            const shortDescription = deal.description?.length > 100 
-              ? `${deal.description.substring(0, 100)}...` 
-              : deal.description;
-            
-            return (
-            <div className="deal-card" key={deal.id}>
-              {/* Deal Banner with Category Overlay */}
-              <div className="deal-banner">
-                <div className="deal-category-overlay">
-                  <i className="fas fa-tag"></i>
-                  {deal.category || 'General'}
-                </div>
-                {getDealBannerUrl(deal) ? (
-                  <SmartImage 
-                    src={getDealBannerUrl(deal)} 
-                    alt={deal.title} 
-                    className="deal-banner-image" 
-                    fallbackClass="deal-banner-placeholder" 
-                  />
-                ) : (
-                  <div className="deal-banner-placeholder">
-                    <i className="fas fa-image"></i>
-                    <span>No Banner</span>
-                  </div>
-                )}
-              </div>
+        <div className="deals-container">
+          <div className="deals-grid">
+            {currentDeals.map(deal => {
+               const shortDescription = deal.description?.length > 100 
+                 ? `${deal.description.substring(0, 100)}...` 
+                 : deal.description;
+               
+               return (
+               <div className="deal-card" key={deal.id}>
+                 {/* Deal Banner with Category Overlay */}
+                 <div className="deal-banner">
+                   <div className="deal-category-overlay">
+                     <i className="fas fa-tag"></i>
+                     {deal.category || 'General'}
+                   </div>
+                   {getDealBannerUrl(deal) ? (
+                     <SmartImage 
+                       src={getDealBannerUrl(deal)} 
+                       alt={deal.title} 
+                       className="deal-banner-image" 
+                       fallbackClass="deal-banner-placeholder" 
+                     />
+                   ) : (
+                     <div className="deal-banner-placeholder">
+                       <i className="fas fa-image"></i>
+                       <span>No Banner</span>
+                     </div>
+                   )}
+                 </div>
 
-              {/* Deal Content */}
-              <div className="deal-content">
-                {/* Deal Title */}
-                <h2 className="deal-title">{deal.title}</h2>
-                
-                {/* Business Info - Logo and Name */}
-                <div className="deal-business-info">
-                  <div className="business-logo-container">
-                    <div className="business-logo">
-                      <SmartImage
-                        src={getMerchantLogoUrl({ logo: deal.businessLogo })}
-                        alt={`${deal.businessName} Logo`}
-                        placeholder={
-                          <div className="image-fallback" style={{display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgb(243, 244, 246)', color: 'rgb(156, 163, 175)', fontSize: '14px', borderRadius: '8px', width: '100%', height: '100%'}}>
-                            <div className="logo-placeholder"><span>{deal.businessName?.charAt(0) || 'B'}</span></div>
-                          </div>
-                        }
-                        className="logo-image"
-                        maxRetries={3}
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'cover',
-                          objectPosition: 'center'
-                        }}
-                      />
-                    </div>
-                  </div>
-                  <div className="business-name-container">
-                    <Link 
-                      to="/business-directory"
-                      state={{ highlightBusiness: deal.businessId }}
-                      className="business-name-link"
-                    >
-                      {deal.businessName}
-                    </Link>
-                  </div>
-                </div>
+                 {/* Deal Content */}
+                 <div className="deal-content">
+                   {/* Deal Title */}
+                   <h2 className="deal-title">{deal.title}</h2>
+                   
+                   {/* Business Info - Logo and Name */}
+                   <div className="deal-business-info">
+                     <div className="business-logo-container">
+                       <div className="business-logo">
+                         <SmartImage
+                           src={getMerchantLogoUrl({ logo: deal.businessLogo })}
+                           alt={`${deal.businessName} Logo`}
+                           placeholder={
+                             <div className="image-fallback" style={{display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgb(243, 244, 246)', color: 'rgb(156, 163, 175)', fontSize: '14px', borderRadius: '8px', width: '100%', height: '100%'}}>
+                               <div className="logo-placeholder"><span>{deal.businessName?.charAt(0) || 'B'}</span></div>
+                             </div>
+                           }
+                           className="logo-image"
+                           maxRetries={3}
+                           style={{
+                             width: '100%',
+                             height: '100%',
+                             objectFit: 'cover',
+                             objectPosition: 'center'
+                           }}
+                         />
+                       </div>
+                     </div>
+                     <div className="business-name-container">
+                       <Link 
+                         to="/business-directory"
+                         state={{ highlightBusiness: deal.businessId }}
+                         className="business-name-link"
+                       >
+                         {deal.businessName}
+                       </Link>
+                     </div>
+                   </div>
 
-                {/* Pricing Section */}
-                <div className="deal-pricing-compact">
-                  {deal.originalPrice && (
-                    <div className="price-row">
-                      <span className="price-label">Original:</span>
-                      <span className="original-price">GHS {parseFloat(deal.originalPrice).toFixed(2)}</span>
-                    </div>
-                  )}
-                  {deal.discountedPrice && (
-                    <div className="price-row">
-                      <span className="price-label">Now:</span>
-                      <span className="discounted-price">GHS {parseFloat(deal.discountedPrice).toFixed(2)}</span>
-                    </div>
-                  )}
-                </div>
+                   {/* Pricing Section */}
+                   <div className="deal-pricing-compact">
+                     {deal.originalPrice && (
+                       <div className="price-row">
+                         <span className="price-label">Original:</span>
+                         <span className="original-price">GHS {parseFloat(deal.originalPrice).toFixed(2)}</span>
+                       </div>
+                     )}
+                     {deal.discountedPrice && (
+                       <div className="price-row">
+                         <span className="price-label">Now:</span>
+                         <span className="discounted-price">GHS {parseFloat(deal.discountedPrice).toFixed(2)}</span>
+                       </div>
+                     )}
+                   </div>
 
-                {/* Valid Until */}
-                {(deal.expiration_date || deal.expirationDate || deal.validUntil) && (
-                  <div className="deal-validity">
-                    <i className="fas fa-calendar-times"></i>
-                    <span>Valid Until: {new Date(deal.expiration_date || deal.expirationDate || deal.validUntil).toLocaleDateString('en-GB', {
-                      day: '2-digit',
-                      month: 'short',
-                      year: 'numeric'
-                    })}</span>
-                  </div>
-                )}
-              </div>
+                   {/* Valid Until */}
+                   {(deal.expiration_date || deal.expirationDate || deal.validUntil) && (
+                     <div className="deal-validity">
+                       <i className="fas fa-calendar-times"></i>
+                       <span>Valid Until: {new Date(deal.expiration_date || deal.expirationDate || deal.validUntil).toLocaleDateString('en-GB', {
+                         day: '2-digit',
+                         month: 'short',
+                         year: 'numeric'
+                       })}</span>
+                     </div>
+                   )}
+                 </div>
 
-              {/* Action Section */}
-              <div className="deal-actions">
-                <button
-                  className="btn-view-details"
-                  onClick={() => {
-                    setSelectedDeal(deal);
-                    setShowDetailModal(true);
-                  }}
-                >
-                  <i className="fas fa-eye"></i>
-                  View Details
-                </button>
+                 {/* Action Section */}
+                 <div className="deal-actions">
+                   <button
+                     className="btn-view-details"
+                     onClick={() => {
+                       setSelectedDeal(deal);
+                       setShowDetailModal(true);
+                     }}
+                   >
+                     <i className="fas fa-eye"></i>
+                     View Details
+                   </button>
 
-                
-                {user && !canRedeem(user, deal.minPlanPriority, plans) && (
-                  <div className="upgrade-prompt">
-                    {(() => {
-                      const requiredPlan = plans.find(p => p.priority === (deal.minPlanPriority || deal.requiredPlanPriority));
-                      if (requiredPlan) {
-                        return (
-                          <button className="btn-upgrade">
-                            <i className="fas fa-arrow-up"></i>
-                            Upgrade to {requiredPlan.name}
-                            {requiredPlan.price && requiredPlan.currency && 
-                              ` (${requiredPlan.currency} ${requiredPlan.price})`
-                            }
-                          </button>
-                        );
-                      }
-                      return (
-                        <button className="btn-upgrade">
-                          <i className="fas fa-lock"></i>
-                          Upgrade Required
-                        </button>
-                      );
-                    })()}
-                  </div>
-                )}
-                
-                {redeemStatus[deal.id] && (
-                  <div className={`redeem-status ${
-                    redeemStatus[deal.id].includes('Upgrade') ? 'upgrade-required' : 
-                    redeemStatus[deal.id] === 'Redeemed!' ? 'success' : 'error'
-                  }`}>
-                    <i className={`fas ${
-                      redeemStatus[deal.id] === 'Redeemed!' ? 'fa-check-circle' : 
-                      redeemStatus[deal.id].includes('Upgrade') ? 'fa-exclamation-triangle' : 'fa-times-circle'
-                    }`}></i>
-                    {redeemStatus[deal.id]}
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
-        
-        {/* Pagination Controls */}
-        {totalPages > 1 && (
-          <div className="pagination-container">
-            <div className="pagination">
-              <button
-                className={`pagination-btn ${currentPage === 1 ? 'disabled' : ''}`}
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-              >
-                <i className="fas fa-chevron-left"></i>
-              </button>
-              
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                <button
-                  key={page}
-                  className={`pagination-btn ${currentPage === page ? 'active' : ''}`}
-                  onClick={() => handlePageChange(page)}
-                >
-                  {page}
-                </button>
-              ))}
-              
-              <button
-                className={`pagination-btn ${currentPage === totalPages ? 'disabled' : ''}`}
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-              >
-                <i className="fas fa-chevron-right"></i>
-              </button>
-            </div>
-            
-            <div className="pagination-info">
-              Showing {startIndex + 1}-{Math.min(endIndex, filteredDeals.length)} of {filteredDeals.length} deals
-            </div>
+                   
+                   {user && !canRedeem(user, deal.minPlanPriority, plans) && (
+                     <div className="upgrade-prompt">
+                       {(() => {
+                         const requiredPlan = plans.find(p => p.priority === (deal.minPlanPriority || deal.requiredPlanPriority));
+                         if (requiredPlan) {
+                           return (
+                             <button className="btn-upgrade">
+                               <i className="fas fa-arrow-up"></i>
+                               Upgrade to {requiredPlan.name}
+                               {requiredPlan.price && requiredPlan.currency && 
+                                 ` (${requiredPlan.currency} ${requiredPlan.price})`
+                               }
+                             </button>
+                           );
+                         }
+                         return (
+                           <button className="btn-upgrade">
+                             <i className="fas fa-lock"></i>
+                             Upgrade Required
+                           </button>
+                         );
+                       })()}
+                     </div>
+                   )}
+                   
+                   {redeemStatus[deal.id] && (
+                     <div className={`redeem-status ${
+                       redeemStatus[deal.id].includes('Upgrade') ? 'upgrade-required' : 
+                       redeemStatus[deal.id] === 'Redeemed!' ? 'success' : 'error'
+                     }`}>
+                       <i className={`fas ${
+                         redeemStatus[deal.id] === 'Redeemed!' ? 'fa-check-circle' : 
+                         redeemStatus[deal.id].includes('Upgrade') ? 'fa-exclamation-triangle' : 'fa-times-circle'
+                       }`}></i>
+                       {redeemStatus[deal.id]}
+                     </div>
+                   )}
+                 </div>
+               </div>
+             );
+           })}
           </div>
-        )}
+          
+          {/* Pagination Controls (sibling of the grid, like BusinessDirectory) */}
+          {filteredDeals.length > dealsPerPage && (
+            <div className="pagination-container">
+              <div className="pagination">
+                <button
+                  className={`pagination-btn ${currentPage === 1 ? 'disabled' : ''}`}
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  ‹ Prev
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                  <button
+                    key={page}
+                    className={`pagination-btn ${currentPage === page ? 'active' : ''}`}
+                    onClick={() => handlePageChange(page)}
+                  >
+                    {page}
+                  </button>
+                ))}
+                <button
+                  className={`pagination-btn ${currentPage === totalPages ? 'disabled' : ''}`}
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  Next ›
+                </button>
+              </div>
+              <div className="pagination-info">
+                Showing {startIndex + 1}-{Math.min(endIndex, filteredDeals.length)} of {filteredDeals.length} deals
+              </div>
+            </div>
+          )}
         </div>
       )}
       {showRedemptionModal && selectedDeal && (

@@ -65,7 +65,12 @@ const UserManagement = () => {
     search: '',
     status: 'all',
     userType: 'all',
-    community: 'all'
+    community: 'all',
+    membershipType: 'all',
+    bloodGroup: 'all',
+    dateFrom: '',
+    dateTo: '',
+    planStatus: 'all'
   });
 
   const [pagination, setPagination] = useState({
@@ -315,6 +320,7 @@ const UserManagement = () => {
           const planDetails = referenceData.plans.find(plan => plan.key === user.membershipType);
           return {
             ...user,
+            bloodGroup: user.bloodGroup || '',
             planValidTill: calculatePlanValidity(user, planDetails),
             isPlanExpired: user.validationDate ? new Date(user.validationDate) < new Date() : false
           };

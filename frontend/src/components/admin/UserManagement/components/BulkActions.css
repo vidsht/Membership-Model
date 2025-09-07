@@ -313,10 +313,11 @@
 }
 
 .btn.btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: rgb(165, 28, 28);
   border-color: rgba(255, 255, 255, 0.5);
   transform: translateY(-2px);
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  color: white;
 }
 
 .btn.btn-secondary:disabled {

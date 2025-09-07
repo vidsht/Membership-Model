@@ -489,6 +489,7 @@ color: #7b1fa2;
 
 .btn-info:hover {
   background: #138496;
+  transform: translateY(-1px);
 }
 
 /* View Toggle Styles */

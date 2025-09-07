@@ -598,8 +598,14 @@ const UnifiedRegistration = () => {
         
     <div className="registration-card unified-registration-card">
       <div className="registration-toggle-info">
+        <div className="toggle-instruction-header">
+          <h3><i className="fas fa-info-circle"></i> Registration Instructions</h3>
+          <p className="instruction-description">
+            Choose your registration type by clicking the tabs below. Each registration type has different benefits and requirements.
+          </p>
+        </div>
         <p className="toggle-instruction">
-          (Toggle between <strong>Member</strong> and <strong>Merchant</strong> registration types)
+          <strong>💡 Tip:</strong> Use the tabs below to switch between <strong>Member</strong> and <strong>Merchant</strong> registration forms
         </p>
       </div>
       <div className="registration-tabs unified-tabs">

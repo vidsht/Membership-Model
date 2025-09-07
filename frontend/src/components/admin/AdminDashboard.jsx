@@ -34,6 +34,17 @@ const AdminDashboard = () => {
   const [recentActivities, setRecentActivities] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Enhanced navigation function for quick links with hero section animation
+  const navigateFromHero = (tabId) => {
+    // First scroll to top (hero section)
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    // Add a brief delay then switch tab with transition effect
+    setTimeout(() => {
+      setActiveTab(tabId);
+    }, 300);
+  };
+
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: 'fas fa-tachometer-alt' },
     { id: 'users', label: 'User Management', icon: 'fas fa-users' },
@@ -62,7 +73,15 @@ const AdminDashboard = () => {
 
   // Helper function to format time ago
   const formatTimeAgo = (dateString) => {
+    if (!dateString) return 'Unknown';
+    
     const date = new Date(dateString);
+    
+    // Check if the date is valid
+    if (isNaN(date.getTime())) {
+      return 'Invalid Date';
+    }
+    
     const now = new Date();
     const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
     
@@ -72,7 +91,16 @@ const AdminDashboard = () => {
       const days = Math.floor(diffInHours / 24);
       return `${days} day${days > 1 ? 's' : ''} ago`;
     }
-    return date.toLocaleDateString();
+    // Use a more reliable date formatting
+    try {
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    } catch (error) {
+      return 'Invalid Date';
+    }
   };
 
   // Handle navigation from other components (like deals returning to deals tab)
@@ -262,7 +290,7 @@ const AdminDashboard = () => {
                 </div>
                 <div className="activity-details">
                   <p className="activity-description">{activity.description}</p>
-                  <span className="activity-time">{formatTimeAgo(activity.createdAt)}</span>
+                  <span className="activity-time">{formatTimeAgo(activity.timestamp)}</span>
                 </div>
               </div>
             ))
@@ -280,28 +308,28 @@ const AdminDashboard = () => {
         <h3>Quick Actions</h3>
         <div className="action-buttons">
           <button 
-            onClick={() => setActiveTab('users')}
+            onClick={() => navigateFromHero('users')}
             className="action-btn users"
           >
             <i className="fas fa-user-plus"></i>
             Manage Users
           </button>
           <button 
-            onClick={() => setActiveTab('merchants')}
+            onClick={() => navigateFromHero('merchants')}
             className="action-btn merchants"
           >
             <i className="fas fa-handshake"></i>
             Review Partners
           </button>
           <button 
-            onClick={() => setActiveTab('deals')}
+            onClick={() => navigateFromHero('deals')}
             className="action-btn deals"
           >
             <i className="fas fa-tags"></i>
             Manage Deals
           </button>
           <button 
-            onClick={() => setActiveTab('plans')}
+            onClick={() => navigateFromHero('plans')}
             className="action-btn plans"
           >
             <i className="fas fa-crown"></i>

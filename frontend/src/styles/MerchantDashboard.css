@@ -204,6 +204,7 @@
   font-weight: 600;
   margin-bottom: 1rem;
   line-height: 1.4;
+  justify-content: center;
 }
 
 .benefit-card p {
@@ -2378,7 +2379,6 @@ background: white;
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #333;
 }
 
 .customer-name strong {
@@ -2933,5 +2933,103 @@ background: white;
   
   .current-vs-upgrade i {
     transform: rotate(90deg);
+  }
+}
+
+/* Privacy Protection Styles for Lower Tier Plans */
+.customer-private {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 10px;
+  background: #f8f9fa;
+  border: 2px dashed #dee2e6;
+  border-radius: 8px;
+  color: #6c757d;
+}
+
+.customer-private i {
+  font-size: 1.5rem;
+  color: #fd7e14;
+  margin-bottom: 5px;
+}
+
+.upgrade-note {
+  font-size: 0.8rem;
+  color: #6c757d;
+  margin-top: 5px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.upgrade-note i {
+  font-size: 0.7rem !important;
+  color: #fd7e14 !important;
+  margin: 0 !important;
+}
+
+.user-name-hidden {
+  color: #6c757d;
+  font-style: italic;
+}
+
+.upgrade-hint {
+  font-size: 0.75rem;
+  color: #fd7e14;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: 2px;
+}
+
+.upgrade-hint i {
+  font-size: 0.7rem;
+}
+
+.private-info {
+  color: #6c757d;
+  font-style: italic;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.private-info i {
+  color: #fd7e14;
+  font-size: 0.85rem;
+}
+
+.private-contact {
+  color: #6c757d;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.private-contact i {
+  color: #fd7e14;
+  font-size: 0.8rem;
+}
+
+.no-contact {
+  color: #9ca3af;
+  font-style: italic;
+}
+
+/* Responsive adjustments for privacy elements */
+@media (max-width: 768px) {
+  .customer-private {
+    padding: 8px;
+  }
+  
+  .upgrade-note {
+    font-size: 0.7rem;
+  }
+  
+  .upgrade-hint {
+    font-size: 0.7rem;
   }
 }

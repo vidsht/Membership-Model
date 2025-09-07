@@ -211,6 +211,7 @@ const UserTable = ({
                 <th>User</th>
                 <th>Contact</th>
                 <th>Type</th>
+                <th>Blood Group</th>
                 <th>Plan</th>
                 <th>Redemption Limit</th>
                 <th>Valid Till</th>
@@ -274,6 +275,11 @@ const UserTable = ({
                     <td>
                       <span className="user-type category-badge">
                         {user.userType ? user.userType.charAt(0).toUpperCase() + user.userType.slice(1) : 'User'}
+                      </span>
+                    </td>
+                    <td>
+                      <span className="blood-group-cell">
+                        {user.bloodGroup || 'N/A'}
                       </span>
                     </td>
                     <td>

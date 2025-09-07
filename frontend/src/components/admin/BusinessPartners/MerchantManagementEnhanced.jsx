@@ -13,8 +13,7 @@ const MerchantManagementEnhanced = () => {
   const navigate = useNavigate();
   const { getCommunityOptions, getBusinessCategoryOptions, getStateOptions } = useDynamicFields();
   const [merchants, setMerchants] = useState([]);
-  const [businesses, setBusinesses] = useState([]);
-  const [viewMode, setViewMode] = useState('cards'); // 'table' or 'cards'
+  const [viewMode, setViewMode] = useState('table'); // Only table view
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
@@ -65,7 +64,12 @@ const MerchantManagementEnhanced = () => {
     search: '',
     status: '',
     category: '',
-    membershipType: ''
+    membershipType: '',
+    state: '',
+    dateFrom: '',
+    dateTo: '',
+    planStatus: '',
+    dealLimit: ''
   });
   const [pagination, setPagination] = useState({
     page: 1,
@@ -77,25 +81,9 @@ const MerchantManagementEnhanced = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   // Removed confirmDialog state (delete functionality)
   useEffect(() => {
-    // Only fetch data on initial load and when viewMode changes
-    if (viewMode === 'cards') {
-      fetchBusinesses();
-    } else {
-      fetchMerchants();
-    }
+    // Only fetch data on initial load
+    fetchMerchants();
   }, [viewMode]); // Simplified dependencies
-  const fetchBusinesses = useCallback(async () => {
-    try {
-      setLoading(true);
-  const response = await api.get('/admin/partners');
-  setBusinesses(response.data?.merchants || []);
-    } catch (err) {
-      setError('Failed to fetch businesses');
-      showNotification('Error loading businesses', 'error');
-    } finally {
-      setLoading(false);
-    }
-  }, [showNotification]);
 
   const fetchMerchants = useCallback(async () => {
     try {
@@ -506,11 +494,7 @@ const MerchantManagementEnhanced = () => {
       setShowBulkActions(false);
       
       // Refresh the merchants list
-      if (viewMode === 'cards') {
-        fetchBusinesses();
-      } else {
-        fetchMerchants();
-      }
+      fetchMerchants();
     } catch (error) {
       console.error(`Error performing bulk ${action}:`, error);
       showNotification(`Failed to ${action} merchants`, 'error');
@@ -612,28 +596,16 @@ const MerchantManagementEnhanced = () => {
       <div className="merchant-management-header">
         <h2>Business Partner Management</h2>
         <div className="header-actions">
-          <div className="view-toggle">
-            <button className={`btn ${viewMode === 'cards' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setViewMode('cards')}>
-              <i className="fas fa-th-large"></i> Cards View
+          <button className="btn btn-primary" onClick={handleAddMerchant}>
+            <i className="fas fa-plus"></i> Add Partner
+          </button>
+          <button className="btn btn-secondary" onClick={handleExportMerchants}>
+            <i className="fas fa-download"></i> Export CSV
+          </button>
+          {selectedMerchants.length > 0 && (
+            <button className="btn btn-secondary" onClick={() => setShowBulkActions(!showBulkActions)}>
+              <i className="fas fa-tasks"></i> Bulk Actions ({selectedMerchants.length})
             </button>
-            <button className={`btn ${viewMode === 'table' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setViewMode('table')}>
-              <i className="fas fa-table"></i> Table View
-            </button>
-          </div>
-          {viewMode === 'table' && (
-            <>
-              <button className="btn btn-primary" onClick={handleAddMerchant}>
-                <i className="fas fa-plus"></i> Add Partner
-              </button>
-              <button className="btn btn-secondary" onClick={handleExportMerchants}>
-                <i className="fas fa-download"></i> Export CSV
-              </button>
-              {selectedMerchants.length > 0 && (
-                <button className="btn btn-secondary" onClick={() => setShowBulkActions(!showBulkActions)}>
-                  <i className="fas fa-tasks"></i> Bulk Actions ({selectedMerchants.length})
-                </button>
-              )}
-            </>
           )}
         </div>
       </div>
@@ -837,8 +809,66 @@ const MerchantManagementEnhanced = () => {
                   <option value="free">Free</option>
                   <option value="premium">Premium</option>
                   <option value="business">Business</option>
-            </select>
-          </div>
+                  <option value="basic_business">Basic Business</option>
+                  <option value="premium_business">Premium Business</option>
+                </select>
+              </div>
+              <div className="filter-group">
+                <select
+                  value={filters.state}
+                  onChange={(e) => handleFilterChange('state', e.target.value)}
+                  className="filter-select"
+                >
+                  <option value="">All States</option>
+                  {getStateOptions().map(state => (
+                    <option key={state.value} value={state.value}>
+                      {state.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="filter-group">
+                <input
+                  type="date"
+                  placeholder="From Date"
+                  value={filters.dateFrom}
+                  onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
+                  className="filter-input"
+                />
+              </div>
+              <div className="filter-group">
+                <input
+                  type="date"
+                  placeholder="To Date"
+                  value={filters.dateTo}
+                  onChange={(e) => handleFilterChange('dateTo', e.target.value)}
+                  className="filter-input"
+                />
+              </div>
+              <div className="filter-group">
+                <select
+                  value={filters.planStatus}
+                  onChange={(e) => handleFilterChange('planStatus', e.target.value)}
+                  className="filter-select"
+                >
+                  <option value="">All Plan Status</option>
+                  <option value="active">Active Plans</option>
+                  <option value="expired">Expired Plans</option>
+                  <option value="expiring_soon">Expiring Soon</option>
+                </select>
+              </div>
+              <div className="filter-group">
+                <select
+                  value={filters.dealLimit}
+                  onChange={(e) => handleFilterChange('dealLimit', e.target.value)}
+                  className="filter-select"
+                >
+                  <option value="">All Deal Limits</option>
+                  <option value="custom">Custom Limit</option>
+                  <option value="default">Default Limit</option>
+                  <option value="unlimited">Unlimited</option>
+                </select>
+              </div>
         </div>
       </div>
 
@@ -1123,112 +1153,6 @@ const MerchantManagementEnhanced = () => {
         </>
       )}
 
-      {/* Business Cards View */}
-      {viewMode === 'cards' && (
-        <div className="business-cards-container">
-          <div className="business-cards-header">
-            <h3>
-              <i className="fas fa-th-large"></i>
-              Active Business Partners ({businesses.length})
-            </h3>
-            <p>Explore our verified business partners directory</p>
-          </div>
-          
-          {businesses.length > 0 ? (
-            <div className="business-grid">
-              {businesses.map((business, index) => (
-                <div key={business.id || index} className="business-card">
-                  <div className="business-card-inner">
-                    <div className="business-card-front">
-                      <div className="business-logo">
-                        {business.logo ? (
-                          <img src={getMerchantLogoUrl(business) || '/logo-placeholder.jpg'} alt={business.name} />
-                        ) : (
-                          <div className="business-placeholder">
-                            <i className="fas fa-store"></i>
-                          </div>
-                        )}
-                      </div>
-                      <div className="business-info">
-                        <h3 className="business-name">{business.name}</h3>
-                        <p className="business-category">{business.sector}</p>
-                        <p className="business-description">
-                          {business.description ? 
-                            `${business.description.substring(0, 100)}...` : 
-                            'Premium business partner in our community'
-                          }
-                        </p>
-                        <div className="business-contact">
-                          {business.phone && (
-                            <a href={`tel:${business.phone}`} className="contact-link" title="Call">
-                              <i className="fas fa-phone"></i>
-                            </a>
-                          )}
-                          {business.email && (
-                            <a href={`mailto:${business.email}`} className="contact-link" title="Email">
-                              <i className="fas fa-envelope"></i>
-                            </a>
-                          )}
-                          {business.website && (
-                            <a href={business.website} target="_blank" rel="noopener noreferrer" className="contact-link" title="Website">
-                              <i className="fas fa-globe"></i>
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                      <div className="business-badge">
-                        <i className="fas fa-certificate" title="Verified Partner"></i>
-                      </div>
-                    </div>
-                    <div className="business-card-back">
-                      <div className="card-back-content">
-                        <h4>{business.name}</h4>
-                        <div className="business-details">
-                          <div className="detail-item">
-                            <i className="fas fa-tag"></i>
-                            <span>{business.sector}</span>
-                          </div>
-                          {business.address && (
-                            <div className="detail-item">
-                              <i className="fas fa-map-marker-alt"></i>
-                              <span>{business.address}</span>
-                            </div>
-                          )}
-                          {business.isVerified && (
-                            <div className="detail-item">
-                              <i className="fas fa-check-circle"></i>
-                              <span>Verified Business</span>
-                            </div>
-                          )}
-                          {business.membershipType && (
-                            <div className="detail-item">
-                              <i className="fas fa-crown"></i>
-                              <span>{business.membershipType} Member</span>
-                            </div>
-                          )}
-                          {business.ownerName && (
-                            <div className="detail-item">
-                              <i className="fas fa-user"></i>
-                              <span>Owner: {business.ownerName}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="no-businesses">
-              <i className="fas fa-store-slash fa-4x"></i>
-              <h3>No Active Businesses Found</h3>
-              <p>There are currently no active business partners to display.</p>
-            </div>
-          )}
-        </div>
-      )}
-
       {/* Merchant Details Modal */}
       {showMerchantDetails && selectedMerchant && (
         <div className="modal-overlay" onClick={() => setShowMerchantDetails(false)}>
@@ -1470,11 +1394,7 @@ const MerchantManagementEnhanced = () => {
                     setShowQuickEditModal(false);
                     setQuickEditMerchant(null);
                     // Refresh the merchants list
-                    if (viewMode === 'cards') {
-                      fetchBusinesses();
-                    } else {
-                      fetchMerchants();
-                    }
+                    fetchMerchants();
                   } else {
                     throw new Error(response.data.message || 'Failed to update deal limit');
                   }

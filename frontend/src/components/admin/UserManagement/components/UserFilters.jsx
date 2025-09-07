@@ -107,6 +107,85 @@ const UserFilters = ({
               </select>
             </div>
 
+            {/* Membership Plan Filter */}
+            <div className="filter-group">
+              <label htmlFor="membershipType">Membership Plan</label>
+              <select
+                id="membershipType"
+                value={filters.membershipType || 'all'}
+                onChange={(e) => handleFilterChange('membershipType', e.target.value)}
+              >
+                <option value="all">All Plans</option>
+                <option value="community">Community</option>
+                <option value="silver">Silver</option>
+                <option value="gold">Gold</option>
+                <option value="basic_business">Basic Business</option>
+                <option value="premium_business">Premium Business</option>
+                {referenceData?.plans?.map(plan => (
+                  <option key={plan.key} value={plan.key}>
+                    {plan.name || plan.key}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Blood Group Filter */}
+            <div className="filter-group">
+              <label htmlFor="bloodGroup">Blood Group</label>
+              <select
+                id="bloodGroup"
+                value={filters.bloodGroup || 'all'}
+                onChange={(e) => handleFilterChange('bloodGroup', e.target.value)}
+              >
+                <option value="all">All Blood Groups</option>
+                <option value="A+">A+</option>
+                <option value="A-">A-</option>
+                <option value="B+">B+</option>
+                <option value="B-">B-</option>
+                <option value="AB+">AB+</option>
+                <option value="AB-">AB-</option>
+                <option value="O+">O+</option>
+                <option value="O-">O-</option>
+              </select>
+            </div>
+
+            {/* Registration Date Range */}
+            <div className="filter-group">
+              <label htmlFor="dateFrom">Registered From</label>
+              <input
+                id="dateFrom"
+                type="date"
+                value={filters.dateFrom || ''}
+                onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
+              />
+            </div>
+
+            <div className="filter-group">
+              <label htmlFor="dateTo">Registered To</label>
+              <input
+                id="dateTo"
+                type="date"
+                value={filters.dateTo || ''}
+                onChange={(e) => handleFilterChange('dateTo', e.target.value)}
+              />
+            </div>
+
+            {/* Plan Expiry Status */}
+            <div className="filter-group">
+              <label htmlFor="planStatus">Plan Status</label>
+              <select
+                id="planStatus"
+                value={filters.planStatus || 'all'}
+                onChange={(e) => handleFilterChange('planStatus', e.target.value)}
+              >
+                <option value="all">All Plans</option>
+                <option value="active">Active</option>
+                <option value="expired">Expired</option>
+                <option value="expiring_soon">Expiring Soon</option>
+                <option value="no_plan">No Plan Set</option>
+              </select>
+            </div>
+
 
 
           </div>

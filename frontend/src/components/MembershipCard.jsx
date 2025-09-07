@@ -214,7 +214,7 @@ const MembershipCard = () => {
       const html2canvas = await import('html2canvas');
       await new Promise(resolve => setTimeout(resolve, 500));
       const canvas = await html2canvas.default(cardRef.current, {
-        scale: 4, // Increased from 3 to 4 for higher quality
+        scale: 3, // Reduced from 4 to 3 for better balance of quality and file size
         backgroundColor: '#ffffff',
         useCORS: true,
         allowTaint: true,
@@ -228,10 +228,10 @@ const MembershipCard = () => {
       if (canvas.width === 0 || canvas.height === 0) {
         throw new Error('Canvas is empty');
       }
-      // Use toDataURL for download - JPEG format with high quality for crisp image
+      // Use PNG format like certificate for crisp image quality
       const link = document.createElement('a');
-      link.download = `membership-card-${user.membershipNumber || 'download'}.jpg`;
-      link.href = canvas.toDataURL('image/jpeg', 0.98); // Increased quality from 0.95 to 0.98
+      link.download = `membership-card-${user.membershipNumber || 'download'}.png`;
+      link.href = canvas.toDataURL('image/png'); // Changed to PNG for better quality
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);

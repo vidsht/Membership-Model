@@ -121,7 +121,15 @@ const Activities = () => {
   };
 
   const formatTimeAgo = (dateString) => {
+    if (!dateString) return 'Unknown';
+    
     const date = new Date(dateString);
+    
+    // Check if the date is valid
+    if (isNaN(date.getTime())) {
+      return 'Invalid Date';
+    }
+    
     const now = new Date();
     const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
     
@@ -133,7 +141,16 @@ const Activities = () => {
       const days = Math.floor(diffInHours / 24);
       return `${days} day${days > 1 ? 's' : ''} ago`;
     } else {
-      return date.toLocaleDateString();
+      // Use a more reliable date formatting
+      try {
+        return date.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric'
+        });
+      } catch (error) {
+        return 'Invalid Date';
+      }
     }
   };
 
