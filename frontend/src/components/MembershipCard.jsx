@@ -21,6 +21,10 @@ const MembershipCard = () => {
     allow_share: true
   });
 
+  // Readiness flags for dynamic content (QR / Barcode)
+  const [qrReady, setQrReady] = useState(false);
+  const [barcodeReady, setBarcodeReady] = useState(false);
+
   useEffect(() => {
     // Fetch card settings from admin
     const fetchCardSettings = async () => {
@@ -41,6 +45,10 @@ const MembershipCard = () => {
     if (user && user.membershipNumber) {
       // Small delay to ensure DOM elements are ready
       setTimeout(async () => {
+        // Initialize readiness based on whether the elements are expected
+        // If the card does not show QR/barcode, mark them ready so they don't block capture
+        setQrReady(!cardSettings.show_qr_code);
+        setBarcodeReady(!cardSettings.show_barcode);
         // Generate QR Code using lazy-loaded libraries
         if (qrCodeRef.current && cardSettings.show_qr_code) {
           let qrGenerated = false;
@@ -57,6 +65,8 @@ const MembershipCard = () => {
               });
               qrCodeRef.current.innerHTML = '';
               qrCodeRef.current.appendChild(canvas);
+              // Mark QR ready after canvas is appended
+              setQrReady(true);
               qrGenerated = true;
             } catch (error) {
               console.error('qrcode (npm) toCanvas error:', error);
@@ -77,6 +87,8 @@ const MembershipCard = () => {
                   colorLight: "#ffffff",
                   correctLevel: window.QRCode.CorrectLevel.H
                 });
+                // The library appends an element (img/canvas) synchronously; mark ready
+                setQrReady(true);
                 qrGenerated = true;
               }
             } catch (error) {
@@ -114,6 +126,8 @@ const MembershipCard = () => {
               
               qrCodeRef.current.innerHTML = '';
               qrCodeRef.current.appendChild(canvas);
+              // Mark QR ready after drawing
+              setQrReady(true);
               qrGenerated = true;
             } catch (error) {
               console.error('qrcode-generator error:', error);
@@ -124,7 +138,23 @@ const MembershipCard = () => {
           if (!qrGenerated) {
             try {
               const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(user.membershipNumber.toString())}`;
-              qrCodeRef.current.innerHTML = `<img src="${qrUrl}" alt="QR Code" style="width: 100px; height: 100px; background: white;" />`;
+              // Create an image element and wait for it to load before marking ready
+              const img = document.createElement('img');
+              img.crossOrigin = 'anonymous';
+              img.width = 100;
+              img.height = 100;
+              img.alt = 'QR Code';
+              img.style.background = 'white';
+              img.onload = () => {
+                setQrReady(true);
+              };
+              img.onerror = () => {
+                // If image fails, still fallback to text
+                setQrReady(true);
+              };
+              qrCodeRef.current.innerHTML = '';
+              qrCodeRef.current.appendChild(img);
+              img.src = qrUrl;
               qrGenerated = true;
             } catch (error) {
               console.error('QR API service error:', error);
@@ -135,6 +165,7 @@ const MembershipCard = () => {
           if (!qrGenerated) {
             console.log('All QR methods failed, showing text fallback');
             qrCodeRef.current.innerHTML = `<div style="background: white; color: black; padding: 10px; font-size: 10px; text-align: center; border-radius: 4px; width: 100px; height: 100px; display: flex; align-items: center; justify-content: center; word-break: break-all;">${user.membershipNumber}</div>`;
+            setQrReady(true);
           }
         }
 
@@ -154,6 +185,8 @@ const MembershipCard = () => {
                   displayValue: false,
                   margin: 0
                 });
+                // Mark barcode as ready after rendering
+                setBarcodeReady(true);
                 barcodeGenerated = true;
               }
             } catch (error) {
@@ -164,7 +197,11 @@ const MembershipCard = () => {
           // Fallback: show membership number as text
           if (!barcodeGenerated) {
             barcodeRef.current.innerHTML = `<text x="50%" y="50%" text-anchor="middle" font-size="8" fill="black">${user.membershipNumber}</text>`;
+            setBarcodeReady(true);
           }
+        } else {
+        // If barcode not requested, ensure readiness isn't blocked
+        if (!cardSettings.show_barcode) setBarcodeReady(true);
         }
       }, 100);
     }
@@ -178,6 +215,17 @@ const MembershipCard = () => {
 
     if (!cardRef.current) {
       showNotification('Card is not ready for download. Please wait.', 'error');
+      return;
+    }
+
+    // Ensure dynamic elements are ready
+    if (cardSettings.show_qr_code && !qrReady) {
+      showNotification('Preparing QR...', 'info');
+      return;
+    }
+
+    if (cardSettings.show_barcode && !barcodeReady) {
+      showNotification('Preparing barcode...', 'info');
       return;
     }
 
@@ -211,27 +259,42 @@ const MembershipCard = () => {
         }
       }
 
+      // Wait for webfonts to be ready to avoid reflow during capture
+      if (document.fonts && document.fonts.ready) {
+        await document.fonts.ready;
+      }
+
+      const rect = cardRef.current.getBoundingClientRect();
+      const width = Math.round(rect.width);
+      const height = Math.round(rect.height);
+
       const html2canvas = await import('html2canvas');
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Small delay to let last-paint finish for appended images/canvases
+      await new Promise(resolve => setTimeout(resolve, 150));
+
       const canvas = await html2canvas.default(cardRef.current, {
-        scale: 2, // Reduced to match certificate for consistent quality
+        scale: 2,
         backgroundColor: '#ffffff',
         useCORS: true,
         allowTaint: true,
-        width: cardRef.current.offsetWidth, // Use actual card dimensions
-        height: cardRef.current.offsetHeight, // Use actual card dimensions
+        width,
+        height,
+        x: 0,
+        y: 0,
         scrollX: 0,
-        scrollY: 0,
-        logging: false, // Disable console logs
-        removeContainer: true // Clean up
+        // Try to neutralize scrolling to avoid white bands
+        scrollY: -window.scrollY,
+        logging: false,
+        removeContainer: true
       });
+
       if (canvas.width === 0 || canvas.height === 0) {
         throw new Error('Canvas is empty');
       }
-      // Use PNG format like certificate for crisp image quality
+
       const link = document.createElement('a');
-      link.download = `membership-card-${user.membershipNumber || 'download'}.png`;
-      link.href = canvas.toDataURL('image/png'); // Changed to PNG for better quality
+      link.download = `membership-card-${user?.membershipNumber || 'download'}.png`;
+      link.href = canvas.toDataURL('image/png');
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -499,6 +562,7 @@ const MembershipCard = () => {
       <div 
         ref={cardRef}
         className="membership-card-new"
+        style={{ background: '#fff', position: 'relative', overflow: 'hidden' }}
       >
         {/* Header Section */}
         <div className="card-header-new">
@@ -604,9 +668,18 @@ const MembershipCard = () => {
       {/* Card Actions */}
       <div className="card-actions">
         {cardSettings.allow_download && (
-          <button className="btn btn-primary" onClick={downloadCard}>
-            <i className="fas fa-download"></i> Download Card
-          </button>
+          // Only enable download when dynamic content is ready
+          (() => {
+            const ready = (!cardSettings.show_qr_code || qrReady) && (!cardSettings.show_barcode || barcodeReady);
+            return (
+              <>
+                <button className="btn btn-primary" onClick={downloadCard} disabled={!ready}>
+                  <i className="fas fa-download"></i> Download Card
+                </button>
+                {!ready && <span style={{ marginLeft: 8, color: '#666' }}>Preparing…</span>}
+              </>
+            );
+          })()
         )}
         {cardSettings.allow_share && (
           <button className="btn btn-success" onClick={shareToWhatsApp}>
