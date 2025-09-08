@@ -76,16 +76,21 @@ const MerchantManagementEnhanced = () => {
     page: 1,
     limit: 10,
     total: 0,
-    pages: 0
+    totalPages: 0
   });
   const [showBulkActions, setShowBulkActions] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   // Removed confirmDialog state (delete functionality)
+
+  // Fetch stats only once on mount
   useEffect(() => {
-    // Fetch data on initial load and fetch stats separately
-    fetchMerchants();
     fetchMerchantStats();
-  }, [viewMode]); // Simplified dependencies
+  }, []);
+
+  // Fetch merchants when filters, page, or limit change
+  useEffect(() => {
+    fetchMerchants();
+  }, [filters, pagination.page, pagination.limit]);
 
   const fetchMerchantStats = useCallback(async () => {
     try {
@@ -108,38 +113,42 @@ const MerchantManagementEnhanced = () => {
   const fetchMerchants = useCallback(async () => {
     try {
       setLoading(true);
+      setError(null);
       const params = new URLSearchParams({
-        page: pagination.page,
-        limit: pagination.limit
+        page: pagination.page.toString(),
+        limit: pagination.limit.toString()
       });
-      
-      // Only add filters that are not 'all' or empty
       Object.entries(filters).forEach(([key, value]) => {
         if (value && value !== 'all' && (typeof value !== 'string' || value.trim() !== '')) {
           params.set(key, value);
         }
       });
-      
       const response = await api.get(`/admin/partners?${params}`);
       if (response.data.success) {
         setMerchants(response.data.merchants || []);
-        // Use backend pagination info if available
         const pag = response.data.pagination || {};
+        const total = pag.total || response.data.total || 0;
+        const limit = pag.limit || response.data.limit || pagination.limit || 10;
+        let totalPages = pag.totalPages || response.data.totalPages;
+        if (!totalPages) {
+          totalPages = Math.ceil(total / limit) || 1;
+        }
         setPagination(prev => ({
           ...prev,
-          page: pag.page || prev.page,
-          limit: pag.limit || prev.limit,
-          total: pag.total || (response.data.merchants?.length || 0),
-          pages: pag.totalPages || Math.ceil((pag.total || response.data.merchants?.length || 0) / (pag.limit || prev.limit || 10))
+          total,
+          totalPages: totalPages < 1 ? 1 : totalPages
         }));
+      } else {
+        throw new Error(response.data.message || 'Failed to fetch merchants');
       }
     } catch (err) {
-      setError('Failed to fetch merchants');
+      setError(err.response?.data?.message || 'Failed to load merchants');
       showNotification('Error loading merchants', 'error');
+      setMerchants([]);
     } finally {
       setLoading(false);
     }
-  }, [pagination.limit, pagination.page, filters, showNotification]);
+  }, [filters, pagination.page, pagination.limit, showNotification]);
 
 
   const formatDate = (dateString) => {
@@ -645,12 +654,12 @@ const MerchantManagementEnhanced = () => {
     }
   };
 
-  const handleFilterChange = (newFilters) => {
+  const handleFilterChange = useCallback((newFilters) => {
     setFilters(prev => ({ ...prev, ...newFilters }));
     setPagination(prev => ({ ...prev, page: 1 }));
-  };
+  }, []);
 
-  const handleClearFilters = () => {
+  const handleClearFilters = useCallback(() => {
     setFilters({
       search: '',
       status: 'all',
@@ -664,7 +673,15 @@ const MerchantManagementEnhanced = () => {
       dealLimit: 'all'
     });
     setPagination(prev => ({ ...prev, page: 1 }));
-  };
+  }, []);
+
+  const handlePageChange = useCallback((page) => {
+    setPagination(prev => ({ ...prev, page }));
+  }, []);
+
+  const handlePageSizeChange = useCallback((limit) => {
+    setPagination(prev => ({ ...prev, limit, page: 1 }));
+  }, []);
 
   // CSV Export functionality
   const handleExportMerchants = useCallback(async () => {
@@ -1190,20 +1207,30 @@ const MerchantManagementEnhanced = () => {
             <button
               className="btn btn-sm btn-secondary"
               disabled={pagination.page === 1}
-              onClick={() => setPagination(prev => ({ ...prev, page: Math.max(1, prev.page - 1) }))}
+              onClick={() => handlePageChange(pagination.page - 1)}
             >
               Previous
             </button>
             <span className="page-info">
-              Page {pagination.page} of {pagination.pages || pagination.totalPages || 1}
+              Page {pagination.page} of {pagination.totalPages || 1}
             </span>
             <button
               className="btn btn-sm btn-secondary"
-              disabled={pagination.page === (pagination.pages || pagination.totalPages || 1)}
-              onClick={() => setPagination(prev => ({ ...prev, page: Math.min((pagination.pages || pagination.totalPages || 1), prev.page + 1) }))}
+              disabled={pagination.page === (pagination.totalPages || 1)}
+              onClick={() => handlePageChange(pagination.page + 1)}
             >
               Next
             </button>
+            <select
+              className="pagination-size-select"
+              value={pagination.limit}
+              onChange={e => handlePageSizeChange(Number(e.target.value))}
+              style={{ marginLeft: '1rem' }}
+            >
+              {[10, 20, 50, 100].map(size => (
+                <option key={size} value={size}>{size} / page</option>
+              ))}
+            </select>
           </div>
         </div>
       )}
