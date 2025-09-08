@@ -1697,8 +1697,8 @@ router.get('/partners', auth, admin, async (req, res) => {
       search,
       dateFrom,
       dateTo,
-      limit = 20,
-      offset = 0
+      page = 1,
+      limit = 20
     } = req.query;
 
     let whereClause = 'WHERE u.userType = "merchant"';
@@ -1804,9 +1804,10 @@ router.get('/partners', auth, admin, async (req, res) => {
       `;
     }
 
-    const pageSize = Math.min(parseInt(limit) || 20, 100);
-    const currentPage = Math.floor((parseInt(offset) || 0) / pageSize) + 1;
-    params.push(pageSize, parseInt(offset));
+  const pageSize = Math.min(parseInt(limit) || 20, 100);
+  const currentPage = Math.max(1, parseInt(page) || 1);
+  const offset = (currentPage - 1) * pageSize;
+  params.push(pageSize, offset);
     const merchantsRaw = await queryAsync(query, params);
     // Normalize plan fields so frontend can use same logic as users
     const merchants = merchantsRaw.map(m => {

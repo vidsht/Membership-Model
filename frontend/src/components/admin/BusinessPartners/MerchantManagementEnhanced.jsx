@@ -109,8 +109,8 @@ const MerchantManagementEnhanced = () => {
     try {
       setLoading(true);
       const params = new URLSearchParams({
-        limit: pagination.limit,
-        offset: (pagination.page - 1) * pagination.limit
+        page: pagination.page,
+        limit: pagination.limit
       });
       
       // Only add filters that are not 'all' or empty
