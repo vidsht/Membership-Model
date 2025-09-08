@@ -1804,7 +1804,9 @@ router.get('/partners', auth, admin, async (req, res) => {
       `;
     }
 
-    params.push(parseInt(limit), parseInt(offset));
+    const pageSize = Math.min(parseInt(limit) || 20, 100);
+    const currentPage = Math.floor((parseInt(offset) || 0) / pageSize) + 1;
+    params.push(pageSize, parseInt(offset));
     const merchantsRaw = await queryAsync(query, params);
     // Normalize plan fields so frontend can use same logic as users
     const merchants = merchantsRaw.map(m => {
@@ -1827,15 +1829,17 @@ router.get('/partners', auth, admin, async (req, res) => {
     const countParams = params.slice(0, -2); // Remove limit and offset
     const totalResult = await queryAsync(countQuery, countParams);
     const totalMerchants = totalResult[0]?.total || 0;
+    const totalPages = Math.ceil(totalMerchants / pageSize) || 1;
 
     res.json({
       success: true,
       merchants,
       totalMerchants,
       pagination: {
-        limit: parseInt(limit),
-        offset: parseInt(offset),
-        total: totalMerchants
+        page: currentPage,
+        limit: pageSize,
+        total: totalMerchants,
+        totalPages: totalPages
       }
     });
   } catch (err) {

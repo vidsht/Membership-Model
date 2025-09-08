@@ -123,10 +123,14 @@ const MerchantManagementEnhanced = () => {
       const response = await api.get(`/admin/partners?${params}`);
       if (response.data.success) {
         setMerchants(response.data.merchants || []);
+        // Use backend pagination info if available
+        const pag = response.data.pagination || {};
         setPagination(prev => ({
           ...prev,
-          total: response.data.merchants?.length || 0,
-          pages: Math.ceil((response.data.merchants?.length || 0) / pagination.limit)
+          page: pag.page || prev.page,
+          limit: pag.limit || prev.limit,
+          total: pag.total || (response.data.merchants?.length || 0),
+          pages: pag.totalPages || Math.ceil((pag.total || response.data.merchants?.length || 0) / (pag.limit || prev.limit || 10))
         }));
       }
     } catch (err) {
@@ -1186,22 +1190,23 @@ const MerchantManagementEnhanced = () => {
             <button
               className="btn btn-sm btn-secondary"
               disabled={pagination.page === 1}
-              onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
+              onClick={() => setPagination(prev => ({ ...prev, page: Math.max(1, prev.page - 1) }))}
             >
               Previous
             </button>
             <span className="page-info">
-              Page {pagination.page} of {pagination.pages}
+              Page {pagination.page} of {pagination.pages || pagination.totalPages || 1}
             </span>
             <button
               className="btn btn-sm btn-secondary"
-              disabled={pagination.page === pagination.pages}
-              onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
+              disabled={pagination.page === (pagination.pages || pagination.totalPages || 1)}
+              onClick={() => setPagination(prev => ({ ...prev, page: Math.min((pagination.pages || pagination.totalPages || 1), prev.page + 1) }))}
             >
               Next
             </button>
           </div>
-        </div>      )}
+        </div>
+      )}
         </>
       )}
 
