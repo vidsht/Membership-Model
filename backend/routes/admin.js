@@ -669,6 +669,33 @@ router.get('/users/export', auth, admin, async (req, res) => {
   }
 });
 
+// Get user statistics - for UserManagement component (MUST be before parameterized routes)
+router.get('/users/statistics', auth, admin, async (req, res) => {
+  try {
+    const [totalUsersResult, pendingApprovalsResult, activeUsersResult, suspendedUsersResult] = await Promise.all([
+      queryAsync('SELECT COUNT(*) as count FROM users WHERE userType != "merchant"'),
+      queryAsync('SELECT COUNT(*) as count FROM users WHERE userType != "merchant" AND status = "pending"'),
+      queryAsync('SELECT COUNT(*) as count FROM users WHERE userType != "merchant" AND status = "approved"'),
+      queryAsync('SELECT COUNT(*) as count FROM users WHERE userType != "merchant" AND status = "suspended"')
+    ]);
+
+    const statistics = {
+      totalUsers: totalUsersResult[0]?.count || 0,
+      pendingApprovals: pendingApprovalsResult[0]?.count || 0,
+      activeUsers: activeUsersResult[0]?.count || 0,
+      suspendedUsers: suspendedUsersResult[0]?.count || 0
+    };
+
+    res.json({
+      success: true,
+      statistics
+    });
+  } catch (err) {
+    console.error('Error fetching user statistics:', err);
+    res.status(500).json({ success: false, message: 'Failed to fetch user statistics' });
+  }
+});
+
 router.get('/users/:id', auth, admin, async (req, res) => {
   try {
     const userId = parseInt(req.params.id);
@@ -1806,6 +1833,35 @@ router.get('/partners', auth, admin, async (req, res) => {
   }
 });
 
+// Get merchant/partner statistics - for MerchantManagement component (MUST be before parameterized routes)
+router.get('/partners/statistics', auth, admin, async (req, res) => {
+  try {
+    const [totalMerchantsResult, pendingApprovalsResult, activeMerchantsResult, suspendedMerchantsResult, rejectedMerchantsResult] = await Promise.all([
+      queryAsync('SELECT COUNT(*) as count FROM users WHERE userType = "merchant"'),
+      queryAsync('SELECT COUNT(*) as count FROM users WHERE userType = "merchant" AND status = "pending"'),
+      queryAsync('SELECT COUNT(*) as count FROM users WHERE userType = "merchant" AND status = "approved"'),
+      queryAsync('SELECT COUNT(*) as count FROM users WHERE userType = "merchant" AND status = "suspended"'),
+      queryAsync('SELECT COUNT(*) as count FROM users WHERE userType = "merchant" AND status = "rejected"')
+    ]);
+
+    const statistics = {
+      totalMerchants: totalMerchantsResult[0]?.count || 0,
+      pendingApprovals: pendingApprovalsResult[0]?.count || 0,
+      activeMerchants: activeMerchantsResult[0]?.count || 0,
+      suspendedMerchants: suspendedMerchantsResult[0]?.count || 0,
+      rejectedMerchants: rejectedMerchantsResult[0]?.count || 0
+    };
+
+    res.json({
+      success: true,
+      statistics
+    });
+  } catch (err) {
+    console.error('Error fetching merchant statistics:', err);
+    res.status(500).json({ success: false, message: 'Failed to fetch merchant statistics' });
+  }
+});
+
 // Get single partner (alias for merchant)
 router.get('/partners/:id', auth, admin, async (req, res) => {
   try {
@@ -2592,64 +2648,6 @@ router.post('/users/bulk-action', auth, admin, async (req, res) => {
   } catch (err) {
     console.error('Error performing bulk user action:', err);
     res.status(500).json({ success: false, message: 'Server error performing bulk action' });
-  }
-});
-
-// ===== STATISTICS ENDPOINTS =====
-
-// Get user statistics - for UserManagement component
-router.get('/users/statistics', auth, admin, async (req, res) => {
-  try {
-    const [totalUsersResult, pendingApprovalsResult, activeUsersResult, suspendedUsersResult] = await Promise.all([
-      queryAsync('SELECT COUNT(*) as count FROM users WHERE userType != "merchant"'),
-      queryAsync('SELECT COUNT(*) as count FROM users WHERE userType != "merchant" AND status = "pending"'),
-      queryAsync('SELECT COUNT(*) as count FROM users WHERE userType != "merchant" AND status = "approved"'),
-      queryAsync('SELECT COUNT(*) as count FROM users WHERE userType != "merchant" AND status = "suspended"')
-    ]);
-
-    const statistics = {
-      totalUsers: totalUsersResult[0]?.count || 0,
-      pendingApprovals: pendingApprovalsResult[0]?.count || 0,
-      activeUsers: activeUsersResult[0]?.count || 0,
-      suspendedUsers: suspendedUsersResult[0]?.count || 0
-    };
-
-    res.json({
-      success: true,
-      statistics
-    });
-  } catch (err) {
-    console.error('Error fetching user statistics:', err);
-    res.status(500).json({ success: false, message: 'Failed to fetch user statistics' });
-  }
-});
-
-// Get merchant/partner statistics - for MerchantManagement component
-router.get('/partners/statistics', auth, admin, async (req, res) => {
-  try {
-    const [totalMerchantsResult, pendingApprovalsResult, activeMerchantsResult, suspendedMerchantsResult, rejectedMerchantsResult] = await Promise.all([
-      queryAsync('SELECT COUNT(*) as count FROM users WHERE userType = "merchant"'),
-      queryAsync('SELECT COUNT(*) as count FROM users WHERE userType = "merchant" AND status = "pending"'),
-      queryAsync('SELECT COUNT(*) as count FROM users WHERE userType = "merchant" AND status = "approved"'),
-      queryAsync('SELECT COUNT(*) as count FROM users WHERE userType = "merchant" AND status = "suspended"'),
-      queryAsync('SELECT COUNT(*) as count FROM users WHERE userType = "merchant" AND status = "rejected"')
-    ]);
-
-    const statistics = {
-      totalMerchants: totalMerchantsResult[0]?.count || 0,
-      pendingApprovals: pendingApprovalsResult[0]?.count || 0,
-      activeMerchants: activeMerchantsResult[0]?.count || 0,
-      suspendedMerchants: suspendedMerchantsResult[0]?.count || 0,
-      rejectedMerchants: rejectedMerchantsResult[0]?.count || 0
-    };
-
-    res.json({
-      success: true,
-      statistics
-    });
-  } catch (err) {
-    console.error('Error fetching merchant statistics:', err);
-    res.status(500).json({ success: false, message: 'Failed to fetch merchant statistics' });
   }
 });
 

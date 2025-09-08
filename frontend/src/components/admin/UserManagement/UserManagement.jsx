@@ -410,12 +410,27 @@ const UserManagement = () => {
         details: 'This action will suspend the user\'s account and restrict their access to the platform.',
         onConfirm: async () => {
           try {
-            const response = await api.put(`/admin/users/${userId}/status`, { status });
-            if (response.data.success) {
+            // Validate session first
+            const isSessionValid = await validateSession();
+            if (!isSessionValid) {
+              showNotification('Your session has expired. Please log in again.', 'error');
+              return;
+            }
+
+            // Call both endpoints: users and partners (similar to bulk action)
+            const [usersRes, partnersRes] = await Promise.allSettled([
+              api.put(`/admin/users/${userId}/status`, { status }),
+              api.put(`/admin/partners/${userId}/status`, { status })
+            ]);
+
+            const usersSuccess = usersRes.status === 'fulfilled' && usersRes.value?.data?.success;
+            const partnersSuccess = partnersRes.status === 'fulfilled' && partnersRes.value?.data?.success;
+
+            if (usersSuccess || partnersSuccess) {
               showNotification(`User suspended successfully`, 'success');
               refreshData();
             } else {
-              throw new Error(response.data.message || 'Failed to suspend user');
+              throw new Error('Failed to suspend user');
             }
           } catch (err) {
             const message = err.response?.data?.message || 'Failed to suspend user';
@@ -427,20 +442,44 @@ const UserManagement = () => {
       return;
     }
 
-    // For other status changes, proceed directly
+    // For other status changes, proceed directly with both endpoints
     try {
-      const response = await api.put(`/admin/users/${userId}/status`, { status });
-      if (response.data.success) {
+      // Validate session first
+      const isSessionValid = await validateSession();
+      if (!isSessionValid) {
+        showNotification('Your session has expired. Please log in again.', 'error');
+        return;
+      }
+
+      // Call both endpoints: users and partners (similar to bulk action)
+      const [usersRes, partnersRes] = await Promise.allSettled([
+        api.put(`/admin/users/${userId}/status`, { status }),
+        api.put(`/admin/partners/${userId}/status`, { status })
+      ]);
+
+      const usersSuccess = usersRes.status === 'fulfilled' && usersRes.value?.data?.success;
+      const partnersSuccess = partnersRes.status === 'fulfilled' && partnersRes.value?.data?.success;
+
+      if (usersSuccess || partnersSuccess) {
         showNotification(`User ${status} successfully`, 'success');
         refreshData();
       } else {
-        throw new Error(response.data.message || 'Failed to update status');
+        // Aggregate errors for debugging
+        const userErr = usersRes.status === 'rejected' ? usersRes.reason : null;
+        const partnerErr = partnersRes.status === 'rejected' ? partnersRes.reason : null;
+        console.error('Status change failures:', { userErr, partnerErr });
+        throw new Error('Failed to update status');
       }
     } catch (err) {
-      const message = err.response?.data?.message || 'Failed to update status';
+      console.error('Status change error:', err);
+      if (err.response?.status === 401) {
+        handleSessionExpired();
+        return;
+      }
+      const message = err.response?.data?.message || err.message || 'Failed to update status';
       showNotification(message, 'error');
     }
-  }, [users, showWarningDialog, showNotification, refreshData]);
+  }, [users, showWarningDialog, showNotification, refreshData, validateSession, handleSessionExpired]);
 
   const handleBulkAction = useCallback(async (action, userIds = selectedUsers) => {
     if (!userIds || userIds.length === 0) {

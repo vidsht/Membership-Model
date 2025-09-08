@@ -151,6 +151,43 @@ const MerchantManagementEnhanced = () => {
 
   // Returns { label, className, daysLeft } for validity
   const calculateValidityInfo = (merchant) => {
+    // First priority: use validationDate if available (custom expiry from plan management)
+    if (merchant.validationDate) {
+      try {
+        const validationDate = new Date(merchant.validationDate);
+        const now = new Date();
+        if (isNaN(validationDate.getTime())) {
+          return { label: 'Invalid date', className: 'validity-error', daysLeft: null };
+        }
+        
+        const diffTime = validationDate.getTime() - now.getTime();
+        const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        let className = 'validity-active';
+        
+        if (daysLeft < 0) {
+          className = 'validity-expired';
+          return { label: 'Expired', className, daysLeft: 0 };
+        } else if (daysLeft <= 7) {
+          className = 'validity-expiring-soon';
+        } else if (daysLeft <= 14) {
+          className = 'validity-expiring';
+        }
+        
+        return {
+          label: validationDate.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+          }),
+          className,
+          daysLeft
+        };
+      } catch (error) {
+        return { label: 'Invalid date', className: 'validity-error', daysLeft: null };
+      }
+    }
+    
+    // Fallback: calculate based on planAssignedAt and billing cycle
     const baseDate = merchant.planAssignedAt || merchant.createdAt;
     if (!baseDate) return { label: 'N/A', className: 'validity-none', daysLeft: null };
     const assignedDate = new Date(baseDate);
@@ -446,21 +483,60 @@ const MerchantManagementEnhanced = () => {
 
   const handleStatusChange = async (merchantId, newStatus) => {
     try {
-      // Use dedicated endpoints for approve/reject, otherwise use status update
-      if (newStatus === 'approved') {
-        await api.post(`/admin/partners/${merchantId}/approve`);
-      } else if (newStatus === 'rejected') {
-        await api.post(`/admin/partners/${merchantId}/reject`);
-      } else {
-        // For other status changes (suspended, pending), use the status endpoint
-        await api.put(`/admin/partners/${merchantId}/status`, { status: newStatus });
+      // Validate session first (if available)
+      const sessionValid = true; // Add session validation if available
+      if (!sessionValid) {
+        showNotification('Your session has expired. Please log in again.', 'error');
+        return;
       }
+
+      // Use dedicated endpoints for approve/reject, but try both users and partners
+      if (newStatus === 'approved') {
+        const [partnersRes, usersRes] = await Promise.allSettled([
+          api.post(`/admin/partners/${merchantId}/approve`),
+          api.put(`/admin/users/${merchantId}/status`, { status: 'approved' })
+        ]);
+        
+        const partnersSuccess = partnersRes.status === 'fulfilled' && partnersRes.value?.data?.success;
+        const usersSuccess = usersRes.status === 'fulfilled' && usersRes.value?.data?.success;
+        
+        if (!partnersSuccess && !usersSuccess) {
+          throw new Error('Failed to approve partner');
+        }
+      } else if (newStatus === 'rejected') {
+        const [partnersRes, usersRes] = await Promise.allSettled([
+          api.post(`/admin/partners/${merchantId}/reject`),
+          api.put(`/admin/users/${merchantId}/status`, { status: 'rejected' })
+        ]);
+        
+        const partnersSuccess = partnersRes.status === 'fulfilled' && partnersRes.value?.data?.success;
+        const usersSuccess = usersRes.status === 'fulfilled' && usersRes.value?.data?.success;
+        
+        if (!partnersSuccess && !usersSuccess) {
+          throw new Error('Failed to reject partner');
+        }
+      } else {
+        // For other status changes (suspended, pending), try both endpoints
+        const [partnersRes, usersRes] = await Promise.allSettled([
+          api.put(`/admin/partners/${merchantId}/status`, { status: newStatus }),
+          api.put(`/admin/users/${merchantId}/status`, { status: newStatus })
+        ]);
+        
+        const partnersSuccess = partnersRes.status === 'fulfilled' && partnersRes.value?.data?.success;
+        const usersSuccess = usersRes.status === 'fulfilled' && usersRes.value?.data?.success;
+        
+        if (!partnersSuccess && !usersSuccess) {
+          throw new Error(`Failed to update partner status to ${newStatus}`);
+        }
+      }
+      
       showNotification(`Partner ${newStatus} successfully`, 'success');
       fetchMerchants();
       fetchMerchantStats(); // Refresh stats after status change
     } catch (err) {
       console.error('Error updating merchant status:', err);
-      showNotification('Error updating merchant status', 'error');
+      const message = err.response?.data?.message || err.message || 'Error updating merchant status';
+      showNotification(message, 'error');
     }
   };
 

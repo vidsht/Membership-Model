@@ -36,17 +36,7 @@ api.interceptors.request.use((config) => {
 
 // ✅ FIXED: Simple response interceptor without loops
 api.interceptors.response.use(
-  (response) => {
-    // Ensure response.data exists
-    if (!response.data) response.data = {};
-
-    // If backend didn't include an explicit `success` boolean, infer success from HTTP status
-    if (typeof response.data.success === 'undefined') {
-      response.data.success = response.status >= 200 && response.status < 300;
-    }
-
-    return response;
-  },
+  (response) => response,
   (error) => {
     // Filter out browser extension connection errors
     if (error && error.message && 
@@ -59,7 +49,7 @@ api.interceptors.response.use(
         data: { success: true, browserExtensionErrorSuppressed: true }
       });
     }
-
+    
     // Handle 401 authentication errors globally
     if (error.response?.status === 401) {
       // Clear any cached auth state
@@ -83,7 +73,7 @@ api.interceptors.response.use(
       } 
       // Removed forced redirect to login on 401
     }
-
+    
     // Skip logging for expected errors that are handled gracefully
     const isExpectedError = (
       // Plan seeding "already exist" error is expected
@@ -93,7 +83,7 @@ api.interceptors.response.use(
       // Add other expected errors here as needed
       false
     );
-
+    
     // Add detailed error logging for debugging (skip expected errors)
     if (!isExpectedError) {
       console.error('API Error Details:', {
@@ -111,12 +101,12 @@ api.interceptors.response.use(
         }
       });    
     }
-
+    
     // Log the full error for debugging (skip expected errors)
     if (!isExpectedError) {
       console.log('Full error object:', error);
     }
-
+    
     // Don't redirect on 401 in API layer - let components handle it
     return Promise.reject(error);
   }
