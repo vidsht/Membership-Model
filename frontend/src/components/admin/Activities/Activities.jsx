@@ -143,10 +143,10 @@ const Activities = () => {
     } else {
       // Use a more reliable date formatting
       try {
-        return date.toLocaleDateString('en-US', {
+        return date.toLocaleDateString('en-GB', {
           year: 'numeric',
-          month: 'short',
-          day: 'numeric'
+          month: '2-digit',
+          day: '2-digit'
         });
       } catch (error) {
         return 'Invalid Date';
@@ -257,7 +257,7 @@ const Activities = () => {
             <tbody>
               {activities.map((activity) => (
                 <tr key={activity.id}>
-                  <td>
+                  <td data-label="Activity">
                     <div className="user-name-cell">
                       <div className="user-avatar">
                         <i className={getActivityIcon(activity.type)}></i>
@@ -270,12 +270,12 @@ const Activities = () => {
                       </div>
                     </div>
                   </td>
-                  <td>
+                  <td data-label="Type">
                     <span className={`status-badge ${getActivityColor(activity.type)}`}>
                       {activity.type.replace('_', ' ')}
                     </span>
                   </td>
-                  <td>
+                  <td data-label="User">
                     {activity.user ? (
                       <div>
                         <div>{activity.user.fullName || activity.user.email}</div>
@@ -287,17 +287,17 @@ const Activities = () => {
                       <span style={{ color: 'var(--neutral-medium)' }}>System</span>
                     )}
                   </td>
-                  <td>
+                  <td data-label="Date">
                     <div style={{ fontSize: '0.875rem' }}>
                       {formatTimeAgo(activity.timestamp || activity.createdAt)}
                     </div>
                   </td>
-                  <td>
+                  <td data-label="Status">
                     <span className="status-badge approved">
                       Completed
                     </span>
                   </td>
-                  <td>                    <div className="user-actions">
+                  <td data-label="Actions">                    <div className="user-actions">
                       <button className="btn-icon" title="View Details">
                         <i className="fas fa-eye"></i>
                       </button>

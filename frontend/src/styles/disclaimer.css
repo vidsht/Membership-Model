@@ -213,14 +213,14 @@
 }
 
 .action-buttons .btn-secondary-home {
-  background: #5B0E0E;
-  color: white;
+  background: #E3C192;
+  color: #5B0E0E;
   border: none;
 }
 
 .action-buttons .btn-secondary-home:hover {
-  background: #E3C192;
-  color: #5B0E0E;
+  background: #5B0E0E;
+  color: white;
   transform: translateY(-2px);
 }
 
@@ -297,8 +297,8 @@
 }
 
 .quick-nav a:hover {
-  color: #e84393;
-  background: #fef7f9;
+  color: #c14545;
+  background: #f1e3ce;
   padding-left: 0.5rem;
 }
 

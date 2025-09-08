@@ -160,7 +160,8 @@ const Disclaimer = () => {
               <h3>Quick Navigation</h3>
               <ul>
                 <li><a href="/unified-registration">Register Now</a></li>
-                <li><a href="/login">Membership Benefits</a></li>
+                <li><a href="/member-benefits">Member Benefits</a></li>
+                <li><a href="/business-benefits">Business Benefits</a></li>
                 <li><a href="/deals">Deal Redemption</a></li>
                 <li><a href="/business-directory">Business Partners</a></li>
                 <li><a href="/about">About Us</a></li>

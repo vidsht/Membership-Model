@@ -500,7 +500,7 @@ const DealList = ({ onTabChange }) => {
               {deals.map(deal => {
                 const isExpired = new Date(deal.validUntil) < new Date();
                 return (                  <tr key={deal.id}>
-                    <td>
+                    <td data-label="Deal Title">
                       <Link to={`/admin/deals/${deal.id}`} className="deal-title-link">
                         {deal.title}
                       </Link>
@@ -510,7 +510,7 @@ const DealList = ({ onTabChange }) => {
                           : deal.description || 'No description'}
                       </div>
                     </td>
-                    <td>
+                    <td data-label="Business">
                       <div className="business-info">
                         <div className="business-name">{deal.businessName || 'N/A'}</div>
                         {deal.businessCategory && (
@@ -521,12 +521,12 @@ const DealList = ({ onTabChange }) => {
                         )}
                       </div>
                     </td>
-                    <td>
+                    <td data-label="Category">
                       <span className={`category-badge ${deal.category}`}>
                         {deal.category}
                       </span>
                     </td>
-                    <td>
+                    <td data-label="Discount">
                       <div className="discount-info">
                         <div className="discount-amount">
                           {deal.discountType === 'percentage' ? `${deal.discount}%` : `GHS ${deal.discount}`}
@@ -541,15 +541,23 @@ const DealList = ({ onTabChange }) => {
                         )}
                       </div>
                     </td>
-                    <td>
+                    <td data-label="Expires">
                       {deal.validUntil ? (
                         <div className="validity-period">
                           <span className={isExpired ? 'expired-date' : 'valid-date'}>
-                            {new Date(deal.validUntil).toLocaleDateString()}
+                            {new Date(deal.validUntil).toLocaleDateString('en-GB', {
+                              year: 'numeric',
+                              month: '2-digit',
+                              day: '2-digit'
+                            })}
                           </span>
                           {deal.validFrom && (
                             <div className="valid-from">
-                              From: {new Date(deal.validFrom).toLocaleDateString()}
+                              From: {new Date(deal.validFrom).toLocaleDateString('en-GB', {
+                                year: 'numeric',
+                                month: '2-digit',
+                                day: '2-digit'
+                              })}
                             </div>
                           )}
                         </div>
@@ -557,12 +565,12 @@ const DealList = ({ onTabChange }) => {
                         'No expiry'
                       )}
                     </td>
-                    <td>
+                    <td data-label="Status">
                       <span className={`status-badge ${deal.status} ${isExpired ? 'expired' : ''}`}>
                         {isExpired && deal.status === 'active' ? 'Expired' : deal.status}
                       </span>
                     </td>
-                    <td>
+                    <td data-label="Redemptions">
                       <div className="redemption-stats">
                         <div className="total-redemptions">{deal.redemptionCount || 0}</div>
                         {deal.monthlyRedemptions !== undefined && (
@@ -577,7 +585,7 @@ const DealList = ({ onTabChange }) => {
                         )}
                       </div>
                     </td>
-                    <td>
+                    <td data-label="Views">
                       <div className="views-info">
                         {deal.views || 0} views
                         {deal.views > 0 && deal.redemptionCount > 0 && (
@@ -587,7 +595,7 @@ const DealList = ({ onTabChange }) => {
                         )}
                       </div>
                     </td>
-                    <td className="actions-cell">
+                    <td className="actions-cell" data-label="Actions">
                       <div className="action-buttons">
                         <Link 
                           to={`/admin/deals/${deal.id}`}

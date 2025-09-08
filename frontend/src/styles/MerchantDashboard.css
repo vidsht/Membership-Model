@@ -232,6 +232,95 @@
   }
 }
 
+/* Tablet responsiveness for 900px */
+@media (max-width: 900px) {
+  .merchant-dashboard {
+    padding: 1.5rem;
+  }
+  
+  .dashboard-header {
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .dashboard-header h1 {
+    font-size: 1.75rem;
+  }
+  
+  .status-alert-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+    text-align: left;
+  }
+  
+  .status-actions {
+    align-items: flex-start;
+    width: 100%;
+  }
+  
+  .benefits-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+  
+  .benefit-card {
+    padding: 1.25rem;
+  }
+  
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+  
+  .stat-card {
+    padding: 1.25rem;
+  }
+  
+  .plan-access-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .plan-features-preview {
+    width: 100%;
+  }
+  
+  .feature-items {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+  
+  .notifications-section {
+    padding: 1.25rem;
+  }
+  
+  .card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  
+  .quick-actions {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+  
+  .action-button {
+    padding: 1rem;
+  }
+  
+  .upgrade-prompt {
+    padding: 1.5rem;
+  }
+  
+  .basic-features {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+}
+
 @media (max-width: 768px) {
   .benefits-section {
     padding: 1.5rem;
@@ -847,6 +936,50 @@ background: white;
   }
 }
 
+/* Enhanced tablet responsiveness for merchant dashboard at 900px */
+@media (max-width: 900px) {
+  .merchant-dashboard {
+    padding: 1.5rem;
+  }
+  
+  .dashboard-sections {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+    padding: 1.25rem;
+    border-radius: 13px;
+    box-shadow: 0 2px 10px rgba(85, 11, 11, 0.11);
+    border: 1.5px solid #550B0B;
+    background: linear-gradient(90deg, #fbeee6 0%, #fff 100%);
+  }
+  
+  .business-info-card,
+  .plan-info-card {
+    padding: 1.5rem;
+    max-height: none;
+  }
+  
+  .card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+  }
+  
+  .card-header h2 {
+    font-size: 1.3rem;
+  }
+  
+  .quick-actions {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+  
+  .action-button {
+    padding: 1rem;
+    font-size: 0.9rem;
+  }
+}
+
 @media (max-width: 768px) {
   .dashboard-sections {
     grid-template-columns: 1fr;
@@ -1354,6 +1487,48 @@ background: white;
 }
 
 /* Responsive Design */
+/* Tablet responsiveness enhancement for 900px */
+@media (max-width: 900px) {
+  .merchant-dashboard {
+    padding: 1.5rem;
+  }
+  
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+  
+  .stat-card {
+    padding: 1.25rem;
+  }
+  
+  .action-buttons {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+  
+  .quick-actions {
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  
+  .detail-row {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  
+  .redemption-item {
+    padding: 1rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  
+  .dashboard-header h1 {
+    font-size: 2.25rem;
+  }
+}
+
 @media (max-width: 768px) {
   .merchant-dashboard {
     padding: 1rem;

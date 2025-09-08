@@ -152,7 +152,7 @@ const Contact = () => {
                   <i className="fas fa-envelope" style={{ fontSize: '1.5rem', color: 'var(--secondary)' }}></i>
                   <div>
                     <strong style={{ color: '#4C0808' }}>Email</strong>
-                    <p style={{ margin: '0', color: '#666' }}>cards@indiansinghana.com</p>
+                    <p style={{ margin: '0', color: '#666' }}><a href="mailto:cards@indiansinghana.com" className="contact-email">cards@indiansinghana.com</a></p>
                     <small>We respond within 24 hours</small>
                   </div>
                 </div>

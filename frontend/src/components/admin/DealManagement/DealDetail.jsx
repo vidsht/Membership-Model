@@ -266,7 +266,15 @@ const DealDetail = () => {
                     </div>
                     <div style={{background: '#f8f9fa', padding: '15px', borderRadius: '6px', border: '1px solid #dee2e6'}}>
                       <label style={{display: 'block', fontWeight: 'bold', marginBottom: '5px', color: '#666'}}>Created Date</label>
-                      <span style={{color: '#333'}}>{deal.created_at ? new Date(deal.created_at).toLocaleDateString() : (deal.createdAt ? new Date(deal.createdAt).toLocaleDateString() : 'N/A')}</span>
+                      <span style={{color: '#333'}}>{deal.created_at ? new Date(deal.created_at).toLocaleDateString('en-GB', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit'
+                      }) : (deal.createdAt ? new Date(deal.createdAt).toLocaleDateString('en-GB', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit'
+                      }) : 'N/A')}</span>
                     </div>
                   </div>
                 </div>

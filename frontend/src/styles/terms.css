@@ -148,13 +148,14 @@
 }
 
 .action-buttons .btn-secondary {
-  background: #6c757d;
-  color: white;
+  background: #E3C192;
+  color: #5B0E0E;
   border: none;
 }
 
 .action-buttons .btn-secondary:hover {
-  background: #5a6268;
+  background: #5B0E0E;
+  color: white;
   transform: translateY(-2px);
 }
 
@@ -175,7 +176,7 @@
 }
 
 .help-text a {
-  color: #667eea;
+  color: #5B0E0E;
   text-decoration: none;
   font-weight: 500;
 }
@@ -228,8 +229,8 @@
 }
 
 .quick-nav a:hover {
-  color: #667eea;
-  background: #f8faff;
+  color: #c14545;
+  background: #f1e3ce;
   padding-left: 0.5rem;
 }
 

@@ -400,7 +400,7 @@ const Home = () => {
                 <i className="fas fa-gift"></i>
               </div>
               <h3 className="feature-title">100+ Trusted Partner Businesses Will Be Onboard</h3>
-              <p className="feature-description">Over 25 major sectors will be covered, ensuring members enjoy benefits across every essential area of life</p>
+              <p className="feature-description">We're partnering with 100+ respected brands to provide exclusive privileges to our Indian community in Ghana.</p>
               <a href="/business-directory" className="feature-link">Explore Business <i className="fas fa-arrow-right"></i></a>
             </div>
             <div className="feature-card">
@@ -408,7 +408,7 @@ const Home = () => {
                 <i className="fas fa-industry"></i>
               </div>
               <h3 className="feature-title">25+ Major Sectors Will Be Covered</h3>
-              <p className="feature-description">From healthcare and education to dining and entertainment, our comprehensive network spans all essential sectors of life in Ghana.</p>
+              <p className="feature-description">Over 25 major sectors will be covered, ensuring members enjoy benefits across every essential area of life</p>
               <a href="/business-directory" className="feature-link">Explore Sectors <i className="fas fa-arrow-right"></i></a>
             </div>
           </div>

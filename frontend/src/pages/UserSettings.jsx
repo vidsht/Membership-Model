@@ -973,7 +973,11 @@ const RedemptionHistoryTab = () => {
             <div className="limit-item">
               <strong>Next Reset:</strong>
               <span className="reset-date">
-                {new Date(now.getFullYear(), now.getMonth() + 1, 1).toLocaleDateString()}
+                {new Date(now.getFullYear(), now.getMonth() + 1, 1).toLocaleDateString('en-GB', {
+                  year: 'numeric',
+                  month: '2-digit',
+                  day: '2-digit'
+                })}
               </span>
             </div>
           </div>
@@ -999,7 +1003,11 @@ const RedemptionHistoryTab = () => {
                 <div className="redemption-card-header">
                   <h4 className="deal-title">{redemption.dealTitle || redemption.title || 'Deal'}</h4>
                   <span className="redemption-date">
-                    {redemption.redeemed_at ? new Date(redemption.redeemed_at).toLocaleDateString() : 'Date not available'}
+                    {redemption.redeemed_at ? new Date(redemption.redeemed_at).toLocaleDateString('en-GB', {
+                      year: 'numeric',
+                      month: '2-digit',
+                      day: '2-digit'
+                    }) : 'Date not available'}
                   </span>
                 </div>
                 <div className="redemption-card-body">

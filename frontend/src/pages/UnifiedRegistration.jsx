@@ -387,7 +387,11 @@ const UnifiedRegistration = () => {
       // Set default plan if membership plans are disabled
       const finalUserForm = { ...userForm };
       if (adminSettings.features?.showMembershipPlans !== true) {
-        finalUserForm.plan = 'silver'; // Default to silver plan for users
+        // Find the lowest priority plan for users (lowest number = lowest priority)
+        const lowestPriorityPlan = userPlans.reduce((lowest, plan) => {
+          return (lowest === null || plan.priority < lowest.priority) ? plan : lowest;
+        }, null);
+        finalUserForm.plan = lowestPriorityPlan ? lowestPriorityPlan.key : 'silver'; // Fallback to silver if no plans found
       }
       
       const result = await register({
@@ -530,7 +534,13 @@ const UnifiedRegistration = () => {
 
       // Set default plan if membership plans are disabled
       const finalPlan = adminSettings.features?.showMembershipPlans !== true 
-        ? 'basic_business' // Default to basic business plan for merchants
+        ? (() => {
+            // Find the lowest priority plan for merchants (lowest number = lowest priority)
+            const lowestPriorityPlan = merchantPlans.reduce((lowest, plan) => {
+              return (lowest === null || plan.priority < lowest.priority) ? plan : lowest;
+            }, null);
+            return lowestPriorityPlan ? lowestPriorityPlan.key : 'basic_business'; // Fallback to basic_business if no plans found
+          })()
         : merchantForm.plan;
 
       const merchantData = {

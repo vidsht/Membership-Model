@@ -59,7 +59,7 @@ const Footer = () => {
           <ul>
             <li><i className="fas fa-map-marker-alt"></i> East Legon, Accra</li>
             <li><i className="fas fa-phone"></i> +233 57 232 3912</li>
-            <li><i className="fas fa-envelope"></i> cards@indiansinghana.com</li>
+            <li><i className="fas fa-envelope"></i> <a href="mailto:cards@indiansinghana.com" className="footer-email">cards@indiansinghana.com</a></li>
           </ul>
         </div>
       </div>

@@ -687,6 +687,77 @@
   }
 }
 
+@media (max-width: 900px) {
+  .table-wrapper {
+    overflow: visible;
+  }
+
+  .users-table thead,
+  .users-table thead tr {
+    display: none;
+  }
+
+  .users-table,
+  .merchants-table {
+    display: block;
+    width: 100%;
+  }
+
+  .users-table tbody,
+  .merchants-table tbody {
+    display: block;
+  }
+
+  .users-table tr,
+  .merchants-table tr {
+    display: block;
+    margin: 0 0 1rem 0;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+    padding: 12px;
+    border: 1px solid rgba(0,0,0,0.04);
+  }
+
+  .users-table td,
+  .merchants-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border: none;
+  }
+
+  .users-table td[data-label]::before,
+  .merchants-table td[data-label]::before {
+    content: attr(data-label);
+    font-weight: 700;
+    color: #495057;
+    margin-right: 8px;
+    flex: 0 0 45%;
+  }
+
+  .users-table td:last-child {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .user-avatar-image,
+  .avatar-image {
+    width: 40px;
+    height: 40px;
+  }
+
+  .action-buttons-compact {
+    display: flex;
+    gap: 8px;
+  }
+
+  .table-pagination {
+    margin-top: 8px;
+  }
+}
+
 @media (max-width: 768px) {
   .users-table-container,
   .table-container.merchants-table-container {

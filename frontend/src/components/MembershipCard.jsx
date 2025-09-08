@@ -182,6 +182,9 @@ const MembershipCard = () => {
     }
 
     try {
+      // Add capture-mode class to remove overlay effects
+      cardRef.current.classList.add('capture-mode', 'download-mode');
+      
       // Import html2canvas dynamically
       const html2canvas = await import('html2canvas');
       const canvas = await html2canvas.default(cardRef.current, {
@@ -190,6 +193,9 @@ const MembershipCard = () => {
         useCORS: true,
         allowTaint: true
       });
+
+      // Remove the classes after capture
+      cardRef.current.classList.remove('capture-mode', 'download-mode');
 
       // Create download link
       const link = document.createElement('a');
@@ -200,6 +206,8 @@ const MembershipCard = () => {
       showNotification('Card downloaded successfully!', 'success');
     } catch (error) {
       console.error('Error downloading card:', error);
+      // Make sure to remove classes even if error occurs
+      cardRef.current?.classList.remove('capture-mode', 'download-mode');
       showNotification('Failed to download card. Please try again.', 'error');
     }
   };
@@ -216,6 +224,9 @@ const MembershipCard = () => {
     }
 
     try {
+      // Add capture-mode class to remove overlay effects
+      cardRef.current.classList.add('capture-mode', 'download-mode');
+      
       const html2canvas = await import('html2canvas');
       const canvas = await html2canvas.default(cardRef.current, {
         scale: 2,
@@ -223,6 +234,9 @@ const MembershipCard = () => {
         useCORS: true,
         allowTaint: true
       });
+
+      // Remove the classes after capture
+      cardRef.current.classList.remove('capture-mode', 'download-mode');
 
       // Convert to blob
       canvas.toBlob((blob) => {
@@ -243,6 +257,8 @@ const MembershipCard = () => {
       showNotification('Sharing card...', 'info');
     } catch (error) {
       console.error('Error sharing card:', error);
+      // Make sure to remove classes even if error occurs
+      cardRef.current?.classList.remove('capture-mode', 'download-mode');
       // Fallback to text sharing
       const message = encodeURIComponent(`I'm a proud member of Indians in Ghana! 🇮🇳🇬🇭\nMember #${user.membershipNumber}\n\nJoin our community: ${window.location.origin}`);
       window.open(`https://wa.me/?text=${message}`, '_blank');
@@ -263,6 +279,9 @@ const MembershipCard = () => {
     try {
       // Try to share with image if possible
       if (navigator.share) {
+        // Add capture-mode class to remove overlay effects
+        cardRef.current.classList.add('capture-mode', 'download-mode');
+        
         const html2canvas = await import('html2canvas');
         const canvas = await html2canvas.default(cardRef.current, {
           scale: 2,
@@ -270,6 +289,9 @@ const MembershipCard = () => {
           useCORS: true,
           allowTaint: true
         });
+
+        // Remove the classes after capture
+        cardRef.current.classList.remove('capture-mode', 'download-mode');
 
         canvas.toBlob(async (blob) => {
           if (blob && navigator.canShare && navigator.canShare({ files: [new File([blob], 'membership-card.png', { type: 'image/png' })] })) {
@@ -308,6 +330,8 @@ const MembershipCard = () => {
       }
     } catch (error) {
       console.error('Error sharing card:', error);
+      // Make sure to remove classes even if error occurs
+      cardRef.current?.classList.remove('capture-mode', 'download-mode');
       // Final fallback to text sharing
       const shareText = `I'm a proud member of Indians in Ghana! 🇮🇳🇬🇭\nMember #${user.membershipNumber}\n\nJoin our community: ${window.location.origin}`;
       

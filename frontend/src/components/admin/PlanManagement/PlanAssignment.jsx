@@ -221,7 +221,11 @@ const PlanAssignment = (props) => {
           
           <div className="info-group">
             <span className="info-label">Registration Date:</span>
-            <span className="info-value">{new Date(user.createdAt).toLocaleDateString()}</span>
+            <span className="info-value">{new Date(user.createdAt).toLocaleDateString('en-GB', {
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit'
+            })}</span>
           </div>
         </div>
       </div>

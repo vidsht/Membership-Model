@@ -302,10 +302,10 @@ const UserList = () => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return 'Invalid Date';
-    return new Intl.DateTimeFormat('en-US', {
+    return new Intl.DateTimeFormat('en-GB', {
       year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+      month: '2-digit',
+      day: '2-digit'
     }).format(date);
   };
 

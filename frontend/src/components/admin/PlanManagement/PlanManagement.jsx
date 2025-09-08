@@ -431,7 +431,11 @@ const PlanManagement = () => {
                     {user.membershipType?.charAt(0).toUpperCase() + user.membershipType?.slice(1) || 'No Plan'}
                   </span>
                 </td>
-                <td>{new Date(user.createdAt).toLocaleDateString()}</td>
+                <td>{new Date(user.createdAt).toLocaleDateString('en-GB', {
+                  year: 'numeric',
+                  month: '2-digit',
+                  day: '2-digit'
+                })}</td>
                 <td>
                   <button
                     className="btn btn-sm btn-primary"
@@ -507,7 +511,11 @@ const PlanManagement = () => {
                     }
                   </span>
                 </td>
-                <td>{new Date(merchant.createdAt).toLocaleDateString()}</td>
+                <td>{new Date(merchant.createdAt).toLocaleDateString('en-GB', {
+                  year: 'numeric',
+                  month: '2-digit',
+                  day: '2-digit'
+                })}</td>
                 <td>
                   <button
                     className="btn btn-sm btn-primary"

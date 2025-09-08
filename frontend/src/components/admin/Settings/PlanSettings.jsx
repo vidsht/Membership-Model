@@ -451,12 +451,20 @@ const PlanSettings = () => {
                   )}
                   <div className="meta-item">
                     <label>Created:</label>
-                    <span>{new Date(plan.createdAt || plan.created_at).toLocaleDateString()}</span>
+                    <span>{new Date(plan.createdAt || plan.created_at).toLocaleDateString('en-GB', {
+                      year: 'numeric',
+                      month: '2-digit',
+                      day: '2-digit'
+                    })}</span>
                   </div>
                   {plan.updatedAt || plan.updated_at ? (
                     <div className="meta-item">
                       <label>Updated:</label>
-                      <span>{new Date(plan.updatedAt || plan.updated_at).toLocaleDateString()}</span>
+                      <span>{new Date(plan.updatedAt || plan.updated_at).toLocaleDateString('en-GB', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit'
+                      })}</span>
                     </div>
                   ) : null}
                 </div>

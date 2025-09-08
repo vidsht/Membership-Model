@@ -155,10 +155,10 @@ const MerchantManagementEnhanced = () => {
     if (!dateString) return 'N/A';
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return 'Invalid Date';
-    return new Intl.DateTimeFormat('en-US', {
+    return new Intl.DateTimeFormat('en-GB', {
       year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+      month: '2-digit',
+      day: '2-digit'
     }).format(date);
   };
 
@@ -187,10 +187,10 @@ const MerchantManagementEnhanced = () => {
         }
         
         return {
-          label: validationDate.toLocaleDateString('en-US', {
+          label: validationDate.toLocaleDateString('en-GB', {
             year: 'numeric',
-            month: 'short',
-            day: 'numeric'
+            month: '2-digit',
+            day: '2-digit'
           }),
           className,
           daysLeft
@@ -1022,17 +1022,17 @@ const MerchantManagementEnhanced = () => {
           <tbody>
             {merchants.map((merchant, index) => (
               <tr key={merchant.id}>
-                <td className="checkbox-cell">
+                <td className="checkbox-cell" data-label="Select">
                   <input
                     type="checkbox"
                     checked={selectedMerchants.includes(merchant.id)}
                     onChange={() => handleMerchantSelect(merchant.id)}
                   />
                 </td>
-                <td className="serial-number">
+                <td className="serial-number" data-label="S.No">
                   {((pagination?.page || 1) - 1) * (pagination?.limit || 10) + index + 1}
                 </td>
-                <td className="business-cell">
+                <td className="business-cell" data-label="Business & Owner">
                   <div className="business-info-compact">
                     <div className="business-name">{merchant.businessName || 'N/A'}</div>
                     <div className="business-desc">{merchant.businessDescription || ''}</div>
@@ -1040,18 +1040,18 @@ const MerchantManagementEnhanced = () => {
                     <div className="joined-date">{formatDate(merchant.createdAt)}</div>
                   </div>
                 </td>
-                <td className="contact-cell">
+                <td className="contact-cell" data-label="Contact">
                   <div className="contact-info-stacked">
                     <div className="email">{merchant.email}</div>
                     <div className="phone">{merchant.phone || 'N/A'}</div>
                   </div>
                 </td>
-                <td className="category-cell">
+                <td className="category-cell" data-label="Category">
                   <span className={`category-badge ${merchant.businessCategory}`}>
                     {merchant.businessCategory || 'N/A'}
                   </span>
                 </td>
-                <td className="plan-cell">
+                <td className="plan-cell" data-label="Plan & Status">
                   <div className="plan-status-info">
                     <span className={`plan-badge ${merchant.membershipType || 'community'}`}>
                       {merchant.planName || merchant.membershipType ? 
@@ -1064,7 +1064,7 @@ const MerchantManagementEnhanced = () => {
                     </span>
                   </div>
                 </td>
-                <td className="limit-cell">
+                <td className="limit-cell" data-label="Deal Limit">
                   <div className="deal-limit-info-compact">
                     {merchant.customDealLimit ? (
                       <span className="custom-limit" title="Custom limit set by admin">
@@ -1077,7 +1077,7 @@ const MerchantManagementEnhanced = () => {
                     )}
                   </div>
                 </td>
-                <td className="validity-cell">
+                <td className="validity-cell" data-label="Valid Till">
                   {(() => {
                     const validity = calculateValidityInfo(merchant);
                     return (
@@ -1092,7 +1092,7 @@ const MerchantManagementEnhanced = () => {
                       </span>
                     );
                   })()}
-                </td>                <td className="actions-cell">
+                </td>                <td className="actions-cell" data-label="Actions">
                   <div className="action-buttons-compact">
                     <button
                       className="btn-compact btn-info"

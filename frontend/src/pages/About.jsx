@@ -55,7 +55,7 @@ const About = () => {
               <p>
                 <strong>Indians in Ghana</strong> is a vibrant community organization dedicated to connecting, 
                 supporting, and empowering the Indian diaspora living in Ghana. Founded by a group of passionate 
-                community leaders in 2010, we have grown to become Ghana's largest and most active Indian community 
+                community leaders in 2022, we have grown to become Ghana's largest and most active Indian community 
                 network with over 5,000 members across the country.
               </p>
               <p>
@@ -130,7 +130,7 @@ const About = () => {
                   <i className="fas fa-graduation-cap" style={{ color: 'var(--primary-color)' }}></i>
                 </div>
                 <h3>Education Support</h3>
-                <p>Scholarships and mentoring programs for Indian students in Ghana, plus educational workshops and career guidance.</p>
+                <p>Organizing educational workshops, career guidance sessions, and mentorship opportunities to help students and young professionals in Ghana shape a brighter future.</p>
               </div>
             </div>
             

@@ -1373,3 +1373,101 @@
   .contact-column { width: 30%; }
   .actions-column { width: 25%; }
 }
+
+/* Responsive: Convert table rows to cards on small screens */
+@media (max-width: 900px) {
+  .merchants-table-container .table-wrapper {
+    overflow: visible;
+  }
+
+  .merchants-table thead,
+  .merchants-table thead tr {
+    display: none;
+  }
+
+  .merchants-table {
+    display: block;
+    width: 100%;
+  }
+
+  .merchants-table tbody {
+    display: block;
+  }
+
+  .merchants-table tr {
+    display: block;
+    margin: 0 0 1rem 0;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+    padding: 12px;
+    border: 1px solid rgba(0,0,0,0.04);
+  }
+
+  .merchants-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border: none;
+  }
+
+  .merchants-table td[data-label]::before {
+    content: attr(data-label);
+    font-weight: 700;
+    color: #495057;
+    margin-right: 8px;
+    flex: 0 0 45%;
+  }
+
+  .merchants-table td:last-child {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .action-buttons-compact {
+    display: flex;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 768px) {
+  .merchant-management-enhanced {
+    padding: 1rem;
+  }
+
+  .merchant-stats-bar {
+    gap: 0.5rem;
+  }
+
+  .merchant-stat {
+    padding: 1rem;
+    min-width: 150px;
+  }
+
+  .merchant-management-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+
+  .header-actions {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .merchant-management-enhanced {
+    padding: 0.5rem;
+  }
+
+  .merchant-stat {
+    min-width: 120px;
+    padding: 0.75rem;
+  }
+
+  .merchant-stat .stat-value {
+    font-size: 1.5rem;
+  }
+}

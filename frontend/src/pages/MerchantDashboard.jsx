@@ -810,7 +810,11 @@ const MerchantDashboard = () => {
                   <h4>{notification.title}</h4>
                   <p>{notification.message}</p>
                   <small className="notification-time">
-                    {new Date(notification.created_at).toLocaleDateString()} at {new Date(notification.created_at).toLocaleTimeString()}
+                    {new Date(notification.created_at).toLocaleDateString('en-GB', {
+                      year: 'numeric',
+                      month: '2-digit',
+                      day: '2-digit'
+                    })} at {new Date(notification.created_at).toLocaleTimeString()}
                   </small>
                 </div>
                 {!notification.read && <div className="unread-indicator"></div>}
@@ -1051,7 +1055,11 @@ const MerchantDashboard = () => {
             <div className="detail-row">
               <div className="detail-item">
                 <strong><i className="fas fa-calendar"></i> Created At:</strong>
-                <span>{businessInfo.businessCreatedAt ? new Date(businessInfo.businessCreatedAt).toLocaleDateString() : 'Not available'}</span>
+                <span>{businessInfo.businessCreatedAt ? new Date(businessInfo.businessCreatedAt).toLocaleDateString('en-GB', {
+                  year: 'numeric',
+                  month: '2-digit',
+                  day: '2-digit'
+                }) : 'Not available'}</span>
               </div>
               <div className="detail-item">
                 <strong><i className="fas fa-user-shield"></i> Verified:</strong>
@@ -1075,7 +1083,11 @@ const MerchantDashboard = () => {
               </div>
               <div className="detail-item">
                 <strong><i className="fas fa-calendar-check"></i> Plan Expiry:</strong>
-                <span>{businessInfo.planExpiryDate ? new Date(businessInfo.planExpiryDate).toLocaleDateString() : 'Not set'}</span>
+                <span>{businessInfo.planExpiryDate ? new Date(businessInfo.planExpiryDate).toLocaleDateString('en-GB', {
+                  year: 'numeric',
+                  month: '2-digit',
+                  day: '2-digit'
+                }) : 'Not set'}</span>
               </div>
             </div>
             {businessInfo.businessDescription && (
@@ -1274,7 +1286,11 @@ const MerchantDashboard = () => {
                   <div className="deal-info">
                     <span className="deal-title">{redemption.dealTitle}</span>
                     <span className="redemption-date">
-                      {new Date(redemption.redeemed_at || redemption.redeemedAt).toLocaleDateString()}
+                      {new Date(redemption.redeemed_at || redemption.redeemedAt).toLocaleDateString('en-GB', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit'
+                      })}
                     </span>
                   </div>
                   <div className="redemption-status">
@@ -1311,7 +1327,11 @@ const MerchantDashboard = () => {
                   }
                   {stats.nextMonthReset && (
                     <span className="reset-info">
-                      <br />Limit resets on: {new Date(stats.nextMonthReset).toLocaleDateString()}
+                      <br />Limit resets on: {new Date(stats.nextMonthReset).toLocaleDateString('en-GB', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit'
+                      })}
                     </span>
                   )}
                 </p>
@@ -1427,7 +1447,11 @@ const MerchantDashboard = () => {
                       </div>
                       <div className={`deal-expiry ${isExpired ? 'expired-date' : ''}`}>
                         {isExpired ? 'Expired: ' : 'Expires: '}
-                        {new Date(deal.validUntil).toLocaleDateString()}
+                        {new Date(deal.validUntil).toLocaleDateString('en-GB', {
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit'
+                        })}
                       </div>
                     </div>
                     <div className="deal-stats">
@@ -1563,7 +1587,11 @@ const MerchantDashboard = () => {
                             </div>
                             <div className="request-time">
                               <i className="fas fa-clock"></i>
-                              {new Date(request.redeemed_at).toLocaleDateString()} at {new Date(request.redeemed_at).toLocaleTimeString()}
+                              {new Date(request.redeemed_at).toLocaleDateString('en-GB', {
+                                year: 'numeric',
+                                month: '2-digit',
+                                day: '2-digit'
+                              })} at {new Date(request.redeemed_at).toLocaleTimeString()}
                             </div>
                           </div>
                           <div className="customer-info">
@@ -2114,7 +2142,11 @@ const MerchantDashboard = () => {
                           <tbody>
                             {dealAnalyticsData.redemptions.slice(0, 20).map(redemption => (
                               <tr key={redemption.id}>
-                                <td>{new Date(redemption.redemption_date).toLocaleDateString()}</td>
+                                <td>{new Date(redemption.redemption_date).toLocaleDateString('en-GB', {
+                                  year: 'numeric',
+                                  month: '2-digit',
+                                  day: '2-digit'
+                                })}</td>
                                 <td>
                                   {!shouldHideContactInfo(userInfo?.membershipType) ? (
                                     redemption.user_name

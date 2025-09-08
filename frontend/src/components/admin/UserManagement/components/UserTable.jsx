@@ -24,10 +24,10 @@ const UserTable = ({
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
     try {
-      return new Date(dateString).toLocaleDateString('en-US', {
+      return new Date(dateString).toLocaleDateString('en-GB', {
         year: 'numeric',
-        month: 'short',
-        day: 'numeric'
+        month: '2-digit',
+        day: '2-digit'
       });
     } catch (error) {
       return 'Invalid Date';
@@ -230,17 +230,17 @@ const UserTable = ({
               ) : (
                 users.map((user, index) => (
                   <tr key={user.id}>
-                    <td className="checkbox-cell">
+                    <td className="checkbox-cell" data-label="Select">
                       <input
                         type="checkbox"
                         checked={selectedUsers.includes(user.id)}
                         onChange={() => onUserSelect(user.id)}
                       />
                     </td>
-                    <td className="serial-number">
+                    <td className="serial-number" data-label="S.No">
                       {((pagination?.page || 1) - 1) * (pagination?.limit || 20) + index + 1}
                     </td>
-                    <td className="user-cell">
+                    <td className="user-cell" data-label="User & Type">
                       <div className="user-info-compact">
                         <div className="user-avatar">
                           {user.profilePhoto ? (
@@ -266,13 +266,13 @@ const UserTable = ({
                         </div>
                       </div>
                     </td>
-                    <td className="contact-cell">
+                    <td className="contact-cell" data-label="Contact Info">
                       <div className="contact-info-stacked">
                         <span className="email">{user.email || 'N/A'}</span>
                         {user.phone && <span className="phone">{user.phone}</span>}
                       </div>
                     </td>
-                    <td className="plan-cell">
+                    <td className="plan-cell" data-label="Plan & Status">
                       <div className="plan-status-info">
                         <span className="plan-badge">
                           {user.membershipType ? user.membershipType.charAt(0).toUpperCase() + user.membershipType.slice(1) : 'None'}
@@ -288,7 +288,7 @@ const UserTable = ({
                         </span>
                       </div>
                     </td>
-                    <td className="limit-cell">
+                    <td className="limit-cell" data-label="Redemption Limit">
                       <div className="redemption-limit-info-compact">
                         {user.customRedemptionLimit ? (
                           <span className="custom-limit" title="Custom limit set by admin">
@@ -310,12 +310,12 @@ const UserTable = ({
                         )}
                       </div>
                     </td>
-                    <td className="validity-cell">
+                    <td className="validity-cell" data-label="Valid Till">
                       <span className="validity-date-compact">
                         {formatValidTill(user)}
                       </span>
                     </td>
-                    <td className="actions-cell">
+                    <td className="actions-cell" data-label="Actions">
                       <div className="action-buttons-compact">
                         {/* View/Edit Button - Route Link (ONLY REMAINING ACTION) */}
                         <Link
