@@ -12,7 +12,7 @@ const MerchantManagementEnhanced = () => {
   const { showNotification } = useNotification();
   const { getMerchantLogoUrl } = useImageUrl();
   const navigate = useNavigate();
-  const { getCommunityOptions, getBusinessCategoryOptions, getStateOptions } = useDynamicFields();
+  const { getCommunityOptions, getBusinessCategoryOptions, getStateOptions, getPlanOptions } = useDynamicFields();
   const [merchants, setMerchants] = useState([]);
   const [viewMode, setViewMode] = useState('table'); // Only table view
   const [loading, setLoading] = useState(true);
@@ -966,7 +966,7 @@ const MerchantManagementEnhanced = () => {
             onExport={handleExportMerchants}
             loading={loading}
             referenceData={{
-              plans: [] // TODO: pass actual merchant plans if available, else fallback to []
+              plans: getPlanOptions()
             }}
           />
 
