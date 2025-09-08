@@ -232,6 +232,38 @@ const MerchantManagementEnhanced = () => {
     };
   };
 
+  // Format valid-till display to match UserManagement logic
+  const formatValidTill = (merchant) => {
+    const validity = calculateValidityInfo(merchant);
+    const label = validity?.label;
+
+    if (!label || label === 'No validity set' || label === 'N/A') {
+      return <span className="validity-none">No validity set</span>;
+    }
+
+    if (label === 'Expired') {
+      return <span className="validity-expired">Expired</span>;
+    }
+
+    if (label === 'Lifetime') {
+      return <span className="validity-lifetime">Lifetime</span>;
+    }
+
+    if (label === 'Invalid date') {
+      return <span className="validity-error">Invalid date</span>;
+    }
+
+    // Otherwise show formatted date similar to users
+    return (
+      <span className={`validity-active`}>
+        {label}
+        {typeof validity.daysLeft === 'number' && validity.className !== 'validity-expired' && (
+          <span className="days-remaining">{validity.daysLeft}d</span>
+        )}
+      </span>
+    );
+  };
+
   const handleMerchantSelect = (merchantId) => {
     setSelectedMerchants(prev => 
       prev.includes(merchantId) 

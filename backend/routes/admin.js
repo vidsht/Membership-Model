@@ -1770,6 +1770,7 @@ router.get('/partners', auth, admin, async (req, res) => {
         SELECT 
           u.id, u.fullName, u.email, u.phone, u.address, u.community, 
           u.membershipType, u.status, u.createdAt, u.lastLogin,
+          u.validationDate, u.planAssignedAt, u.planAssignedBy, -- ADDED
           b.businessId, b.businessName, b.businessDescription, b.businessCategory,
           b.businessAddress, b.businessPhone, b.businessEmail, b.website,
           b.businessLicense, b.taxId, b.customDealLimit,
@@ -1788,6 +1789,7 @@ router.get('/partners', auth, admin, async (req, res) => {
         SELECT 
           u.id, u.fullName, u.email, u.phone, u.address, u.community, 
           u.membershipType, u.status, u.createdAt, u.lastLogin,
+          u.validationDate, u.planAssignedAt, u.planAssignedBy, -- ADDED
           NULL as businessId, NULL as businessName, NULL as businessDescription, 
           NULL as businessCategory, NULL as businessAddress, NULL as businessPhone, 
           NULL as businessEmail, NULL as website, NULL as businessLicense, 
@@ -1803,7 +1805,16 @@ router.get('/partners', auth, admin, async (req, res) => {
     }
 
     params.push(parseInt(limit), parseInt(offset));
-    const merchants = await queryAsync(query, params);
+    const merchantsRaw = await queryAsync(query, params);
+    // Normalize plan fields so frontend can use same logic as users
+    const merchants = merchantsRaw.map(m => {
+      m.planExpiryDate = m.validationDate || null;
+      m.isPlanExpired = m.validationDate ? (new Date(m.validationDate) < new Date()) : false;
+      if (!m.planName && m.membershipType) {
+        m.planName = m.planName || m.membershipType;
+      }
+      return m;
+    });
     console.log('👥 Found merchants:', merchants.length, 'first merchant businessName:', merchants[0]?.businessName);
 
     // Get total count

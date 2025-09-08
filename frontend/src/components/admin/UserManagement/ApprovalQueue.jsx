@@ -139,24 +139,45 @@ const ApprovalQueue = () => {
   const handleApproveUser = useCallback(async (userId, userType, userName) => {
     try {
       console.log('✅ Approving user:', { userId, userType, userName });
-      
-      // Fixed: Use consistent endpoint
-      await api.put(`/admin/users/${userId}/status`, { status: 'approved' });
-      
-      await fetchPendingApprovals();
-      showNotification(`${userName || 'User'} approved successfully!`, 'success');
+
+      // Validate session
+      const sessionValid = await validateSession();
+      if (!sessionValid) {
+        handleSessionExpired();
+        return;
+      }
+
+      // Call both users and partners endpoints (tolerate partial success)
+      const [usersRes, partnersRes] = await Promise.allSettled([
+        api.put(`/admin/users/${userId}/status`, { status: 'approved' }),
+        api.put(`/admin/partners/${userId}/status`, { status: 'approved' })
+      ]);
+
+      const usersSuccess = usersRes.status === 'fulfilled' && usersRes.value?.data?.success;
+      const partnersSuccess = partnersRes.status === 'fulfilled' && partnersRes.value?.data?.success;
+
+      if (usersSuccess || partnersSuccess) {
+        await fetchPendingApprovals();
+        showNotification(`${userName || 'User'} approved successfully!`, 'success');
+      } else {
+        // Aggregate errors for debugging
+        const uErr = usersRes.status === 'rejected' ? usersRes.reason : null;
+        const pErr = partnersRes.status === 'rejected' ? partnersRes.reason : null;
+        console.error('Approve user failed:', { uErr, pErr });
+        throw new Error('Failed to approve user');
+      }
     } catch (error) {
       console.error('❌ Error approving user:', error);
-      
+
       if (error.response?.status === 401) {
         handleSessionExpired();
         return;
       }
-      
+
       const message = error.response?.data?.message || 'Failed to approve user. Please try again.';
       showNotification(message, 'error');
     }
-  }, [fetchPendingApprovals, showNotification, handleSessionExpired]);
+  }, [fetchPendingApprovals, showNotification, handleSessionExpired, validateSession]);
 
   /**
    * Handle individual user rejection
@@ -164,24 +185,46 @@ const ApprovalQueue = () => {
   const handleRejectUser = useCallback(async (userId, userName) => {
     try {
       console.log('❌ Rejecting user:', { userId, userName });
-      
-      // Fixed: Use consistent endpoint
-      await api.put(`/admin/users/${userId}/status`, { status: 'rejected' });
-      
-      await fetchPendingApprovals();
-      showNotification(`${userName || 'User'} rejected successfully!`, 'success');
+
+      // Validate session
+      const sessionValid = await validateSession();
+      if (!sessionValid) {
+        handleSessionExpired();
+        return;
+      }
+
+      const payload = { status: 'rejected' };
+
+      // Call both users and partners endpoints (tolerate partial success)
+      const [usersRes, partnersRes] = await Promise.allSettled([
+        api.put(`/admin/users/${userId}/status`, payload),
+        api.put(`/admin/partners/${userId}/status`, payload)
+      ]);
+
+      const usersSuccess = usersRes.status === 'fulfilled' && usersRes.value?.data?.success;
+      const partnersSuccess = partnersRes.status === 'fulfilled' && partnersRes.value?.data?.success;
+
+      if (usersSuccess || partnersSuccess) {
+        await fetchPendingApprovals();
+        showNotification(`${userName || 'User'} rejected successfully!`, 'success');
+      } else {
+        const uErr = usersRes.status === 'rejected' ? usersRes.reason : null;
+        const pErr = partnersRes.status === 'rejected' ? partnersRes.reason : null;
+        console.error('Reject user failed:', { uErr, pErr });
+        throw new Error('Failed to reject user');
+      }
     } catch (error) {
       console.error('❌ Error rejecting user:', error);
-      
+
       if (error.response?.status === 401) {
         handleSessionExpired();
         return;
       }
-      
+
       const message = error.response?.data?.message || 'Failed to reject user. Please try again.';
       showNotification(message, 'error');
     }
-  }, [fetchPendingApprovals, showNotification, handleSessionExpired]);
+  }, [fetchPendingApprovals, showNotification, handleSessionExpired, validateSession]);
 
   /**
    * Handle bulk approval
