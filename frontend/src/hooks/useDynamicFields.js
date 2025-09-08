@@ -18,6 +18,7 @@ export const useDynamicFields = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
+
   const fetchDynamicFields = async () => {
     try {
       setIsLoading(true);
@@ -43,6 +44,8 @@ export const useDynamicFields = () => {
       } catch (adminError) {
         console.warn('Admin endpoint not available, falling back to auth endpoints:', adminError.message);
       }
+
+  // Always defined outside fetchDynamicFields
   const getPlanOptions = () => {
     return dynamicFields.plans.map(plan => ({
       value: plan.key,
