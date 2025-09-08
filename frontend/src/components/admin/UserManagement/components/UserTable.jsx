@@ -196,10 +196,10 @@ const UserTable = ({
     <>
       <div className="table-container merchants-table-container">
         <div className="table-wrapper">
-          <table className="users-table merchants-table">
+          <table className="users-table merchants-table compact-table">
             <thead>
               <tr>
-                <th className="select-column">
+                <th className="checkbox-column">
                   <input
                     type="checkbox"
                     checked={selectedUsers.length > 0 && selectedUsers.length === users.length}
@@ -208,21 +208,18 @@ const UserTable = ({
                   />
                 </th>
                 <th className="serial-column">S.No</th>
-                <th>User</th>
-                <th>Contact</th>
-                <th>Type</th>
-                <th>Plan</th>
-                <th>Redemption Limit</th>
-                <th>Valid Till</th>
-                <th>Status</th>
-                <th>Registered</th>
-                <th>Actions</th>
+                <th className="user-column">User & Type</th>
+                <th className="contact-column">Contact Info</th>
+                <th className="plan-column">Plan & Status</th>
+                <th className="limit-column">Redemption Limit</th>
+                <th className="validity-column">Valid Till</th>
+                <th className="actions-column">Actions</th>
               </tr>
             </thead>
             <tbody>
               {users.length === 0 ? (
                 <tr>
-                  <td colSpan="11" className="no-data">
+                  <td colSpan="8" className="no-data">
                     <div className="no-data-content no-merchants">
                       <i className="fas fa-users fa-3x"></i>
                       <h3>No Users Found</h3>
@@ -233,7 +230,7 @@ const UserTable = ({
               ) : (
                 users.map((user, index) => (
                   <tr key={user.id}>
-                    <td>
+                    <td className="checkbox-cell">
                       <input
                         type="checkbox"
                         checked={selectedUsers.includes(user.id)}
@@ -243,41 +240,40 @@ const UserTable = ({
                     <td className="serial-number">
                       {((pagination?.page || 1) - 1) * (pagination?.limit || 20) + index + 1}
                     </td>
-                    <td>
-                      <div className="user-cell business-info">
+                    <td className="user-cell">
+                      <div className="user-info-compact">
                         <div className="user-avatar">
                           {user.profilePhoto ? (
                             <SmartImage 
                               src={getProfileImageUrl(user)} 
                               alt={user.fullName}
                               className="avatar-image user-avatar-image"
-                              fallback={<DefaultAvatar size={40} name={user.fullName} />}
+                              fallback={<DefaultAvatar size={32} name={user.fullName} />}
                             />
                           ) : (
-                            <DefaultAvatar size={40} name={user.fullName} />
+                            <DefaultAvatar size={32} name={user.fullName} />
                           )}
                         </div>
-                        <div className="user-info user-details">
-                          <span className="user-name business-name">{user.fullName || 'Unknown'}</span>
+                        <div className="user-details-compact">
+                          <span className="user-name">{user.fullName || 'Unknown'}</span>
                           {user.membershipNumber && (
-                            <span className="membership-number business-desc">#{user.membershipNumber}</span>
+                            <span className="membership-number">#{user.membershipNumber}</span>
                           )}
+                          <span className="user-type">
+                            {user.userType ? user.userType.charAt(0).toUpperCase() + user.userType.slice(1) : 'User'}
+                          </span>
+                          <span className="registered-date">{formatDate(user.createdAt)}</span>
                         </div>
                       </div>
                     </td>
-                    <td>
-                      <div className="contact-cell contact-info">
+                    <td className="contact-cell">
+                      <div className="contact-info-stacked">
                         <span className="email">{user.email || 'N/A'}</span>
                         {user.phone && <span className="phone">{user.phone}</span>}
                       </div>
                     </td>
-                    <td>
-                      <span className="user-type category-badge">
-                        {user.userType ? user.userType.charAt(0).toUpperCase() + user.userType.slice(1) : 'User'}
-                      </span>
-                    </td>
-                    <td>
-                      <div className="plan-cell">
+                    <td className="plan-cell">
+                      <div className="plan-status-info">
                         <span className="plan-badge">
                           {user.membershipType ? user.membershipType.charAt(0).toUpperCase() + user.membershipType.slice(1) : 'None'}
                         </span>
@@ -287,23 +283,26 @@ const UserTable = ({
                             Expired
                           </span>
                         )}
+                        <span className={`status-badge ${getStatusBadgeClass(user.status)}`}>
+                          {user.status ? user.status.charAt(0).toUpperCase() + user.status.slice(1) : 'Unknown'}
+                        </span>
                       </div>
                     </td>
-                    <td>
-                      <div className="redemption-limit-info">
+                    <td className="limit-cell">
+                      <div className="redemption-limit-info-compact">
                         {user.customRedemptionLimit ? (
                           <span className="custom-limit" title="Custom limit set by admin">
-                            <i className="fas fa-star"></i> {user.customRedemptionLimit === -1 ? 'Unlimited' : `${user.customRedemptionLimit}/month`}
+                            <i className="fas fa-star"></i> {user.customRedemptionLimit === -1 ? 'Unlimited' : `${user.customRedemptionLimit}/m`}
                           </span>
                         ) : (
                           <span className="plan-limit" title="Using plan default">
-                            {user.planMaxDealRedemptions ? `${user.planMaxDealRedemptions}/month` : 'Plan Default'}
+                            {user.planMaxDealRedemptions ? `${user.planMaxDealRedemptions}/m` : 'Plan Default'}
                           </span>
                         )}
                         {onQuickEditRedemption && user.userType === 'user' && (
                           <button
                             onClick={() => onQuickEditRedemption(user)}
-                            className="btn-mini btn-edit-limit"
+                            className="btn-mini-compact"
                             title="Edit Redemption Limit"
                           >
                             <i className="fas fa-edit"></i>
@@ -311,23 +310,17 @@ const UserTable = ({
                         )}
                       </div>
                     </td>
-                    <td>
-                      <span className="validity-date">
+                    <td className="validity-cell">
+                      <span className="validity-date-compact">
                         {formatValidTill(user)}
                       </span>
                     </td>
-                    <td>
-                      <span className={`status-badge ${getStatusBadgeClass(user.status)}`}>
-                        {user.status ? user.status.charAt(0).toUpperCase() + user.status.slice(1) : 'Unknown'}
-                      </span>
-                    </td>
-                    <td>{formatDate(user.createdAt)}</td>
-                    <td>
-                      <div className="action-buttons">
+                    <td className="actions-cell">
+                      <div className="action-buttons-compact">
                         {/* View/Edit Button - Route Link (ONLY REMAINING ACTION) */}
                         <Link
                           to={`/admin/users/${user.id}/details`}
-                          className="btn-icon btn-view btn btn-sm btn-info"
+                          className="btn-compact btn-info"
                           title="View/Edit Details"
                         >
                           <i className="fas fa-eye"></i>
@@ -337,7 +330,7 @@ const UserTable = ({
                         {onQuickChangePassword && (
                           <button
                             onClick={() => onQuickChangePassword(user)}
-                            className="btn-icon btn-password btn btn-sm btn-warning"
+                            className="btn-compact btn-warning"
                             title="Change Password"
                           >
                             <i className="fas fa-key"></i>
@@ -349,14 +342,14 @@ const UserTable = ({
                           <>
                             <button
                               onClick={() => handleStatusChange(user.id, 'approved')}
-                              className="btn-icon btn-approve btn btn-sm btn-success"
+                              className="btn-compact btn-success"
                               title="Approve"
                             >
                               <i className="fas fa-check"></i>
                             </button>
                             <button
                               onClick={() => handleStatusChange(user.id, 'rejected')}
-                              className="btn-icon btn-reject btn btn-sm btn-danger"
+                              className="btn-compact btn-danger"
                               title="Reject"
                             >
                               <i className="fas fa-times"></i>
@@ -367,7 +360,7 @@ const UserTable = ({
                         {user.status === 'approved' && (
                           <button
                             onClick={() => handleStatusChange(user.id, 'suspended')}
-                            className="btn-icon btn-suspend btn btn-sm"
+                            className="btn-compact btn-suspend"
                             title="Suspend"
                           >
                             <i className="fas fa-ban"></i>
@@ -377,7 +370,7 @@ const UserTable = ({
                         {user.status === 'suspended' && (
                           <button
                             onClick={() => handleStatusChange(user.id, 'approved')}
-                            className="btn-icon btn-activate btn btn-sm"
+                            className="btn-compact btn-activate"
                             title="Activate"
                           >
                             <i className="fas fa-check-circle"></i>

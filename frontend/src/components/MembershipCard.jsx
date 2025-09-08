@@ -14,9 +14,6 @@ const MembershipCard = () => {
   const qrCodeRef = useRef();
   const barcodeRef = useRef();
   const cardRef = useRef();
-  // readiness flags for dynamic content (QR / Barcode)
-  const [qrReady, setQrReady] = useState(false);
-  const [barcodeReady, setBarcodeReady] = useState(false);
   const [cardSettings, setCardSettings] = useState({
     show_qr_code: true,
     show_barcode: true,
@@ -127,22 +124,7 @@ const MembershipCard = () => {
           if (!qrGenerated) {
             try {
               const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(user.membershipNumber.toString())}`;
-              // Append an actual image element (crossOrigin) and wait for it to load before marking ready
-              const img = document.createElement('img');
-              img.crossOrigin = 'anonymous';
-              img.alt = 'QR Code';
-              img.style.width = '100px';
-              img.style.height = '100px';
-              img.onload = () => {
-                setQrReady(true);
-              };
-              img.onerror = () => {
-                console.error('QR image failed to load');
-                // leave qrReady false so download is gated
-              };
-              img.src = qrUrl;
-              qrCodeRef.current.innerHTML = '';
-              qrCodeRef.current.appendChild(img);
+              qrCodeRef.current.innerHTML = `<img src="${qrUrl}" alt="QR Code" style="width: 100px; height: 100px; background: white;" />`;
               qrGenerated = true;
             } catch (error) {
               console.error('QR API service error:', error);
@@ -152,24 +134,7 @@ const MembershipCard = () => {
           // Final fallback: Show membership number as text
           if (!qrGenerated) {
             console.log('All QR methods failed, showing text fallback');
-            const fallback = document.createElement('div');
-            fallback.style.background = 'white';
-            fallback.style.color = 'black';
-            fallback.style.padding = '10px';
-            fallback.style.fontSize = '10px';
-            fallback.style.textAlign = 'center';
-            fallback.style.borderRadius = '4px';
-            fallback.style.width = '100px';
-            fallback.style.height = '100px';
-            fallback.style.display = 'flex';
-            fallback.style.alignItems = 'center';
-            fallback.style.justifyContent = 'center';
-            fallback.style.wordBreak = 'break-all';
-            fallback.textContent = user.membershipNumber;
-            qrCodeRef.current.innerHTML = '';
-            qrCodeRef.current.appendChild(fallback);
-            // Mark QR as ready since there is no external resource
-            setQrReady(true);
+            qrCodeRef.current.innerHTML = `<div style="background: white; color: black; padding: 10px; font-size: 10px; text-align: center; border-radius: 4px; width: 100px; height: 100px; display: flex; align-items: center; justify-content: center; word-break: break-all;">${user.membershipNumber}</div>`;
           }
         }
 
@@ -190,8 +155,6 @@ const MembershipCard = () => {
                   margin: 0
                 });
                 barcodeGenerated = true;
-                // JSBarcode writes synchronously to the SVG element, mark ready
-                setBarcodeReady(true);
               }
             } catch (error) {
               console.error('JsBarcode error:', error);
@@ -200,17 +163,7 @@ const MembershipCard = () => {
           
           // Fallback: show membership number as text
           if (!barcodeGenerated) {
-            barcodeRef.current.innerHTML = '';
-            const svgText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-            svgText.setAttribute('x', '50%');
-            svgText.setAttribute('y', '50%');
-            svgText.setAttribute('text-anchor', 'middle');
-            svgText.setAttribute('font-size', '8');
-            svgText.setAttribute('fill', 'black');
-            svgText.textContent = user.membershipNumber;
-            barcodeRef.current.appendChild(svgText);
-            // Mark barcode as ready since the fallback is immediate
-            setBarcodeReady(true);
+            barcodeRef.current.innerHTML = `<text x="50%" y="50%" text-anchor="middle" font-size="8" fill="black">${user.membershipNumber}</text>`;
           }
         }
       }, 100);
@@ -223,106 +176,31 @@ const MembershipCard = () => {
       return;
     }
 
-    // Gate on readiness of dynamic content
-    if (cardSettings.show_qr_code && !qrReady) {
-      showNotification('Preparing QR...', 'info');
-      return;
-    }
-    if (cardSettings.show_barcode && !barcodeReady) {
-      showNotification('Preparing barcode...', 'info');
-      return;
-    }
-
     if (!cardRef.current) {
       showNotification('Card is not ready for download. Please wait.', 'error');
       return;
     }
 
-    let tempObjectUrl = null;
-    let imgEl = null;
-    let originalSrc = null;
-
     try {
-      // Optionally wait for fonts to be ready to avoid mid-capture reflow
-      if (document.fonts && document.fonts.ready) {
-        await document.fonts.ready;
-      }
-
-      // If there's an uploaded profile image, fetch it and set a same-origin object URL
-      const profileUrl = getProfileImageUrl(user);
-      if (profileUrl) {
-        try {
-          const resp = await fetch(profileUrl, { mode: 'cors' });
-          if (resp && resp.ok) {
-            const blob = await resp.blob();
-            tempObjectUrl = URL.createObjectURL(blob);
-
-            // Find the profile image in the card (SmartImage uses className "profile-image")
-            imgEl = cardRef.current.querySelector('img.profile-image');
-            if (imgEl) {
-              originalSrc = imgEl.src;
-              imgEl.src = tempObjectUrl;
-              // Ensure image has finished decoding
-              if (imgEl.decode) await imgEl.decode();
-            }
-          } else {
-            console.warn('Failed to fetch profile image for download, status:', resp && resp.status);
-          }
-        } catch (fetchErr) {
-          console.warn('Error fetching profile image for download:', fetchErr);
-        }
-      }
-
+      // Import html2canvas dynamically
       const html2canvas = await import('html2canvas');
-
-      // Measure the element precisely
-      const node = cardRef.current;
-      const rect = node.getBoundingClientRect();
-      const width = Math.round(rect.width);
-      const height = Math.round(rect.height);
-
-      // Small pause to ensure layout settled
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      const canvas = await html2canvas.default(node, {
+      const canvas = await html2canvas.default(cardRef.current, {
         scale: 2,
+        backgroundColor: '#ffffff',
         useCORS: true,
-        allowTaint: true,
-        width,
-        height,
-        x: 0,
-        y: 0,
-        scrollX: 0,
-        scrollY: -window.scrollY,
-        logging: false,
-        removeContainer: true
+        allowTaint: true
       });
 
-      if (canvas.width === 0 || canvas.height === 0) {
-        throw new Error('Canvas is empty');
-      }
-
-      // Trigger PNG download
+      // Create download link
       const link = document.createElement('a');
       link.download = `membership-card-${user.membershipNumber || 'download'}.png`;
-      link.href = canvas.toDataURL('image/png');
-      document.body.appendChild(link);
+      link.href = canvas.toDataURL();
       link.click();
-      document.body.removeChild(link);
+
       showNotification('Card downloaded successfully!', 'success');
     } catch (error) {
       console.error('Error downloading card:', error);
       showNotification('Failed to download card. Please try again.', 'error');
-    } finally {
-      // Restore original image src and revoke temporary object URL
-      try {
-        if (imgEl && originalSrc !== undefined) {
-          imgEl.src = originalSrc;
-        }
-        if (tempObjectUrl) URL.revokeObjectURL(tempObjectUrl);
-      } catch (restoreErr) {
-        console.warn('Error restoring profile image after download:', restoreErr);
-      }
     }
   };
 
@@ -339,47 +217,30 @@ const MembershipCard = () => {
 
     try {
       const html2canvas = await import('html2canvas');
-      
-      // Wait a moment for any images to load
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
       const canvas = await html2canvas.default(cardRef.current, {
-        scale: 2, // Consistent with download function
+        scale: 2,
         backgroundColor: '#ffffff',
         useCORS: true,
-        allowTaint: true,
-        width: cardRef.current.offsetWidth,
-        height: cardRef.current.offsetHeight,
-        scrollX: 0,
-        scrollY: 0,
-        logging: false,
-        removeContainer: true
+        allowTaint: true
       });
 
-      // Verify canvas has content
-      if (canvas.width === 0 || canvas.height === 0) {
-        throw new Error('Canvas is empty');
-      }
-
       // Convert to blob
-        canvas.toBlob((blob) => {
-          if (!blob) {
-            throw new Error('Failed to create image blob');
-          }
+      canvas.toBlob((blob) => {
+        if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([blob], 'membership-card.png', { type: 'image/png' })] })) {
+          const file = new File([blob], 'membership-card.png', { type: 'image/png' });
+          navigator.share({
+            title: 'My Indians in Ghana Membership Card',
+            text: `I'm a proud member of Indians in Ghana! 🇮🇳🇬🇭\nMember #${user.membershipNumber}`,
+            files: [file]
+          });
+        } else {
+          // Fallback to WhatsApp web link
+          const message = encodeURIComponent(`I'm a proud member of Indians in Ghana! 🇮🇳🇬🇭\nMember #${user.membershipNumber}\n\nJoin our community: ${window.location.origin}`);
+          window.open(`https://wa.me/?text=${message}`, '_blank');
+        }
+      }, 'image/png');
 
-          if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([blob], 'membership-card.jpg', { type: 'image/jpeg' })] })) {
-            const file = new File([blob], 'membership-card.jpg', { type: 'image/jpeg' });
-            navigator.share({
-              title: 'My Indians in Ghana Membership Card',
-              text: `I'm a proud member of Indians in Ghana! 🇮🇳🇬🇭\nMember #${user.membershipNumber}`,
-              files: [file]
-            });
-          } else {
-            // Fallback to WhatsApp web link
-            const message = encodeURIComponent(`I'm a proud member of Indians in Ghana! 🇮🇳🇬🇭\nMember #${user.membershipNumber}\n\nJoin our community: ${window.location.origin}`);
-            window.open(`https://wa.me/?text=${message}`, '_blank');
-          }
-        }, 'image/jpeg', 0.95);      showNotification('Sharing card...', 'info');
+      showNotification('Sharing card...', 'info');
     } catch (error) {
       console.error('Error sharing card:', error);
       // Fallback to text sharing
@@ -403,35 +264,16 @@ const MembershipCard = () => {
       // Try to share with image if possible
       if (navigator.share) {
         const html2canvas = await import('html2canvas');
-        
-        // Wait a moment for any images to load
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
         const canvas = await html2canvas.default(cardRef.current, {
-          scale: 2, // Consistent configuration
+          scale: 2,
           backgroundColor: '#ffffff',
           useCORS: true,
-          allowTaint: true,
-          width: cardRef.current.offsetWidth,
-          height: cardRef.current.offsetHeight,
-          scrollX: 0,
-          scrollY: 0,
-          logging: false,
-          removeContainer: true
+          allowTaint: true
         });
 
-        // Verify canvas has content
-        if (canvas.width === 0 || canvas.height === 0) {
-          throw new Error('Canvas is empty');
-        }
-
         canvas.toBlob(async (blob) => {
-          if (!blob) {
-            throw new Error('Failed to create image blob');
-          }
-
-          if (navigator.canShare && navigator.canShare({ files: [new File([blob], 'membership-card.jpg', { type: 'image/jpeg' })] })) {
-            const file = new File([blob], 'membership-card.jpg', { type: 'image/jpeg' });
+          if (blob && navigator.canShare && navigator.canShare({ files: [new File([blob], 'membership-card.png', { type: 'image/png' })] })) {
+            const file = new File([blob], 'membership-card.png', { type: 'image/png' });
             await navigator.share({
               title: 'My Indians in Ghana Membership Card',
               text: `I'm a proud member of Indians in Ghana! 🇮🇳🇬🇭\nMember #${user.membershipNumber}`,
@@ -445,7 +287,7 @@ const MembershipCard = () => {
             });
           }
           showNotification('Card shared successfully!', 'success');
-        }, 'image/jpeg', 0.95);
+        }, 'image/png');
       } else {
         // Fallback for browsers that don't support Web Share API
         const shareText = `I'm a proud member of Indians in Ghana! 🇮🇳🇬🇭\nMember #${user.membershipNumber}\n\nJoin our community: ${window.location.origin}`;
@@ -459,13 +301,9 @@ const MembershipCard = () => {
           textArea.value = shareText;
           document.body.appendChild(textArea);
           textArea.select();
-          try {
-            document.execCommand('copy');
-            showNotification('Share text copied to clipboard!', 'success');
-          } catch (err) {
-            showNotification('Unable to copy share text', 'error');
-          }
+          document.execCommand('copy');
           document.body.removeChild(textArea);
+          showNotification('Share text copied to clipboard!', 'success');
         }
       }
     } catch (error) {
@@ -573,6 +411,7 @@ const MembershipCard = () => {
       <div 
         ref={cardRef}
         className="membership-card-new"
+        style={{backgroundColor: '#ffffff'}}
       >
         {/* Header Section */}
         <div className="card-header-new">
@@ -678,7 +517,7 @@ const MembershipCard = () => {
       {/* Card Actions */}
       <div className="card-actions">
         {cardSettings.allow_download && (
-          <button className="btn btn-primary" onClick={downloadCard} disabled={!( (!cardSettings.show_qr_code || qrReady) && (!cardSettings.show_barcode || barcodeReady) )}>
+          <button className="btn btn-primary" onClick={downloadCard}>
             <i className="fas fa-download"></i> Download Card
           </button>
         )}

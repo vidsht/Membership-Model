@@ -355,6 +355,75 @@
   color: white;
 }
 
+.membership-card-new.download-mode {
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+.membership-card-new.download-mode::before {
+  display: none !important;
+}
+
+.membership-card-new.download-mode * {
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+/* Download/Share Mode - Removes all problematic visual effects */
+.membership-card-new.capture-mode {
+  box-shadow: none !important;
+  filter: none !important;
+  /* Ensure solid background during capture */
+  background: linear-gradient(135deg, #1e113b 0%, #55188e 50%, #7C3AED 100%) !important;
+}
+
+/* Disable the pseudo-element overlay during capture */
+.membership-card-new.capture-mode::before {
+  display: none !important;
+  content: none !important;
+}
+
+/* Remove box-shadow from all child elements during capture */
+.membership-card-new.capture-mode *,
+.membership-card-new.capture-mode *::before,
+.membership-card-new.capture-mode *::after {
+  box-shadow: none !important;
+  filter: none !important;
+  text-shadow: none !important;
+}
+
+/* Specific fixes for elements that commonly cause issues */
+.membership-card-new.capture-mode .membership-badge {
+  box-shadow: none !important;
+  /* Keep the gradient background but remove shadow */
+  background: linear-gradient(45deg, #FFC107, #FF9800) !important;
+}
+
+.membership-card-new.capture-mode .btn:hover {
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+/* Ensure QR code and barcode backgrounds remain solid */
+.membership-card-new.capture-mode .qr-code,
+.membership-card-new.capture-mode .barcode {
+  background: #ffffff !important;
+  box-shadow: none !important;
+}
+
+/* Remove any text shadows that might cause rendering issues */
+.membership-card-new.capture-mode .main-title,
+.membership-card-new.capture-mode .membership-card-title,
+.membership-card-new.capture-mode .blood-group-value {
+  text-shadow: none !important;
+}
+
+/* Ensure profile photo border remains visible but without shadow */
+.membership-card-new.capture-mode .profile-photo {
+  border: 2px solid rgba(255, 255, 255, 0.8) !important;
+  box-shadow: none !important;
+}
+
 /* Responsive Design - Maintaining Desktop Layout */
 @media (max-width: 1024px) {
   .membership-card-container {

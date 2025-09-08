@@ -50,11 +50,30 @@ const DealList = ({ onTabChange }) => {
   
   useEffect(() => {
     fetchInitialData();
+    fetchDealStats(); // Fetch full statistics separately
   }, []);
 
   useEffect(() => {
     fetchDeals();
   }, [filters, pagination.page, pagination.limit]);
+
+  const fetchDealStats = async () => {
+    try {
+      const response = await api.get('/admin/deals/statistics');
+      if (response.data.success) {
+        setStats(response.data.statistics || {
+          activeDeals: 0,
+          totalDeals: 0,
+          totalRedemptions: 0,
+          expiredDeals: 0,
+          pendingDeals: 0
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching deal statistics:', error);
+      // Keep existing stats on error
+    }
+  };
 
   const fetchInitialData = async () => {
     try {
@@ -71,8 +90,7 @@ const DealList = ({ onTabChange }) => {
       })) || []);
       setActivePlans(plansResponse.data.plans || []);
       
-      // Calculate stats from deals
-      calculateStats(dealsResponse.data.deals || []);
+      // Stats are now fetched separately via fetchDealStats()
     } catch (error) {
       console.error('Error fetching initial data:', error);
       showNotification('Error loading data. Please try again.', 'error');
@@ -113,7 +131,7 @@ const DealList = ({ onTabChange }) => {
         total: paginationData.total || 0,
         totalPages: Math.ceil((paginationData.total || 0) / pagination.limit)
       }));
-      calculateStats(dealsData);
+      // Stats are now fetched separately, don't calculate from paginated data
     } catch (error) {
       console.error('Error fetching deals:', error);
       showNotification('Error loading deals. Please try again.', 'error');
@@ -122,18 +140,6 @@ const DealList = ({ onTabChange }) => {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const calculateStats = (dealsData) => {
-    const now = new Date();
-    const stats = {
-      totalDeals: dealsData.length,
-      activeDeals: dealsData.filter(deal => deal.status === 'active' && new Date(deal.validUntil) > now).length,
-      expiredDeals: dealsData.filter(deal => new Date(deal.validUntil) <= now).length,
-      pendingDeals: dealsData.filter(deal => deal.status === 'pending' || deal.status === 'pending_approval').length,
-      totalRedemptions: dealsData.reduce((sum, deal) => sum + (deal.redemptionCount || 0), 0)
-    };
-    setStats(stats);
   };
 
   const handleFilterChange = (newFilters) => {
@@ -163,10 +169,8 @@ const DealList = ({ onTabChange }) => {
       ));
       
       showNotification(`Deal ${newStatus === 'active' ? 'activated' : 'deactivated'} successfully`, 'success');
-      // Recalculate stats
-      calculateStats(deals.map(deal => 
-        deal.id === dealId ? { ...deal, status: newStatus } : deal
-      ));
+      // Refresh full statistics
+      fetchDealStats();
     } catch (error) {
       console.error('Error updating deal status:', error);
       showNotification('Failed to update deal status', 'error');
@@ -193,14 +197,8 @@ const DealList = ({ onTabChange }) => {
         : 'Deal approved successfully';
       showNotification(message, 'success');
       
-      // Recalculate stats
-      calculateStats(deals.map(deal => 
-        deal.id === dealId ? { 
-          ...deal, 
-          status: 'active',
-          ...(minPlanPriority !== null && { minPlanPriority, requiredPlanPriority: minPlanPriority })
-        } : deal
-      ));
+      // Refresh full statistics
+      fetchDealStats();
     } catch (error) {
       console.error('Error approving deal:', error);
       showNotification('Error approving deal. Please try again.', 'error');
@@ -317,10 +315,8 @@ const DealList = ({ onTabChange }) => {
       ));
       
       showNotification('Deal rejected successfully', 'success');
-      // Recalculate stats
-      calculateStats(deals.map(deal => 
-        deal.id === dealId ? { ...deal, status: 'rejected', rejection_reason: rejectionReason } : deal
-      ));
+      // Refresh full statistics  
+      fetchDealStats();
     } catch (error) {
       console.error('Error rejecting deal:', error);
       showNotification('Error rejecting deal. Please try again.', 'error');
@@ -416,7 +412,7 @@ const DealList = ({ onTabChange }) => {
         await api.delete(`/admin/deals/${dealId}`);
         const updatedDeals = deals.filter(deal => deal.id !== dealId);
         setDeals(updatedDeals);
-        calculateStats(updatedDeals);
+        fetchDealStats(); // Refresh full statistics
         showNotification('Deal deleted successfully', 'success');
       }
     } catch (error) {

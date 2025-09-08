@@ -5,6 +5,7 @@ import { useNotification } from '../../../contexts/NotificationContext';
 import { useDynamicFields } from '../../../hooks/useDynamicFields';
 import useImageUrl from '../../../hooks/useImageUrl';
 import QuickChangePassword from './QuickChangePassword';
+import MerchantFilters from './components/MerchantFilters';
 import './MerchantManagementEnhanced.css';
 
 const MerchantManagementEnhanced = () => {
@@ -17,15 +18,14 @@ const MerchantManagementEnhanced = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
-  // Stats calculation - similar to user management
-  const stats = useMemo(() => {
-    const totalMerchants = merchants.length;
-    const pendingApprovals = merchants.filter(merchant => merchant.status === 'pending').length;
-    const activeMerchants = merchants.filter(merchant => merchant.status === 'approved').length;
-    const suspendedMerchants = merchants.filter(merchant => merchant.status === 'suspended').length;
-    const rejectedMerchants = merchants.filter(merchant => merchant.status === 'rejected').length;
-    return { totalMerchants, pendingApprovals, activeMerchants, suspendedMerchants, rejectedMerchants };
-  }, [merchants]);
+  // Stats state - fetched from backend for full statistics
+  const [stats, setStats] = useState({
+    totalMerchants: 0,
+    pendingApprovals: 0,
+    activeMerchants: 0,
+    suspendedMerchants: 0,
+    rejectedMerchants: 0
+  });
   const [selectedMerchant, setSelectedMerchant] = useState(null);
   const [showAddMerchant, setShowAddMerchant] = useState(false);
   const [showMerchantDetails, setShowMerchantDetails] = useState(false);
@@ -62,12 +62,15 @@ const MerchantManagementEnhanced = () => {
   const [selectedMerchants, setSelectedMerchants] = useState([]);
   const [filters, setFilters] = useState({
     search: '',
-    status: '',
-    category: '',
-    membershipType: '',
+    status: 'all',
+    category: 'all',
+    community: 'all',
+    state: 'all',
+    membershipType: 'all',
     dateFrom: '',
-    planStatus: '',
-    dealLimit: ''
+    dateTo: '',
+    planStatus: 'all',
+    dealLimit: 'all'
   });
   const [pagination, setPagination] = useState({
     page: 1,
@@ -79,18 +82,44 @@ const MerchantManagementEnhanced = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   // Removed confirmDialog state (delete functionality)
   useEffect(() => {
-    // Only fetch data on initial load
+    // Fetch data on initial load and fetch stats separately
     fetchMerchants();
+    fetchMerchantStats();
   }, [viewMode]); // Simplified dependencies
+
+  const fetchMerchantStats = useCallback(async () => {
+    try {
+      const response = await api.get('/admin/partners/statistics');
+      if (response.data.success) {
+        setStats(response.data.statistics || {
+          totalMerchants: 0,
+          pendingApprovals: 0,
+          activeMerchants: 0,
+          suspendedMerchants: 0,
+          rejectedMerchants: 0
+        });
+      }
+    } catch (err) {
+      console.error('Failed to fetch merchant statistics:', err);
+      // Keep existing stats on error
+    }
+  }, []);
 
   const fetchMerchants = useCallback(async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams({
         limit: pagination.limit,
-        offset: (pagination.page - 1) * pagination.limit,
-        ...filters
+        offset: (pagination.page - 1) * pagination.limit
       });
+      
+      // Only add filters that are not 'all' or empty
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value && value !== 'all' && (typeof value !== 'string' || value.trim() !== '')) {
+          params.set(key, value);
+        }
+      });
+      
       const response = await api.get(`/admin/partners?${params}`);
       if (response.data.success) {
         setMerchants(response.data.merchants || []);
@@ -403,6 +432,7 @@ const MerchantManagementEnhanced = () => {
         });
         setFormErrors({});
         fetchMerchants(); // Refresh the list
+        fetchMerchantStats(); // Refresh stats
       } else {
         throw new Error(response.data.message || `Failed to ${isEditMode ? 'update' : 'create'} merchant`);
       }
@@ -427,6 +457,7 @@ const MerchantManagementEnhanced = () => {
       }
       showNotification(`Partner ${newStatus} successfully`, 'success');
       fetchMerchants();
+      fetchMerchantStats(); // Refresh stats after status change
     } catch (err) {
       console.error('Error updating merchant status:', err);
       showNotification('Error updating merchant status', 'error');
@@ -439,6 +470,7 @@ const MerchantManagementEnhanced = () => {
       await api.post(`/admin/partners/${merchantId}/approve`);
       showNotification('Partner approved successfully', 'success');
       fetchMerchants();
+      fetchMerchantStats(); // Refresh stats after approval
     } catch (err) {
       console.error('Error approving merchant:', err);
       showNotification('Error approving partner', 'error');
@@ -451,6 +483,7 @@ const MerchantManagementEnhanced = () => {
       await api.post(`/admin/partners/${merchantId}/reject`);
       showNotification('Partner rejected successfully', 'success');
       fetchMerchants();
+      fetchMerchantStats(); // Refresh stats after rejection
     } catch (err) {
       console.error('Error rejecting merchant:', err);
       showNotification('Error rejecting partner', 'error');
@@ -491,16 +524,33 @@ const MerchantManagementEnhanced = () => {
       setSelectedMerchants([]);
       setShowBulkActions(false);
       
-      // Refresh the merchants list
+      // Refresh the merchants list and stats
       fetchMerchants();
+      fetchMerchantStats();
     } catch (error) {
       console.error(`Error performing bulk ${action}:`, error);
       showNotification(`Failed to ${action} merchants`, 'error');
     }
   };
 
-  const handleFilterChange = (field, value) => {
-    setFilters(prev => ({ ...prev, [field]: value }));
+  const handleFilterChange = (newFilters) => {
+    setFilters(prev => ({ ...prev, ...newFilters }));
+    setPagination(prev => ({ ...prev, page: 1 }));
+  };
+
+  const handleClearFilters = () => {
+    setFilters({
+      search: '',
+      status: 'all',
+      category: 'all',
+      community: 'all',
+      state: 'all',
+      membershipType: 'all',
+      dateFrom: '',
+      dateTo: '',
+      planStatus: 'all',
+      dealLimit: 'all'
+    });
     setPagination(prev => ({ ...prev, page: 1 }));
   };
 
@@ -765,94 +815,14 @@ const MerchantManagementEnhanced = () => {
 
       {viewMode === 'table' && (
         <>
-          {/* Filters */}
-          <div className="filters-section">
-            <div className="filters-row">
-              <div className="filter-group">
-                <input
-                  type="text"
-                  placeholder="Search merchants..."
-                  value={filters.search}
-                  onChange={(e) => handleFilterChange('search', e.target.value)}
-                  className="search-input"
-                />
-              </div>
-              <div className="filter-group">
-                <select
-                  value={filters.status}
-                  onChange={(e) => handleFilterChange('status', e.target.value)}
-                  className="filter-select"
-                >
-                  <option value="">All Status</option>
-                  <option value="pending">Pending</option>
-                  <option value="approved">Approved</option>
-                  <option value="rejected">Rejected</option>
-                  <option value="suspended">Suspended</option>
-                </select>
-              </div>
-              <div className="filter-group">
-                <select
-                  value={filters.category}
-                  onChange={(e) => handleFilterChange('category', e.target.value)}
-                  className="filter-select"
-                >
-                  <option value="">All Categories</option>
-                  {getBusinessCategoryOptions().map(category => (
-                    <option key={category.value} value={category.value}>
-                      {category.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="filter-group">
-                <select
-                  value={filters.membershipType}
-                  onChange={(e) => handleFilterChange('membershipType', e.target.value)}
-                  className="filter-select"
-                >
-                  <option value="">All Plans</option>
-                  <option value="free">Free</option>
-                  <option value="premium">Premium</option>
-                  <option value="business">Business</option>
-                  <option value="basic_business">Basic Business</option>
-                  <option value="premium_business">Premium Business</option>
-                </select>
-              </div>
-               <div className="filter-group">
-                 <input
-                   type="date"
-                   placeholder="From Date"
-                   value={filters.dateFrom}
-                   onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
-                   className="filter-input"
-                 />
-               </div>
-              <div className="filter-group">
-                <select
-                  value={filters.planStatus}
-                  onChange={(e) => handleFilterChange('planStatus', e.target.value)}
-                  className="filter-select"
-                >
-                  <option value="">All Plan Status</option>
-                  <option value="active">Active Plans</option>
-                  <option value="expired">Expired Plans</option>
-                  <option value="expiring_soon">Expiring Soon</option>
-                </select>
-              </div>
-              <div className="filter-group">
-                <select
-                  value={filters.dealLimit}
-                  onChange={(e) => handleFilterChange('dealLimit', e.target.value)}
-                  className="filter-select"
-                >
-                  <option value="">All Deal Limits</option>
-                  <option value="custom">Custom Limit</option>
-                  <option value="default">Default Limit</option>
-                  <option value="unlimited">Unlimited</option>
-                </select>
-              </div>
-        </div>
-      </div>
+          {/* New Merchant Filters Component */}
+          <MerchantFilters
+            filters={filters}
+            onFilterChange={handleFilterChange}
+            onClearFilters={handleClearFilters}
+            onExport={handleExportMerchants}
+            loading={loading}
+          />
 
       {/* Bulk Actions */}
       {showBulkActions && selectedMerchants.length > 0 && (
@@ -883,10 +853,10 @@ const MerchantManagementEnhanced = () => {
 
       {/* Merchants Table */}
       <div className="merchants-table-container">
-        <table className="merchants-table">
+        <table className="merchants-table compact-table">
           <thead>
             <tr>
-              <th>
+              <th className="checkbox-column">
                 <input
                   type="checkbox"
                   checked={selectedMerchants.length === merchants.length && merchants.length > 0}
@@ -894,22 +864,19 @@ const MerchantManagementEnhanced = () => {
                 />
               </th>
               <th className="serial-column">S.No</th>
-              <th>Business</th>
-              <th>Owner</th>
-              <th>Contact</th>
-              <th>Category</th>
-              <th>Plan</th>
-              <th>Deal Limit</th>
-              <th>Valid Till</th>
-              <th>Status</th>
-              <th>Joined</th>
-              <th>Actions</th>
+              <th className="business-column">Business & Owner</th>
+              <th className="contact-column">Contact</th>
+              <th className="category-column">Category</th>
+              <th className="plan-column">Plan & Status</th>
+              <th className="limit-column">Deal Limit</th>
+              <th className="validity-column">Valid Till</th>
+              <th className="actions-column">Actions</th>
             </tr>
           </thead>
           <tbody>
             {merchants.map((merchant, index) => (
               <tr key={merchant.id}>
-                <td>
+                <td className="checkbox-cell">
                   <input
                     type="checkbox"
                     checked={selectedMerchants.includes(merchant.id)}
@@ -919,58 +886,59 @@ const MerchantManagementEnhanced = () => {
                 <td className="serial-number">
                   {((pagination?.page || 1) - 1) * (pagination?.limit || 10) + index + 1}
                 </td>
-                <td>
-                  <div className="business-info">
+                <td className="business-cell">
+                  <div className="business-info-compact">
                     <div className="business-name">{merchant.businessName || 'N/A'}</div>
                     <div className="business-desc">{merchant.businessDescription || ''}</div>
-                  </div>
-                </td>
-                <td>
-                  <div className="owner-info">
                     <div className="owner-name">{merchant.fullName}</div>
-                    <div className="membership-type">{merchant.membershipType || 'free'}</div>
+                    <div className="joined-date">{formatDate(merchant.createdAt)}</div>
                   </div>
                 </td>
-                <td>
-                  <div className="contact-info">
+                <td className="contact-cell">
+                  <div className="contact-info-stacked">
                     <div className="email">{merchant.email}</div>
                     <div className="phone">{merchant.phone || 'N/A'}</div>
                   </div>
                 </td>
-                <td>
+                <td className="category-cell">
                   <span className={`category-badge ${merchant.businessCategory}`}>
                     {merchant.businessCategory || 'N/A'}
                   </span>
                 </td>
-                <td>
-                  <span className={`plan-badge ${merchant.membershipType || 'community'}`}>
-                    {merchant.planName || merchant.membershipType ? 
-                      (merchant.planName || merchant.membershipType.charAt(0).toUpperCase() + merchant.membershipType.slice(1)) :
-                      'Community'
-                    }
-                  </span>
+                <td className="plan-cell">
+                  <div className="plan-status-info">
+                    <span className={`plan-badge ${merchant.membershipType || 'community'}`}>
+                      {merchant.planName || merchant.membershipType ? 
+                        (merchant.planName || merchant.membershipType.charAt(0).toUpperCase() + merchant.membershipType.slice(1)) :
+                        'Community'
+                      }
+                    </span>
+                    <span className={`status-badge ${merchant.status}`}>
+                      {merchant.status}
+                    </span>
+                  </div>
                 </td>
-                <td>
-                  <div className="deal-limit-info">
+                <td className="limit-cell">
+                  <div className="deal-limit-info-compact">
                     {merchant.customDealLimit ? (
                       <span className="custom-limit" title="Custom limit set by admin">
-                        <i className="fas fa-star"></i> {merchant.customDealLimit}/month
+                        <i className="fas fa-star"></i> {merchant.customDealLimit}/m
                       </span>
                     ) : (
                       <span className="plan-limit" title="Using plan default">
-                        {merchant.planMaxDeals ? `${merchant.planMaxDeals}/month` : 'Unlimited'}
+                        {merchant.planMaxDeals ? `${merchant.planMaxDeals}/m` : 'Unlimited'}
                       </span>
                     )}
                   </div>
                 </td>
-                <td>
+                <td className="validity-cell">
                   {(() => {
                     const validity = calculateValidityInfo(merchant);
                     return (
-                      <span className={`validity-date ${validity.className}`}>
+                      <span className={`validity-date-compact ${validity.className}`}>
                         {validity.label}
                         {typeof validity.daysLeft === 'number' && validity.className !== 'validity-expired' && validity.className !== 'validity-none' && (
-                          <span className="days-remaining">{validity.daysLeft} day{validity.daysLeft !== 1 ? 's' : ''} left</span>
+                          <span className="days-remaining">{validity.daysLeft}d</span>
                         )}
                         {validity.className === 'validity-expired' && (
                           <span className="days-remaining">Expired</span>
@@ -978,16 +946,10 @@ const MerchantManagementEnhanced = () => {
                       </span>
                     );
                   })()}
-                </td>
-                <td>
-                  <span className={`status-badge ${merchant.status}`}>
-                    {merchant.status}
-                  </span>
-                </td>
-                <td>{formatDate(merchant.createdAt)}</td>                <td>
-                  <div className="action-buttons">
+                </td>                <td className="actions-cell">
+                  <div className="action-buttons-compact">
                     <button
-                      className="btn btn-sm btn-info"
+                      className="btn-compact btn-info"
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
@@ -999,7 +961,7 @@ const MerchantManagementEnhanced = () => {
                       <i className="fas fa-eye"></i>
                     </button>
                     <button
-                      className="btn btn-sm btn-primary"
+                      className="btn-compact btn-primary"
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
@@ -1011,7 +973,7 @@ const MerchantManagementEnhanced = () => {
                       <i className="fas fa-edit"></i>
                     </button>
                     <button
-                      className="btn btn-sm btn-warning"
+                      className="btn-compact btn-warning"
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
@@ -1023,7 +985,7 @@ const MerchantManagementEnhanced = () => {
                       <i className="fas fa-key"></i>
                     </button>
                     <button
-                      className="btn btn-sm btn-warning"
+                      className="btn-compact btn-warning"
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
@@ -1037,7 +999,7 @@ const MerchantManagementEnhanced = () => {
                     {merchant.status === 'pending' && (
                       <>
                         <button
-                          className="btn btn-sm btn-success"
+                          className="btn-compact btn-success"
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
@@ -1049,7 +1011,7 @@ const MerchantManagementEnhanced = () => {
                           <i className="fas fa-check"></i>
                         </button>
                         <button
-                          className="btn btn-sm btn-warning"
+                          className="btn-compact btn-danger"
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
@@ -1064,7 +1026,7 @@ const MerchantManagementEnhanced = () => {
                     )}
                     {merchant.status === 'approved' && (
                       <button
-                        className="btn btn-sm btn-suspend"
+                        className="btn-compact btn-suspend"
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
@@ -1078,7 +1040,7 @@ const MerchantManagementEnhanced = () => {
                     )}
                     {merchant.status === 'suspended' && (
                       <button
-                        className="btn btn-sm btn-activate"
+                        className="btn-compact btn-activate"
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();

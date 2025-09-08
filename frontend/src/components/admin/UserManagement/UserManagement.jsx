@@ -118,13 +118,13 @@ const UserManagement = () => {
     }
   ], []);
 
-  const stats = useMemo(() => {
-    const totalUsers = users.length;
-    const pendingApprovals = users.filter(user => user.status === 'pending').length;
-    const activeUsers = users.filter(user => user.status === 'approved').length;
-    const suspendedUsers = users.filter(user => user.status === 'suspended').length;
-    return { totalUsers, pendingApprovals, activeUsers, suspendedUsers };
-  }, [users]);
+  // Stats state - fetched from backend for full statistics
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    pendingApprovals: 0,
+    activeUsers: 0,
+    suspendedUsers: 0
+  });
 
   // Utility functions (useCallback)
   const calculatePlanValidity = useCallback((user, planDetails) => {
@@ -152,10 +152,29 @@ const UserManagement = () => {
     setSelectedUsers([]);
   }, []);
 
+  // Define fetchUserStats before refreshData to avoid "Cannot access 'fetchUserStats' before initialization"
+  const fetchUserStats = useCallback(async () => {
+    try {
+      const response = await api.get('/admin/users/statistics');
+      if (response.data.success) {
+        setStats(response.data.statistics || {
+          totalUsers: 0,
+          pendingApprovals: 0,
+          activeUsers: 0,
+          suspendedUsers: 0
+        });
+      }
+    } catch (err) {
+      console.error('Failed to fetch user statistics:', err);
+      // Keep existing stats on error
+    }
+  }, []);
+
   const refreshData = useCallback(() => {
     setRefreshTrigger(prev => prev + 1);
     clearSelections();
-  }, [clearSelections]);
+    fetchUserStats(); // Refresh stats whenever data is refreshed
+  }, [clearSelections, fetchUserStats]);
 
   const closeModal = useCallback(() => {
     setModalState({
@@ -365,14 +384,17 @@ const UserManagement = () => {
         handleSessionExpired();
         return;
       }
-      await fetchReferenceData();
+      await Promise.all([
+        fetchReferenceData(),
+        fetchUserStats()
+      ]);
     } catch (err) {
       setError('Failed to initialize user management');
       showNotification('Failed to load user management', 'error');
     } finally {
       setLoading(false);
     }
-  }, [validateSession, handleSessionExpired, fetchReferenceData, showNotification]);
+  }, [validateSession, handleSessionExpired, fetchReferenceData, fetchUserStats, showNotification]);
 
   // Event handlers
   const handleStatusChange = useCallback(async (userId, status) => {

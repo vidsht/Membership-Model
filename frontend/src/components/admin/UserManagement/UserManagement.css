@@ -1379,3 +1379,175 @@
 }
 
 /* End pagination styling */
+
+/* ===================================
+   COMPACT TABLE STYLES FOR USER MANAGEMENT
+   =================================== */
+
+/* Compact user info cell */
+.user-info-compact {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  line-height: 1.2;
+}
+
+.user-info-compact .user-name {
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #1f2937;
+}
+
+.user-info-compact .user-type {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.user-info-compact .user-reg-date {
+  font-size: 0.7rem;
+  color: #9ca3af;
+}
+
+/* Stacked contact info */
+.contact-info-stacked {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  line-height: 1.2;
+}
+
+.contact-info-stacked .contact-email,
+.contact-info-stacked .contact-phone {
+  font-size: 0.8rem;
+  color: #374151;
+}
+
+.contact-info-stacked .contact-email {
+  font-weight: 500;
+}
+
+.contact-info-stacked .contact-phone {
+  color: #6b7280;
+}
+
+/* Plan & Status combined cell */
+.plan-status-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  line-height: 1.2;
+}
+
+.plan-status-info .plan-name {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #1f2937;
+}
+
+.plan-status-info .status-badge {
+  font-size: 0.7rem;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  align-self: flex-start;
+}
+
+.plan-status-info .status-badge.active {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.plan-status-info .status-badge.inactive {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.plan-status-info .status-badge.suspended {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+/* Compact action buttons */
+.btn-compact {
+  padding: 0.25rem 0.5rem !important;
+  font-size: 0.75rem !important;
+  border-radius: 0.25rem !important;
+  font-weight: 500 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.25rem !important;
+  min-width: auto !important;
+  height: auto !important;
+  line-height: 1.2 !important;
+}
+
+.btn-compact.btn-primary {
+  background-color: #3b82f6 !important;
+  border-color: #3b82f6 !important;
+  color: white !important;
+}
+
+.btn-compact.btn-warning {
+  background-color: #f59e0b !important;
+  border-color: #f59e0b !important;
+  color: white !important;
+}
+
+.btn-compact.btn-danger {
+  background-color: #ef4444 !important;
+  border-color: #ef4444 !important;
+  color: white !important;
+}
+
+.btn-compact.btn-secondary {
+  background-color: #6b7280 !important;
+  border-color: #6b7280 !important;
+  color: white !important;
+}
+
+.btn-compact:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+}
+
+/* Compact table adjustments */
+.user-table-container .table th,
+.user-table-container .table td {
+  padding: 0.5rem 0.25rem !important;
+  vertical-align: middle !important;
+  font-size: 0.8rem !important;
+}
+
+.user-table-container .table th {
+  font-weight: 600 !important;
+  background-color: #f8fafc !important;
+  border-bottom: 2px solid #e5e7eb !important;
+}
+
+/* Responsive adjustments for compact layout */
+@media (max-width: 1200px) {
+  .user-table-container .table th:nth-child(7),
+  .user-table-container .table td:nth-child(7) {
+    display: none; /* Hide Valid Till column on smaller screens */
+  }
+}
+
+@media (max-width: 992px) {
+  .user-table-container .table th:nth-child(6),
+  .user-table-container .table td:nth-child(6) {
+    display: none; /* Hide Redemption Limit column */
+  }
+}
+
+@media (max-width: 768px) {
+  .user-table-container .table th:nth-child(5),
+  .user-table-container .table td:nth-child(5) {
+    display: none; /* Hide Plan & Status column */
+  }
+  
+  .user-info-compact .user-reg-date {
+    display: none; /* Hide registration date on mobile */
+  }
+}

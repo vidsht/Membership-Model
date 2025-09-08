@@ -2595,6 +2595,110 @@ router.post('/users/bulk-action', auth, admin, async (req, res) => {
   }
 });
 
+// ===== STATISTICS ENDPOINTS =====
+
+// Get user statistics - for UserManagement component
+router.get('/users/statistics', auth, admin, async (req, res) => {
+  try {
+    const [totalUsersResult, pendingApprovalsResult, activeUsersResult, suspendedUsersResult] = await Promise.all([
+      queryAsync('SELECT COUNT(*) as count FROM users WHERE userType != "merchant"'),
+      queryAsync('SELECT COUNT(*) as count FROM users WHERE userType != "merchant" AND status = "pending"'),
+      queryAsync('SELECT COUNT(*) as count FROM users WHERE userType != "merchant" AND status = "approved"'),
+      queryAsync('SELECT COUNT(*) as count FROM users WHERE userType != "merchant" AND status = "suspended"')
+    ]);
+
+    const statistics = {
+      totalUsers: totalUsersResult[0]?.count || 0,
+      pendingApprovals: pendingApprovalsResult[0]?.count || 0,
+      activeUsers: activeUsersResult[0]?.count || 0,
+      suspendedUsers: suspendedUsersResult[0]?.count || 0
+    };
+
+    res.json({
+      success: true,
+      statistics
+    });
+  } catch (err) {
+    console.error('Error fetching user statistics:', err);
+    res.status(500).json({ success: false, message: 'Failed to fetch user statistics' });
+  }
+});
+
+// Get merchant/partner statistics - for MerchantManagement component
+router.get('/partners/statistics', auth, admin, async (req, res) => {
+  try {
+    const [totalMerchantsResult, pendingApprovalsResult, activeMerchantsResult, suspendedMerchantsResult, rejectedMerchantsResult] = await Promise.all([
+      queryAsync('SELECT COUNT(*) as count FROM users WHERE userType = "merchant"'),
+      queryAsync('SELECT COUNT(*) as count FROM users WHERE userType = "merchant" AND status = "pending"'),
+      queryAsync('SELECT COUNT(*) as count FROM users WHERE userType = "merchant" AND status = "approved"'),
+      queryAsync('SELECT COUNT(*) as count FROM users WHERE userType = "merchant" AND status = "suspended"'),
+      queryAsync('SELECT COUNT(*) as count FROM users WHERE userType = "merchant" AND status = "rejected"')
+    ]);
+
+    const statistics = {
+      totalMerchants: totalMerchantsResult[0]?.count || 0,
+      pendingApprovals: pendingApprovalsResult[0]?.count || 0,
+      activeMerchants: activeMerchantsResult[0]?.count || 0,
+      suspendedMerchants: suspendedMerchantsResult[0]?.count || 0,
+      rejectedMerchants: rejectedMerchantsResult[0]?.count || 0
+    };
+
+    res.json({
+      success: true,
+      statistics
+    });
+  } catch (err) {
+    console.error('Error fetching merchant statistics:', err);
+    res.status(500).json({ success: false, message: 'Failed to fetch merchant statistics' });
+  }
+});
+
+// Get deal statistics - for DealManagement component
+router.get('/deals/statistics', auth, admin, async (req, res) => {
+  try {
+    // Check if deals table exists
+    const dealsTableExists = await tableExists('deals');
+    if (!dealsTableExists) {
+      return res.json({
+        success: true,
+        statistics: {
+          totalDeals: 0,
+          activeDeals: 0,
+          expiredDeals: 0,
+          pendingDeals: 0,
+          totalRedemptions: 0
+        }
+      });
+    }
+
+    const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+    
+    const [totalDealsResult, activeDealsResult, expiredDealsResult, pendingDealsResult, redemptionsResult] = await Promise.all([
+      queryAsync('SELECT COUNT(*) as count FROM deals'),
+      queryAsync('SELECT COUNT(*) as count FROM deals WHERE status = "active" AND (validUntil IS NULL OR validUntil > ?)', [now]),
+      queryAsync('SELECT COUNT(*) as count FROM deals WHERE validUntil IS NOT NULL AND validUntil <= ?', [now]),
+      queryAsync('SELECT COUNT(*) as count FROM deals WHERE status IN ("pending", "pending_approval")'),
+      queryAsync('SELECT COALESCE(SUM(redemptionCount), 0) as total FROM deals')
+    ]);
+
+    const statistics = {
+      totalDeals: totalDealsResult[0]?.count || 0,
+      activeDeals: activeDealsResult[0]?.count || 0,
+      expiredDeals: expiredDealsResult[0]?.count || 0,
+      pendingDeals: pendingDealsResult[0]?.count || 0,
+      totalRedemptions: redemptionsResult[0]?.total || 0
+    };
+
+    res.json({
+      success: true,
+      statistics
+    });
+  } catch (err) {
+    console.error('Error fetching deal statistics:', err);
+    res.status(500).json({ success: false, message: 'Failed to fetch deal statistics' });
+  }
+});
+
 // ===== DEALS MANAGEMENT =====
 router.get('/deals', auth, admin, async (req, res) => {
   try {

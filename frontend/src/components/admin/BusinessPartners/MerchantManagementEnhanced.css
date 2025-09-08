@@ -1187,3 +1187,189 @@
     font-size: 1.2rem;
   }
 }
+
+/* Compact Table Styles for Better Mobile/Desktop Experience */
+.compact-table {
+  table-layout: fixed;
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.compact-table th,
+.compact-table td {
+  padding: 8px 6px;
+  border: 1px solid #e0e0e0;
+  text-align: left;
+  vertical-align: top;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Column width controls */
+.checkbox-column { width: 30px; }
+.serial-column { width: 50px; }
+.business-column { width: 25%; }
+.contact-column { width: 18%; }
+.category-column { width: 10%; }
+.plan-column { width: 12%; }
+.limit-column { width: 8%; }
+.validity-column { width: 10%; }
+.actions-column { width: 15%; }
+
+/* Compact cell styles */
+.business-info-compact {
+  line-height: 1.3;
+}
+
+.business-info-compact .business-name {
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 0.9rem;
+  margin-bottom: 2px;
+}
+
+.business-info-compact .business-desc {
+  font-size: 0.8rem;
+  color: #666;
+  margin-bottom: 3px;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.business-info-compact .owner-name {
+  font-size: 0.85rem;
+  color: #495057;
+  font-weight: 500;
+  margin-bottom: 2px;
+}
+
+.business-info-compact .joined-date {
+  font-size: 0.75rem;
+  color: #6c757d;
+}
+
+.contact-info-stacked {
+  line-height: 1.3;
+}
+
+.contact-info-stacked .email {
+  font-size: 0.85rem;
+  color: #2c3e50;
+  margin-bottom: 3px;
+  word-break: break-all;
+}
+
+.contact-info-stacked .phone {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.plan-status-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.plan-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.deal-limit-info-compact {
+  font-size: 0.8rem;
+}
+
+.deal-limit-info-compact .custom-limit i {
+  color: #ffc107;
+}
+
+.validity-date-compact {
+  font-size: 0.8rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.validity-date-compact .days-remaining {
+  font-size: 0.75rem;
+  color: #666;
+  margin-top: 2px;
+}
+
+.action-buttons-compact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  align-items: center;
+}
+
+.btn-compact {
+  padding: 4px 6px;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  transition: all 0.2s;
+  min-width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-compact:hover {
+  transform: scale(1.1);
+}
+
+.btn-compact.btn-info { background: #17a2b8; color: white; }
+.btn-compact.btn-primary { background: #007bff; color: white; }
+.btn-compact.btn-warning { background: #ffc107; color: #212529; }
+.btn-compact.btn-success { background: #28a745; color: white; }
+.btn-compact.btn-danger { background: #dc3545; color: white; }
+.btn-compact.btn-suspend { background: #6c757d; color: white; }
+.btn-compact.btn-activate { background: #20c997; color: white; }
+
+/* Responsive adjustments for compact table */
+@media (max-width: 1200px) {
+  .business-column { width: 30%; }
+  .contact-column { width: 20%; }
+  .actions-column { width: 18%; }
+}
+
+@media (max-width: 768px) {
+  .compact-table th,
+  .compact-table td {
+    padding: 6px 4px;
+    font-size: 0.8rem;
+  }
+  
+  .checkbox-column { width: 25px; }
+  .serial-column { width: 40px; }
+  .business-column { width: 35%; }
+  .contact-column { width: 25%; }
+  .category-column { display: none; }
+  .limit-column { width: 8%; }
+  .validity-column { display: none; }
+  .actions-column { width: 20%; }
+}
+
+@media (max-width: 480px) {
+  .plan-column { display: none; }
+  .business-column { width: 45%; }
+  .contact-column { width: 30%; }
+  .actions-column { width: 25%; }
+}
