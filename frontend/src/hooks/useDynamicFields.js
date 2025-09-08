@@ -7,17 +7,15 @@ import api from '../services/api';
  */
 export const useDynamicFields = () => {
   const [dynamicFields, setDynamicFields] = useState({
-  communities: [],
-  userTypes: [],
-  businessCategories: [],
-  dealCategories: [],
-  countries: [],
-  states: [],
-  plans: []
+    communities: [],
+    userTypes: [],
+    businessCategories: [],
+    dealCategories: [],
+    countries: [],
+    states: []
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-
 
   const fetchDynamicFields = async () => {
     try {
@@ -28,15 +26,10 @@ export const useDynamicFields = () => {
       try {
         const adminResponse = await api.get('/admin/dynamic-fields');
         if (adminResponse.data.success) {
-          // Filter active options for each field type except plans
+          // Filter active options for each field type
           const newDynamicFields = {};
           Object.keys(adminResponse.data.dynamicFields).forEach(fieldType => {
-            if (fieldType === 'plans') {
-              // plans do not have isActive property in the same way
-              newDynamicFields.plans = adminResponse.data.dynamicFields.plans || [];
-            } else {
-              newDynamicFields[fieldType] = adminResponse.data.dynamicFields[fieldType].filter(item => item.isActive !== false);
-            }
+            newDynamicFields[fieldType] = adminResponse.data.dynamicFields[fieldType].filter(item => item.isActive !== false);
           });
           setDynamicFields(newDynamicFields);
           return; // Successfully loaded from admin endpoint
@@ -44,14 +37,6 @@ export const useDynamicFields = () => {
       } catch (adminError) {
         console.warn('Admin endpoint not available, falling back to auth endpoints:', adminError.message);
       }
-
-  // Always defined outside fetchDynamicFields
-  const getPlanOptions = () => {
-    return dynamicFields.plans.map(plan => ({
-      value: plan.key,
-      label: plan.name || plan.key
-    }));
-  };
 
       // Fallback to individual auth endpoints for backward compatibility
       const [
@@ -225,7 +210,6 @@ export const useDynamicFields = () => {
     getBusinessCategoryOptions,
     getDealCategoryOptions,
     getCountryOptions,
-  getStateOptions,
-  getPlanOptions
+    getStateOptions
   };
 };

@@ -3933,6 +3933,7 @@ router.get('/dynamic-fields', async (req, res) => {
       for (const fieldType of fieldTypes) {
         const settingKey = `dynamicFields.${fieldType}`;
         const result = await queryAsync('SELECT value FROM settings WHERE `key` = ?', [settingKey]);
+        
         if (result.length > 0) {
           try {
             dynamicFields[fieldType] = JSON.parse(result[0].value);
@@ -3950,17 +3951,6 @@ router.get('/dynamic-fields', async (req, res) => {
         dynamicFields[fieldType] = getDefaultFieldOptions(fieldType);
       });
     }
-
-    // Fetch active plans from plans table
-    let plans = [];
-    try {
-      if (await tableExists('plans')) {
-        plans = await queryAsync('SELECT `key`, name FROM plans WHERE isActive = TRUE ORDER BY priority');
-      }
-    } catch (planError) {
-      console.warn('Plans table not found or error fetching plans:', planError);
-    }
-    dynamicFields.plans = plans;
 
     res.json({
       success: true,
