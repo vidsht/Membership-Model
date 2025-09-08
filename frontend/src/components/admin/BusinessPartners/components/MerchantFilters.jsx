@@ -3,14 +3,16 @@ import React, { useState } from 'react';
 import { useDynamicFields } from '../../../../hooks/useDynamicFields';
 import './MerchantFilters.css';
 
+
 const MerchantFilters = ({ 
   filters, 
   onFilterChange, 
   onClearFilters, 
   onExport, 
-  loading 
+  loading, 
+  referenceData = {} 
 }) => {
-  const { getCommunityOptions, getBusinessCategoryOptions, getStateOptions, isLoading: fieldsLoading } = useDynamicFields();
+  const { getBusinessCategoryOptions, isLoading: fieldsLoading } = useDynamicFields();
   const [isExpanded, setIsExpanded] = useState(true);
 
   const handleFilterChange = (field, value) => {
@@ -90,62 +92,33 @@ const MerchantFilters = ({
               </select>
             </div>
 
-            {/* Community Filter */}
-            <div className="filter-group">
-              <label htmlFor="community">Community</label>
-              <select
-                id="community"
-                value={filters.community || 'all'}
-                onChange={(e) => handleFilterChange('community', e.target.value)}
-              >
-                <option value="all">All Communities</option>
-                {fieldsLoading ? (
-                  <option disabled>Loading communities...</option>
-                ) : (
-                  getCommunityOptions().map(option => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))
-                )}
-              </select>
-            </div>
-
-            {/* State Filter */}
-            <div className="filter-group">
-              <label htmlFor="state">State</label>
-              <select
-                id="state"
-                value={filters.state || 'all'}
-                onChange={(e) => handleFilterChange('state', e.target.value)}
-              >
-                <option value="all">All States</option>
-                {fieldsLoading ? (
-                  <option disabled>Loading states...</option>
-                ) : (
-                  getStateOptions().map(option => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))
-                )}
-              </select>
-            </div>
-
-            {/* Membership Plan Filter */}
+            {/* Membership Plan Filter (dynamic from referenceData.plans) */}
             <div className="filter-group">
               <label htmlFor="membershipType">Membership Plan</label>
               <select
                 id="membershipType"
                 value={filters.membershipType || 'all'}
                 onChange={(e) => handleFilterChange('membershipType', e.target.value)}
+                disabled={fieldsLoading || loading}
               >
                 <option value="all">All Plans</option>
-                <option value="free">Free</option>
-                <option value="premium">Premium</option>
-                <option value="business">Business</option>
-                <option value="basic_business">Basic Business</option>
-                <option value="premium_business">Premium Business</option>
+                {(fieldsLoading || loading) ? (
+                  <option disabled>Loading plans...</option>
+                ) : referenceData?.plans && referenceData.plans.length > 0 ? (
+                  referenceData.plans.map(plan => (
+                    <option key={plan.key || plan.id} value={plan.key || plan.id}>
+                      {plan.name || plan.key || `Plan ${plan.id}`}
+                    </option>
+                  ))
+                ) : (
+                  <>
+                    <option value="free">Free</option>
+                    <option value="premium">Premium</option>
+                    <option value="business">Business</option>
+                    <option value="basic_business">Basic Business</option>
+                    <option value="premium_business">Premium Business</option>
+                  </>
+                )}
               </select>
             </div>
 
@@ -157,17 +130,6 @@ const MerchantFilters = ({
                 type="date"
                 value={filters.dateFrom || ''}
                 onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
-              />
-            </div>
-
-            {/* Registration Date To */}
-            <div className="filter-group">
-              <label htmlFor="dateTo">Registered To</label>
-              <input
-                id="dateTo"
-                type="date"
-                value={filters.dateTo || ''}
-                onChange={(e) => handleFilterChange('dateTo', e.target.value)}
               />
             </div>
 
@@ -183,6 +145,7 @@ const MerchantFilters = ({
                 <option value="active">Active Plans</option>
                 <option value="expired">Expired Plans</option>
                 <option value="expiring_soon">Expiring Soon</option>
+                <option value="no_plan">No Plan Set</option>
               </select>
             </div>
 

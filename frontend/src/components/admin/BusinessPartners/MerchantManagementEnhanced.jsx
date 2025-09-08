@@ -688,10 +688,16 @@ const MerchantManagementEnhanced = () => {
     try {
       showNotification('Preparing merchant export...', 'info');
 
-      // Build query params with current filters (like UserManagement does)
+      // Only send supported filters to backend
+      const allowedFilters = [
+        'status', 'category', 'membershipType', 'planStatus', 'dealLimit', 'search', 'dateFrom', 'dateTo'
+      ];
       const queryParams = new URLSearchParams();
       Object.entries(filters).forEach(([key, value]) => {
-        if (value && value !== 'all' && (typeof value !== 'string' || value.trim() !== '')) {
+        if (
+          allowedFilters.includes(key) &&
+          value && value !== 'all' && (typeof value !== 'string' || value.trim() !== '')
+        ) {
           queryParams.set(key, value);
         }
       });
@@ -709,6 +715,8 @@ const MerchantManagementEnhanced = () => {
           const json = JSON.parse(text);
           const msg = json?.message || json?.error || 'Failed to export merchants';
           showNotification(msg, 'error');
+          // Log full error for debugging
+          console.error('Export error (json blob):', json);
           return;
         } catch (e) {
           console.error('Failed to parse JSON error blob from export response', e);
@@ -728,8 +736,8 @@ const MerchantManagementEnhanced = () => {
 
       showNotification('Merchants exported successfully', 'success');
     } catch (err) {
-      console.error('Export error:', err);
-      // If server returned a JSON error as a blob (axios error with blob body), parse it
+      // Enhanced error logging for debugging
+      console.error('Export error (catch):', err, err?.response);
       try {
         const errData = err.response?.data;
         if (errData && typeof errData.text === 'function') {
@@ -738,19 +746,25 @@ const MerchantManagementEnhanced = () => {
             const json = JSON.parse(text);
             const message = json?.message || json?.error || 'Failed to export merchants';
             showNotification(message, 'error');
+            // Log full error for debugging
+            console.error('Export error (json blob in catch):', json);
             return;
           } catch (parseErr) {
-            // not JSON
             showNotification('Failed to export merchants', 'error');
+            console.error('Export error (parseErr):', parseErr, text);
             return;
           }
         }
       } catch (e) {
-        // ignore parsing errors
+        console.error('Export error (parsing catch):', e);
       }
 
       const message = err.response?.data?.message || 'Failed to export merchants';
       showNotification(message, 'error');
+      // Log any other error details
+      if (err.response) {
+        console.error('Export error (response):', err.response);
+      }
     }
   }, [showNotification, filters]);
 
@@ -951,6 +965,9 @@ const MerchantManagementEnhanced = () => {
             onClearFilters={handleClearFilters}
             onExport={handleExportMerchants}
             loading={loading}
+            referenceData={{
+              plans: [] // TODO: pass actual merchant plans if available, else fallback to []
+            }}
           />
 
       {/* Bulk Actions */}

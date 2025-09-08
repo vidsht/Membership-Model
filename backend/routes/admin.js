@@ -1879,6 +1879,166 @@ router.get('/partners/statistics', auth, admin, async (req, res) => {
 });
 
 // Get single partner (alias for merchant)
+// Move /partners/export above /partners/:id to prevent route shadowing
+router.get('/partners/export', auth, admin, async (req, res) => {
+  try {
+    const {
+      status,
+      category,
+      membershipType,
+      planStatus,
+      dealLimit,
+      search,
+      dateFrom,
+      dateTo
+    } = req.query;
+
+    let whereClause = 'WHERE u.userType = "merchant"';
+    const params = [];
+
+    // Apply same filters as main partners route
+    if (status && status !== 'all') {
+      whereClause += ' AND u.status = ?';
+      params.push(status);
+    }
+
+    if (membershipType && membershipType !== 'all') {
+      whereClause += ' AND u.membershipType = ?';
+      params.push(membershipType);
+    }
+
+    if (search && search.trim()) {
+      whereClause += ' AND (u.fullName LIKE ? OR u.email LIKE ? OR b.businessName LIKE ? OR u.phone LIKE ?)';
+      const searchTerm = `%${search.trim()}%`;
+      params.push(searchTerm, searchTerm, searchTerm, searchTerm);
+    }
+
+    if (dateFrom) {
+      whereClause += ' AND DATE(u.createdAt) >= ?';
+      params.push(dateFrom);
+    }
+
+    if (dateTo) {
+      whereClause += ' AND DATE(u.createdAt) <= ?';
+      params.push(dateTo);
+    }
+
+    if (category && category !== 'all') {
+      whereClause += ' AND b.businessCategory = ?';
+      params.push(category);
+    }
+
+    if (planStatus && planStatus !== 'all') {
+      if (planStatus === 'active') {
+        whereClause += ' AND (u.validationDate IS NULL OR u.validationDate >= NOW())';
+      } else if (planStatus === 'expired') {
+        whereClause += ' AND u.validationDate IS NOT NULL AND u.validationDate < NOW()';
+      } else if (planStatus === 'expiring_soon') {
+        whereClause += ' AND u.validationDate IS NOT NULL AND u.validationDate >= NOW() AND u.validationDate <= DATE_ADD(NOW(), INTERVAL 30 DAY)';
+      }
+    }
+
+    if (dealLimit && dealLimit !== 'all') {
+      if (dealLimit === 'custom') {
+        whereClause += ' AND b.customDealLimit IS NOT NULL';
+      } else if (dealLimit === 'default') {
+        whereClause += ' AND b.customDealLimit IS NULL';
+      } else if (dealLimit === 'unlimited') {
+        whereClause += ' AND (b.customDealLimit = 0 OR p.max_deals_per_month = 0)';
+      }
+    }
+
+    // Check if businesses table exists
+    const businessTableExists = await tableExists('businesses');
+    
+    let exportQuery;
+    if (businessTableExists) {
+      exportQuery = `
+        SELECT 
+          u.id, u.fullName, u.email, u.phone, u.address, u.community, 
+          u.membershipType, u.status, u.createdAt, u.lastLogin, u.validationDate,
+          b.businessId, b.businessName, b.businessDescription, b.businessCategory,
+          b.businessAddress, b.businessPhone, b.businessEmail, b.website,
+          b.customDealLimit,
+          p.name as planName, p.price as planPrice, p.billingCycle, p.currency
+        FROM users u
+        LEFT JOIN businesses b ON u.id = b.userId
+        LEFT JOIN plans p ON u.membershipType = p.key
+        ${whereClause}
+        ORDER BY u.createdAt DESC
+      `;
+    } else {
+      exportQuery = `
+        SELECT 
+          u.id, u.fullName, u.email, u.phone, u.address, u.community, 
+          u.membershipType, u.status, u.createdAt, u.lastLogin, u.validationDate,
+          NULL as businessId, NULL as businessName, NULL as businessDescription, 
+          NULL as businessCategory, NULL as businessAddress, NULL as businessPhone, 
+          NULL as businessEmail, NULL as website, NULL as customDealLimit,
+          p.name as planName, p.price as planPrice, p.billingCycle, p.currency
+        FROM users u
+        LEFT JOIN plans p ON u.membershipType = p.key
+        ${whereClause}
+        ORDER BY u.createdAt DESC
+      `;
+    }
+
+    const partners = await queryAsync(exportQuery, params);
+
+    // Convert to CSV
+    const csvHeader = 'ID,Full Name,Email,Phone,Community,Membership Type,Status,Business Name,Business Category,Business Address,Business Phone,Business Email,Website,Custom Deal Limit,Plan Name,Plan Price,Registration Date,Last Login,Plan Valid Till\n';
+    
+    const csvRows = partners.map(partner => {
+      const formatValue = (value) => {
+        if (value === null || value === undefined) return '';
+        if (typeof value === 'string' && value.includes(',')) return `"${value}"`;
+        return value;
+      };
+
+      const formatDate = (date) => {
+        if (!date) return '';
+        try {
+          return new Date(date).toLocaleDateString('en-US');
+        } catch {
+          return '';
+        }
+      };
+
+      return [
+        formatValue(partner.id),
+        formatValue(partner.fullName),
+        formatValue(partner.email),
+        formatValue(partner.phone),
+        formatValue(partner.community),
+        formatValue(partner.membershipType),
+        formatValue(partner.status),
+        formatValue(partner.businessName),
+        formatValue(partner.businessCategory),
+        formatValue(partner.businessAddress),
+        formatValue(partner.businessPhone),
+        formatValue(partner.businessEmail),
+        formatValue(partner.website),
+        formatValue(partner.customDealLimit),
+        formatValue(partner.planName),
+        formatValue(partner.planPrice),
+        formatDate(partner.createdAt),
+        formatDate(partner.lastLogin),
+        formatDate(partner.validationDate)
+      ].join(',');
+    }).join('\n');
+
+    const csvContent = csvHeader + csvRows;
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename=partners-export-${new Date().toISOString().split('T')[0]}.csv`);
+    res.send(csvContent);
+  } catch (err) {
+    console.error('Error exporting partners:', err);
+    res.status(500).json({ success: false, message: 'Server error exporting partners' });
+  }
+});
+
+// Now define /partners/:id route after /partners/export
 router.get('/partners/:id', auth, admin, async (req, res) => {
   try {
     const merchantId = parseInt(req.params.id);
