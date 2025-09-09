@@ -2388,79 +2388,64 @@ router.put('/partners/:id', auth, admin, async (req, res) => {
 // Approve partner
 // Reuse the user status update logic for partner approval for consistency
 router.post('/partners/:id/approve', auth, admin, async (req, res) => {
-  // Call the same logic as /users/:id/status with status = 'approved'
-  req.body = { ...req.body, status: 'approved' };
-  req.params.id = req.params.id; // Ensure id is set
-  // Use the same handler as /users/:id/status
-  // Find the /users/:id/status handler function
-  const userStatusHandler = async (req, res) => {
-    try {
-      const userId = parseInt(req.params.id);
-      const { status } = req.body;
-
-      if (!userId || isNaN(userId)) {
-        return res.status(400).json({ success: false, message: 'Valid user ID is required' });
-      }
-
-      if (!['pending', 'approved', 'rejected', 'suspended'].includes(status)) {
-        return res.status(400).json({ success: false, message: 'Invalid status' });
-      }
-
-      const adminUserId = getAdminUserId(req);
-
-      const hasStatusUpdatedAt = await columnExists('users', 'statusUpdatedAt');
-      const hasStatusUpdatedBy = await columnExists('users', 'statusUpdatedBy');
-
-      let updateQuery = 'UPDATE users SET status = ?, updated_at = NOW(), statusUpdatedAt = NOW()';
-      let params = [status];
-
-      if (hasStatusUpdatedAt) {
-        updateQuery += ', statusUpdatedAt = NOW()';
-      }
-
-      if (hasStatusUpdatedBy) {
-        updateQuery += ', statusUpdatedBy = ?';
-        params.push(adminUserId);
-      }
-
-      updateQuery += ' WHERE id = ?';
-      params.push(userId);
-
-      const result = await queryAsync(updateQuery, params);
-
-      if (result.affectedRows === 0) {
-        return res.status(404).json({ success: false, message: 'User not found' });
-      }
-
-      // Log user status change activity
-      await logUserStatusChange(req, userId, status, req.body.reason || 'User status changed by admin');
-
-      if (await tableExists('activities')) {
-        try {
-          await queryAsync(
-            'INSERT INTO activities (type, description, userId, timestamp) VALUES (?, ?, ?, NOW())',
-            [`user_${status}`, `User ${status} by admin`, adminUserId]
-          );
-        } catch (activityError) {
-          console.warn('Error logging activity:', activityError);
-        }
-      }
-
-      // Send profile status update notification
-      NotificationHooks.onProfileStatusChange(userId, status, req.body.reason || '').then(emailResult => {
-        console.log('📧 Profile status update email sent:', emailResult);
-      }).catch(emailError => {
-        console.error('📧 Failed to send profile status update email:', emailError);
-      });
-
-      res.json({ success: true, message: `User ${status} successfully` });
-    } catch (err) {
-      console.error('Error updating user status:', err);
-      res.status(500).json({ success: false, message: 'Server error updating user status' });
+  try {
+    const userId = parseInt(req.params.id);
+    if (!userId || isNaN(userId)) {
+      return res.status(400).json({ success: false, message: 'Valid user ID is required' });
     }
-  };
-  // Call the handler
-  return userStatusHandler(req, res);
+
+    // Check current status first
+    const [user] = await queryAsync('SELECT status FROM users WHERE id = ?', [userId]);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    if (user.status === 'approved') {
+      // Already approved, treat as success (idempotent)
+      return res.json({ success: true, message: 'User already approved' });
+    }
+
+    // Reuse the user status update logic
+    req.body = { ...req.body, status: 'approved' };
+    // Inline the logic from /users/:id/status
+    const adminUserId = getAdminUserId(req);
+    const hasStatusUpdatedAt = await columnExists('users', 'statusUpdatedAt');
+    const hasStatusUpdatedBy = await columnExists('users', 'statusUpdatedBy');
+    let updateQuery = 'UPDATE users SET status = ?, updated_at = NOW(), statusUpdatedAt = NOW()';
+    let params = ['approved'];
+    if (hasStatusUpdatedAt) {
+      updateQuery += ', statusUpdatedAt = NOW()';
+    }
+    if (hasStatusUpdatedBy) {
+      updateQuery += ', statusUpdatedBy = ?';
+      params.push(adminUserId);
+    }
+    updateQuery += ' WHERE id = ?';
+    params.push(userId);
+    const result = await queryAsync(updateQuery, params);
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    await logUserStatusChange(req, userId, 'approved', req.body.reason || 'User status changed by admin');
+    if (await tableExists('activities')) {
+      try {
+        await queryAsync(
+          'INSERT INTO activities (type, description, userId, timestamp) VALUES (?, ?, ?, NOW())',
+          ['user_approved', 'User approved by admin', adminUserId]
+        );
+      } catch (activityError) {
+        console.warn('Error logging activity:', activityError);
+      }
+    }
+    NotificationHooks.onProfileStatusChange(userId, 'approved', req.body.reason || '').then(emailResult => {
+      console.log('📧 Profile status update email sent:', emailResult);
+    }).catch(emailError => {
+      console.error('📧 Failed to send profile status update email:', emailError);
+    });
+    res.json({ success: true, message: 'User approved successfully' });
+  } catch (err) {
+    console.error('Error approving partner:', err);
+    res.status(500).json({ success: false, message: 'Server error approving partner' });
+  }
 });
 
 // Reject partner
