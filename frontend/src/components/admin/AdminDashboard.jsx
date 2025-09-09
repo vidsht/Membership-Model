@@ -118,42 +118,28 @@ const AdminDashboard = () => {
     const fetchAdminStats = async () => {
       try {
         setIsLoading(true);
-        
-        // Fetch dashboard statistics with fallback
-        try {
-          const [statsResponse, planStatsResponse] = await Promise.all([
-            api.get('/admin/stats'),
-            api.get('/admin/plans/statistics').catch(() => ({ data: { success: false } }))
-          ]);
-          
-          let baseStats = {};
-          if (statsResponse.data.success) {
-            baseStats = statsResponse.data.stats;
-          }
-          
-          // Add plan statistics
-          if (planStatsResponse.data.success) {
-            const planStats = planStatsResponse.data.statistics;
-            baseStats.totalPlans = planStats.summary.userPlans.total + planStats.summary.merchantPlans.total;
-            baseStats.planSubscribers = planStats.summary.userPlans.totalSubscribers + planStats.summary.merchantPlans.totalSubscribers;
-          }
-          
-          setStats(baseStats);
-        } catch (statsError) {
-          console.error('❌ AdminDashboard - Error fetching stats:', statsError);
-          
-          // Set fallback stats
-          setStats({
-            totalUsers: 0,
-            totalMerchants: 0,
-            pendingApprovals: 0,
-            activeBusinesses: 0,
-            totalRevenue: 0,
-            totalDeals: 0,
-            totalPlans: 0,
-            planSubscribers: 0
-          });
+        // Fetch user and merchant statistics in parallel
+        const [userStatsRes, merchantStatsRes, planStatsResponse] = await Promise.all([
+          api.get('/admin/users/statistics'),
+          api.get('/admin/partners/statistics'),
+          api.get('/admin/plans/statistics').catch(() => ({ data: { success: false } }))
+        ]);
+        let baseStats = {};
+        if (userStatsRes.data.success && merchantStatsRes.data.success) {
+          const userStats = userStatsRes.data.statistics;
+          const merchantStats = merchantStatsRes.data.statistics;
+          baseStats.totalUsers = userStats.totalUsers;
+          baseStats.totalMerchants = merchantStats.totalMerchants;
+          baseStats.pendingApprovals = (userStats.pendingApprovals || 0) + (merchantStats.pendingApprovals || 0);
+          baseStats.activeBusinesses = merchantStats.activeMerchants;
         }
+        // Add plan statistics
+        if (planStatsResponse.data.success) {
+          const planStats = planStatsResponse.data.statistics;
+          baseStats.totalPlans = planStats.summary.userPlans.total + planStats.summary.merchantPlans.total;
+          baseStats.planSubscribers = planStats.summary.userPlans.totalSubscribers + planStats.summary.merchantPlans.totalSubscribers;
+        }
+        setStats(baseStats);
         
         // Fetch recent activities with fallback
         try {
@@ -165,10 +151,8 @@ const AdminDashboard = () => {
           console.error('❌ AdminDashboard - Error fetching activities:', activitiesError);
           setRecentActivities([]);
         }
-        
       } catch (error) {
         console.error('❌ AdminDashboard - General error fetching admin data:', error);
-        // Use a ref to avoid infinite re-renders
         if (showNotification) {
           showNotification('Some admin data could not be loaded. Please check your connection.', 'warning');
         }

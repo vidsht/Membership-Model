@@ -274,17 +274,23 @@ router.get('/public', async (req, res) => {
 router.get('/home-stats', async (req, res) => {
   try {
     // Get basic home page statistics - simplified version
-    let totalUsers = 0, totalBusinesses = 0, totalDeals = 0, totalRedemptions = 0;
+  let totalUsers = 0, totalBusinesses = 0, totalDeals = 0, totalRedemptions = 0, activeBusinesses = 0;
     
     try {
       const userCount = await queryAsync('SELECT COUNT(*) as count FROM users');
       totalUsers = userCount[0]?.count || 0;
     } catch (e) { console.log('Users table error:', e.message); }
-    
+
     try {
       const businessCount = await queryAsync('SELECT COUNT(*) as count FROM businesses');
       totalBusinesses = businessCount[0]?.count || 0;
     } catch (e) { console.log('Businesses table error:', e.message); }
+
+    // Add: count only approved merchants (active businesses)
+    try {
+      const activeBiz = await queryAsync('SELECT COUNT(*) as count FROM users WHERE userType = "merchant" AND status = "approved"');
+      activeBusinesses = activeBiz[0]?.count || 0;
+    } catch (e) { console.log('Active businesses query error:', e.message); }
     
     try {
       const dealCount = await queryAsync(`
@@ -304,6 +310,7 @@ router.get('/home-stats', async (req, res) => {
     const formattedStats = {
       totalUsers: totalUsers,
       totalBusinesses: totalBusinesses,
+      activeBusinesses: activeBusinesses, // Only approved merchants
       totalDeals: totalDeals,
       totalRedemptions: totalRedemptions,
       uniqueRedeemers: 0, // Will add later when table exists

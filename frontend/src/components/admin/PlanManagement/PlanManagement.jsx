@@ -50,27 +50,27 @@ const PlanManagement = () => {
     const fetchPlanStatsAndPlansAndUsers = async () => {
       try {
         setIsLoading(true);
-        // Fetch stats
-        const statsResponse = await api.get('/admin/stats');
-        setStats(statsResponse.data.stats || {});
-        
+        // Fetch dashboard stats (for userPlanCounts, merchantPlanCounts)
+        const dashboardResponse = await api.get('/admin/dashboard');
+        const dashboardStats = dashboardResponse.data.stats || {};
+        setStats(prev => ({
+          ...prev,
+          ...dashboardStats,
+          userPlanCounts: dashboardStats.userPlanCounts || {},
+          merchantPlanCounts: dashboardStats.merchantPlanCounts || {}
+        }));
         // Fetch user plans from the new plans endpoint
         const userPlansResponse = await api.get('/plans?type=user&isActive=true');
-        console.log('User plans response:', userPlansResponse.data);
         setUserPlans(userPlansResponse.data.plans || []);
-        
         // Fetch merchant plans from the new plans endpoint  
         const merchantPlansResponse = await api.get('/plans?type=merchant&isActive=true');
-        console.log('Merchant plans response:', merchantPlansResponse.data);
         setMerchantPlans(merchantPlansResponse.data.plans || []);
-        
         // Fetch users
         const usersResponse = await api.get('/admin/users?userType=user');
         setUsers(usersResponse.data.users || []);
-          // Fetch merchants using the partners endpoint which includes business info
+        // Fetch merchants using the partners endpoint which includes business info
         const merchantsResponse = await api.get('/admin/partners');
         setMerchants(merchantsResponse.data.merchants || []);
-        
         // Fetch analytics data
         try {
           const analyticsResponse = await api.get('/admin/plan-analytics');
@@ -82,25 +82,21 @@ const PlanManagement = () => {
         } catch (analyticsError) {
           console.log('Analytics not available:', analyticsError.message);
         }
-        
         // Calculate upcoming expiries from user data
         const now = new Date();
         const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-        
         // Count expiring users
         const expiringUsers = usersResponse.data.users?.filter(user => {
           if (!user.planExpiryDate) return false;
           const expiryDate = new Date(user.planExpiryDate);
           return expiryDate >= now && expiryDate <= sevenDaysFromNow;
         }).length || 0;
-        
         // Count expiring merchants
         const expiringMerchants = merchantsResponse.data.merchants?.filter(merchant => {
           if (!merchant.validationDate) return false;
           const expiryDate = new Date(merchant.validationDate);
           return expiryDate >= now && expiryDate <= sevenDaysFromNow;
         }).length || 0;
-        
         // Update analytics with calculated expiries
         setAnalytics(prev => ({
           ...prev,

@@ -83,7 +83,9 @@ const About = () => {
                 <div className="benefit-icon">
                 <i className="fas fa-bullseye"></i>
               </div>
-                <h3> Our Mission</h3>
+              <div className='about-header'>
+                <h3>Our Mission</h3>
+              </div>
                 <p>
                   To create a strong, supportive network for Indians in Ghana while promoting cultural exchange, 
                   business opportunities, and community welfare. We aim to be the premier platform that connects 
@@ -101,14 +103,14 @@ const About = () => {
                 <div className="benefit-icon">
                 <i className="fas fa-eye"></i>
               </div>
+              <div className='about-header'>
                 <h3>Our Vision</h3>
+              </div>
                 <p>
-                  To build the most comprehensive and beneficial membership ecosystem for Indians in Ghana, 
-                  providing unmatched value through exclusive deals, community support, and cultural preservation.
+                  To build the most comprehensive and beneficial membership ecosystem for Indians in Ghana, providing unmatched value through community support, and cultural preservation. 
                 </p>
                 <p>
-                  We envision a united, thriving Indian community that contributes significantly to Ghana's multicultural 
-                  landscape while maintaining strong connections to our roots and traditions.
+                  We envision a united, thriving Indian community that contributes significantly to Ghana's landscape while maintaining strong connections to our roots and traditions. We aim to create lasting impact that bridges cultures that unites our diverse community across Ghana.
                 </p>
               </div>
             </div>
@@ -126,10 +128,12 @@ const About = () => {
             <div className="initiative-card">
               <div className="card-accent" style={{ background: 'var(--primary-color)' }}></div>
               <div className="card-content">
-                <div className="icon-container" style={{ background: 'rgba(58, 80, 107, 0.1)' }}>
-                  <i className="fas fa-graduation-cap" style={{ color: 'var(--primary-color)' }}></i>
+                <div className='about-header'>
+                    <div className="icon-container" style={{ background: 'rgba(58, 80, 107, 0.1)' }}>
+                      <i className="fas fa-graduation-cap" style={{ color: 'var(--primary-color)' }}></i>
+                    </div>
+                    <h3>Education Support</h3>
                 </div>
-                <h3>Education Support</h3>
                 <p>Organizing educational workshops, career guidance sessions, and mentorship opportunities to help students and young professionals in Ghana shape a brighter future.</p>
               </div>
             </div>
@@ -137,10 +141,12 @@ const About = () => {
             <div className="initiative-card">
               <div className="card-accent" style={{ background: 'var(--accent-color)' }}></div>
               <div className="card-content">
-                <div className="icon-container" style={{ background: 'rgba(111, 174, 175, 0.1)' }}>
-                  <i className="fas fa-hands-helping" style={{ color: 'var(--accent-color)' }}></i>
+                <div className='about-header'>
+                  <div className="icon-container" style={{ background: 'rgba(111, 174, 175, 0.1)' }}>
+                    <i className="fas fa-hands-helping" style={{ color: 'var(--accent-color)' }}></i>
+                  </div>
+                  <h3>Community Welfare</h3>
                 </div>
-                <h3>Community Welfare</h3>
                 <p>Support services for community members in need, emergency assistance, and welfare programs for the elderly.</p>
               </div>
             </div>
@@ -148,10 +154,12 @@ const About = () => {
             <div className="initiative-card">
               <div className="card-accent" style={{ background: 'var(--primary-light)' }}></div>
               <div className="card-content">
-                <div className="icon-container" style={{ background: 'rgba(92, 123, 164, 0.1)' }}>
-                  <i className="fas fa-calendar-alt" style={{ color: 'var(--primary-light)' }}></i>
+                <div className='about-header'>
+                  <div className="icon-container" style={{ background: 'rgba(92, 123, 164, 0.1)' }}>
+                    <i className="fas fa-calendar-alt" style={{ color: 'var(--primary-light)' }}></i>
+                  </div>
+                  <h3>Cultural Celebrations</h3>
                 </div>
-                <h3>Cultural Celebrations</h3>
                 <p>Regular events celebrating Indian festivals, cultural performances, and traditional gatherings throughout Ghana.</p>
               </div>
             </div>

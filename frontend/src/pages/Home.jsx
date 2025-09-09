@@ -182,7 +182,7 @@ const Home = () => {
             if (adminStats.data?.success) {
               setStats({
                 totalMembers: adminStats.data.stats.totalUsers || 0,
-                activeBusinesses: adminStats.data.stats.activeBusinesses || 0,
+                activeBusinesses: adminStats.data.stats.activeBusinesses || 0, // Only approved merchants
                 exclusiveDeals: adminStats.data.stats.totalDeals || 0,
                 pendingApprovals: adminStats.data.stats.pendingApprovals || 0
               });
@@ -198,7 +198,8 @@ const Home = () => {
         if (publicStats.data?.success) {
           setStats({
             totalMembers: publicStats.data.stats.totalMembers || 0,
-            activeBusinesses: publicStats.data.stats.totalBusinesses || 0,
+            // Use activeBusinesses if available, otherwise fallback to totalBusinesses
+            activeBusinesses: publicStats.data.stats.activeBusinesses ?? publicStats.data.stats.totalBusinesses ?? 0,
             exclusiveDeals: publicStats.data.stats.totalDeals || 0,
             pendingApprovals: 0
           });
