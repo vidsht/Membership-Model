@@ -2386,38 +2386,81 @@ router.put('/partners/:id', auth, admin, async (req, res) => {
 });
 
 // Approve partner
+// Reuse the user status update logic for partner approval for consistency
 router.post('/partners/:id/approve', auth, admin, async (req, res) => {
-  try {
-    const merchantId = parseInt(req.params.id);
-    if (!merchantId || isNaN(merchantId)) {
-      return res.status(400).json({ success: false, message: 'Valid partner ID is required' });
-    }
+  // Call the same logic as /users/:id/status with status = 'approved'
+  req.body = { ...req.body, status: 'approved' };
+  req.params.id = req.params.id; // Ensure id is set
+  // Use the same handler as /users/:id/status
+  // Find the /users/:id/status handler function
+  const userStatusHandler = async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const { status } = req.body;
 
-    const result = await queryAsync(
-      'UPDATE users SET status = "approved", updated_at = NOW() WHERE id = ? AND userType = "merchant"',
-      [merchantId]
-    );
+      if (!userId || isNaN(userId)) {
+        return res.status(400).json({ success: false, message: 'Valid user ID is required' });
+      }
 
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ success: false, message: 'Partner not found' });
-    }
+      if (!['pending', 'approved', 'rejected', 'suspended'].includes(status)) {
+        return res.status(400).json({ success: false, message: 'Invalid status' });
+      }
 
-    // Log merchant status change activity
-    await logMerchantStatusChange(req, merchantId, 'approved', 'Partner approved by admin');
+      const adminUserId = getAdminUserId(req);
 
-    // Send profile status update notification
-    NotificationHooks.onProfileStatusChange(merchantId, 'approved', 'Your business profile has been approved by admin.')
-      .then(emailResult => {
+      const hasStatusUpdatedAt = await columnExists('users', 'statusUpdatedAt');
+      const hasStatusUpdatedBy = await columnExists('users', 'statusUpdatedBy');
+
+      let updateQuery = 'UPDATE users SET status = ?, updated_at = NOW(), statusUpdatedAt = NOW()';
+      let params = [status];
+
+      if (hasStatusUpdatedAt) {
+        updateQuery += ', statusUpdatedAt = NOW()';
+      }
+
+      if (hasStatusUpdatedBy) {
+        updateQuery += ', statusUpdatedBy = ?';
+        params.push(adminUserId);
+      }
+
+      updateQuery += ' WHERE id = ?';
+      params.push(userId);
+
+      const result = await queryAsync(updateQuery, params);
+
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ success: false, message: 'User not found' });
+      }
+
+      // Log user status change activity
+      await logUserStatusChange(req, userId, status, req.body.reason || 'User status changed by admin');
+
+      if (await tableExists('activities')) {
+        try {
+          await queryAsync(
+            'INSERT INTO activities (type, description, userId, timestamp) VALUES (?, ?, ?, NOW())',
+            [`user_${status}`, `User ${status} by admin`, adminUserId]
+          );
+        } catch (activityError) {
+          console.warn('Error logging activity:', activityError);
+        }
+      }
+
+      // Send profile status update notification
+      NotificationHooks.onProfileStatusChange(userId, status, req.body.reason || '').then(emailResult => {
         console.log('📧 Profile status update email sent:', emailResult);
       }).catch(emailError => {
         console.error('📧 Failed to send profile status update email:', emailError);
       });
 
-    res.json({ success: true, message: 'Partner approved successfully' });
-  } catch (err) {
-    console.error('Error approving partner:', err);
-    res.status(500).json({ success: false, message: 'Server error approving partner' });
-  }
+      res.json({ success: true, message: `User ${status} successfully` });
+    } catch (err) {
+      console.error('Error updating user status:', err);
+      res.status(500).json({ success: false, message: 'Server error updating user status' });
+    }
+  };
+  // Call the handler
+  return userStatusHandler(req, res);
 });
 
 // Reject partner
