@@ -532,8 +532,19 @@ router.post('/deals', checkMerchantAccess, checkDealPostingLimit, [
   body('category').notEmpty().withMessage('Deal category is required'),
   body('discount').notEmpty().withMessage('Discount is required'),
   body('discountType').isIn(['percentage', 'fixed', 'bogo', 'other']).withMessage('Invalid discount type'),
-  body('expiration_date').isISO8601().withMessage('Valid expiration date is required'),
-  body('memberLimit').optional().isInt({ min: 1 }).withMessage('Member limit must be a positive integer')
+  body('memberLimit').optional().custom((value) => {
+    // Allow empty string, null, or undefined
+    if (!value || value === '' || value === null || value === undefined) {
+      return true;
+    }
+    // If value is provided, it must be a positive integer
+    const num = parseInt(value);
+    if (isNaN(num) || num < 1) {
+      throw new Error('Member limit must be a positive integer');
+    }
+    return true;
+  }),
+  body('expiration_date').isISO8601().withMessage('Valid expiration date is required')
 ], async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -550,8 +561,7 @@ router.post('/deals', checkMerchantAccess, checkDealPostingLimit, [
       dealLimit,
       dealsUsed: merchant.dealsUsedThisMonth || 0
     });
-  }
-  const {
+  }  const {
     title,
     description,
     category,
@@ -564,8 +574,8 @@ router.post('/deals', checkMerchantAccess, checkDealPostingLimit, [
     imageUrl,
     couponCode,
     requiredPlanPriority,
-    bannerImage,
-    memberLimit
+    bannerImage,  // Add this field
+    memberLimit   // Add memberLimit field
   } = req.body;
 
   // Get plan information for accessLevel field (for display purposes)
@@ -589,8 +599,8 @@ router.post('/deals', checkMerchantAccess, checkDealPostingLimit, [
 
   const insertQuery = `
     INSERT INTO deals 
-    (businessId, title, description, category, discount, discountType, originalPrice, discountedPrice, termsConditions, validFrom, validUntil, couponCode, requiredPlanPriority, member_limit, bannerImage, status)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending_approval')
+    (businessId, title, description, category, discount, discountType, originalPrice, discountedPrice, termsConditions, validFrom, validUntil, couponCode, requiredPlanPriority, bannerImage, member_limit, status)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending_approval')
   `;
 
   const values = [
@@ -607,8 +617,8 @@ router.post('/deals', checkMerchantAccess, checkDealPostingLimit, [
     expiration_date, // validUntil  
     couponCode || null,
     requiredPlanPriority || 1,
-    memberLimit || null,
-    bannerImage || null
+    bannerImage || null,  // Add bannerImage value
+    memberLimit || null   // Add memberLimit value
   ];
 
   db.query(insertQuery, values, (err, result) => {
@@ -652,9 +662,20 @@ router.put('/deals/:dealId', checkMerchantAccess, [
   body('description').notEmpty().withMessage('Description is required'),
   body('category').notEmpty().withMessage('Category is required'),
   body('discount').isNumeric().withMessage('Valid discount amount is required'),
+  body('memberLimit').optional().custom((value) => {
+    // Allow empty string, null, or undefined
+    if (!value || value === '' || value === null || value === undefined) {
+      return true;
+    }
+    // If value is provided, it must be a positive integer
+    const num = parseInt(value);
+    if (isNaN(num) || num < 1) {
+      throw new Error('Member limit must be a positive integer');
+    }
+    return true;
+  }),
   body('originalPrice').optional().isNumeric().withMessage('Valid original price is required'),
-  body('discountedPrice').optional().isNumeric().withMessage('Valid discounted price is required'),
-  body('memberLimit').optional().isInt({ min: 1 }).withMessage('Member limit must be a positive integer')
+  body('discountedPrice').optional().isNumeric().withMessage('Valid discounted price is required')
 ], async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -676,8 +697,8 @@ router.put('/deals/:dealId', checkMerchantAccess, [
       expiration_date,
       couponCode,
       requiredPlanPriority,
-      bannerImage,
-      memberLimit
+      bannerImage,  // Add this field
+      memberLimit   // Add memberLimit field
     } = req.body;
 
     if (!dealId || isNaN(dealId)) {
@@ -716,8 +737,8 @@ router.put('/deals/:dealId', checkMerchantAccess, [
         expiration_date = ?, 
         couponCode = ?,
         minPlanPriority = ?,
-        member_limit = ?,
         bannerImage = ?,
+        member_limit = ?,
         status = 'pending_approval',
         updated_at = NOW()
       WHERE id = ? AND businessId = ?
@@ -735,30 +756,13 @@ router.put('/deals/:dealId', checkMerchantAccess, [
       expiration_date || null, 
       couponCode || null,
       minPlanPriority,
-      memberLimit || null,
-      bannerImage || null,
-      dealId,
-      merchant.businessId
-    ];
-
-    const updateValues = [
-      title, 
-      description, 
-      category, 
-      discount, 
-      discountType,
-      originalPrice || null, 
-      discountedPrice || null, 
-      termsConditions || null, 
-      expiration_date || null, 
-      couponCode || null,
-      minPlanPriority,
       bannerImage || null,  // Add bannerImage value
+      memberLimit || null,  // Add memberLimit value
       dealId,
       merchant.businessId
     ];
 
-    const result = await queryAsync(updateQuery, updateValues);
+    const result = await queryAsync(updateQuery, values);
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ success: false, message: 'Deal not found or no changes made' });

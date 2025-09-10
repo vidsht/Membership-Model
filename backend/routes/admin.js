@@ -3141,7 +3141,18 @@ router.post('/deals', auth, admin, [
   body('category').trim().isLength({ min: 1 }).withMessage('Category is required'),
   body('validFrom').isISO8601().withMessage('Valid from date is required'),
   body('validUntil').isISO8601().withMessage('Valid until date is required'),
-  body('memberLimit').optional().isInt({ min: 1 }).withMessage('Member limit must be a positive integer'),
+  body('memberLimit').optional().custom((value) => {
+    // Allow empty string, null, or undefined
+    if (!value || value === '' || value === null || value === undefined) {
+      return true;
+    }
+    // If value is provided, it must be a positive integer
+    const num = parseInt(value);
+    if (isNaN(num) || num < 1) {
+      throw new Error('Member limit must be a positive integer');
+    }
+    return true;
+  }),
   body('status').optional().isIn(['active', 'inactive', 'pending']).withMessage('Status must be active, inactive, or pending')
 ], async (req, res) => {
   try {
@@ -3233,7 +3244,18 @@ router.put('/deals/:id', auth, admin, [
   body('category').trim().isLength({ min: 1 }).withMessage('Category is required'),
   body('validFrom').isISO8601().withMessage('Valid from date is required'),
   body('validUntil').isISO8601().withMessage('Valid until date is required'),
-  body('memberLimit').optional().isInt({ min: 1 }).withMessage('Member limit must be a positive integer'),
+  body('memberLimit').optional().custom((value) => {
+    // Allow empty string, null, or undefined
+    if (!value || value === '' || value === null || value === undefined) {
+      return true;
+    }
+    // If value is provided, it must be a positive integer
+    const num = parseInt(value);
+    if (isNaN(num) || num < 1) {
+      throw new Error('Member limit must be a positive integer');
+    }
+    return true;
+  }),
   body('status').optional().isIn(['active', 'inactive', 'pending']).withMessage('Status must be active, inactive, or pending')
 ], async (req, res) => {
   try {
@@ -4850,193 +4872,6 @@ router.get('/plans/active', auth, admin, async (req, res) => {
   } catch (err) {
     console.error('Error fetching active plans:', err);
     res.status(500).json({ success: false, message: 'Server error fetching active plans' });
-  }
-});
-
-// Approve deal
-router.patch('/deals/:id/approve', auth, admin, async (req, res) => {
-  try {
-    const dealId = parseInt(req.params.id);
-    const { accessLevel, minPlanPriority } = req.body;
-    
-    if (!dealId || isNaN(dealId)) {
-      return res.status(400).json({ success: false, message: 'Valid deal ID is required' });
-    }
-
-    // Prepare update query - include accessLevel and/or minPlanPriority if provided
-    let updateQuery = 'UPDATE deals SET status = "active", updated_at = NOW()';
-    let updateParams = [];
-    
-    // If minPlanPriority is provided, use it (priority-based access)
-    if (minPlanPriority !== undefined && minPlanPriority !== null) {
-      const priority = parseInt(minPlanPriority);
-      if (!isNaN(priority) && priority >= 0) {
-        updateQuery += ', minPlanPriority = ?, requiredPlanPriority = ?';
-        updateParams.push(priority, priority);
-        
-        // Convert priority to accessLevel dynamically using database plans
-        try {
-          const plansQuery = 'SELECT * FROM plans WHERE type = "user" AND isActive = 1 ORDER BY priority';
-          const plansResult = await queryAsync(plansQuery);
-          
-          if (plansResult.length > 0) {
-            // Find the plan that matches this priority
-            const matchingPlan = plansResult.find(plan => plan.priority === priority);
-            
-            if (matchingPlan) {
-              // Use dynamic access level based on plan name/key
-              if (matchingPlan.key === 'platinum' || matchingPlan.name.toLowerCase().includes('platinum')) {
-                accessLevel = 'all'; // Highest tier can access all
-              } else if (matchingPlan.key === 'gold' || matchingPlan.name.toLowerCase().includes('gold')) {
-                accessLevel = 'premium';
-              } else if (matchingPlan.key === 'silver' || matchingPlan.name.toLowerCase().includes('silver')) {
-                accessLevel = 'intermediate';
-              } else {
-                accessLevel = 'basic';
-              }
-            } else {
-              // Fallback: use position in priority order for dynamic assignment
-              const sortedPlans = plansResult.sort((a, b) => b.priority - a.priority);
-              const planIndex = sortedPlans.findIndex(plan => plan.priority <= priority);
-              
-              if (planIndex === 0) accessLevel = 'all'; // Highest priority
-              else if (planIndex === 1) accessLevel = 'premium';
-              else if (planIndex === 2) accessLevel = 'intermediate';
-              else accessLevel = 'basic';
-            }
-          } else {
-            // Fallback to basic if no plans found
-            accessLevel = 'basic';
-          }
-        } catch (planError) {
-          console.warn('Could not load plans for dynamic access level conversion:', planError);
-          // Fallback to static conversion if dynamic fails
-          if (priority >= 3) accessLevel = 'all';
-          else if (priority === 2) accessLevel = 'premium';
-          else if (priority === 1) accessLevel = 'intermediate';
-          else accessLevel = 'basic';
-        }
-        
-        updateQuery += ', accessLevel = ?';
-        updateParams.push(accessLevel);
-      }
-    }
-    
-    // Legacy accessLevel support (kept for backward compatibility)
-    if (accessLevel && ['basic', 'intermediate', 'premium', 'all'].includes(accessLevel)) {
-      updateQuery += ', accessLevel = ?';
-      updateParams.push(accessLevel);
-    }
-    
-    updateQuery += ' WHERE id = ?';
-    updateParams.push(dealId);
-
-    console.log('Executing deal approval query:', updateQuery);
-    console.log('With parameters:', updateParams);
-
-    const result = await queryAsync(updateQuery, updateParams);
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ success: false, message: 'Pending deal not found or already processed' });
-    }
-
-    // Update merchant's monthly deal count
-    const dealInfoQuery = 'SELECT businessId, created_at FROM deals WHERE id = ?';
-    const dealInfo = await queryAsync(dealInfoQuery, [dealId]);
-    if (dealInfo.length > 0) {
-      const notificationService = require('../services/notificationService');
-      try {
-        await notificationService.incrementMerchantDealCount(dealInfo[0].businessId, dealInfo[0].created_at);
-      } catch (countError) {
-        console.error('Failed to update merchant deal count:', countError);
-      }
-    }
-
-    // Verify the update by fetching the updated deal
-    const verifyQuery = 'SELECT id, status, accessLevel, minPlanPriority FROM deals WHERE id = ?';
-    const verifyResult = await queryAsync(verifyQuery, [dealId]);
-    
-    console.log('Updated deal verification:', verifyResult[0]);
-
-    let approvalMessage = 'Deal approved successfully';
-    if (minPlanPriority !== null) {
-      approvalMessage += ` with minimum plan priority ${minPlanPriority}`;
-    } else if (accessLevel) {
-      approvalMessage += ` with access level set to ${accessLevel}`;
-    }
-
-    res.json({ 
-      success: true, 
-      message: approvalMessage,
-      accessLevel: accessLevel,
-      minPlanPriority: minPlanPriority,
-      updatedDeal: verifyResult[0]
-    });
-  } catch (err) {
-    console.error('Error approving deal:', err);
-    res.status(500).json({ success: false, message: 'Server error approving deal' });
-  }
-});
-
-// Reject deal
-router.patch('/deals/:id/reject', auth, admin, async (req, res) => {
-  try {
-    const dealId = parseInt(req.params.id);
-    const { reason } = req.body;
-    
-    if (!dealId || isNaN(dealId)) {
-      return res.status(400).json({ success: false, message: 'Valid deal ID is required' });
-    }
-
-    if (!(await tableExists('deals'))) {
-      return res.status(404).json({ success: false, message: 'Deals table not found' });
-    }
-
-    // Check if deal exists and is pending
-    const existingDeal = await queryAsync('SELECT id, status, businessId FROM deals WHERE id = ?', [dealId]);
-    if (existingDeal.length === 0) {
-      return res.status(404).json({ success: false, message: 'Deal not found' });
-    }
-
-    if (existingDeal[0].status !== 'pending_approval') {
-      return res.status(400).json({ success: false, message: 'Deal is not pending approval' });
-    }
-
-    // Update deal status to rejected
-    await queryAsync('UPDATE deals SET status = ? WHERE id = ?', ['rejected', dealId]);
-
-    // TODO: Send notification to merchant about deal rejection
-    // For now, we'll add a basic notification entry if notifications table exists
-    if (await tableExists('notifications')) {
-      try {
-        const message = reason ? `Your deal has been rejected. Reason: ${reason}` : 'Your deal has been rejected.';
-        await queryAsync(
-          'INSERT INTO notifications (userId, type, title, message, relatedId, created_at) VALUES ((SELECT userId FROM businesses WHERE businessId = ?), ?, ?, ?, ?, NOW())',
-          [existingDeal[0].businessId, 'deal_rejected', 'Deal Rejected', message, dealId]
-        );
-      } catch (notificationError) {
-        console.warn('Failed to create notification:', notificationError);
-      }
-    }
-
-    // Send email notification to merchant
-    NotificationHooks.onDealStatusChange(dealId, 'rejected', reason).then(emailResult => {
-      console.log('📧 Deal rejection email sent:', emailResult);
-    }).catch(emailError => {
-      console.error('📧 Failed to send deal rejection email:', emailError);
-    });
-
-    res.json({
-      success: true,
-      message: 'Deal rejected successfully'
-    });
-  } catch (err) {
-    console.error('Error rejecting deal:', err);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Server error rejecting deal',
-      error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
-    });
   }
 });
 

@@ -881,6 +881,21 @@ const RedemptionHistoryTab = () => {
     return redemptionMonth === currentMonth && status === 'approved';
   });
 
+  // Calculate total redemption stats
+  const totalRedemptions = userRedemptions.length;
+  const approvedRedemptions = userRedemptions.filter(r => String(r.status || '').toLowerCase() === 'approved').length;
+  const pendingRedemptions = userRedemptions.filter(r => String(r.status || '').toLowerCase() === 'pending').length;
+  const rejectedRedemptions = userRedemptions.filter(r => String(r.status || '').toLowerCase() === 'rejected').length;
+
+  // Calculate total savings (sum of discounted amounts)
+  const totalSavings = userRedemptions
+    .filter(r => String(r.status || '').toLowerCase() === 'approved')
+    .reduce((total, redemption) => {
+      const originalPrice = parseFloat(redemption.originalPrice || 0);
+      const discountedPrice = parseFloat(redemption.discountedPrice || 0);
+      return total + (originalPrice - discountedPrice);
+    }, 0);
+
   // Get user redemption limit info
   // Priority: customRedemptionLimit (admin override) -> planMaxDealRedemptions (from plan) -> fallback values
   const userRedemptionLimit = user?.customRedemptionLimit || 
@@ -924,10 +939,39 @@ const RedemptionHistoryTab = () => {
         </p>
       </div>
 
+      {/* Total Redemption Stats Card */}
+      <div className="plan-info-card total-stats-card">
+        <div className="card-header">
+          <h2><i className="fas fa-chart-bar"></i> Total Redemption Stats</h2>
+        </div>
+        <div className="stats-grid">
+          <div className="stat-item">
+            <div className="stat-number">{totalRedemptions}</div>
+            <div className="stat-label">Total Redemptions</div>
+          </div>
+          <div className="stat-item approved">
+            <div className="stat-number">{approvedRedemptions}</div>
+            <div className="stat-label">Approved</div>
+          </div>
+          <div className="stat-item pending">
+            <div className="stat-number">{pendingRedemptions}</div>
+            <div className="stat-label">Pending</div>
+          </div>
+          <div className="stat-item rejected">
+            <div className="stat-number">{rejectedRedemptions}</div>
+            <div className="stat-label">Rejected</div>
+          </div>
+          <div className="stat-item savings">
+            <div className="stat-number">GH₵ {totalSavings.toFixed(2)}</div>
+            <div className="stat-label">Total Savings</div>
+          </div>
+        </div>
+      </div>
+
       {/* Redemption Limit Info Card - Similar to Merchant Plan Info Card */}
       <div className="plan-info-card redemption-limit-card">
         <div className="card-header">
-          <h2><i className="fas fa-ticket-alt"></i> Redemption Limits</h2>
+          <h2><i className="fas fa-ticket-alt"></i> Monthly Redemption Limits</h2>
           {!canRedeem && (
             <span className="limit-warning">
               <i className="fas fa-exclamation-triangle"></i> Limit Reached

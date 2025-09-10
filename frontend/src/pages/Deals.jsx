@@ -275,7 +275,7 @@ const Deals = () => {
 
   // Share deal function
   const handleShareDeal = async (deal) => {
-    const dealUrl = `${window.location.origin}/deals`;
+    const dealUrl = `${window.location.origin}/deals?id=${deal.id}`;
     const shareText = `Check out this amazing deal: ${deal.title} at ${deal.businessName}! ${deal.discount}% OFF. Join Indians in Ghana Community to access exclusive deals.`;
     
     // Check if Web Share API is available (mobile devices)
@@ -498,6 +498,7 @@ const Deals = () => {
                    </button>
 
                    
+                   {/* Remove upgrade prompt buttons 
                    {user && !canRedeem(user, deal.minPlanPriority, plans) && (
                      <div className="upgrade-prompt">
                        {(() => {
@@ -522,6 +523,7 @@ const Deals = () => {
                        })()}
                      </div>
                    )}
+                   */}
                    
                    {redeemStatus[deal.id] && (
                      <div className={`redeem-status ${

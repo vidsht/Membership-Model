@@ -535,48 +535,79 @@ const MerchantManagementEnhanced = () => {
         return;
       }
 
+      let successCount = 0;
+      let lastError = null;
+
       // Use dedicated endpoints for approve/reject, but try both users and partners
       if (newStatus === 'approved') {
-        const [partnersRes, usersRes] = await Promise.allSettled([
-          api.post(`/admin/partners/${merchantId}/approve`),
-          api.put(`/admin/users/${merchantId}/status`, { status: 'approved' })
-        ]);
-        
-        const partnersSuccess = partnersRes.status === 'fulfilled' && partnersRes.value?.data?.success;
-        const usersSuccess = usersRes.status === 'fulfilled' && usersRes.value?.data?.success;
-        
-        if (!partnersSuccess && !usersSuccess) {
-          throw new Error('Failed to approve partner');
+        try {
+          const partnersRes = await api.post(`/admin/partners/${merchantId}/approve`);
+          if (partnersRes.data?.success) {
+            successCount++;
+          }
+        } catch (error) {
+          console.log('Partners approve error:', error);
+          lastError = error;
+        }
+
+        try {
+          const usersRes = await api.put(`/admin/users/${merchantId}/status`, { status: 'approved' });
+          if (usersRes.data?.success) {
+            successCount++;
+          }
+        } catch (error) {
+          console.log('Users approve error:', error);
+          if (!lastError) lastError = error;
         }
       } else if (newStatus === 'rejected') {
-        const [partnersRes, usersRes] = await Promise.allSettled([
-          api.post(`/admin/partners/${merchantId}/reject`),
-          api.put(`/admin/users/${merchantId}/status`, { status: 'rejected' })
-        ]);
-        
-        const partnersSuccess = partnersRes.status === 'fulfilled' && partnersRes.value?.data?.success;
-        const usersSuccess = usersRes.status === 'fulfilled' && usersRes.value?.data?.success;
-        
-        if (!partnersSuccess && !usersSuccess) {
-          throw new Error('Failed to reject partner');
+        try {
+          const partnersRes = await api.post(`/admin/partners/${merchantId}/reject`);
+          if (partnersRes.data?.success) {
+            successCount++;
+          }
+        } catch (error) {
+          console.log('Partners reject error:', error);
+          lastError = error;
+        }
+
+        try {
+          const usersRes = await api.put(`/admin/users/${merchantId}/status`, { status: 'rejected' });
+          if (usersRes.data?.success) {
+            successCount++;
+          }
+        } catch (error) {
+          console.log('Users reject error:', error);
+          if (!lastError) lastError = error;
         }
       } else {
         // For other status changes (suspended, pending), try both endpoints
-        const [partnersRes, usersRes] = await Promise.allSettled([
-          api.put(`/admin/partners/${merchantId}/status`, { status: newStatus }),
-          api.put(`/admin/users/${merchantId}/status`, { status: newStatus })
-        ]);
-        
-        const partnersSuccess = partnersRes.status === 'fulfilled' && partnersRes.value?.data?.success;
-        const usersSuccess = usersRes.status === 'fulfilled' && usersRes.value?.data?.success;
-        
-        if (!partnersSuccess && !usersSuccess) {
-          throw new Error(`Failed to update partner status to ${newStatus}`);
+        try {
+          const partnersRes = await api.put(`/admin/partners/${merchantId}/status`, { status: newStatus });
+          if (partnersRes.data?.success) {
+            successCount++;
+          }
+        } catch (error) {
+          console.log('Partners status error:', error);
+          lastError = error;
+        }
+
+        try {
+          const usersRes = await api.put(`/admin/users/${merchantId}/status`, { status: newStatus });
+          if (usersRes.data?.success) {
+            successCount++;
+          }
+        } catch (error) {
+          console.log('Users status error:', error);
+          if (!lastError) lastError = error;
         }
       }
       
-      showNotification(`Partner ${newStatus} successfully`, 'success');
-      fetchMerchants();
+      if (successCount > 0) {
+        showNotification(`Partner ${newStatus} successfully`, 'success');
+        fetchMerchants();
+      } else {
+        throw lastError || new Error(`Failed to update partner status to ${newStatus}`);
+      }
       fetchMerchantStats(); // Refresh stats after status change
     } catch (err) {
       console.error('Error updating merchant status:', err);

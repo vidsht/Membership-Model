@@ -78,7 +78,7 @@ const BusinessDirectory = () => {
 
   // Share business function
   const handleShareBusiness = async (business) => {
-    const businessUrl = `${window.location.origin}/business-directory`;
+    const businessUrl = `${window.location.origin}/business-directory?id=${business.businessId || business.id}`;
     const businessName = business.businessName || business.name;
     const businessCategory = business.businessCategory || business.category || business.sector;
     const shareText = `Check out ${businessName}${businessCategory ? ` - ${businessCategory}` : ''} in the Indians in Ghana Business Directory! Discover quality services and support our community businesses.`;

@@ -59,9 +59,22 @@ const Dashboard = () => {
   }
 
   const getMembershipBenefits = (planData, userType) => {
-    // If we have plan data from the API, use its benefits
+    // First priority: Use features from API if available
+    if (planData?.features && Array.isArray(planData.features) && planData.features.length > 0) {
+      return planData.features.filter(feature => feature && feature.trim());
+    }
+
+    // Second priority: Use benefits array if available
     if (planData?.benefits && Array.isArray(planData.benefits)) {
       return planData.benefits;
+    }
+
+    // Third priority: Parse features as string if it's a comma-separated string
+    if (planData?.features && typeof planData.features === 'string') {
+      const featuresArray = planData.features.split(',').map(f => f.trim()).filter(f => f);
+      if (featuresArray.length > 0) {
+        return featuresArray;
+      }
     }
 
     // Fallback to hardcoded benefits based on plan name/type
@@ -216,6 +229,49 @@ const Dashboard = () => {
               }
             </p>
           </div>
+
+          {/* Plan Details Card */}
+          {currentPlan && (
+            <div className="plan-details-card">
+              <div className="plan-details-header">
+                <div className="plan-info">
+                  <h3>{currentPlan.name}</h3>
+                  <p className="plan-description">{currentPlan.description || 'Premium membership plan'}</p>
+                </div>
+                <div className="plan-pricing">
+                  <span className="price-amount">{currentPlan.currency} {currentPlan.price}</span>
+                  <span className="billing-cycle">/{currentPlan.billingCycle}</span>
+                </div>
+              </div>
+              
+              <div className="plan-details-stats">
+                {currentPlan.maxRedemptions && (
+                  <div className="plan-stat">
+                    <i className="fas fa-tags"></i>
+                    <span>Up to {currentPlan.maxRedemptions} redemptions</span>
+                  </div>
+                )}
+                {currentPlan.dealPostingLimit && (
+                  <div className="plan-stat">
+                    <i className="fas fa-bullhorn"></i>
+                    <span>Up to {currentPlan.dealPostingLimit} deals/month</span>
+                  </div>
+                )}
+                {currentPlan.priority && (
+                  <div className="plan-stat">
+                    <i className="fas fa-star"></i>
+                    <span>Priority Level {currentPlan.priority}</span>
+                  </div>
+                )}
+                {user.validationDate && (
+                  <div className="plan-stat">
+                    <i className="fas fa-calendar-check"></i>
+                    <span>Valid until {new Date(user.validationDate).toLocaleDateString()}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
           
           <div className="benefits-grid">
             {getMembershipBenefits(currentPlan, user.userType).map((benefit, index) => (

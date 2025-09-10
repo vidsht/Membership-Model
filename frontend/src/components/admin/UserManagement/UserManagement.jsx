@@ -417,20 +417,35 @@ const UserManagement = () => {
               return;
             }
 
+            let successCount = 0;
+            let lastError = null;
+
             // Call both endpoints: users and partners (similar to bulk action)
-            const [usersRes, partnersRes] = await Promise.allSettled([
-              api.put(`/admin/users/${userId}/status`, { status }),
-              api.put(`/admin/partners/${userId}/status`, { status })
-            ]);
+            try {
+              const usersRes = await api.put(`/admin/users/${userId}/status`, { status });
+              if (usersRes.data?.success) {
+                successCount++;
+              }
+            } catch (userError) {
+              console.log('Users endpoint error:', userError);
+              lastError = userError;
+            }
 
-            const usersSuccess = usersRes.status === 'fulfilled' && usersRes.value?.data?.success;
-            const partnersSuccess = partnersRes.status === 'fulfilled' && partnersRes.value?.data?.success;
+            try {
+              const partnersRes = await api.put(`/admin/partners/${userId}/status`, { status });
+              if (partnersRes.data?.success) {
+                successCount++;
+              }
+            } catch (partnerError) {
+              console.log('Partners endpoint error:', partnerError);
+              if (!lastError) lastError = partnerError;
+            }
 
-            if (usersSuccess || partnersSuccess) {
+            if (successCount > 0) {
               showNotification(`User suspended successfully`, 'success');
               refreshData();
             } else {
-              throw new Error('Failed to suspend user');
+              throw lastError || new Error('Failed to suspend user');
             }
           } catch (err) {
             const message = err.response?.data?.message || 'Failed to suspend user';
@@ -451,24 +466,35 @@ const UserManagement = () => {
         return;
       }
 
+      let successCount = 0;
+      let lastError = null;
+
       // Call both endpoints: users and partners (similar to bulk action)
-      const [usersRes, partnersRes] = await Promise.allSettled([
-        api.put(`/admin/users/${userId}/status`, { status }),
-        api.put(`/admin/partners/${userId}/status`, { status })
-      ]);
+      try {
+        const usersRes = await api.put(`/admin/users/${userId}/status`, { status });
+        if (usersRes.data?.success) {
+          successCount++;
+        }
+      } catch (userError) {
+        console.log('Users endpoint error:', userError);
+        lastError = userError;
+      }
 
-      const usersSuccess = usersRes.status === 'fulfilled' && usersRes.value?.data?.success;
-      const partnersSuccess = partnersRes.status === 'fulfilled' && partnersRes.value?.data?.success;
+      try {
+        const partnersRes = await api.put(`/admin/partners/${userId}/status`, { status });
+        if (partnersRes.data?.success) {
+          successCount++;
+        }
+      } catch (partnerError) {
+        console.log('Partners endpoint error:', partnerError);
+        if (!lastError) lastError = partnerError;
+      }
 
-      if (usersSuccess || partnersSuccess) {
+      if (successCount > 0) {
         showNotification(`User ${status} successfully`, 'success');
         refreshData();
       } else {
-        // Aggregate errors for debugging
-        const userErr = usersRes.status === 'rejected' ? usersRes.reason : null;
-        const partnerErr = partnersRes.status === 'rejected' ? partnersRes.reason : null;
-        console.error('Status change failures:', { userErr, partnerErr });
-        throw new Error('Failed to update status');
+        throw lastError || new Error('Failed to update status');
       }
     } catch (err) {
       console.error('Status change error:', err);
