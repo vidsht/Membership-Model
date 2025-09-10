@@ -2859,28 +2859,34 @@ router.post('/users/bulk-action', auth, admin, async (req, res) => {
 router.get('/deals/statistics', auth, admin, async (req, res) => {
   try {
     // Check if deals table exists
-    const dealsTableExists = await tableExists('deals');
-    if (!dealsTableExists) {
+    if (!(await tableExists('deals'))) {
       return res.json({
         success: true,
-        statistics: {
-          totalDeals: 0,
-          activeDeals: 0,
-          expiredDeals: 0,
-          pendingDeals: 0,
-          totalRedemptions: 0
-        }
+        statistics: { totalDeals: 0, activeDeals: 0, expiredDeals: 0, pendingDeals: 0, totalRedemptions: 0 }
       });
     }
 
-    const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
-    
+    // Dynamically detect redemptions column (redemptions vs redemptionCount)
+    let redemptionsColumn = 'redemptions';
+    try {
+      const colCheck = await queryAsync(`
+        SELECT COLUMN_NAME as name FROM INFORMATION_SCHEMA.COLUMNS 
+        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'deals' 
+          AND COLUMN_NAME IN ('redemptions','redemptionCount')`);
+      if (colCheck.length) {
+        redemptionsColumn = colCheck[0].name; // first match
+      } else {
+        redemptionsColumn = null; // no column
+      }
+    } catch (_) { /* ignore */ }
+
+    // Use only status-based counts (avoid referencing optional date columns that may not exist / cause failures)
     const [totalDealsResult, activeDealsResult, expiredDealsResult, pendingDealsResult, redemptionsResult] = await Promise.all([
       queryAsync('SELECT COUNT(*) as count FROM deals'),
-      queryAsync('SELECT COUNT(*) as count FROM deals WHERE status = "active" AND (validUntil IS NULL OR validUntil > ?)', [now]),
-      queryAsync('SELECT COUNT(*) as count FROM deals WHERE validUntil IS NOT NULL AND validUntil <= ?', [now]),
+      queryAsync('SELECT COUNT(*) as count FROM deals WHERE status = "active"'),
+      queryAsync('SELECT COUNT(*) as count FROM deals WHERE status = "expired"'),
       queryAsync('SELECT COUNT(*) as count FROM deals WHERE status IN ("pending", "pending_approval")'),
-      queryAsync('SELECT COALESCE(SUM(redemptionCount), 0) as total FROM deals')
+      redemptionsColumn ? queryAsync(`SELECT COALESCE(SUM(${redemptionsColumn}),0) as total FROM deals`) : Promise.resolve([{ total: 0 }])
     ]);
 
     const statistics = {

@@ -19,13 +19,14 @@ const DealList = ({ onTabChange }) => {
   const [deals, setDeals] = useState([]);
   const [businesses, setBusinesses] = useState([]);
   const [activePlans, setActivePlans] = useState([]);
-  const [stats, setStats] = useState({ 
-    activeDeals: 0, 
-    totalDeals: 0, 
+  const emptyDealStats = {
+    activeDeals: 0,
+    totalDeals: 0,
     totalRedemptions: 0,
     expiredDeals: 0,
     pendingDeals: 0
-  });
+  };
+  const [stats, setStats] = useState(emptyDealStats);
   const [isLoading, setIsLoading] = useState(true);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -61,12 +62,13 @@ const DealList = ({ onTabChange }) => {
     try {
       const response = await api.get('/admin/deals/statistics');
       if (response.data.success) {
-        setStats(response.data.statistics || {
-          activeDeals: 0,
-          totalDeals: 0,
-          totalRedemptions: 0,
-          expiredDeals: 0,
-          pendingDeals: 0
+        const s = response.data.statistics || {};
+        setStats({
+          activeDeals: s.activeDeals ?? 0,
+            totalDeals: s.totalDeals ?? 0,
+          totalRedemptions: s.totalRedemptions ?? 0,
+          expiredDeals: s.expiredDeals ?? 0,
+          pendingDeals: s.pendingDeals ?? 0
         });
       }
     } catch (error) {
