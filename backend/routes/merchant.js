@@ -706,18 +706,15 @@ router.put('/deals/:dealId', checkMerchantAccess, [
       return res.status(400).json({ success: false, message: 'Valid deal ID is required' });
     }
 
-    // Debug logging for troubleshooting
-    console.log('[DEBUG] PUT /deals/:dealId called');
-    console.log('[DEBUG] dealId:', dealId);
-    console.log('[DEBUG] merchant.businessId:', merchant.businessId);
+    // Check if deal exists and belongs to this merchant, and can be edited
     const checkQuery = `
       SELECT id, status FROM deals 
       WHERE id = ? AND businessId = ? AND status IN ('pending_approval', 'rejected', 'active')
     `;
+    
     const existingDeal = await queryAsync(checkQuery, [dealId, merchant.businessId]);
-    console.log('[DEBUG] existingDeal result:', existingDeal);
+    
     if (existingDeal.length === 0) {
-      console.log('[DEBUG] Deal not found or not editable. Query params:', { dealId, businessId: merchant.businessId });
       return res.status(404).json({ 
         success: false, 
         message: 'Deal not found or cannot be edited. Only pending, rejected, or live (active) deals can be modified.' 
