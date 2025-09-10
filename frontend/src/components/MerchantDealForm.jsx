@@ -8,6 +8,8 @@ import { useImageUrl, SmartImage } from '../hooks/useImageUrl.jsx';
 import './MerchantDealForm.css';
 
 const MerchantDealForm = ({ deal, onDealCreated, onClose, isEditing = false }) => {
+  console.log('[DEBUG] MerchantDealForm props:', { deal, isEditing, hasOnDealCreated: !!onDealCreated, hasOnClose: !!onClose });
+  
   const { showNotification } = useNotification();
   const { getDealCategoryOptions } = useDynamicFields();
   const { getDealBannerUrl } = useImageUrl();
@@ -71,7 +73,11 @@ const MerchantDealForm = ({ deal, onDealCreated, onClose, isEditing = false }) =
 
   // Populate form when editing
 React.useEffect(() => {
+  console.log('[DEBUG] MerchantDealForm useEffect - isEditing:', isEditing, 'deal:', deal);
+  
   if (isEditing && deal) {
+    console.log('[DEBUG] Populating form with deal data:', deal);
+    
     setFormData({
       title: deal.title || '',
       description: deal.description || '',
@@ -89,8 +95,26 @@ React.useEffect(() => {
       memberLimit: deal.memberLimit || ''
     });
     
+    console.log('[DEBUG] Form data set to:', {
+      title: deal.title || '',
+      description: deal.description || '',
+      discount: deal.discount || '',
+      discountType: deal.discountType || 'percentage',
+      originalPrice: deal.originalPrice || '',
+      discountedPrice: deal.discountedPrice || '',
+      category: deal.category || '',
+      validFrom: deal.validFrom ? formatDateForInput(new Date(deal.validFrom)) : '',
+      validUntil: deal.validUntil ? formatDateForInput(new Date(deal.validUntil)) : '',
+      requiredPlanPriority: deal.requiredPlanPriority || 1,
+      termsConditions: deal.termsConditions || '',
+      couponCode: deal.couponCode || '',
+      featuredImage: null,
+      memberLimit: deal.memberLimit || ''
+    });
+    
     // Set banner preview if deal has existing banner
     if (deal.bannerImage) {
+      console.log('[DEBUG] Setting banner preview for deal with bannerImage:', deal.bannerImage);
       setBannerPreview(getDealBannerUrl(deal));
     }
   }
@@ -277,31 +301,17 @@ const handleBannerImageUpload = (fileOrResponse) => {
         ...(formData.memberLimit && formData.memberLimit.trim() !== '' && { memberLimit: parseInt(formData.memberLimit) })
       };
 
-        {/* Member Limit Field (moved into form) */}
-        <div className="form-group">
-          <label htmlFor="memberLimit">Member Limit (Optional)</label>
-          <input
-            type="number"
-            id="memberLimit"
-            name="memberLimit"
-            value={formData.memberLimit}
-            onChange={handleChange}
-            min="1"
-            placeholder="e.g., 100 (leave blank for unlimited)"
-            className={formErrors.memberLimit ? 'error' : ''}
-          />
-          {formErrors.memberLimit && <span className="error-message">{formErrors.memberLimit}</span>}
-          <span className="help-text">Limit the number of members who can redeem this deal. Leave blank for unlimited.</span>
-        </div>
-
-let dealId;
-let createdDeal;
+      let dealId;
+      let createdDeal;
 
 if (isEditing && deal) {
+  console.log('[DEBUG] Updating existing deal. Deal ID:', deal.id);
+  console.log('[DEBUG] Update data being sent:', dealData);
+  
   const response = await merchantApi.updateDeal(deal.id, dealData);
   dealId = deal.id;
   createdDeal = { ...deal, ...dealData };
-  console.log('🔧 DEBUG: Update response:', response.data);
+  console.log('[DEBUG] Update response:', response);
   showNotification('Deal updated successfully! It will be reviewed by admin before going live.', 'success');
 } else {
   const response = await merchantApi.createDeal(dealData);

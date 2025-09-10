@@ -671,12 +671,21 @@ const MerchantDashboard = () => {
   };
 
   const handleEditDeal = (deal) => {
+    console.log('[DEBUG] handleEditDeal called with deal:', deal);
+    console.log('[DEBUG] Deal status:', deal.status);
+    console.log('[DEBUG] Allowed statuses:', ['pending_approval', 'rejected']);
+    console.log('[DEBUG] Status check result:', ['pending_approval', 'rejected'].includes(deal.status));
+    
     // Check if deal can be edited
     if (!['pending_approval', 'rejected'].includes(deal.status)) {
+      console.log('[DEBUG] Deal cannot be edited - wrong status');
       showNotification('Can only edit deals that are pending approval or rejected', 'error');
       return;
     }
+    
+    console.log('[DEBUG] Setting editingDeal to:', deal);
     setEditingDeal(deal);
+    console.log('[DEBUG] Setting showDealForm to true');
     setShowDealForm(true);
   };
 
@@ -707,14 +716,19 @@ const MerchantDashboard = () => {
   };
 
   const handleDealUpdated = (updatedDeal) => {
+    console.log('[DEBUG] handleDealUpdated called with:', updatedDeal);
+    
     setEditingDeal(null);
     setShowDealForm(false);
     
     if (updatedDeal) {
+      console.log('[DEBUG] Updating deal in local state');
       // Update deal in local state
       setDeals(prev => prev.map(deal => 
         deal.id === updatedDeal.id ? { ...deal, ...updatedDeal } : deal
       ));
+    } else {
+      console.log('[DEBUG] No updated deal data provided, refreshing dashboard');
     }
     
     // Refresh dashboard data to get latest stats
@@ -1161,6 +1175,66 @@ const MerchantDashboard = () => {
             )}
           </div>
         </div>
+
+        {/* Dynamic Plan Benefits for Merchants */}
+        <div className="plan-benefits-card">
+          <div className="card-header">
+            <h2><i className="fas fa-star"></i> Your Current Plan Benefits</h2>
+          </div>
+          <div className="benefits-content">
+            {(() => {
+              console.log('[DEBUG] Merchant Plan Benefits - currentMerchantPlan:', currentMerchantPlan);
+              console.log('[DEBUG] Merchant Plan Benefits - planInfo:', planInfo);
+              console.log('[DEBUG] Merchant Plan Benefits - userInfo.membershipType:', userInfo?.membershipType);
+              
+              // Try to get benefits from current merchant plan data
+              if (currentMerchantPlan?.benefits && Array.isArray(currentMerchantPlan.benefits) && currentMerchantPlan.benefits.length > 0) {
+                console.log('[DEBUG] Using benefits from currentMerchantPlan:', currentMerchantPlan.benefits);
+                return (
+                  <ul className="benefits-list">
+                    {currentMerchantPlan.benefits.map((benefit, index) => (
+                      <li key={index} className="benefit-item">
+                        <i className="fas fa-check-circle text-success"></i>
+                        <span>{benefit}</span>
+                      </li>
+                    ))}
+                  </ul>
+                );
+              }
+              
+              // Fallback to planInfo benefits if available
+              if (planInfo?.benefits && Array.isArray(planInfo.benefits) && planInfo.benefits.length > 0) {
+                console.log('[DEBUG] Using benefits from planInfo:', planInfo.benefits);
+                return (
+                  <ul className="benefits-list">
+                    {planInfo.benefits.map((benefit, index) => (
+                      <li key={index} className="benefit-item">
+                        <i className="fas fa-check-circle text-success"></i>
+                        <span>{benefit}</span>
+                      </li>
+                    ))}
+                  </ul>
+                );
+              }
+              
+              // Final fallback: use getMerchantBenefits function
+              const membershipType = userInfo?.membershipType || planInfo?.key || 'basic';
+              const fallbackBenefits = getMerchantBenefits({ type: membershipType, name: membershipType });
+              console.log('[DEBUG] Using fallback benefits for membership type:', membershipType, fallbackBenefits);
+              
+              return (
+                <ul className="benefits-list">
+                  {fallbackBenefits.map((benefit, index) => (
+                    <li key={index} className="benefit-item">
+                      <i className="fas fa-check-circle text-success"></i>
+                      <span>{benefit}</span>
+                    </li>
+                  ))}
+                </ul>
+              );
+            })()}
+          </div>
+        </div>
       </div>
 
       {/* Quick Actions */}
@@ -1395,6 +1469,8 @@ const MerchantDashboard = () => {
             <>
             <div className="deals-grid">
               {deals.slice((dealsPage - 1) * itemsPerPage, dealsPage * itemsPerPage).map(deal => {
+                console.log('[DEBUG] Rendering deal:', deal.id, 'status:', deal.status, 'title:', deal.title);
+                
                 const isExpired = new Date(deal.validUntil) < new Date();
                 const displayStatus = isExpired ? 'Expired' : deal.status;
                 

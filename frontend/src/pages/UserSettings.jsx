@@ -887,14 +887,6 @@ const RedemptionHistoryTab = () => {
   const pendingRedemptions = userRedemptions.filter(r => String(r.status || '').toLowerCase() === 'pending').length;
   const rejectedRedemptions = userRedemptions.filter(r => String(r.status || '').toLowerCase() === 'rejected').length;
 
-  // Calculate total savings (sum of discounted amounts)
-  const totalSavings = userRedemptions
-    .filter(r => String(r.status || '').toLowerCase() === 'approved')
-    .reduce((total, redemption) => {
-      const originalPrice = parseFloat(redemption.originalPrice || 0);
-      const discountedPrice = parseFloat(redemption.discountedPrice || 0);
-      return total + (originalPrice - discountedPrice);
-    }, 0);
 
   // Get user redemption limit info
   // Priority: customRedemptionLimit (admin override) -> planMaxDealRedemptions (from plan) -> fallback values
@@ -960,10 +952,6 @@ const RedemptionHistoryTab = () => {
           <div className="stat-item rejected">
             <div className="stat-number">{rejectedRedemptions}</div>
             <div className="stat-label">Rejected</div>
-          </div>
-          <div className="stat-item savings">
-            <div className="stat-number">GH₵ {totalSavings.toFixed(2)}</div>
-            <div className="stat-label">Total Savings</div>
           </div>
         </div>
       </div>

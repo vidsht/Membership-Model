@@ -868,4 +868,53 @@ router.get('/access-levels', async (req, res) => {
   }
 });
 
+// Track individual deal view
+router.post('/:dealId/view', auth, async (req, res) => {
+  try {
+    const dealId = parseInt(req.params.dealId);
+    const userId = req.user.id;
+
+    if (!dealId || isNaN(dealId)) {
+      return res.status(400).json({ success: false, message: 'Valid deal ID is required' });
+    }
+
+    // First check if deal exists and is active
+    const dealCheckQuery = `
+      SELECT id, status, title FROM deals 
+      WHERE id = ? AND status = 'active'
+    `;
+    
+    const existingDeal = await queryAsync(dealCheckQuery, [dealId]);
+    
+    if (existingDeal.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Deal not found or not active' 
+      });
+    }
+
+    // Increment view count
+    const updateQuery = `
+      UPDATE deals 
+      SET views = COALESCE(views, 0) + 1, 
+          updated_at = NOW()
+      WHERE id = ?
+    `;
+
+    await queryAsync(updateQuery, [dealId]);
+
+    // Optional: Track view history for analytics (if you want to track individual views)
+    // You could create a deal_views table to track: user_id, deal_id, viewed_at
+    // For now, we'll just increment the counter
+
+    res.json({ 
+      success: true,
+      message: 'View tracked successfully'
+    });
+  } catch (err) {
+    console.error('Track deal view error:', err);
+    res.status(500).json({ success: false, message: 'Server error tracking view' });
+  }
+});
+
 module.exports = router;

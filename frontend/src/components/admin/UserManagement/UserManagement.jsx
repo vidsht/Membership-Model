@@ -173,7 +173,12 @@ const UserManagement = () => {
   const refreshData = useCallback(() => {
     setRefreshTrigger(prev => prev + 1);
     clearSelections();
-    fetchUserStats(); // Refresh stats whenever data is refreshed
+    // Refresh stats whenever data is refreshed, but don't let stats errors affect the main operation
+    try {
+      fetchUserStats();
+    } catch (statsError) {
+      console.error('Error refreshing user stats:', statsError);
+    }
   }, [clearSelections, fetchUserStats]);
 
   const closeModal = useCallback(() => {

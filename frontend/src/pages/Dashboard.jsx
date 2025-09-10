@@ -16,11 +16,17 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchPlans = async () => {
       try {
-        const plansData = await getAllPlans('user');
+        const response = await getAllPlans('user');
+        console.log('Dashboard: Raw API response:', response);
+        
+        // Handle both direct array and {success: true, plans: []} response formats
+        const plansData = Array.isArray(response) ? response : (response.plans || []);
+        console.log('Dashboard: Processed plans data:', plansData);
         setPlans(plansData);
         
         // Find current user's plan
         const userPlanType = user?.membershipType || user?.membership || 'basic';
+        console.log('Dashboard: User plan type:', userPlanType);
         
         // Primary matching should be by plan key, which matches membershipType
         const foundPlan = plansData.find(plan => 
@@ -30,6 +36,7 @@ const Dashboard = () => {
         ) || plansData.find(plan => 
           plan.type === userPlanType
         );
+        console.log('Dashboard: Found current plan:', foundPlan);
         setCurrentPlan(foundPlan);
 
         // Get upgrade recommendations (plans with higher priority)
@@ -38,6 +45,7 @@ const Dashboard = () => {
           .filter(plan => plan.priority > currentPriority && plan.isActive)
           .sort((a, b) => a.priority - b.priority)
           .slice(0, 3); // Show max 3 upgrade options
+        console.log('Dashboard: Upgrade recommendations:', recommendations);
         setUpgradeRecommendations(recommendations);
       } catch (error) {
         console.error('Error fetching plans:', error);
@@ -59,13 +67,17 @@ const Dashboard = () => {
   }
 
   const getMembershipBenefits = (planData, userType) => {
+    console.log('Dashboard: getMembershipBenefits called with:', { planData, userType });
+    
     // First priority: Use features from API if available
     if (planData?.features && Array.isArray(planData.features) && planData.features.length > 0) {
+      console.log('Dashboard: Using API features array:', planData.features);
       return planData.features.filter(feature => feature && feature.trim());
     }
 
     // Second priority: Use benefits array if available
     if (planData?.benefits && Array.isArray(planData.benefits)) {
+      console.log('Dashboard: Using benefits array:', planData.benefits);
       return planData.benefits;
     }
 
@@ -73,10 +85,12 @@ const Dashboard = () => {
     if (planData?.features && typeof planData.features === 'string') {
       const featuresArray = planData.features.split(',').map(f => f.trim()).filter(f => f);
       if (featuresArray.length > 0) {
+        console.log('Dashboard: Using parsed features string:', featuresArray);
         return featuresArray;
       }
     }
 
+    console.log('Dashboard: Falling back to hardcoded benefits');
     // Fallback to hardcoded benefits based on plan name/type
     const planName = planData?.name?.toLowerCase() || planData?.type?.toLowerCase() || 'basic';
     

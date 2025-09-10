@@ -329,4 +329,16 @@ export const getRedemptionRequests = async () => merchantApi.getRedemptionReques
 export const approveRedemptionRequest = async (requestId) => merchantApi.approveRedemptionRequest(requestId);
 export const rejectRedemptionRequest = async (requestId, reason) => merchantApi.rejectRedemptionRequest(requestId, reason);
 
+// Deal view tracking
+export const trackDealView = async (dealId) => {
+  try {
+    const response = await api.post(`/deals/${dealId}/view`);
+    return response.data;
+  } catch (error) {
+    console.error('Error tracking deal view:', error);
+    // Don't throw error since view tracking is not critical
+    return { success: false };
+  }
+};
+
 export default api;

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { getAllDeals, redeemDeal, getAllPlans } from '../services/api';
+import { getAllDeals, redeemDeal, getAllPlans, trackDealView } from '../services/api';
 import DealFilters from '../components/deals/DealFilters';
 import PlanExpiryBanner from '../components/PlanExpiryBanner';
 import usePlanAccess from '../hooks/usePlanAccess.jsx';
@@ -68,6 +68,7 @@ function getPlanNameByPriority(priority, plans) {
 
 const Deals = () => {
   const { user } = useAuth();
+  const location = useLocation();
   const planAccess = usePlanAccess();
   const { getDealBannerUrl, getMerchantLogoUrl } = useImageUrl();
   const [deals, setDeals] = useState([]);
@@ -97,6 +98,19 @@ const Deals = () => {
     fetchDeals();
     fetchPlans();
   }, []);
+
+  // Handle shared URLs - auto-open deal modal if ID is in URL
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    const dealId = urlParams.get('id');
+    
+    if (dealId && deals.length > 0) {
+      const deal = deals.find(d => d.id === parseInt(dealId));
+      if (deal) {
+        handleViewDetails(deal);
+      }
+    }
+  }, [location.search, deals]);
   const fetchPlans = async () => {
     try {
       const plansResponse = await getAllPlans('user', true);
@@ -276,7 +290,13 @@ const Deals = () => {
   // Share deal function
   const handleShareDeal = async (deal) => {
     const dealUrl = `${window.location.origin}/deals?id=${deal.id}`;
-    const shareText = `Check out this amazing deal: ${deal.title} at ${deal.businessName}! ${deal.discount}% OFF. Join Indians in Ghana Community to access exclusive deals.`;
+    const shareText = `🎉 Check out this amazing deal: *${deal.title}* at ${deal.businessName}! 
+
+💰 ${deal.discount}% OFF - Was ₵${deal.originalPrice}, now ₵${deal.discountedPrice}
+
+Click to view details: ${dealUrl}
+
+Join Indians in Ghana Community for exclusive deals!`;
     
     // Check if Web Share API is available (mobile devices)
     if (navigator.share) {
@@ -288,12 +308,12 @@ const Deals = () => {
         });
       } catch (error) {
         console.log('Error sharing:', error);
-        // Fallback to copying URL
-        copyToClipboard(dealUrl, deal.title);
+        // Fallback to copying URL with text
+        copyToClipboard(shareText, deal.title);
       }
     } else {
-      // Desktop fallback - show share modal or copy to clipboard
-      copyToClipboard(dealUrl, deal.title);
+      // Desktop fallback - copy formatted text with URL
+      copyToClipboard(shareText, deal.title);
     }
   };
 
@@ -338,6 +358,25 @@ const Deals = () => {
     }
   };
 
+  // Handle view details with view tracking
+  const handleViewDetails = async (deal) => {
+    console.log('[DEBUG] Viewing deal details:', deal.id, deal.title);
+    
+    // Track the view if user is logged in
+    if (user) {
+      try {
+        await trackDealView(deal.id);
+        console.log('[DEBUG] Deal view tracked successfully for deal:', deal.id);
+      } catch (error) {
+        console.log('[DEBUG] View tracking failed (non-critical):', error.message);
+      }
+    }
+    
+    // Set selected deal and show modal
+    setSelectedDeal(deal);
+    setShowDetailModal(true);
+  };
+
   return (
     <div className="deals-page">
       {/* Hero Section */}
@@ -345,16 +384,6 @@ const Deals = () => {
         <div className="deals-hero-content">
           <h1>Exclusive Member Deals</h1>
           <p>Discover amazing discounts and offers exclusively available to our community members</p>
-          {/* <div className="deals-stats">
-            <div className="stat">
-              <span className="stat-number">{filteredDeals.length}</span>
-              <span className="stat-label">Active Deals</span>
-            </div>
-            <div className="stat">
-              <span className="stat-number">{user ? user.membership || 'Guest' : 'Guest'}</span>
-              <span className="stat-label">Your Tier</span>
-            </div>
-          </div> */}
         </div>
       </div>
 
@@ -479,10 +508,7 @@ const Deals = () => {
                  <div className="deal-actions">
                    <button
                      className="btn-view-details"
-                     onClick={() => {
-                       setSelectedDeal(deal);
-                       setShowDetailModal(true);
-                     }}
+                     onClick={() => handleViewDetails(deal)}
                    >
                      <i className="fas fa-eye"></i>
                      View Details

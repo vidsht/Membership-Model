@@ -198,12 +198,18 @@ const DealList = ({ onTabChange }) => {
         ? `Deal approved successfully - accessible to ${selectedPlan?.name || 'Unknown'} plan and higher priority plans` 
         : 'Deal approved successfully';
       showNotification(message, 'success');
-      
-      // Refresh full statistics
-      fetchDealStats();
     } catch (error) {
       console.error('Error approving deal:', error);
       showNotification('Error approving deal. Please try again.', 'error');
+      return; // Don't refresh stats if approval failed
+    }
+    
+    // Refresh full statistics after successful approval
+    try {
+      await fetchDealStats();
+    } catch (statsError) {
+      console.error('Error refreshing deal statistics:', statsError);
+      // Don't show error for stats refresh failure
     }
   };
 
@@ -317,11 +323,18 @@ const DealList = ({ onTabChange }) => {
       ));
       
       showNotification('Deal rejected successfully', 'success');
-      // Refresh full statistics  
-      fetchDealStats();
     } catch (error) {
       console.error('Error rejecting deal:', error);
       showNotification('Error rejecting deal. Please try again.', 'error');
+      return; // Don't refresh stats if rejection failed
+    }
+    
+    // Refresh full statistics after successful rejection
+    try {
+      await fetchDealStats();
+    } catch (statsError) {
+      console.error('Error refreshing deal statistics:', statsError);
+      // Don't show error for stats refresh failure
     }
   };
 

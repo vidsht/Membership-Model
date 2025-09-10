@@ -605,10 +605,15 @@ const MerchantManagementEnhanced = () => {
       if (successCount > 0) {
         showNotification(`Partner ${newStatus} successfully`, 'success');
         fetchMerchants();
+        // Refresh stats after successful status change, but don't let stats errors affect success message
+        try {
+          fetchMerchantStats();
+        } catch (statsError) {
+          console.error('Error refreshing merchant stats:', statsError);
+        }
       } else {
         throw lastError || new Error(`Failed to update partner status to ${newStatus}`);
       }
-      fetchMerchantStats(); // Refresh stats after status change
     } catch (err) {
       console.error('Error updating merchant status:', err);
       const message = err.response?.data?.message || err.message || 'Error updating merchant status';
@@ -622,7 +627,12 @@ const MerchantManagementEnhanced = () => {
       await api.post(`/admin/partners/${merchantId}/approve`);
       showNotification('Partner approved successfully', 'success');
       fetchMerchants();
-      fetchMerchantStats(); // Refresh stats after approval
+      // Refresh stats after successful approval, but don't let stats errors affect success message
+      try {
+        fetchMerchantStats();
+      } catch (statsError) {
+        console.error('Error refreshing merchant stats:', statsError);
+      }
     } catch (err) {
       console.error('Error approving merchant:', err);
       showNotification('Error approving partner', 'error');

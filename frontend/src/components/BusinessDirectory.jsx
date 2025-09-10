@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useImageUrl, SmartImage, DefaultAvatar } from '../hooks/useImageUrl.jsx';
 import api from '../services/api';
 import { useDynamicFields } from '../hooks/useDynamicFields';
@@ -6,6 +7,7 @@ import './BusinessDirectory.css';
 
 
 const BusinessDirectory = () => {
+  const location = useLocation();
   const [businesses, setBusinesses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -45,6 +47,23 @@ const BusinessDirectory = () => {
     fetchBusinesses();
   }, []);
 
+  // Handle shared URLs - auto-open business modal if ID is in URL
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    const businessId = urlParams.get('id');
+    
+    if (businessId && businesses.length > 0) {
+      const business = businesses.find(b => 
+        (b.businessId && b.businessId.toString() === businessId) || 
+        (b.id && b.id.toString() === businessId)
+      );
+      if (business) {
+        setSelectedBusiness(business);
+        setShowBusinessModal(true);
+      }
+    }
+  }, [location.search, businesses]);
+
 
   // Filter businesses based on search and category (match Home page fields)
   const filteredBusinesses = businesses.filter(business => {
@@ -81,7 +100,17 @@ const BusinessDirectory = () => {
     const businessUrl = `${window.location.origin}/business-directory?id=${business.businessId || business.id}`;
     const businessName = business.businessName || business.name;
     const businessCategory = business.businessCategory || business.category || business.sector;
-    const shareText = `Check out ${businessName}${businessCategory ? ` - ${businessCategory}` : ''} in the Indians in Ghana Business Directory! Discover quality services and support our community businesses.`;
+    const businessAddress = business.businessAddress || business.address;
+    const businessPhone = business.businessPhone || business.phone;
+    
+    const shareText = `🏪 Check out *${businessName}*${businessCategory ? ` - ${businessCategory}` : ''} in the Indians in Ghana Business Directory!
+
+📍 ${businessAddress || 'Location available on website'}
+${businessPhone ? `📞 ${businessPhone}` : ''}
+
+Click to view full details: ${businessUrl}
+
+Discover quality services and support our community businesses! 🇮🇳🇬🇭`;
     
     // Check if Web Share API is available (mobile devices)
     if (navigator.share) {
@@ -93,12 +122,12 @@ const BusinessDirectory = () => {
         });
       } catch (error) {
         console.log('Error sharing:', error);
-        // Fallback to copying URL
-        copyBusinessToClipboard(businessUrl, businessName);
+        // Fallback to copying formatted text with URL
+        copyBusinessToClipboard(shareText, businessName);
       }
     } else {
-      // Desktop fallback - copy to clipboard
-      copyBusinessToClipboard(businessUrl, businessName);
+      // Desktop fallback - copy formatted text with URL
+      copyBusinessToClipboard(shareText, businessName);
     }
   };
 
