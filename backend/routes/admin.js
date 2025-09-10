@@ -2866,6 +2866,13 @@ router.get('/deals/statistics', auth, admin, async (req, res) => {
       });
     }
 
+    // --- Ensure expired deals are up-to-date ---
+    // Import updateExpiredDeals from deals.js
+    const { updateExpiredDeals } = require('./deals');
+    if (typeof updateExpiredDeals === 'function') {
+      await updateExpiredDeals();
+    }
+
     // Dynamically detect redemptions column (redemptions vs redemptionCount)
     let redemptionsColumn = 'redemptions';
     try {

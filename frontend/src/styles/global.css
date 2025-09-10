@@ -480,6 +480,30 @@ color: white;
   outline: none;
 }
 
+@media (min-width: 600px) and (max-width: 900px) {
+  header .logo img {
+    width: 90px;
+    height: 90px;
+    object-fit: contain;
+  }
+}
+
+@media only screen and (min-width: 1024px) and (max-width: 1366px) and (orientation: landscape),
+       only screen and (min-width: 834px) and (max-width: 1024px) and (orientation: portrait) {
+  header .header-content {
+    padding: 1.5rem 3rem;
+    gap: 2rem;
+  }
+  header .logo img {
+    width: 100px;
+    height: 100px;
+    object-fit: contain;
+  }
+  header nav ul {
+    gap: 2.5rem;
+  }
+}
+
 /* Make icons slightly smaller on very small screens */
 @media (max-width: 480px) {
   .footer-social-icons a { width: 38px; height: 38px; }
