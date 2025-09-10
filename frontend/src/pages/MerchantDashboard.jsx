@@ -671,21 +671,12 @@ const MerchantDashboard = () => {
   };
 
   const handleEditDeal = (deal) => {
-    console.log('[DEBUG] handleEditDeal called with deal:', deal);
-    console.log('[DEBUG] Deal status:', deal.status);
-    console.log('[DEBUG] Allowed statuses:', ['pending_approval', 'rejected']);
-    console.log('[DEBUG] Status check result:', ['pending_approval', 'rejected'].includes(deal.status));
-    
-    // Check if deal can be edited
-    if (!['pending_approval', 'rejected'].includes(deal.status)) {
-      console.log('[DEBUG] Deal cannot be edited - wrong status');
-      showNotification('Can only edit deals that are pending approval or rejected', 'error');
+    // Allow editing for pending_approval, rejected, or active deals
+    if (!['pending_approval', 'rejected', 'active'].includes(deal.status)) {
+      showNotification('Can only edit deals that are pending approval, rejected, or live (active)', 'error');
       return;
     }
-    
-    console.log('[DEBUG] Setting editingDeal to:', deal);
     setEditingDeal(deal);
-    console.log('[DEBUG] Setting showDealForm to true');
     setShowDealForm(true);
   };
 
@@ -1563,8 +1554,8 @@ const MerchantDashboard = () => {
                       <button 
                         className="btn btn-sm btn-secondary" 
                         onClick={() => handleEditDeal(deal)}
-                        disabled={!['pending_approval', 'rejected'].includes(deal.status)}
-                        title={['pending_approval', 'rejected'].includes(deal.status) ? 'Edit deal' : 'Can only edit pending or rejected deals'}
+                        disabled={!['pending_approval', 'rejected', 'active'].includes(deal.status)}
+                        title={['pending_approval', 'rejected', 'active'].includes(deal.status) ? 'Edit deal' : 'Can only edit pending, rejected, or live (active) deals'}
                       >
                         <i className="fas fa-edit"></i> Edit
                       </button>
