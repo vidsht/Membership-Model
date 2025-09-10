@@ -1227,6 +1227,31 @@ router.patch('/redemption-requests/:requestId/approve', checkMerchantAccess, asy
       return res.status(500).json({ success: false, message: 'Failed to update deal redemption count' });
     }
 
+    // Check if deal has reached member limit and auto-expire if needed
+    try {
+      const dealResult = await queryAsync('SELECT member_limit FROM deals WHERE id = ?', [dealId]);
+      if (dealResult.length > 0 && dealResult[0].member_limit) {
+        const memberLimit = dealResult[0].member_limit;
+        
+        // Count unique users who have approved redemptions for this deal
+        const uniqueUserResult = await queryAsync(
+          'SELECT COUNT(DISTINCT user_id) as uniqueUsers FROM deal_redemptions WHERE deal_id = ? AND status = "approved"', 
+          [dealId]
+        );
+        
+        const uniqueUsers = uniqueUserResult[0]?.uniqueUsers || 0;
+        
+        // If member limit reached, auto-expire the deal
+        if (uniqueUsers >= memberLimit) {
+          await queryAsync('UPDATE deals SET status = "expired" WHERE id = ?', [dealId]);
+          console.log(`Deal ${dealId} auto-expired: reached member limit of ${memberLimit} users`);
+        }
+      }
+    } catch (limitError) {
+      console.error('Error checking member limit for deal:', limitError);
+      // Don't fail the approval if member limit check fails
+    }
+
     // Update user's monthly redemption count
     const notificationService = require('../services/notificationService');
     try {

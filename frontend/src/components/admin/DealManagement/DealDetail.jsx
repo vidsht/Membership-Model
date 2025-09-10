@@ -70,8 +70,13 @@ const DealDetail = () => {
         const thisWeek = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
         const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
         
+        // Calculate unique users (approved redemptions only)
+        const approvedRedemptions = redemptionsData.filter(r => r.status === 'approved');
+        const uniqueUsers = new Set(approvedRedemptions.map(r => r.userId || r.user_id)).size;
+        
         const stats = {
           total: redemptionsData.length,
+          uniqueUsers: uniqueUsers,
           today: redemptionsData.filter(r => new Date(r.redeemedAt) >= today).length,
           thisWeek: redemptionsData.filter(r => new Date(r.redeemedAt) >= thisWeek).length,
           thisMonth: redemptionsData.filter(r => new Date(r.redeemedAt) >= thisMonth).length
@@ -264,6 +269,12 @@ const DealDetail = () => {
                       <label style={{display: 'block', fontWeight: 'bold', marginBottom: '5px', color: '#666'}}>Status</label>
                       <span style={{color: '#333'}}>{deal.status || 'N/A'}</span>
                     </div>
+                    {deal.member_limit && (
+                      <div style={{background: '#f8f9fa', padding: '15px', borderRadius: '6px', border: '1px solid #dee2e6'}}>
+                        <label style={{display: 'block', fontWeight: 'bold', marginBottom: '5px', color: '#666'}}>Member Limit</label>
+                        <span style={{color: '#333'}}>{deal.member_limit} users max</span>
+                      </div>
+                    )}
                     <div style={{background: '#f8f9fa', padding: '15px', borderRadius: '6px', border: '1px solid #dee2e6'}}>
                       <label style={{display: 'block', fontWeight: 'bold', marginBottom: '5px', color: '#666'}}>Created Date</label>
                       <span style={{color: '#333'}}>{deal.created_at ? new Date(deal.created_at).toLocaleDateString('en-GB', {
@@ -327,6 +338,21 @@ const DealDetail = () => {
                     <div style={{fontSize: '24px', fontWeight: 'bold', color: '#1976d2', marginBottom: '5px'}}>{redemptionStats.total || 0}</div>
                     <div style={{color: '#424242', fontSize: '14px'}}>Total Redemptions</div>
                   </div>
+                  <div style={{background: '#f3e5f5', padding: '15px', borderRadius: '6px', border: '1px solid #ce93d8', textAlign: 'center'}}>
+                    <div style={{fontSize: '24px', fontWeight: 'bold', color: '#7b1fa2', marginBottom: '5px'}}>{redemptionStats.uniqueUsers || 0}</div>
+                    <div style={{color: '#424242', fontSize: '14px'}}>Unique Users</div>
+                  </div>
+                  {deal.member_limit && (
+                    <div style={{background: deal.member_limit <= (redemptionStats.uniqueUsers || 0) ? '#ffebee' : '#e8f5e8', padding: '15px', borderRadius: '6px', border: `1px solid ${deal.member_limit <= (redemptionStats.uniqueUsers || 0) ? '#ef5350' : '#81c784'}`, textAlign: 'center'}}>
+                      <div style={{fontSize: '24px', fontWeight: 'bold', color: deal.member_limit <= (redemptionStats.uniqueUsers || 0) ? '#d32f2f' : '#388e3c', marginBottom: '5px'}}>
+                        {(redemptionStats.uniqueUsers || 0)}/{deal.member_limit}
+                      </div>
+                      <div style={{color: '#424242', fontSize: '14px'}}>Member Limit</div>
+                      {deal.member_limit <= (redemptionStats.uniqueUsers || 0) && (
+                        <div style={{color: '#d32f2f', fontSize: '12px', marginTop: '5px', fontWeight: 'bold'}}>LIMIT REACHED</div>
+                      )}
+                    </div>
+                  )}
                   <div style={{background: '#e8f5e8', padding: '15px', borderRadius: '6px', border: '1px solid #81c784', textAlign: 'center'}}>
                     <div style={{fontSize: '24px', fontWeight: 'bold', color: '#388e3c', marginBottom: '5px'}}>{redemptionStats.today || 0}</div>
                     <div style={{color: '#424242', fontSize: '14px'}}>Today</div>
@@ -353,7 +379,7 @@ const DealDetail = () => {
                           padding: '15px',
                           borderBottom: index < redemptions.length - 1 ? '1px solid #f1f3f4' : 'none',
                           display: 'grid',
-                          gridTemplateColumns: '1fr 1fr 1fr 1fr',
+                          gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr',
                           gap: '15px',
                           alignItems: 'center',
                           hover: {background: '#f8f9fa'}
@@ -384,6 +410,40 @@ const DealDetail = () => {
                                   minute: '2-digit'
                                 }) : 'Date not available'
                               }
+                            </div>
+                          </div>
+                          <div>
+                            <div style={{color: '#6c757d', fontSize: '12px', marginBottom: '2px'}}>Status</div>
+                            <div style={{
+                              display: 'inline-block',
+                              padding: '4px 8px',
+                              borderRadius: '12px',
+                              fontSize: '12px',
+                              fontWeight: 'bold',
+                              textTransform: 'uppercase',
+                              backgroundColor: (() => {
+                                const status = redemption.status;
+                                switch(status) {
+                                  case 'approved': return '#e8f5e8';
+                                  case 'rejected': return '#ffebee';
+                                  case 'pending': return '#fff3e0';
+                                  default: return '#f5f5f5';
+                                }
+                              })(),
+                              color: (() => {
+                                const status = redemption.status;
+                                switch(status) {
+                                  case 'approved': return '#2e7d32';
+                                  case 'rejected': return '#c62828';
+                                  case 'pending': return '#f57c00';
+                                  default: return '#757575';
+                                }
+                              })()
+                            }}>
+                              {redemption.status === 'approved' ? '✓ Approved' : 
+                               redemption.status === 'rejected' ? '✗ Rejected' : 
+                               redemption.status === 'pending' ? '⏳ Pending' : 
+                               redemption.status || 'Unknown'}
                             </div>
                           </div>
                           <div>
@@ -430,13 +490,6 @@ const DealDetail = () => {
                       {(deal.viewCount && redemptions.length) ? 
                         ((redemptions.length / deal.viewCount) * 100).toFixed(1) : '0'}%
                     </div>
-                    <div style={{fontSize: '14px', opacity: '0.9'}}>Conversion Rate</div>
-                  </div>
-                  <div style={{background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)', color: 'white', padding: '25px', borderRadius: '12px', textAlign: 'center', boxShadow: '0 4px 15px rgba(250, 112, 154, 0.3)'}}>
-                    <div style={{fontSize: '32px', fontWeight: 'bold', marginBottom: '8px'}}>
-                      ₵{deal.totalRevenue || deal.total_revenue || (redemptions.length * (deal.discountedPrice || deal.discounted_price || 0)) || 0}
-                    </div>
-                    <div style={{fontSize: '14px', opacity: '0.9'}}>Revenue Generated</div>
                   </div>
                 </div>
 

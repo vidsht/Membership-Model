@@ -45,7 +45,7 @@
 
 .user-filters__search-container input[type="text"]:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #500909;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
@@ -71,7 +71,7 @@
 
 .user-filters__category-select:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #500909;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
@@ -123,7 +123,7 @@
 
 /* Header with toggle button */
 .user-filters__toggle-filters {
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: linear-gradient(135deg, #500909, #500909);
   color: white;
   font-weight: 600;
   font-size: 0.9rem;

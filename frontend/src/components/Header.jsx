@@ -52,13 +52,31 @@ const Header = () => {
     setBusinessOpen(false);
   }, [location.pathname]);
 
+  // Helper function to check if we should show mobile/tablet navigation
+  const shouldShowMobileNav = () => {
+    if (typeof window === 'undefined') return false;
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    
+    // Mobile
+    if (width <= 768) return true;
+    
+    // iPad Pro/Air portrait (834px - 1024px wide)
+    if (width >= 834 && width <= 1024 && height > width) return true;
+    
+    // iPad Pro landscape (1024px - 1366px wide)
+    if (width >= 1024 && width <= 1366 && height < width) return true;
+    
+    return false;
+  };
+
   const toggleMobile = () => {
     setMobileOpen(prev => !prev);
   };
 
   const toggleBusiness = (e) => {
-    // On mobile, toggle dropdown on click. On desktop, keep hover behavior.
-    if (typeof window !== 'undefined' && window.innerWidth <= 768) {
+    // On mobile/tablet, toggle dropdown on click. On desktop, keep hover behavior.
+    if (shouldShowMobileNav()) {
       e.stopPropagation();
       setBusinessOpen(prev => !prev);
     }
@@ -87,7 +105,8 @@ const Header = () => {
   const [logoSrc, setLogoSrc] = useState('/logo1.png');
   useEffect(() => {
     function handleResize() {
-      if (window.innerWidth <= 1024) {
+      // Use smaller logo for mobile/tablet navigation
+      if (shouldShowMobileNav()) {
         setLogoSrc('/logo.png');
       } else {
         setLogoSrc('/logo1.png');

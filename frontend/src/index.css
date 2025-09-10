@@ -340,8 +340,8 @@ input:focus, select:focus, textarea:focus {
 }
 
 .checkbox-group input[type="checkbox"]:checked {
-    background-color: var(--accent);
-    border-color: var(--accent);
+    background-color: #631111;
+    border-color: #631111;
 }
 
 .checkbox-group input[type="checkbox"]:checked::after {

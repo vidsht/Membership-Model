@@ -76,6 +76,51 @@ const BusinessDirectory = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // Share business function
+  const handleShareBusiness = async (business) => {
+    const businessUrl = `${window.location.origin}/business-directory`;
+    const businessName = business.businessName || business.name;
+    const businessCategory = business.businessCategory || business.category || business.sector;
+    const shareText = `Check out ${businessName}${businessCategory ? ` - ${businessCategory}` : ''} in the Indians in Ghana Business Directory! Discover quality services and support our community businesses.`;
+    
+    // Check if Web Share API is available (mobile devices)
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `${businessName} - Indians in Ghana Business Directory`,
+          text: shareText,
+          url: businessUrl
+        });
+      } catch (error) {
+        console.log('Error sharing:', error);
+        // Fallback to copying URL
+        copyBusinessToClipboard(businessUrl, businessName);
+      }
+    } else {
+      // Desktop fallback - copy to clipboard
+      copyBusinessToClipboard(businessUrl, businessName);
+    }
+  };
+
+  // Copy business link to clipboard
+  const copyBusinessToClipboard = async (text, businessName) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      // Show temporary success feedback (you could add a toast notification here)
+      console.log(`Business directory link copied for ${businessName}`);
+    } catch (error) {
+      console.error('Failed to copy to clipboard:', error);
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      console.log(`Business directory link copied for ${businessName}`);
+    }
+  };
+
 
   return (
     <div className="business-directory-container">
@@ -212,6 +257,16 @@ const BusinessDirectory = () => {
                       <i className="fas fa-globe"></i> Visit Website
                     </a>
                   )}
+                  <button 
+                    className="business-share-btn"
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevent opening the modal
+                      handleShareBusiness(business);
+                    }}
+                    title="Share this business"
+                  >
+                    <i className="fas fa-share-alt"></i> Share
+                  </button>
                 </div>
               </div>
               );

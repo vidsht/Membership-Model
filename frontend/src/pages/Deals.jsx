@@ -273,6 +273,71 @@ const Deals = () => {
     }
   };
 
+  // Share deal function
+  const handleShareDeal = async (deal) => {
+    const dealUrl = `${window.location.origin}/deals`;
+    const shareText = `Check out this amazing deal: ${deal.title} at ${deal.businessName}! ${deal.discount}% OFF. Join Indians in Ghana Community to access exclusive deals.`;
+    
+    // Check if Web Share API is available (mobile devices)
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `${deal.title} - ${deal.businessName}`,
+          text: shareText,
+          url: dealUrl
+        });
+      } catch (error) {
+        console.log('Error sharing:', error);
+        // Fallback to copying URL
+        copyToClipboard(dealUrl, deal.title);
+      }
+    } else {
+      // Desktop fallback - show share modal or copy to clipboard
+      copyToClipboard(dealUrl, deal.title);
+    }
+  };
+
+  // Copy to clipboard function
+  const copyToClipboard = async (text, dealTitle) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      // Show a temporary success message
+      setRedeemStatus({ 
+        ...redeemStatus, 
+        [dealTitle]: '📋 Deal link copied to clipboard!' 
+      });
+      // Clear the message after 3 seconds
+      setTimeout(() => {
+        setRedeemStatus(prev => {
+          const newStatus = { ...prev };
+          delete newStatus[dealTitle];
+          return newStatus;
+        });
+      }, 3000);
+    } catch (error) {
+      console.error('Failed to copy to clipboard:', error);
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      
+      setRedeemStatus({ 
+        ...redeemStatus, 
+        [dealTitle]: '📋 Deal link copied!' 
+      });
+      setTimeout(() => {
+        setRedeemStatus(prev => {
+          const newStatus = { ...prev };
+          delete newStatus[dealTitle];
+          return newStatus;
+        });
+      }, 3000);
+    }
+  };
+
   return (
     <div className="deals-page">
       {/* Hero Section */}
@@ -421,6 +486,15 @@ const Deals = () => {
                    >
                      <i className="fas fa-eye"></i>
                      View Details
+                   </button>
+
+                   <button 
+                     className="btn-share-deal"
+                     onClick={() => handleShareDeal(deal)}
+                     title="Share this deal"
+                   >
+                     <i className="fas fa-share-alt"></i>
+                     Share
                    </button>
 
                    

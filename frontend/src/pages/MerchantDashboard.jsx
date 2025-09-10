@@ -36,6 +36,7 @@ const MerchantDashboard = () => {
   const [showRejectionModal, setShowRejectionModal] = useState(false);
   const [rejectionRequestId, setRejectionRequestId] = useState(null);
   const [rejectionReason, setRejectionReason] = useState('');
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   
   // Member verification state
   const [showMemberVerification, setShowMemberVerification] = useState(false);
@@ -1276,10 +1277,13 @@ const MerchantDashboard = () => {
                     ) : (
                       <>
                         <span className="user-name-hidden">Customer</span>
-                        <span className="upgrade-hint">
+                        <button 
+                          className="btn btn-outline-primary btn-sm upgrade-btn"
+                          onClick={() => setShowUpgradeModal(true)}
+                        >
                           <i className="fas fa-lock"></i>
-                          Upgrade to view details
-                        </span>
+                          View Details
+                        </button>
                       </>
                     )}
                   </div>
@@ -1611,10 +1615,13 @@ const MerchantDashboard = () => {
                                 <div className="customer-private">
                                   <i className="fas fa-user-shield"></i>
                                   <strong>Customer Information</strong>
-                                  <span className="upgrade-note">
+                                  <button 
+                                    className="btn btn-outline-primary btn-sm upgrade-btn"
+                                    onClick={() => setShowUpgradeModal(true)}
+                                  >
                                     <i className="fas fa-lock"></i>
-                                    Upgrade to Gold+ to view customer details
-                                  </span>
+                                    View Details
+                                  </button>
                                 </div>
                               )}
                               {request.membershipNumber && (
@@ -2401,6 +2408,74 @@ const MerchantDashboard = () => {
                     Reject Request
                   </>
                 )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Upgrade Plan Modal */}
+      {showUpgradeModal && (
+        <div className="modal-overlay">
+          <div className="modal-content upgrade-modal">
+            <div className="modal-header">
+              <h3>
+                <i className="fas fa-arrow-up"></i>
+                Upgrade Your Plan
+              </h3>
+              <button className="modal-close" onClick={() => setShowUpgradeModal(false)}>
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="upgrade-info">
+                <i className="fas fa-info-circle"></i>
+                <p>Upgrade your plan to access customer details and unlock additional features for your business.</p>
+              </div>
+              
+              {upgradeRecommendations.length > 0 ? (
+                <div className="upgrade-plans-grid">
+                  {upgradeRecommendations.map((plan) => (
+                    <div key={plan.id} className="upgrade-plan-card modal-plan">
+                      <div className="plan-header">
+                        <h4>{plan.name}</h4>
+                        <div className="plan-price">
+                          <span className="currency">{plan.currency}</span>
+                          <span className="amount">{plan.price}</span>
+                          <span className="billing">/{plan.billingCycle}</span>
+                        </div>
+                      </div>
+                      <div className="plan-features">
+                        <h5>Key Features:</h5>
+                        <ul>
+                          {plan.features && plan.features.split(',').slice(0, 4).map((feature, index) => (
+                            <li key={index}>
+                              <i className="fas fa-check"></i>
+                              {feature.trim()}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                      <button className="btn btn-primary btn-upgrade">
+                        <i className="fas fa-arrow-up"></i>
+                        Upgrade to {plan.name}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="no-upgrades">
+                  <i className="fas fa-crown"></i>
+                  <p>You're already on the highest available plan!</p>
+                </div>
+              )}
+            </div>
+            <div className="modal-footer">
+              <button 
+                className="btn btn-secondary" 
+                onClick={() => setShowUpgradeModal(false)}
+              >
+                Close
               </button>
             </div>
           </div>

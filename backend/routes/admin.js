@@ -2880,12 +2880,31 @@ router.get('/deals/statistics', auth, admin, async (req, res) => {
       }
     } catch (_) { /* ignore */ }
 
-    // Use only status-based counts (avoid referencing optional date columns that may not exist / cause failures)
+    // Check if validUntil column exists for proper expired deals calculation
+    let hasValidUntilColumn = false;
+    try {
+      const validUntilCheck = await queryAsync(`
+        SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS 
+        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'deals' AND COLUMN_NAME = 'validUntil'
+      `);
+      hasValidUntilColumn = validUntilCheck.length > 0;
+    } catch (_) { /* ignore */ }
+
+    // Build queries - include date-based expiry calculation if column exists
+    const totalQuery = 'SELECT COUNT(*) as count FROM deals';
+    const activeQuery = hasValidUntilColumn 
+      ? 'SELECT COUNT(*) as count FROM deals WHERE status = "active" AND (validUntil IS NULL OR validUntil >= CURDATE())'
+      : 'SELECT COUNT(*) as count FROM deals WHERE status = "active"';
+    const expiredQuery = hasValidUntilColumn
+      ? 'SELECT COUNT(*) as count FROM deals WHERE status = "expired" OR (validUntil IS NOT NULL AND validUntil < CURDATE())'
+      : 'SELECT COUNT(*) as count FROM deals WHERE status = "expired"';
+    const pendingQuery = 'SELECT COUNT(*) as count FROM deals WHERE status IN ("pending", "pending_approval")';
+
     const [totalDealsResult, activeDealsResult, expiredDealsResult, pendingDealsResult, redemptionsResult] = await Promise.all([
-      queryAsync('SELECT COUNT(*) as count FROM deals'),
-      queryAsync('SELECT COUNT(*) as count FROM deals WHERE status = "active"'),
-      queryAsync('SELECT COUNT(*) as count FROM deals WHERE status = "expired"'),
-      queryAsync('SELECT COUNT(*) as count FROM deals WHERE status IN ("pending", "pending_approval")'),
+      queryAsync(totalQuery),
+      queryAsync(activeQuery),
+      queryAsync(expiredQuery),
+      queryAsync(pendingQuery),
       redemptionsColumn ? queryAsync(`SELECT COALESCE(SUM(${redemptionsColumn}),0) as total FROM deals`) : Promise.resolve([{ total: 0 }])
     ]);
 
@@ -3122,6 +3141,7 @@ router.post('/deals', auth, admin, [
   body('category').trim().isLength({ min: 1 }).withMessage('Category is required'),
   body('validFrom').isISO8601().withMessage('Valid from date is required'),
   body('validUntil').isISO8601().withMessage('Valid until date is required'),
+  body('memberLimit').optional().isInt({ min: 1 }).withMessage('Member limit must be a positive integer'),
   body('status').optional().isIn(['active', 'inactive', 'pending']).withMessage('Status must be active, inactive, or pending')
 ], async (req, res) => {
   try {
@@ -3172,15 +3192,18 @@ router.post('/deals', auth, admin, [
       INSERT INTO deals (
         title, description, businessId, discount, discountType, originalPrice, 
         discountedPrice, category, validFrom, validUntil, requiredPlanPriority,
-        minPlanPriority, termsConditions, couponCode, bannerImage, status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+        minPlanPriority, termsConditions, couponCode, member_limit, bannerImage, status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
+
+    // Extract memberLimit from req.body
+    const { memberLimit } = req.body;
 
     const params = [
       title, description, businessId, discount, discountType, originalPrice,
       discountedPrice, category, validFrom, validUntil, requiredPlanPriority,
       requiredPlanPriority, // Set minPlanPriority to same value for consistency
-      termsConditions, couponCode, bannerImage || null, status
+      termsConditions, couponCode, memberLimit || null, bannerImage || null, status
     ];
 
     const result = await queryAsync(query, params);
@@ -3210,6 +3233,7 @@ router.put('/deals/:id', auth, admin, [
   body('category').trim().isLength({ min: 1 }).withMessage('Category is required'),
   body('validFrom').isISO8601().withMessage('Valid from date is required'),
   body('validUntil').isISO8601().withMessage('Valid until date is required'),
+  body('memberLimit').optional().isInt({ min: 1 }).withMessage('Member limit must be a positive integer'),
   body('status').optional().isIn(['active', 'inactive', 'pending']).withMessage('Status must be active, inactive, or pending')
 ], async (req, res) => {
   try {
@@ -3270,15 +3294,18 @@ router.put('/deals/:id', auth, admin, [
         title = ?, description = ?, businessId = ?, discount = ?, discountType = ?, 
         originalPrice = ?, discountedPrice = ?, category = ?, validFrom = ?, 
         validUntil = ?, requiredPlanPriority = ?, minPlanPriority = ?, termsConditions = ?, 
-        couponCode = ?, bannerImage = ?, status = ?
+        couponCode = ?, member_limit = ?, bannerImage = ?, status = ?
       WHERE id = ?
     `;
+
+    // Extract memberLimit from req.body
+    const { memberLimit } = req.body;
 
     const params = [
       title, description, businessId, discount, discountType, originalPrice,
       discountedPrice, category, validFrom, validUntil, requiredPlanPriority,
       requiredPlanPriority, // Set minPlanPriority to same value for consistency
-      termsConditions, couponCode, bannerImage || null, status, dealId
+      termsConditions, couponCode, memberLimit || null, bannerImage || null, status, dealId
     ];
 
     await queryAsync(query, params);

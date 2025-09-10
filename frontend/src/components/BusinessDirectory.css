@@ -867,3 +867,75 @@
     gap: 6px;
   }
 }
+
+/* Business Share Button Styles */
+.business-share-btn {
+  background: linear-gradient(135deg, #20B2AA 0%, #17A2B8 100%);
+  color: white;
+  border: none;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(32, 178, 170, 0.2);
+  min-width: 85px;
+  justify-content: center;
+}
+
+.business-share-btn:hover {
+  background: linear-gradient(135deg, #17A2B8 0%, #138496 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(32, 178, 170, 0.3);
+  color: white;
+}
+
+.business-share-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(32, 178, 170, 0.2);
+}
+
+.business-share-btn i {
+  font-size: 0.8rem;
+}
+
+/* Business Actions Layout */
+.business-actions {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+
+/* Responsive adjustments for share button */
+@media (max-width: 768px) {
+  .business-share-btn {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.8rem;
+    min-width: 75px;
+  }
+  
+  .business-actions {
+    gap: 0.4rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .business-actions {
+    flex-direction: column;
+    gap: 0.4rem;
+    align-items: stretch;
+  }
+  
+  .business-share-btn,
+  .business-website {
+    width: 100%;
+    text-align: center;
+    justify-content: center;
+  }
+}

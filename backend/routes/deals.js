@@ -589,12 +589,37 @@ router.post('/:id/redeem', checkDealAccess, (req, res) => {
               return res.status(403).json({ message: 'This deal has reached its maximum redemption limit' });
             }
 
-            // Proceed with redemption
-            performRedemption();
+            // Check member limit next
+            checkMemberLimit();
           });
         } else {
-          // No max redemption limit, proceed
-          performRedemption();
+          // No max redemption limit, check member limit
+          checkMemberLimit();
+        }
+
+        function checkMemberLimit() {
+          // Check member limit for the deal (limit by number of unique users)
+          if (deal.member_limit && deal.member_limit > 0) {
+            db.query('SELECT COUNT(DISTINCT user_id) as uniqueUsers FROM deal_redemptions WHERE deal_id = ? AND status = "approved"', [dealId], (err4, limitResults) => {
+              if (err4) {
+                console.error('Deal member limit check error:', err4);
+                return res.status(500).json({ message: 'Server error' });
+              }
+
+              const uniqueUsers = limitResults[0]?.uniqueUsers || 0;
+              if (uniqueUsers >= deal.member_limit) {
+                return res.status(403).json({ 
+                  message: `This deal has reached its member limit of ${deal.member_limit} users` 
+                });
+              }
+
+              // Proceed with redemption
+              performRedemption();
+            });
+          } else {
+            // No member limit, proceed
+            performRedemption();
+          }
         }
 
         function performRedemption() {

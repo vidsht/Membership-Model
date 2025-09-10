@@ -2604,3 +2604,71 @@
     gap: 6px;
   }
 }
+
+/* Share Button Styles */
+.btn-share-deal {
+  background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+  color: white;
+  border: none;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(23, 162, 184, 0.2);
+  min-width: 110px;
+  justify-content: center;
+}
+
+.btn-share-deal:hover {
+  background: linear-gradient(135deg, #138496 0%, #0f6b7a 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(23, 162, 184, 0.3);
+  color: white;
+}
+
+.btn-share-deal:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(23, 162, 184, 0.2);
+}
+
+.btn-share-deal i {
+  font-size: 0.85rem;
+}
+
+/* Deal Actions Layout */
+.deal-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .btn-share-deal {
+    padding: 0.5rem 0.8rem;
+    font-size: 0.85rem;
+    min-width: 95px;
+  }
+  
+  .deal-actions {
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .deal-actions {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .btn-share-deal,
+  .btn-view-details {
+    width: 100%;
+  }
+}

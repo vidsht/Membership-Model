@@ -35,6 +35,7 @@ const DealForm = () => {
     termsConditions: '',
     couponCode: '',
     featuredImage: null,
+    memberLimit: '', // Optional field for limiting number of members who can access
     status: 'active'
   });
   
@@ -137,6 +138,14 @@ const DealForm = () => {
     if (!formData.category.trim()) errors.category = 'Category is required';
     if (!formData.validFrom) errors.validFrom = 'Start date is required';
     if (!formData.validUntil) errors.validUntil = 'End date is required';
+    
+    // Validate member limit if provided
+    if (formData.memberLimit && formData.memberLimit.trim() !== '') {
+      const limit = parseInt(formData.memberLimit);
+      if (isNaN(limit) || limit < 1) {
+        errors.memberLimit = 'Member limit must be a positive number';
+      }
+    }
     
     // Validate prices
     if (formData.originalPrice) {
@@ -546,6 +555,24 @@ const DealForm = () => {
                   className={formErrors.validUntil ? 'error' : ''}
                 />
                 {formErrors.validUntil && <span className="error-message">{formErrors.validUntil}</span>}
+              </div>
+              
+              <div className="form-group">
+                <label htmlFor="memberLimit">Member Limit (Optional)</label>
+                <input
+                  type="number"
+                  id="memberLimit"
+                  name="memberLimit"
+                  value={formData.memberLimit}
+                  onChange={handleChange}
+                  placeholder="Enter maximum number of members who can access this deal"
+                  min="1"
+                  className={formErrors.memberLimit ? 'error' : ''}
+                />
+                <small className="field-description">
+                  Leave empty for unlimited access. Once the limit is reached, the deal will automatically expire.
+                </small>
+                {formErrors.memberLimit && <span className="error-message">{formErrors.memberLimit}</span>}
               </div>
             </div>
           </div>
