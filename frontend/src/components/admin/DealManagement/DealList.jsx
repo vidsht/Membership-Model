@@ -65,7 +65,7 @@ const DealList = ({ onTabChange }) => {
         const s = response.data.statistics || {};
         setStats({
           activeDeals: s.activeDeals ?? 0,
-          totalDeals: s.totalDeals ?? 0,
+            totalDeals: s.totalDeals ?? 0,
           totalRedemptions: s.totalRedemptions ?? 0,
           expiredDeals: s.expiredDeals ?? 0,
           pendingDeals: s.pendingDeals ?? 0
@@ -465,7 +465,7 @@ const DealList = ({ onTabChange }) => {
         </div>
         <div className="deal-stat">
           <span className="stat-label">Expired Deals</span>
-          <span className="stat-value">{typeof stats.expiredDeals === 'number' && !isNaN(stats.expiredDeals) ? stats.expiredDeals : 0}</span>
+          <span className="stat-value">{stats.expiredDeals}</span>
         </div>
         <div className="deal-stat">
           <span className="stat-label">Pending Deals</span>
