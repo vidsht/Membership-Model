@@ -28,7 +28,8 @@ const MerchantDealForm = ({ deal, onDealCreated, onClose, isEditing = false }) =
     requiredPlanPriority: 1, // Default to lowest priority
     termsConditions: '',
     couponCode: '',
-    featuredImage: null
+    featuredImage: null,
+    memberLimit: '' // Optional field for limiting number of members who can access
   });
     const [formErrors, setFormErrors] = useState({});
   
@@ -84,7 +85,8 @@ React.useEffect(() => {
       requiredPlanPriority: deal.requiredPlanPriority || 1,
       termsConditions: deal.termsConditions || '',
       couponCode: deal.couponCode || '',
-      featuredImage: null // Don't populate image for editing
+      featuredImage: null, // Don't populate image for editing
+      memberLimit: deal.memberLimit || ''
     });
     
     // Set banner preview if deal has existing banner
@@ -100,7 +102,6 @@ React.useEffect(() => {
   
   const validateForm = () => {
     const errors = {};
-    
     if (!formData.title.trim()) errors.title = 'Title is required';
     if (!formData.description.trim()) errors.description = 'Description is required';
     if (!formData.discount) errors.discount = 'Discount value is required';
@@ -109,7 +110,15 @@ React.useEffect(() => {
     if (!formData.category.trim()) errors.category = 'Category is required';
     if (!formData.validFrom) errors.validFrom = 'Start date is required';
     if (!formData.validUntil) errors.validUntil = 'End date is required';
-    
+
+    // Validate member limit if provided
+    if (formData.memberLimit && formData.memberLimit.trim() !== '') {
+      const limit = parseInt(formData.memberLimit);
+      if (isNaN(limit) || limit < 1) {
+        errors.memberLimit = 'Member limit must be a positive number';
+      }
+    }
+
     // Validate prices
     if (formData.originalPrice) {
       const originalPrice = parseFloat(formData.originalPrice);
@@ -117,34 +126,32 @@ React.useEffect(() => {
         errors.originalPrice = 'Original price must be greater than 0';
       }
     }
-    
+
     if (formData.discountedPrice) {
       const discountedPrice = parseFloat(formData.discountedPrice);
       if (isNaN(discountedPrice) || discountedPrice < 0) {
         errors.discountedPrice = 'Discounted price must be 0 or greater';
       }
     }
-    
+
     // Validate that discounted price is less than original price
     if (formData.originalPrice && formData.discountedPrice) {
       const originalPrice = parseFloat(formData.originalPrice);
       const discountedPrice = parseFloat(formData.discountedPrice);
-      
       if (!isNaN(originalPrice) && !isNaN(discountedPrice) && discountedPrice >= originalPrice) {
         errors.discountedPrice = 'Discounted price must be less than original price';
       }
     }
-    
+
     // Check if end date is after start date
     if (formData.validFrom && formData.validUntil) {
       const startDate = new Date(formData.validFrom);
       const endDate = new Date(formData.validUntil);
-      
       if (endDate <= startDate) {
         errors.validUntil = 'End date must be after start date';
       }
     }
-    
+
     // Validate discount based on type
     if (formData.discountType === 'percentage') {
       const discountValue = parseFloat(formData.discount);
@@ -157,7 +164,7 @@ React.useEffect(() => {
         errors.discount = 'Fixed discount amount must be greater than 0';
       }
     }
-    
+
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -266,8 +273,26 @@ const handleBannerImageUpload = (fileOrResponse) => {
         expiration_date: formData.validUntil,
         couponCode: formData.couponCode,
         requiredPlanPriority: parseInt(formData.requiredPlanPriority),
-        ...(formData.bannerImage && { bannerImage: formData.bannerImage })
+        ...(formData.bannerImage && { bannerImage: formData.bannerImage }),
+        ...(formData.memberLimit && formData.memberLimit.trim() !== '' && { memberLimit: parseInt(formData.memberLimit) })
       };
+
+        {/* Member Limit Field (moved into form) */}
+        <div className="form-group">
+          <label htmlFor="memberLimit">Member Limit (Optional)</label>
+          <input
+            type="number"
+            id="memberLimit"
+            name="memberLimit"
+            value={formData.memberLimit}
+            onChange={handleChange}
+            min="1"
+            placeholder="e.g., 100 (leave blank for unlimited)"
+            className={formErrors.memberLimit ? 'error' : ''}
+          />
+          {formErrors.memberLimit && <span className="error-message">{formErrors.memberLimit}</span>}
+          <span className="help-text">Limit the number of members who can redeem this deal. Leave blank for unlimited.</span>
+        </div>
 
 let dealId;
 let createdDeal;
@@ -517,6 +542,23 @@ if (!dealId) {
             <span className="help-text">
               Which membership tiers can access this deal (users with this priority or higher)
             </span>
+          </div>
+
+          {/* Member Limit Field */}
+          <div className="form-group">
+            <label htmlFor="memberLimit">Member Limit (Optional)</label>
+            <input
+              type="number"
+              id="memberLimit"
+              name="memberLimit"
+              value={formData.memberLimit}
+              onChange={handleChange}
+              min="1"
+              placeholder="e.g., 100 (leave blank for unlimited)"
+              className={formErrors.memberLimit ? 'error' : ''}
+            />
+            {formErrors.memberLimit && <span className="error-message">{formErrors.memberLimit}</span>}
+            <span className="help-text">Limit the number of members who can redeem this deal. Leave blank for unlimited.</span>
           </div>
         </div>
         

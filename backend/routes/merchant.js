@@ -531,7 +531,9 @@ router.post('/deals', checkMerchantAccess, checkDealPostingLimit, [
   body('description').notEmpty().withMessage('Deal description is required'),
   body('category').notEmpty().withMessage('Deal category is required'),
   body('discount').notEmpty().withMessage('Discount is required'),
-  body('discountType').isIn(['percentage', 'fixed', 'bogo', 'other']).withMessage('Invalid discount type'),  body('expiration_date').isISO8601().withMessage('Valid expiration date is required')
+  body('discountType').isIn(['percentage', 'fixed', 'bogo', 'other']).withMessage('Invalid discount type'),
+  body('expiration_date').isISO8601().withMessage('Valid expiration date is required'),
+  body('memberLimit').optional().isInt({ min: 1 }).withMessage('Member limit must be a positive integer')
 ], async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -548,7 +550,8 @@ router.post('/deals', checkMerchantAccess, checkDealPostingLimit, [
       dealLimit,
       dealsUsed: merchant.dealsUsedThisMonth || 0
     });
-  }  const {
+  }
+  const {
     title,
     description,
     category,
@@ -561,7 +564,8 @@ router.post('/deals', checkMerchantAccess, checkDealPostingLimit, [
     imageUrl,
     couponCode,
     requiredPlanPriority,
-    bannerImage  // Add this field
+    bannerImage,
+    memberLimit
   } = req.body;
 
   // Get plan information for accessLevel field (for display purposes)
@@ -585,8 +589,8 @@ router.post('/deals', checkMerchantAccess, checkDealPostingLimit, [
 
   const insertQuery = `
     INSERT INTO deals 
-    (businessId, title, description, category, discount, discountType, originalPrice, discountedPrice, termsConditions, validFrom, validUntil, couponCode, requiredPlanPriority, bannerImage, status)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending_approval')
+    (businessId, title, description, category, discount, discountType, originalPrice, discountedPrice, termsConditions, validFrom, validUntil, couponCode, requiredPlanPriority, member_limit, bannerImage, status)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending_approval')
   `;
 
   const values = [
@@ -603,7 +607,8 @@ router.post('/deals', checkMerchantAccess, checkDealPostingLimit, [
     expiration_date, // validUntil  
     couponCode || null,
     requiredPlanPriority || 1,
-    bannerImage || null  // Add bannerImage value
+    memberLimit || null,
+    bannerImage || null
   ];
 
   db.query(insertQuery, values, (err, result) => {
@@ -648,7 +653,8 @@ router.put('/deals/:dealId', checkMerchantAccess, [
   body('category').notEmpty().withMessage('Category is required'),
   body('discount').isNumeric().withMessage('Valid discount amount is required'),
   body('originalPrice').optional().isNumeric().withMessage('Valid original price is required'),
-  body('discountedPrice').optional().isNumeric().withMessage('Valid discounted price is required')
+  body('discountedPrice').optional().isNumeric().withMessage('Valid discounted price is required'),
+  body('memberLimit').optional().isInt({ min: 1 }).withMessage('Member limit must be a positive integer')
 ], async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -670,7 +676,8 @@ router.put('/deals/:dealId', checkMerchantAccess, [
       expiration_date,
       couponCode,
       requiredPlanPriority,
-      bannerImage  // Add this field
+      bannerImage,
+      memberLimit
     } = req.body;
 
     if (!dealId || isNaN(dealId)) {
@@ -709,6 +716,7 @@ router.put('/deals/:dealId', checkMerchantAccess, [
         expiration_date = ?, 
         couponCode = ?,
         minPlanPriority = ?,
+        member_limit = ?,
         bannerImage = ?,
         status = 'pending_approval',
         updated_at = NOW()
@@ -727,7 +735,8 @@ router.put('/deals/:dealId', checkMerchantAccess, [
       expiration_date || null, 
       couponCode || null,
       minPlanPriority,
-      bannerImage || null,  // Add bannerImage value
+      memberLimit || null,
+      bannerImage || null,
       dealId,
       merchant.businessId
     ];
