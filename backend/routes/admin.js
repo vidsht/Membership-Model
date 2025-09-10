@@ -2867,10 +2867,10 @@ router.get('/deals/statistics', auth, admin, async (req, res) => {
     }
 
     // --- Ensure expired deals are up-to-date ---
-    // Import updateExpiredDeals from deals.js
-    const { updateExpiredDeals } = require('./deals');
-    if (typeof updateExpiredDeals === 'function') {
-      await updateExpiredDeals();
+    // Import updateExpiredDeals from deals.js (now properly exported)
+    const dealsModule = require('./deals');
+    if (typeof dealsModule.updateExpiredDeals === 'function') {
+      await dealsModule.updateExpiredDeals();
     }
 
     // Dynamically detect redemptions column (redemptions vs redemptionCount)
@@ -2923,6 +2923,12 @@ router.get('/deals', auth, admin, async (req, res) => {
         deals: [],
         message: 'Deals table not found'
       });
+    }
+
+    // --- Ensure expired deals are up-to-date before fetching list ---
+    const dealsModule = require('./deals');
+    if (typeof dealsModule.updateExpiredDeals === 'function') {
+      await dealsModule.updateExpiredDeals();
     }
 
     const {

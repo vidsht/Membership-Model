@@ -843,4 +843,7 @@ router.get('/access-levels', async (req, res) => {
   }
 });
 
-module.exports = router;
+module.exports = {
+  router,
+  updateExpiredDeals
+};
