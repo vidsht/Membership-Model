@@ -169,13 +169,18 @@ const DealList = ({ onTabChange }) => {
       setDeals((deals || []).map(deal => 
         deal.id === dealId ? { ...deal, status: newStatus } : deal
       ));
-      
       showNotification(`Deal ${newStatus === 'active' ? 'activated' : 'deactivated'} successfully`, 'success');
-      // Refresh full statistics
-      fetchDealStats();
     } catch (error) {
       console.error('Error updating deal status:', error);
       showNotification('Failed to update deal status', 'error');
+      return;
+    }
+    // Refresh full statistics after successful status change (never show error to user)
+    try {
+      await fetchDealStats();
+    } catch (statsError) {
+      console.error('Error refreshing deal statistics:', statsError);
+      // Do not show error notification for stats refresh
     }
   };
 
@@ -183,7 +188,6 @@ const DealList = ({ onTabChange }) => {
     try {
       const approvalData = minPlanPriority !== null ? { minPlanPriority } : {};
       await api.patch(`/admin/deals/${dealId}/approve`, approvalData);
-      
       // Update the deal in the local state
       setDeals((deals || []).map(deal => 
         deal.id === dealId ? { 
@@ -192,7 +196,6 @@ const DealList = ({ onTabChange }) => {
           ...(minPlanPriority !== null && { minPlanPriority, requiredPlanPriority: minPlanPriority })
         } : deal
       ));
-      
       const selectedPlan = activePlans.find(plan => plan.priority === minPlanPriority);
       const message = minPlanPriority !== null 
         ? `Deal approved successfully - accessible to ${selectedPlan?.name || 'Unknown'} plan and higher priority plans` 
@@ -201,15 +204,14 @@ const DealList = ({ onTabChange }) => {
     } catch (error) {
       console.error('Error approving deal:', error);
       showNotification('Error approving deal. Please try again.', 'error');
-      return; // Don't refresh stats if approval failed
+      return;
     }
-    
-    // Refresh full statistics after successful approval
+    // Refresh full statistics after successful approval (never show error to user)
     try {
       await fetchDealStats();
     } catch (statsError) {
       console.error('Error refreshing deal statistics:', statsError);
-      // Don't show error for stats refresh failure
+      // Do not show error notification for stats refresh
     }
   };
 
@@ -316,25 +318,22 @@ const DealList = ({ onTabChange }) => {
   const handleRejectDeal = async (dealId, rejectionReason = '') => {
     try {
       await api.patch(`/admin/deals/${dealId}/reject`, { rejectionReason });
-      
       // Update the deal in the local state
       setDeals((deals || []).map(deal => 
         deal.id === dealId ? { ...deal, status: 'rejected', rejection_reason: rejectionReason } : deal
       ));
-      
       showNotification('Deal rejected successfully', 'success');
     } catch (error) {
       console.error('Error rejecting deal:', error);
       showNotification('Error rejecting deal. Please try again.', 'error');
-      return; // Don't refresh stats if rejection failed
+      return;
     }
-    
-    // Refresh full statistics after successful rejection
+    // Refresh full statistics after successful rejection (never show error to user)
     try {
       await fetchDealStats();
     } catch (statsError) {
       console.error('Error refreshing deal statistics:', statsError);
-      // Don't show error for stats refresh failure
+      // Do not show error notification for stats refresh
     }
   };
 
