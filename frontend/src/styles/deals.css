@@ -134,6 +134,40 @@
   font-size: 0.7rem;
 }
 
+/* Deal Limited Badge Styles */
+.deal-limited-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: linear-gradient(135deg, #ff6b6b, #d32f2f);
+  color: white;
+  padding: 0.4rem 0.8rem;
+  border-radius: 15px;
+  font-size: 0.5rem;
+  font-weight: 600;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  box-shadow: 0 2px 8px rgba(211, 47, 47, 0.3);
+  animation: limitedPulse 2s infinite ease-in-out;
+}
+
+.deal-limited-badge i {
+  font-size: 0.7rem;
+}
+
+@keyframes limitedPulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.05);
+  }
+}
+
 /* Deal Banner Styles */
 .deal-banner {
   width: 100%;

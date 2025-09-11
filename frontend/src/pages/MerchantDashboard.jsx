@@ -1469,6 +1469,13 @@ const MerchantDashboard = () => {
                   <div key={deal.id} className={`deal-card ${isExpired ? 'expired-deal' : ''}`}>
                       {deal.bannerImage && (
                       <div className="deal-banner-container">
+                        {/* Limited Badge - Show when member limit is set */}
+                        {(deal.member_limit || deal.memberLimit) && (
+                          <div className="deal-limited-badge">
+                            <i className="fas fa-users"></i>
+                            Limited
+                          </div>
+                        )}
                         <SmartImage 
                           src={getDealBannerUrl(deal)} 
                           alt={deal.title} 
@@ -1479,9 +1486,18 @@ const MerchantDashboard = () => {
                     )}
                     <div className="deal-header">
                       <h3>{deal.title}</h3>
-                      <span className={`status-badge ${isExpired ? 'expired' : deal.status}`}>
-                        {displayStatus}
-                      </span>
+                      <div className="deal-header-badges">
+                        <span className={`status-badge ${isExpired ? 'expired' : deal.status}`}>
+                          {displayStatus}
+                        </span>
+                        {/* Limited Badge for deals without banners */}
+                        {!deal.bannerImage && (deal.member_limit || deal.memberLimit) && (
+                          <span className="limited-badge-inline">
+                            <i className="fas fa-users"></i>
+                            Limited
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <p className="deal-description">{deal.description}</p>
                     

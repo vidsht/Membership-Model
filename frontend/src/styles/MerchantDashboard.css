@@ -3023,6 +3023,60 @@ background: white;
   overflow: hidden;
 }
 
+/* Deal Header Badges Container */
+.merchant-dashboard .deal-header-badges {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: flex-end;
+}
+
+/* Limited Badge for deals without banners (inline) */
+.merchant-dashboard .limited-badge-inline {
+  background: linear-gradient(135deg, #ff6b6b, #d32f2f);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  box-shadow: 0 1px 4px rgba(211, 47, 47, 0.3);
+  animation: limitedPulse 2s infinite ease-in-out;
+}
+
+.merchant-dashboard .limited-badge-inline i {
+  font-size: 0.6rem;
+}
+
+/* Deal Limited Badge for banner containers */
+.merchant-dashboard .deal-banner-container {
+  position: relative;
+}
+
+.merchant-dashboard .deal-limited-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: linear-gradient(135deg, #ff6b6b, #d32f2f);
+  color: white;
+  padding: 0.3rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.55rem;
+  font-weight: 600;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  box-shadow: 0 2px 6px rgba(211, 47, 47, 0.4);
+  animation: limitedPulse 2s infinite ease-in-out;
+}
+
+.merchant-dashboard .deal-limited-badge i {
+  font-size: 0.6rem;
+}
+
 .merchant-dashboard .status-badge {
   padding: 0.35rem 0.75rem;
   border-radius: 20px;
