@@ -2036,10 +2036,10 @@ background: white;
     gap: 1rem;
   }
 
-  .stat-icon{
+  /* .stat-icon{
     width: 10px;
     height: 10px;
-  }
+  } */
 }
 
 /* Rejection Reason Styles */
