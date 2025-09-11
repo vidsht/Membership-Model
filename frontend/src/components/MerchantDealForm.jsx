@@ -387,26 +387,43 @@ if (!dealId) {
         onClose();
       }
     } catch (error) {
-      // Enhanced error handling for merchant status
-      if (error.response && error.response.status === 403) {
-        const msg = error.response.data && error.response.data.message;
-        if (msg === 'Profile is not accepted by the admin') {
-          // Try to get the user's status from the backend error (if available)
-          // But backend only sends generic message, so show based on status if possible
-          // Optionally, you could enhance backend to send the actual status in the error
-          // For now, try to infer from a second API call (not implemented here)
-          // Default to generic message
-          showNotification('Your profile is not accepted by the admin.', 'error');
-        } else if (msg && msg.toLowerCase().includes('rejected')) {
-          showNotification('Your profile is rejected by admin.', 'error');
-        } else if (msg && msg.toLowerCase().includes('suspend')) {
-          showNotification('Your profile is temporarily suspended by admin.', 'error');
+      console.error('Error creating/updating deal:', error);
+      
+      // Enhanced error handling for deal operations
+      if (error.response) {
+        const status = error.response.status;
+        const errorData = error.response.data;
+        const msg = errorData?.message || errorData?.error || 'Unknown error occurred';
+        
+        if (status === 404) {
+          if (isEditing) {
+            showNotification('Deal not found or you do not have permission to edit this deal.', 'error');
+          } else {
+            showNotification('Resource not found. Please try again.', 'error');
+          }
+        } else if (status === 403) {
+          if (msg === 'Profile is not accepted by the admin') {
+            showNotification('Your profile is not accepted by the admin.', 'error');
+          } else if (msg && msg.toLowerCase().includes('rejected')) {
+            showNotification('Your profile is rejected by admin.', 'error');
+          } else if (msg && msg.toLowerCase().includes('suspend')) {
+            showNotification('Your profile is temporarily suspended by admin.', 'error');
+          } else if (msg.includes('cannot be edited') || msg.includes('cannot be modified')) {
+            showNotification(msg, 'error');
+          } else {
+            showNotification(msg || 'Access denied. Please check your permissions.', 'error');
+          }
+        } else if (status === 400) {
+          showNotification(msg || 'Invalid data provided. Please check your inputs.', 'error');
+        } else if (status >= 500) {
+          showNotification('Server error occurred. Please try again later.', 'error');
         } else {
-          showNotification(msg || 'Failed to create deal. Please try again.', 'error');
+          showNotification(msg || `Failed to ${isEditing ? 'update' : 'create'} deal. Please try again.`, 'error');
         }
+      } else if (error.request) {
+        showNotification('Network error. Please check your connection and try again.', 'error');
       } else {
-        console.error('Error creating deal:', error);
-        showNotification('Failed to create deal. Please try again.', 'error');
+        showNotification(`Failed to ${isEditing ? 'update' : 'create'} deal. Please try again.`, 'error');
       }
     } finally {
       setIsSaving(false);
