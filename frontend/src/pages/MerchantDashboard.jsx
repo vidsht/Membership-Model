@@ -16,6 +16,7 @@ const MerchantDashboard = () => {
   const { getBusinessCategoryOptions } = useDynamicFields();
   const [deals, setDeals] = useState([]);
   const [plans, setPlans] = useState([]);
+  const [userPlans, setUserPlans] = useState([]);
   const [currentMerchantPlan, setCurrentMerchantPlan] = useState(null);
   const [upgradeRecommendations, setUpgradeRecommendations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -85,28 +86,35 @@ const MerchantDashboard = () => {
   // Fetch merchant plans for access level display
   const fetchPlans = async () => {
     try {
-      // Fetch merchant plans (not user plans!) for merchant upgrade recommendations
-      const plansResponse = await getAllPlans('merchant', true);
-      const allPlans = Array.isArray(plansResponse) ? plansResponse : plansResponse.plans || [];
-      setPlans(allPlans);
-      
-      // Find current merchant's plan
+      // Fetch both merchant plans (for merchant upgrade recommendations) and user plans
+      const [merchantPlansResponse, userPlansResponse] = await Promise.all([
+        getAllPlans('merchant', true),
+        getAllPlans('user', true)
+      ]);
+
+      const merchantPlans = Array.isArray(merchantPlansResponse) ? merchantPlansResponse : merchantPlansResponse.plans || [];
+      const uPlans = Array.isArray(userPlansResponse) ? userPlansResponse : userPlansResponse.plans || [];
+
+      // Merchant plans are used for merchant-specific upgrade recommendations
+      setPlans(merchantPlans);
+      // User plans are the canonical plans for requiredPlanPriority lookups
+      setUserPlans(uPlans);
+
+      // Find current merchant's plan (still match against merchant plans)
       const userPlanType = user?.membershipType || user?.membership || 'basic';
-      
-      // Primary matching should be by plan key, which matches membershipType
-      const foundPlan = allPlans.find(plan => 
+      const foundPlan = merchantPlans.find(plan => 
         plan.key?.toLowerCase() === userPlanType.toLowerCase()
-      ) || allPlans.find(plan => 
+      ) || merchantPlans.find(plan => 
         plan.name?.toLowerCase() === userPlanType.toLowerCase()
-      ) || allPlans.find(plan => 
+      ) || merchantPlans.find(plan => 
         plan.type === userPlanType
       );
-      
+
       setCurrentMerchantPlan(foundPlan);
 
-      // Get upgrade recommendations (plans with higher priority)
+      // Get upgrade recommendations (plans with higher priority) from merchant plans
       const currentPriority = foundPlan?.priority || 0;
-      const recommendations = allPlans
+      const recommendations = merchantPlans
         .filter(plan => plan.priority > currentPriority && plan.isActive)
         .sort((a, b) => a.priority - b.priority)
         .slice(0, 3); // Show max 3 upgrade options
@@ -120,17 +128,18 @@ const MerchantDashboard = () => {
   // Helper function to get plan name by priority
   const getPlanNameByPriority = (priority) => {
     if (!priority && priority !== 0) return 'All Members';
-    
-    const plan = plans.find(p => p.priority === priority);
+
+    // Prefer user plans (these correspond to requiredPlanPriority priorities used by backend)
+    const plan = userPlans.find(p => p.priority === priority) || plans.find(p => p.priority === priority);
     if (plan) {
       return `${plan.name} (${plan.key})`;
     }
-    
+
     // Fallback for unknown priorities
     if (priority === 1) return 'Silver';
     if (priority === 2) return 'Gold';  
     if (priority === 3) return 'Platinum';
-    
+
     return `Priority ${priority}`;
   };
 
@@ -1734,7 +1743,7 @@ const MerchantDashboard = () => {
                                     <i className="fas fa-user"></i>
                                     <strong>{blurText(request.userName || 'Customer')}</strong>
                                     <small className="text-muted ml-2">
-                                      <i className="fas fa-eye-slash"></i> Upgrade to Premium for full details
+                                      <i className="fas fa-eye-slash"></i> Upgrade for full details
                                     </small>
                                   </div>
                                   <div className="customer-contact">
@@ -2468,11 +2477,7 @@ const MerchantDashboard = () => {
             <div className="modal-footer">
               <button 
                 className="btn btn-secondary" 
-                onClick={() => {
-                  setShowMemberVerification(false);
-                  setMembershipSearch('');
-                  setMemberVerificationResult(null);
-                }}
+                onClick={() => setShowMemberVerification(false)}
               >
                 Close
               </button>

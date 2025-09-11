@@ -240,7 +240,11 @@ const DealList = ({ onTabChange }) => {
         // This was actually successful but something in response parsing failed
         console.log('Deal approval was successful, updating UI...');
         setDeals((deals || []).map(deal => 
-          deal.id === dealId ? { ...deal, status: 'active' } : deal
+          deal.id === dealId ? { 
+            ...deal, 
+            status: 'active',
+            ...(minPlanPriority !== null && { minPlanPriority, requiredPlanPriority: minPlanPriority })
+          } : deal
         ));
         showNotification('Deal approved successfully', 'success');
       } else {
@@ -689,7 +693,7 @@ const DealList = ({ onTabChange }) => {
                           <>
                             <button
                               className="btn-sm btn-success"
-                              onClick={() => handleApproveWithAccessLevel(deal.id, deal.title, deal.accessLevel)}
+                              onClick={() => handleApproveWithAccessLevel(deal.id, deal.title, deal.requiredPlanPriority)}
                               title="Approve Deal"
                             >
                               <i className="fas fa-check"></i>
