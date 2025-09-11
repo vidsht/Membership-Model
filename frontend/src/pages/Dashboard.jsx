@@ -69,16 +69,32 @@ const Dashboard = () => {
   const getMembershipBenefits = (planData, userType) => {
     console.log('Dashboard: getMembershipBenefits called with:', { planData, userType });
     
+    // Benefits to exclude from display
+    const excludedBenefitTypes = [
+      'community updates', 'cashback offers', 'curated deals', 'flash deals'
+    ];
+    
+    const filterBenefits = (benefits) => {
+      return benefits.filter(benefit => {
+        const benefitLower = benefit.toLowerCase();
+        // Exclude benefits that contain any of the excluded types
+        return !excludedBenefitTypes.some(excluded => 
+          benefitLower.includes(excluded) || benefitLower.startsWith('access to')
+        );
+      });
+    };
+    
     // First priority: Use features from API if available
     if (planData?.features && Array.isArray(planData.features) && planData.features.length > 0) {
       console.log('Dashboard: Using API features array:', planData.features);
-      return planData.features.filter(feature => feature && feature.trim());
+      const filteredFeatures = filterBenefits(planData.features.filter(feature => feature && feature.trim()));
+      return filteredFeatures;
     }
 
     // Second priority: Use benefits array if available
     if (planData?.benefits && Array.isArray(planData.benefits)) {
       console.log('Dashboard: Using benefits array:', planData.benefits);
-      return planData.benefits;
+      return filterBenefits(planData.benefits);
     }
 
     // Third priority: Parse features as string if it's a comma-separated string
@@ -86,7 +102,7 @@ const Dashboard = () => {
       const featuresArray = planData.features.split(',').map(f => f.trim()).filter(f => f);
       if (featuresArray.length > 0) {
         console.log('Dashboard: Using parsed features string:', featuresArray);
-        return featuresArray;
+        return filterBenefits(featuresArray);
       }
     }
 
@@ -94,88 +110,93 @@ const Dashboard = () => {
     // Fallback to hardcoded benefits based on plan name/type
     const planName = planData?.name?.toLowerCase() || planData?.type?.toLowerCase() || 'basic';
     
+    let hardcodedBenefits = [];
+    
     if (userType === 'merchant') {
       switch (planName) {
         case 'platinum':
         case 'platinum_business':
         case 'featured':
-          return [
+          hardcodedBenefits = [
             'Premium business listing with featured placement',
             'Unlimited deal creation and promotion',
             'Advanced analytics and customer insights',
             'Priority customer support',
-            'Community networking events access',
             'Monthly performance reports',
             'Featured logo placement on homepage'
           ];
+          break;
         case 'gold':
         case 'gold_business':
         case 'premium':
-          return [
+          hardcodedBenefits = [
             'Enhanced business listing',
             'Up to 20 deals per month',
             'Basic analytics dashboard',
-            'Community networking access',
             'Email marketing support',
             'Monthly newsletter feature'
           ];
+          break;
         case 'silver':
         case 'silver_business':
-          return [
+          hardcodedBenefits = [
             'Standard business listing',
             'Up to 10 deals per month',
             'Basic business profile',
             'Community directory inclusion',
             'Event notifications'
           ];
+          break;
         default:
-          return [
+          hardcodedBenefits = [
             'Basic business listing',
             'Up to 5 deals per month',
-            'Community directory access',
             'Basic customer support'
           ];
       }
     } else {
-      // Regular user benefits
+      // Regular user benefits (filtered to exclude specified types)
       switch (planName) {
         case 'platinum':
         case 'lifetime':
-          return [
-            'Unlimited exclusive deals access',
-            'VIP event access and priority booking',
+          hardcodedBenefits = [
+            'Unlimited exclusive deals',
+            'VIP event booking',
             'Concierge support services',
             'Digital membership card with premium design',
-            'Community networking events',
             'Travel assistance and discounts',
             'Priority customer support'
           ];
+          break;
         case 'gold':
-          return [
-            'Access to premium deals (up to 50% off)',
+          hardcodedBenefits = [
+            'Premium deals (up to 50% off)',
             'Priority event booking',
             'Enhanced member support',
             'Digital membership card',
-            'Monthly community newsletter',
+            'Monthly newsletter',
             'Networking event invitations'
           ];
+          break;
         case 'silver':
-          return [
-            'Access to standard deals (up to 30% off)',
+          hardcodedBenefits = [
+            'Standard deals (up to 30% off)',
             'Event notifications and booking',
             'Digital membership card',
-            'Community directory access',
             'Basic member support'
           ];
+          break;
         default:
-          return [
+          hardcodedBenefits = [
             'Basic membership card',
-            'Community event updates',
-            'Member directory access',
+            'Member directory listing',
             'Newsletter subscription'
           ];
       }
     }
+    
+    // Apply the same filtering to hardcoded benefits
+    return filterBenefits(hardcodedBenefits);
   };
 
   const getNextMembershipType = (current) => {
