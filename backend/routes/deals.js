@@ -128,7 +128,8 @@ const checkDealAccess = async (req, res, next) => {
       return null;
     })();
 
-    if (computedMaxRedemptions !== null && computedMaxRedemptions > 0) {
+    // Only check limits if we have a valid positive limit (exclude -1 which means unlimited)
+    if (computedMaxRedemptions !== null && computedMaxRedemptions > 0 && computedMaxRedemptions !== -1) {
       // YYYY-MM format
       const currentMonth = new Date().toISOString().slice(0, 7);
       const redemptionsThisMonth = await queryAsync(
@@ -140,11 +141,10 @@ const checkDealAccess = async (req, res, next) => {
 
       const redemptionLimit = computedMaxRedemptions;
 
-      if (redemptionLimit > 0 && redemptionsThisMonth[0].count >= redemptionLimit) {
-        // Compose a safe display value (never show -1)
-        const displayLimit = redemptionLimit === -1 ? 'Unlimited' : redemptionLimit;
+      // Double check: only enforce limit if it's positive and not -1 (unlimited)
+      if (redemptionLimit > 0 && redemptionLimit !== -1 && redemptionsThisMonth[0].count >= redemptionLimit) {
         return res.status(403).json({ 
-          message: `You have reached your monthly redemption limit of ${displayLimit}. Please upgrade your plan for more deals.`,
+          message: `You have reached your monthly redemption limit of ${redemptionLimit}. Please upgrade your plan for more deals.`,
           statusCheck: 'limit_reached',
           redemptionsUsed: redemptionsThisMonth[0].count,
           redemptionLimit: redemptionLimit,
@@ -154,6 +154,18 @@ const checkDealAccess = async (req, res, next) => {
 
       user.redemptionsUsed = redemptionsThisMonth[0].count;
       user.redemptionLimit = redemptionLimit;
+    } else if (computedMaxRedemptions === -1) {
+      // For unlimited plans (-1), set user redemption info but don't enforce limits
+      const currentMonth = new Date().toISOString().slice(0, 7);
+      const redemptionsThisMonth = await queryAsync(
+        `SELECT COUNT(*) as count 
+         FROM deal_redemptions 
+         WHERE user_id = ? AND DATE_FORMAT(redeemed_at, '%Y-%m') = ? AND status = 'approved'`,
+        [userId, currentMonth]
+      );
+      
+      user.redemptionsUsed = redemptionsThisMonth[0].count;
+      user.redemptionLimit = -1; // Mark as unlimited
     }
 
     req.user = user;

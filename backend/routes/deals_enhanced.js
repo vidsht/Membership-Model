@@ -227,7 +227,8 @@ router.post('/:id/redeem', checkDealAccess, (req, res) => {
       const redemptionsThisMonth = limitResults[0]?.redemptionsThisMonth || 0;
       const monthlyLimit = user.customRedemptionLimit || user.maxRedemptionsPerMonth || 0;
 
-      if (monthlyLimit > 0 && redemptionsThisMonth >= monthlyLimit) {
+      // Only enforce limit if it's positive and not -1 (which means unlimited)
+      if (monthlyLimit > 0 && monthlyLimit !== -1 && redemptionsThisMonth >= monthlyLimit) {
         return res.status(403).json({ 
           message: `You have reached your monthly redemption limit of ${monthlyLimit}. Upgrade your plan for more redemptions.`,
           monthlyLimit,
