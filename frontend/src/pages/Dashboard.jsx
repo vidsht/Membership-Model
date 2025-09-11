@@ -250,85 +250,82 @@ const Dashboard = () => {
           {user.userType === 'merchant' ? <MerchantCertificate /> : <MembershipCard />}
         </div>
 
-        {/* Benefits Section */}
-        <div className="benefits-section">
-          <div className="benefits-header">
-            <h2>
-              <i className={`fas ${user.userType === 'merchant' ? 'fa-handshake' : 'fa-gift'}`}></i>
-              Your {currentPlan?.name || 'Current'} Plan Benefits
-            </h2>
-            <p>
-              {user.userType === 'merchant' 
-                ? 'Exclusive advantages for business partners' 
-                : 'Exclusive privileges for community members'
-              }
-            </p>
-          </div>
-
-          {/* Plan Details Card */}
-          {currentPlan && (
-            <div className="plan-details-card">
-              <div className="plan-details-header">
-                <div className="plan-info">
-                  <h3>{currentPlan.name}</h3>
-                  <p className="plan-description">{currentPlan.description || 'Premium membership plan'}</p>
-                </div>
-                <div className="plan-pricing">
-                  <span className="price-amount">{currentPlan.currency} {currentPlan.price}</span>
-                  <span className="billing-cycle">/{currentPlan.billingCycle}</span>
-                </div>
-              </div>
-              
-              <div className="plan-details-stats">
-                {currentPlan.maxRedemptions && (
-                  <div className="plan-stat">
-                    <i className="fas fa-tags"></i>
-                    <span>Up to {currentPlan.maxRedemptions} redemptions</span>
-                  </div>
-                )}
-                {currentPlan.dealPostingLimit && (
-                  <div className="plan-stat">
-                    <i className="fas fa-bullhorn"></i>
-                    <span>Up to {currentPlan.dealPostingLimit} deals/month</span>
-                  </div>
-                )}
-                {currentPlan.priority && (
-                  <div className="plan-stat">
-                    <i className="fas fa-star"></i>
-                    <span>Priority Level {currentPlan.priority}</span>
-                  </div>
-                )}
-                {user.validationDate && (
-                  <div className="plan-stat">
-                    <i className="fas fa-calendar-check"></i>
-                    <span>Valid until {new Date(user.validationDate).toLocaleDateString()}</span>
-                  </div>
-                )}
-              </div>
+        {/* Benefits Section - Hidden for merchants */}
+        {user.userType !== 'merchant' && (
+          <div className="benefits-section">
+            <div className="benefits-header">
+              <h2>
+                <i className="fas fa-gift"></i>
+                Your {currentPlan?.name || 'Current'} Plan Benefits
+              </h2>
+              <p>Exclusive privileges for community members</p>
             </div>
-          )}
-          
-          <div className="benefits-grid">
-            {getMembershipBenefits(currentPlan, user.userType).map((benefit, index) => (
-              <div key={index} className="benefit-card">
-                <div className="benefit-icon">
-                  <i className={`fas ${
-                    benefit.includes('VIP') || benefit.includes('Priority') ? 'fa-crown' :
-                    benefit.includes('deal') || benefit.includes('Deal') ? 'fa-tags' :
-                    benefit.includes('event') || benefit.includes('Event') ? 'fa-calendar-alt' :
-                    benefit.includes('support') || benefit.includes('Support') ? 'fa-headset' :
-                    benefit.includes('analytics') || benefit.includes('Analytics') ? 'fa-chart-line' :
-                    benefit.includes('card') || benefit.includes('Card') ? 'fa-id-card' :
-                    benefit.includes('listing') || benefit.includes('Listing') ? 'fa-store' :
-                    'fa-check-circle'
-                  }`}></i>
+
+            {/* Plan Details Card */}
+            {currentPlan && (
+              <div className="plan-details-card">
+                <div className="plan-details-header">
+                  <div className="plan-info">
+                    <h3>{currentPlan.name}</h3>
+                    <p className="plan-description">{currentPlan.description || 'Premium membership plan'}</p>
+                  </div>
+                  <div className="plan-pricing">
+                    <span className="price-amount">{currentPlan.currency} {currentPlan.price}</span>
+                    <span className="billing-cycle">/{currentPlan.billingCycle}</span>
+                  </div>
                 </div>
-                <h3>{benefit.split(' ').slice(0, 3).join(' ')}</h3>
-                <p>{benefit}</p>
+                
+                <div className="plan-details-stats">
+                  {currentPlan.maxRedemptions && (
+                    <div className="plan-stat">
+                      <i className="fas fa-tags"></i>
+                      <span>Up to {currentPlan.maxRedemptions} redemptions</span>
+                    </div>
+                  )}
+                  {currentPlan.dealPostingLimit && (
+                    <div className="plan-stat">
+                      <i className="fas fa-bullhorn"></i>
+                      <span>Up to {currentPlan.dealPostingLimit} deals/month</span>
+                    </div>
+                  )}
+                  {currentPlan.priority && (
+                    <div className="plan-stat">
+                      <i className="fas fa-star"></i>
+                      <span>Priority Level {currentPlan.priority}</span>
+                    </div>
+                  )}
+                  {user.validationDate && (
+                    <div className="plan-stat">
+                      <i className="fas fa-calendar-check"></i>
+                      <span>Valid until {new Date(user.validationDate).toLocaleDateString()}</span>
+                    </div>
+                  )}
+                </div>
               </div>
-            ))}
+            )}
+            
+            <div className="benefits-grid">
+              {getMembershipBenefits(currentPlan, user.userType).map((benefit, index) => (
+                <div key={index} className="benefit-card">
+                  <div className="benefit-icon">
+                    <i className={`fas ${
+                      benefit.includes('VIP') || benefit.includes('Priority') ? 'fa-crown' :
+                      benefit.includes('deal') || benefit.includes('Deal') ? 'fa-tags' :
+                      benefit.includes('event') || benefit.includes('Event') ? 'fa-calendar-alt' :
+                      benefit.includes('support') || benefit.includes('Support') ? 'fa-headset' :
+                      benefit.includes('analytics') || benefit.includes('Analytics') ? 'fa-chart-line' :
+                      benefit.includes('card') || benefit.includes('Card') ? 'fa-id-card' :
+                      benefit.includes('listing') || benefit.includes('Listing') ? 'fa-store' :
+                      'fa-check-circle'
+                    }`}></i>
+                  </div>
+                  <h3>{benefit.split(' ').slice(0, 3).join(' ')}</h3>
+                  <p>{benefit}</p>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Upgrade Recommendations Section */}
         {upgradeRecommendations.length > 0 && (
