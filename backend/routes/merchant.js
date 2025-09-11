@@ -657,6 +657,7 @@ router.post('/deals', checkMerchantAccess, checkDealPostingLimit, [
 });
 
 // Update deal (only for pending_approval or rejected deals)
+// Update deal (allow for pending_approval, rejected, or active deals)
 router.put('/deals/:dealId', checkMerchantAccess, [
   body('title').notEmpty().withMessage('Title is required'),
   body('description').notEmpty().withMessage('Description is required'),
@@ -705,25 +706,45 @@ router.put('/deals/:dealId', checkMerchantAccess, [
       return res.status(400).json({ success: false, message: 'Valid deal ID is required' });
     }
 
-    // Check if deal exists and belongs to this merchant, and can be edited
+    // Check if deal exists and belongs to this merchant
+    console.log(`[DEBUG] Checking deal ${dealId} for merchant businessId: ${merchant.businessId}`);
     const checkQuery = `
-      SELECT id, status FROM deals 
-      WHERE id = ? AND businessId = ? AND status IN ('pending_approval', 'rejected')
+      SELECT id, status, title, businessId FROM deals 
+      WHERE id = ?
     `;
     
-    const existingDeal = await queryAsync(checkQuery, [dealId, merchant.businessId]);
+    const existingDeal = await queryAsync(checkQuery, [dealId]);
+    console.log(`[DEBUG] Deal found:`, existingDeal[0]);
     
     if (existingDeal.length === 0) {
       return res.status(404).json({ 
         success: false, 
-        message: 'Deal not found or cannot be edited. Only pending or rejected deals can be modified.' 
+        message: 'Deal not found.' 
+      });
+    }
+
+    // Check if deal belongs to this merchant
+    if (existingDeal[0].businessId !== merchant.businessId) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'You do not have permission to edit this deal. This deal belongs to a different business.' 
+      });
+    }
+
+    // Check if deal status allows editing (allow all statuses now)
+    const allowedStatuses = ['pending_approval', 'rejected', 'active', 'inactive', 'expired'];
+    if (!allowedStatuses.includes(existingDeal[0].status)) {
+      return res.status(403).json({ 
+        success: false, 
+        message: `Deal with status '${existingDeal[0].status}' cannot be edited.` 
       });
     }
 
     // Convert required plan priority to minPlanPriority
     const minPlanPriority = requiredPlanPriority ? parseInt(requiredPlanPriority) : null;
 
-    // Update the deal
+    // Update the deal (keep status as is if active, else set to pending_approval)
+    const newStatus = existingDeal[0].status === 'active' ? 'active' : 'pending_approval';
     const updateQuery = `
       UPDATE deals SET 
         title = ?, 
@@ -739,7 +760,7 @@ router.put('/deals/:dealId', checkMerchantAccess, [
         minPlanPriority = ?,
         bannerImage = ?,
         member_limit = ?,
-        status = 'pending_approval',
+        status = ?,
         updated_at = NOW()
       WHERE id = ? AND businessId = ?
     `;
@@ -758,6 +779,7 @@ router.put('/deals/:dealId', checkMerchantAccess, [
       minPlanPriority,
       bannerImage || null,  // Add bannerImage value
       memberLimit || null,  // Add memberLimit value
+      newStatus,
       dealId,
       merchant.businessId
     ];
@@ -780,6 +802,7 @@ router.put('/deals/:dealId', checkMerchantAccess, [
 });
 
 // Delete deal (only for pending_approval or rejected deals)
+// Delete deal (allow for pending_approval, rejected, or active deals)
 router.delete('/deals/:dealId', checkMerchantAccess, async (req, res) => {
   try {
     const merchant = req.merchant;
@@ -789,18 +812,37 @@ router.delete('/deals/:dealId', checkMerchantAccess, async (req, res) => {
       return res.status(400).json({ success: false, message: 'Valid deal ID is required' });
     }
 
-    // Check if deal exists and belongs to this merchant, and can be deleted
+    // Check if deal exists and belongs to this merchant
+    console.log(`[DEBUG] Checking deal ${dealId} for deletion, merchant businessId: ${merchant.businessId}`);
     const checkQuery = `
-      SELECT id, status, title FROM deals 
-      WHERE id = ? AND businessId = ? AND status IN ('pending_approval', 'rejected')
+      SELECT id, status, title, businessId FROM deals 
+      WHERE id = ?
     `;
     
-    const existingDeal = await queryAsync(checkQuery, [dealId, merchant.businessId]);
+    const existingDeal = await queryAsync(checkQuery, [dealId]);
+    console.log(`[DEBUG] Deal found for deletion:`, existingDeal[0]);
     
     if (existingDeal.length === 0) {
       return res.status(404).json({ 
         success: false, 
-        message: 'Deal not found or cannot be deleted. Only pending or rejected deals can be removed.' 
+        message: 'Deal not found.' 
+      });
+    }
+
+    // Check if deal belongs to this merchant
+    if (existingDeal[0].businessId !== merchant.businessId) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'You do not have permission to delete this deal. This deal belongs to a different business.' 
+      });
+    }
+
+    // Check if deal status allows deletion (allow all statuses now)
+    const allowedStatuses = ['pending_approval', 'rejected', 'active', 'inactive', 'expired'];
+    if (!allowedStatuses.includes(existingDeal[0].status)) {
+      return res.status(403).json({ 
+        success: false, 
+        message: `Deal with status '${existingDeal[0].status}' cannot be deleted.` 
       });
     }
 

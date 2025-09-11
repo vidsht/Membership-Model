@@ -164,52 +164,102 @@ const DealList = ({ onTabChange }) => {
   
   const handleStatusChange = async (dealId, newStatus) => {
     try {      
-      await api.patch(`/admin/deals/${dealId}/status`, { status: newStatus });
-      // Update local state
-      setDeals((deals || []).map(deal => 
-        deal.id === dealId ? { ...deal, status: newStatus } : deal
-      ));
+      const response = await api.patch(`/admin/deals/${dealId}/status`, { status: newStatus });
       
-      showNotification(`Deal ${newStatus === 'active' ? 'activated' : 'deactivated'} successfully`, 'success');
-      // Refresh full statistics
-      fetchDealStats();
+      // Check if the response indicates success
+      if (response.data && response.data.success !== false) {
+        // Update local state
+        setDeals((deals || []).map(deal => 
+          deal.id === dealId ? { ...deal, status: newStatus } : deal
+        ));
+        showNotification(`Deal ${newStatus === 'active' ? 'activated' : 'deactivated'} successfully`, 'success');
+      } else {
+        // Backend returned success: false
+        const errorMessage = response.data?.message || 'Failed to update deal status';
+        showNotification(errorMessage, 'error');
+        return;
+      }
     } catch (error) {
       console.error('Error updating deal status:', error);
-      showNotification('Failed to update deal status', 'error');
+      
+      // Enhanced error handling - check if it's a successful response that threw an error
+      if (error.response && error.response.status === 200 && error.response.data?.success) {
+        // This was actually successful but something in response parsing failed
+        console.log('Deal status update was successful, updating UI...');
+        setDeals((deals || []).map(deal => 
+          deal.id === dealId ? { ...deal, status: newStatus } : deal
+        ));
+        showNotification(`Deal ${newStatus === 'active' ? 'activated' : 'deactivated'} successfully`, 'success');
+      } else {
+        // Actual error
+        const errorMessage = error.response?.data?.message || 'Failed to update deal status';
+        showNotification(errorMessage, 'error');
+        return;
+      }
+    }
+    // Refresh full statistics after successful status change (never show error to user)
+    try {
+      await fetchDealStats();
+    } catch (statsError) {
+      console.error('Error refreshing deal statistics:', statsError);
+      // Do not show error notification for stats refresh
     }
   };
 
   const handleApproveDeal = async (dealId, minPlanPriority = null) => {
     try {
       const approvalData = minPlanPriority !== null ? { minPlanPriority } : {};
-      await api.patch(`/admin/deals/${dealId}/approve`, approvalData);
+      const response = await api.patch(`/admin/deals/${dealId}/approve`, approvalData);
       
-      // Update the deal in the local state
-      setDeals((deals || []).map(deal => 
-        deal.id === dealId ? { 
-          ...deal, 
-          status: 'active',
-          ...(minPlanPriority !== null && { minPlanPriority, requiredPlanPriority: minPlanPriority })
-        } : deal
-      ));
-      
-      const selectedPlan = activePlans.find(plan => plan.priority === minPlanPriority);
-      const message = minPlanPriority !== null 
-        ? `Deal approved successfully - accessible to ${selectedPlan?.name || 'Unknown'} plan and higher priority plans` 
-        : 'Deal approved successfully';
-      showNotification(message, 'success');
+      // Check if the response indicates success
+      if (response.data && response.data.success !== false) {
+        // Update the deal in the local state
+        setDeals((deals || []).map(deal => 
+          deal.id === dealId ? { 
+            ...deal, 
+            status: 'active',
+            ...(minPlanPriority !== null && { minPlanPriority, requiredPlanPriority: minPlanPriority })
+          } : deal
+        ));
+        const selectedPlan = activePlans.find(plan => plan.priority === minPlanPriority);
+        const message = minPlanPriority !== null 
+          ? `Deal approved successfully - accessible to ${selectedPlan?.name || 'Unknown'} plan and higher priority plans` 
+          : 'Deal approved successfully';
+        showNotification(message, 'success');
+      } else {
+        // Backend returned success: false
+        const errorMessage = response.data?.message || 'Failed to approve deal';
+        showNotification(errorMessage, 'error');
+        return;
+      }
     } catch (error) {
       console.error('Error approving deal:', error);
-      showNotification('Error approving deal. Please try again.', 'error');
-      return; // Don't refresh stats if approval failed
+      
+      // Enhanced error handling - check if it's a successful response that threw an error
+      if (error.response && error.response.status === 200 && error.response.data?.success) {
+        // This was actually successful but something in response parsing failed
+        console.log('Deal approval was successful, updating UI...');
+        setDeals((deals || []).map(deal => 
+          deal.id === dealId ? { 
+            ...deal, 
+            status: 'active',
+            ...(minPlanPriority !== null && { minPlanPriority, requiredPlanPriority: minPlanPriority })
+          } : deal
+        ));
+        showNotification('Deal approved successfully', 'success');
+      } else {
+        // Actual error
+        const errorMessage = error.response?.data?.message || 'Error approving deal. Please try again.';
+        showNotification(errorMessage, 'error');
+        return;
+      }
     }
-    
-    // Refresh full statistics after successful approval
+    // Refresh full statistics after successful approval (never show error to user)
     try {
       await fetchDealStats();
     } catch (statsError) {
       console.error('Error refreshing deal statistics:', statsError);
-      // Don't show error for stats refresh failure
+      // Do not show error notification for stats refresh
     }
   };
 
@@ -315,26 +365,45 @@ const DealList = ({ onTabChange }) => {
 
   const handleRejectDeal = async (dealId, rejectionReason = '') => {
     try {
-      await api.patch(`/admin/deals/${dealId}/reject`, { rejectionReason });
+      const response = await api.patch(`/admin/deals/${dealId}/reject`, { rejectionReason });
       
-      // Update the deal in the local state
-      setDeals((deals || []).map(deal => 
-        deal.id === dealId ? { ...deal, status: 'rejected', rejection_reason: rejectionReason } : deal
-      ));
-      
-      showNotification('Deal rejected successfully', 'success');
+      // Check if the response indicates success
+      if (response.data && response.data.success !== false) {
+        // Update the deal in the local state
+        setDeals((deals || []).map(deal => 
+          deal.id === dealId ? { ...deal, status: 'rejected', rejection_reason: rejectionReason } : deal
+        ));
+        showNotification('Deal rejected successfully', 'success');
+      } else {
+        // Backend returned success: false
+        const errorMessage = response.data?.message || 'Failed to reject deal';
+        showNotification(errorMessage, 'error');
+        return;
+      }
     } catch (error) {
       console.error('Error rejecting deal:', error);
-      showNotification('Error rejecting deal. Please try again.', 'error');
-      return; // Don't refresh stats if rejection failed
+      
+      // Enhanced error handling - check if it's a successful response that threw an error
+      if (error.response && error.response.status === 200 && error.response.data?.success) {
+        // This was actually successful but something in response parsing failed
+        console.log('Deal rejection was successful, updating UI...');
+        setDeals((deals || []).map(deal => 
+          deal.id === dealId ? { ...deal, status: 'rejected', rejection_reason: rejectionReason } : deal
+        ));
+        showNotification('Deal rejected successfully', 'success');
+      } else {
+        // Actual error
+        const errorMessage = error.response?.data?.message || 'Error rejecting deal. Please try again.';
+        showNotification(errorMessage, 'error');
+        return;
+      }
     }
-    
-    // Refresh full statistics after successful rejection
+    // Refresh full statistics after successful rejection (never show error to user)
     try {
       await fetchDealStats();
     } catch (statsError) {
       console.error('Error refreshing deal statistics:', statsError);
-      // Don't show error for stats refresh failure
+      // Do not show error notification for stats refresh
     }
   };
 
@@ -624,7 +693,7 @@ const DealList = ({ onTabChange }) => {
                           <>
                             <button
                               className="btn-sm btn-success"
-                              onClick={() => handleApproveWithAccessLevel(deal.id, deal.title, deal.accessLevel)}
+                              onClick={() => handleApproveWithAccessLevel(deal.id, deal.title, deal.requiredPlanPriority)}
                               title="Approve Deal"
                             >
                               <i className="fas fa-check"></i>

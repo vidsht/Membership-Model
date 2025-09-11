@@ -3,7 +3,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import PasswordStrengthIndicator from '../components/PasswordStrengthIndicator/PasswordStrengthIndicator';
 import { useDynamicFields } from '../hooks/useDynamicFields';
+import { useFormValidation } from '../hooks/useFormValidation';
+import FormField from '../components/common/FormField';
+import FormErrorSummary from '../components/common/FormErrorSummary';
 import '../styles/registration.css';
+import '../styles/FormValidation.css';
 
 const MerchantRegister = () => {
   // Use dynamic fields hook
@@ -12,6 +16,88 @@ const MerchantRegister = () => {
     getCountryOptions,
     isLoading: fieldsLoading 
   } = useDynamicFields();
+
+  // Initialize form validation
+  const {
+    errors,
+    touchedFields,
+    hasErrors,
+    validateForm: validateFormData,
+    validateField,
+    markFieldTouched,
+    clearAllErrors,
+    setFieldError
+  } = useFormValidation();
+
+  // Merchant registration validation schema
+  const merchantValidationSchema = {
+    fullName: {
+      rules: ['required', { type: 'minLength', minLength: 2 }],
+      displayName: 'Full Name'
+    },
+    email: {
+      rules: ['required', 'email'],
+      displayName: 'Email'
+    },
+    password: {
+      rules: ['required', 'passwordStrength'],
+      displayName: 'Password'
+    },
+    confirmPassword: {
+      rules: ['required'],
+      displayName: 'Confirm Password'
+    },
+    businessName: {
+      rules: ['required', 'businessName'],
+      displayName: 'Business Name'
+    },
+    businessCategory: {
+      rules: ['required'],
+      displayName: 'Business Category'
+    },
+    phone: {
+      rules: ['phone'],
+      displayName: 'Phone Number'
+    },
+    businessPhone: {
+      rules: ['phone'],
+      displayName: 'Business Phone'
+    },
+    businessEmail: {
+      rules: ['email'],
+      displayName: 'Business Email'
+    },
+    website: {
+      rules: ['url'],
+      displayName: 'Website'
+    },
+    taxId: {
+      rules: ['taxId'],
+      displayName: 'Tax ID'
+    }
+  };
+
+  const fieldLabels = {
+    fullName: 'Full Name',
+    email: 'Email Address',
+    password: 'Password',
+    confirmPassword: 'Confirm Password',
+    phone: 'Phone Number',
+    bloodGroup: 'Blood Group',
+    businessName: 'Business Name',
+    businessDescription: 'Business Description',
+    businessCategory: 'Business Category',
+    businessPhone: 'Business Phone',
+    businessEmail: 'Business Email',
+    website: 'Website',
+    businessLicense: 'Business License',
+    taxId: 'Tax ID',
+    businessStreet: 'Street Address',
+    businessCity: 'City',
+    businessState: 'State/Region',
+    businessZipCode: 'Postal Code',
+    businessCountry: 'Country'
+  };
   
   const [formData, setFormData] = useState({
     // Personal Information
@@ -60,67 +146,48 @@ const MerchantRegister = () => {
   };
 
   const handleInputChange = (e) => {
+    const fieldName = e.target.id;
+    const value = e.target.value;
+    
     setFormData({
       ...formData,
-      [e.target.id]: e.target.value
+      [fieldName]: value
     });
+
+    // Validate field on change if it was already touched
+    if (touchedFields[fieldName]) {
+      validateField(fieldName, value, merchantValidationSchema[fieldName]?.rules || [], fieldLabels[fieldName]);
+    }
   };
 
-  const validateForm = () => {
-    if (!formData.fullName || !formData.email || !formData.password) {
-      showNotification('Please fill in all required personal information', 'error');
-      return false;
-    }
-
-    if (!formData.businessName || !formData.businessCategory) {
-      showNotification('Please fill in required business information', 'error');
-      return false;
-    }
-
-    if (formData.password !== formData.confirmPassword) {
-      showNotification('Passwords do not match', 'error');
-      return false;
-    }
-
-    // Password validation with strength criteria
-    const passwordCriteria = {
-      hasMinLength: formData.password.length >= 6,
-      hasMaxLength: formData.password.length <= 20,
-      hasNumber: /\d/.test(formData.password),
-      hasSymbol: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(formData.password),
-      hasLowercase: /[a-z]/.test(formData.password),
-      hasUppercase: /[A-Z]/.test(formData.password),
-      onlyLatin: /^[a-zA-Z0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]*$/.test(formData.password)
-    };
+  const handleFieldBlur = (e) => {
+    const fieldName = e.target.id;
+    const value = e.target.value;
     
-    const isPasswordValid = Object.values(passwordCriteria).every(Boolean);
-    
-    if (!isPasswordValid) {
-      const failedCriteria = [];
-      if (!passwordCriteria.hasMinLength) failedCriteria.push('At least 6 characters');
-      if (!passwordCriteria.hasMaxLength) failedCriteria.push('Maximum 20 characters');
-      if (!passwordCriteria.hasNumber) failedCriteria.push('One number');
-      if (!passwordCriteria.hasSymbol) failedCriteria.push('One symbol');
-      if (!passwordCriteria.hasLowercase) failedCriteria.push('One lowercase letter');
-      if (!passwordCriteria.hasUppercase) failedCriteria.push('One uppercase letter');
-      if (!passwordCriteria.onlyLatin) failedCriteria.push('Only Latin letters and symbols');
-      
-      showNotification(`Password requirements: ${failedCriteria.join(', ')}`, 'error');
-      return false;
-    }
-
-    if (!termsAccepted) {
-      showNotification('Please accept the terms and conditions', 'error');
-      return false;
-    }
-
-    return true;
+    markFieldTouched(fieldName);
+    validateField(fieldName, value, merchantValidationSchema[fieldName]?.rules || [], fieldLabels[fieldName]);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!validateForm()) {
+    // Custom validation for password match
+    if (formData.password !== formData.confirmPassword) {
+      setFieldError('confirmPassword', 'Passwords do not match');
+      showNotification('Passwords do not match', 'error');
+      return;
+    }
+
+    // Validate entire form
+    const isValid = validateFormData(formData, merchantValidationSchema);
+    
+    if (!isValid) {
+      showNotification('Please correct the errors below before submitting', 'error');
+      return;
+    }
+    
+    if (!termsAccepted) {
+      showNotification('Please accept the terms and conditions', 'error');
       return;
     }
 
@@ -155,6 +222,7 @@ const MerchantRegister = () => {
       
       const successMessage = response.message || 'Merchant account created successfully! Welcome to the platform.';
       showNotification(successMessage, 'success');
+      clearAllErrors();
       
       // Redirect after successful registration
       setTimeout(() => {
@@ -235,42 +303,58 @@ const MerchantRegister = () => {
 
             <div className="merchant-form-container">
               <form onSubmit={handleSubmit}>
+                <FormErrorSummary 
+                  errors={errors} 
+                  fieldLabels={fieldLabels}
+                  show={hasErrors && Object.keys(touchedFields).length > 0}
+                />
+
                 {/* Personal Information */}
                 <div className="form-section">
                   <h3><i className="fas fa-user"></i> Personal Information</h3>
                   
-                  <div className="form-group">
-                    <label htmlFor="fullName">Full Name *</label>
-                    <input 
-                      type="text" 
-                      id="fullName" 
-                      value={formData.fullName}
-                      onChange={handleInputChange}
-                      placeholder="Your full name" 
-                      required 
-                    />
-                  </div>
+                  <FormField
+                    label="Full Name"
+                    name="fullName"
+                    type="text"
+                    value={formData.fullName}
+                    onChange={handleInputChange}
+                    onBlur={handleFieldBlur}
+                    error={errors.fullName}
+                    touched={touchedFields.fullName}
+                    required={true}
+                    placeholder="Your full name"
+                    inputProps={{ id: 'fullName' }}
+                  />
 
                   <div className="form-row">
                     <div className="form-group">
-                      <label htmlFor="email">Email Address *</label>
-                      <input 
-                        type="email" 
-                        id="email" 
+                      <FormField
+                        label="Email Address"
+                        name="email"
+                        type="email"
                         value={formData.email}
                         onChange={handleInputChange}
-                        placeholder="your@email.com" 
-                        required 
+                        onBlur={handleFieldBlur}
+                        error={errors.email}
+                        touched={touchedFields.email}
+                        required={true}
+                        placeholder="your@email.com"
+                        inputProps={{ id: 'email' }}
                       />
                     </div>
                     <div className="form-group">
-                      <label htmlFor="phone">Phone Number</label>
-                      <input 
-                        type="tel" 
-                        id="phone" 
+                      <FormField
+                        label="Phone Number"
+                        name="phone"
+                        type="tel"
                         value={formData.phone}
                         onChange={handleInputChange}
-                        placeholder="+233 XX XXX XXXX" 
+                        onBlur={handleFieldBlur}
+                        error={errors.phone}
+                        touched={touchedFields.phone}
+                        placeholder="+233 XX XXX XXXX"
+                        inputProps={{ id: 'phone' }}
                       />
                     </div>
                   </div>
@@ -283,146 +367,190 @@ const MerchantRegister = () => {
                         id="password" 
                         value={formData.password}
                         onChange={handleInputChange}
+                        onBlur={handleFieldBlur}
+                        className={errors.password && touchedFields.password ? 'field-error' : ''}
                         placeholder="Create a strong password" 
                         required 
                       />
+                      {errors.password && touchedFields.password && (
+                        <div className="error-message">{errors.password}</div>
+                      )}
                       <PasswordStrengthIndicator 
                         password={formData.password} 
                         showCriteria={true} 
                       />
                     </div>
                     <div className="form-group">
-                      <label htmlFor="confirmPassword">Confirm Password *</label>
-                      <input 
-                        type="password" 
-                        id="confirmPassword" 
+                      <FormField
+                        label="Confirm Password"
+                        name="confirmPassword"
+                        type="password"
                         value={formData.confirmPassword}
                         onChange={handleInputChange}
-                        placeholder="Confirm your password" 
-                        required 
+                        onBlur={handleFieldBlur}
+                        error={errors.confirmPassword}
+                        touched={touchedFields.confirmPassword}
+                        required={true}
+                        placeholder="Confirm your password"
+                        inputProps={{ id: 'confirmPassword' }}
                       />
                     </div>
                   </div>
 
-                  <div className="form-group">
-                    <label htmlFor="bloodGroup">Blood Group</label>
-                    <select
-                      id="bloodGroup"
-                      value={formData.bloodGroup}
-                      onChange={handleInputChange}
-                    >
-                      <option value="">Select blood group (optional)</option>
-                      <option value="A+">A+</option>
-                      <option value="A-">A-</option>
-                      <option value="B+">B+</option>
-                      <option value="B-">B-</option>
-                      <option value="AB+">AB+</option>
-                      <option value="AB-">AB-</option>
-                      <option value="O+">O+</option>
-                      <option value="O-">O-</option>
-                    </select>
-                  </div>
+                  <FormField
+                    label="Blood Group"
+                    name="bloodGroup"
+                    type="select"
+                    value={formData.bloodGroup}
+                    onChange={handleInputChange}
+                    onBlur={handleFieldBlur}
+                    error={errors.bloodGroup}
+                    touched={touchedFields.bloodGroup}
+                    placeholder="Select blood group (optional)"
+                    inputProps={{ id: 'bloodGroup' }}
+                    options={[
+                      { value: 'A+', label: 'A+' },
+                      { value: 'A-', label: 'A-' },
+                      { value: 'B+', label: 'B+' },
+                      { value: 'B-', label: 'B-' },
+                      { value: 'AB+', label: 'AB+' },
+                      { value: 'AB-', label: 'AB-' },
+                      { value: 'O+', label: 'O+' },
+                      { value: 'O-', label: 'O-' }
+                    ]}
+                  />
                 </div>
 
                 {/* Business Information */}
                 <div className="form-section">
                   <h3><i className="fas fa-building"></i> Business Information</h3>
                   
-                  <div className="form-group">
-                    <label htmlFor="businessName">Business Name *</label>
-                    <input 
-                      type="text" 
-                      id="businessName" 
-                      value={formData.businessName}
-                      onChange={handleInputChange}
-                      placeholder="Your business name" 
-                      required 
-                    />
-                  </div>
+                  <FormField
+                    label="Business Name"
+                    name="businessName"
+                    type="text"
+                    value={formData.businessName}
+                    onChange={handleInputChange}
+                    onBlur={handleFieldBlur}
+                    error={errors.businessName}
+                    touched={touchedFields.businessName}
+                    required={true}
+                    placeholder="Your business name"
+                    inputProps={{ id: 'businessName' }}
+                  />
 
-                  <div className="form-group">
-                    <label htmlFor="businessDescription">Business Description</label>
-                    <textarea 
-                      id="businessDescription" 
-                      value={formData.businessDescription}
-                      onChange={handleInputChange}
-                      placeholder="Brief description of your business"
-                      rows="3"
-                    />
-                  </div>
+                  <FormField
+                    label="Business Description"
+                    name="businessDescription"
+                    type="textarea"
+                    value={formData.businessDescription}
+                    onChange={handleInputChange}
+                    onBlur={handleFieldBlur}
+                    error={errors.businessDescription}
+                    touched={touchedFields.businessDescription}
+                    placeholder="Brief description of your business"
+                    rows={3}
+                    inputProps={{ id: 'businessDescription' }}
+                  />
 
                   <div className="form-row">
                     <div className="form-group">
-                      <label htmlFor="businessCategory">Business Category *</label>
-                      <select 
-                        id="businessCategory" 
+                      <FormField
+                        label="Business Category"
+                        name="businessCategory"
+                        type="select"
                         value={formData.businessCategory}
                         onChange={handleInputChange}
-                        required
-                      >
-                        <option value="">Select Category</option>
-                        <option value="restaurant">Restaurant & Food</option>
-                        <option value="retail">Retail & Shopping</option>
-                        <option value="services">Professional Services</option>
-                        <option value="healthcare">Healthcare</option>
-                        <option value="technology">Technology</option>
-                        <option value="other">Other</option>
-                      </select>
+                        onBlur={handleFieldBlur}
+                        error={errors.businessCategory}
+                        touched={touchedFields.businessCategory}
+                        required={true}
+                        placeholder="Select Category"
+                        inputProps={{ id: 'businessCategory' }}
+                        options={[
+                          { value: 'restaurant', label: 'Restaurant & Food' },
+                          { value: 'retail', label: 'Retail & Shopping' },
+                          { value: 'services', label: 'Professional Services' },
+                          { value: 'healthcare', label: 'Healthcare' },
+                          { value: 'technology', label: 'Technology' },
+                          { value: 'other', label: 'Other' }
+                        ]}
+                      />
                     </div>
                     <div className="form-group">
-                      <label htmlFor="businessPhone">Business Phone</label>
-                      <input 
-                        type="tel" 
-                        id="businessPhone" 
+                      <FormField
+                        label="Business Phone"
+                        name="businessPhone"
+                        type="tel"
                         value={formData.businessPhone}
                         onChange={handleInputChange}
-                        placeholder="Business phone number" 
+                        onBlur={handleFieldBlur}
+                        error={errors.businessPhone}
+                        touched={touchedFields.businessPhone}
+                        placeholder="Business phone number"
+                        inputProps={{ id: 'businessPhone' }}
                       />
                     </div>
                   </div>
 
                   <div className="form-row">
                     <div className="form-group">
-                      <label htmlFor="businessEmail">Business Email</label>
-                      <input 
-                        type="email" 
-                        id="businessEmail" 
+                      <FormField
+                        label="Business Email"
+                        name="businessEmail"
+                        type="email"
                         value={formData.businessEmail}
                         onChange={handleInputChange}
-                        placeholder="business@example.com" 
+                        onBlur={handleFieldBlur}
+                        error={errors.businessEmail}
+                        touched={touchedFields.businessEmail}
+                        placeholder="business@example.com"
+                        inputProps={{ id: 'businessEmail' }}
                       />
                     </div>
                     <div className="form-group">
-                      <label htmlFor="website">Website (Optional)</label>
-                      <input 
-                        type="url" 
-                        id="website" 
+                      <FormField
+                        label="Website (Optional)"
+                        name="website"
+                        type="url"
                         value={formData.website}
                         onChange={handleInputChange}
-                        placeholder="https://yourwebsite.com" 
+                        onBlur={handleFieldBlur}
+                        error={errors.website}
+                        touched={touchedFields.website}
+                        placeholder="https://yourwebsite.com"
+                        inputProps={{ id: 'website' }}
                       />
                     </div>
                   </div>
 
                   <div className="form-row">
                     <div className="form-group">
-                      <label htmlFor="businessLicense">Business License # (Optional)</label>
-                      <input 
-                        type="text" 
-                        id="businessLicense" 
+                      <FormField
+                        label="Business License # (Optional)"
+                        name="businessLicense"
+                        type="text"
                         value={formData.businessLicense}
                         onChange={handleInputChange}
-                        placeholder="Business license number" 
+                        onBlur={handleFieldBlur}
+                        error={errors.businessLicense}
+                        touched={touchedFields.businessLicense}
+                        placeholder="Business license number"
+                        inputProps={{ id: 'businessLicense' }}
                       />
                     </div>
                     <div className="form-group">
-                      <label htmlFor="taxId">Tax ID (Optional)</label>
-                      <input 
-                        type="text" 
-                        id="taxId" 
+                      <FormField
+                        label="Tax ID (Optional)"
+                        name="taxId"
+                        type="text"
                         value={formData.taxId}
                         onChange={handleInputChange}
-                        placeholder="Business tax ID" 
+                        onBlur={handleFieldBlur}
+                        error={errors.taxId}
+                        touched={touchedFields.taxId}
+                        placeholder="Business tax ID"
+                        inputProps={{ id: 'taxId' }}
                       />
                     </div>
                   </div>
@@ -515,7 +643,7 @@ const MerchantRegister = () => {
 
                   <button 
                     type="submit" 
-                    className="register-btn" 
+                    className={`register-btn ${hasErrors ? 'has-errors' : ''}`}
                     disabled={loading}
                   >
                     <i className="fas fa-store"></i> {loading ? 'Creating Account...' : 'Register as Merchant'}

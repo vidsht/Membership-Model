@@ -421,6 +421,13 @@ Join Indians in Ghana Community for exclusive deals!`;
                      <i className="fas fa-tag"></i>
                      {deal.category || 'General'}
                    </div>
+                   {/* Limited Badge - Show when member limit is set */}
+                   {(deal.member_limit || deal.memberLimit) && (
+                     <div className="deal-limited-badge">
+                       <i className="fas fa-users"></i>
+                       Limited
+                     </div>
+                   )}
                    {getDealBannerUrl(deal) ? (
                      <SmartImage 
                        src={getDealBannerUrl(deal)} 

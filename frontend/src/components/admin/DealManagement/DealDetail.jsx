@@ -16,10 +16,19 @@ const DealDetail = () => {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('details');
   const { isModalOpen, modalContent, openModal, closeModal } = useModal();
+  
+  // Pagination state for redemptions
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
 
   useEffect(() => {
     fetchDealData();
   }, [dealId]);
+
+  // Reset pagination when redemptions data changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [redemptions.length]);
 
   const fetchDealData = async () => {
     try {
@@ -97,6 +106,120 @@ const DealDetail = () => {
     }
   };
 
+  // Pagination helper functions
+  const getPaginatedRedemptions = () => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return redemptions.slice(startIndex, endIndex);
+  };
+
+  const getTotalPages = () => {
+    return Math.ceil(redemptions.length / itemsPerPage);
+  };
+
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage);
+  };
+
+  // Pagination component
+  const PaginationComponent = () => {
+    const totalPages = getTotalPages();
+    
+    if (totalPages <= 1) return null;
+    
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '20px',
+        borderTop: '1px solid #dee2e6',
+        background: '#f8f9fa'
+      }}>
+        <div style={{color: '#6c757d', fontSize: '14px'}}>
+          Showing {Math.min((currentPage - 1) * itemsPerPage + 1, redemptions.length)} to {Math.min(currentPage * itemsPerPage, redemptions.length)} of {redemptions.length} redemptions
+        </div>
+        <div style={{display: 'flex', gap: '10px', alignItems: 'center'}}>
+          <button 
+            style={{
+              padding: '8px 12px',
+              border: '1px solid #dee2e6',
+              background: currentPage === 1 ? '#f8f9fa' : '#fff',
+              color: currentPage === 1 ? '#6c757d' : '#495057',
+              borderRadius: '6px',
+              cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+              fontSize: '14px'
+            }}
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+          >
+            <i className="fas fa-chevron-left"></i> Previous
+          </button>
+          
+          <div style={{display: 'flex', gap: '5px'}}>
+            {[...Array(totalPages)].map((_, index) => {
+              const pageNum = index + 1;
+              const isCurrentPage = pageNum === currentPage;
+              
+              // Show first page, last page, current page, and pages around current
+              if (
+                pageNum === 1 || 
+                pageNum === totalPages || 
+                (pageNum >= currentPage - 1 && pageNum <= currentPage + 1)
+              ) {
+                return (
+                  <button
+                    key={pageNum}
+                    style={{
+                      padding: '8px 12px',
+                      border: '1px solid #dee2e6',
+                      background: isCurrentPage ? '#007bff' : '#fff',
+                      color: isCurrentPage ? '#fff' : '#495057',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontWeight: isCurrentPage ? 'bold' : 'normal'
+                    }}
+                    onClick={() => handlePageChange(pageNum)}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              }
+              
+              // Show ellipsis for gaps
+              if (pageNum === currentPage - 2 || pageNum === currentPage + 2) {
+                return (
+                  <span key={pageNum} style={{padding: '8px 4px', color: '#6c757d'}}>
+                    ...
+                  </span>
+                );
+              }
+              
+              return null;
+            })}
+          </div>
+          
+          <button 
+            style={{
+              padding: '8px 12px',
+              border: '1px solid #dee2e6',
+              background: currentPage === totalPages ? '#f8f9fa' : '#fff',
+              color: currentPage === totalPages ? '#6c757d' : '#495057',
+              borderRadius: '6px',
+              cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+              fontSize: '14px'
+            }}
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+          >
+            Next <i className="fas fa-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="deal-detail-container">
       <div className="deal-detail-header">
@@ -158,12 +281,6 @@ const DealDetail = () => {
               onClick={() => setActiveTab('redemptions')}
             >
               Redemptions ({(deal.redemptionCount || deal.redemptions || redemptions.length || 0)})
-            </button>
-            <button 
-              className={`tab-button ${activeTab === 'analytics' ? 'active' : ''}`}
-              onClick={() => setActiveTab('analytics')}
-            >
-              Analytics
             </button>
           </div>
 
@@ -371,15 +488,15 @@ const DealDetail = () => {
                 {redemptions.length > 0 ? (
                   <div style={{background: '#fff', border: '1px solid #dee2e6', borderRadius: '8px', overflow: 'hidden'}}>
                     <div style={{background: '#f8f9fa', padding: '15px', borderBottom: '1px solid #dee2e6'}}>
-                      <h3 style={{color: '#495057', margin: '0', fontSize: '18px'}}>Users Who Redeemed This Deal</h3>
+                      <h3 style={{color: '#495057', margin: '0', fontSize: '18px'}}>Users Who Redeemed This Deal ({redemptions.length} total)</h3>
                     </div>
-                    <div style={{maxHeight: '400px', overflowY: 'auto'}}>
-                      {redemptions.map((redemption, index) => (
-                        <div key={index} style={{
+                    <div>
+                      {getPaginatedRedemptions().map((redemption, index) => (
+                        <div key={`${redemption.id || redemption.userId || redemption.user_id}-${index}`} style={{
                           padding: '15px',
-                          borderBottom: index < redemptions.length - 1 ? '1px solid #f1f3f4' : 'none',
+                          borderBottom: index < getPaginatedRedemptions().length - 1 ? '1px solid #f1f3f4' : 'none',
                           display: 'grid',
-                          gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr',
+                          gridTemplateColumns: '1fr 1fr 1fr 1fr',
                           gap: '15px',
                           alignItems: 'center',
                           hover: {background: '#f8f9fa'}
@@ -446,18 +563,12 @@ const DealDetail = () => {
                                redemption.status || 'Unknown'}
                             </div>
                           </div>
-                          <div>
-                            <div style={{color: '#6c757d', fontSize: '12px', marginBottom: '2px'}}>Amount Saved</div>
-                            <div style={{color: '#28a745', fontWeight: 'bold', fontSize: '16px'}}>
-                              ₵{redemption.amountSaved || redemption.amount_saved || 
-                                 (deal.originalPrice && deal.discountedPrice ? 
-                                   (deal.originalPrice - deal.discountedPrice).toFixed(2) : 
-                                   redemption.savings || '0')}
-                            </div>
-                          </div>
                         </div>
                       ))}
                     </div>
+                    
+                    {/* Pagination Component */}
+                    <PaginationComponent />
                   </div>
                 ) : (
                   <div style={{background: '#f8f9fa', padding: '40px', borderRadius: '6px', border: '1px solid #dee2e6', textAlign: 'center'}}>
@@ -471,136 +582,7 @@ const DealDetail = () => {
               </div>
             )}
 
-            {activeTab === 'analytics' && (
-              <div>
-                <h2 style={{color: '#333', marginBottom: '20px'}}>Deal Analytics & Performance</h2>
-                
-                {/* Key Performance Indicators */}
-                <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginBottom: '30px'}}>
-                  <div style={{background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', padding: '25px', borderRadius: '12px', textAlign: 'center', boxShadow: '0 4px 15px rgba(102, 126, 234, 0.3)'}}>
-                    <div style={{fontSize: '32px', fontWeight: 'bold', marginBottom: '8px'}}>{deal.viewCount || deal.view_count || deal.views || 0}</div>
-                    <div style={{fontSize: '14px', opacity: '0.9'}}>Total Views</div>
-                  </div>
-                  <div style={{background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', color: 'white', padding: '25px', borderRadius: '12px', textAlign: 'center', boxShadow: '0 4px 15px rgba(240, 147, 251, 0.3)'}}>
-                    <div style={{fontSize: '32px', fontWeight: 'bold', marginBottom: '8px'}}>{redemptions.length || deal.redemptionCount || deal.redemptions || 0}</div>
-                    <div style={{fontSize: '14px', opacity: '0.9'}}>Total Redemptions</div>
-                  </div>
-                  <div style={{background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', color: 'white', padding: '25px', borderRadius: '12px', textAlign: 'center', boxShadow: '0 4px 15px rgba(79, 172, 254, 0.3)'}}>
-                    <div style={{fontSize: '32px', fontWeight: 'bold', marginBottom: '8px'}}>
-                      {(deal.viewCount && redemptions.length) ? 
-                        ((redemptions.length / deal.viewCount) * 100).toFixed(1) : '0'}%
-                    </div>
-                  </div>
-                </div>
-
-                {/* Performance Chart */}
-                <div style={{background: '#fff', padding: '25px', borderRadius: '12px', border: '1px solid #e1e5e9', marginBottom: '30px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)'}}>
-                  <h3 style={{color: '#495057', marginBottom: '20px', fontSize: '18px'}}>📊 Performance Trends</h3>
-                  <div style={{
-                    height: '320px',
-                    background: 'linear-gradient(45deg, #f8f9fa 25%, transparent 25%, transparent 75%, #f8f9fa 75%), linear-gradient(45deg, #f8f9fa 25%, transparent 25%, transparent 75%, #f8f9fa 75%)',
-                    backgroundSize: '20px 20px',
-                    backgroundPosition: '0 0, 10px 10px',
-                    border: '2px dashed #dee2e6',
-                    borderRadius: '8px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    position: 'relative'
-                  }}>
-                    {/* Mock Chart Visualization */}
-                    <div style={{position: 'absolute', bottom: '20px', left: '20px', right: '20px', height: '200px', display: 'flex', alignItems: 'end', justifyContent: 'space-around'}}>
-                      {[...Array(7)].map((_, i) => {
-                        const height = Math.random() * 150 + 30;
-                        const color = i === 6 ? '#667eea' : '#e9ecef';
-                        return (
-                          <div key={i} style={{
-                            width: '30px',
-                            height: `${height}px`,
-                            background: color,
-                            borderRadius: '4px 4px 0 0',
-                            marginRight: '5px'
-                          }} />
-                        );
-                      })}
-                    </div>
-                    <div style={{textAlign: 'center', color: '#6c757d', zIndex: 1, background: 'rgba(255,255,255,0.9)', padding: '15px', borderRadius: '8px'}}>
-                      <div style={{fontSize: '20px', marginBottom: '10px'}}>📈</div>
-                      <h4 style={{margin: '0 0 8px 0', color: '#495057'}}>Interactive Chart Coming Soon</h4>
-                      <p style={{margin: '0', fontSize: '14px'}}>Daily views, redemptions, and revenue tracking</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Engagement Metrics */}
-                <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px'}}>
-                  <div style={{background: '#fff', padding: '20px', borderRadius: '12px', border: '1px solid #e1e5e9', boxShadow: '0 2px 10px rgba(0,0,0,0.05)'}}>
-                    <h4 style={{color: '#495057', marginBottom: '15px', fontSize: '16px'}}>🎯 User Engagement</h4>
-                    <div style={{marginBottom: '15px'}}>
-                      <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '8px'}}>
-                        <span style={{color: '#6c757d', fontSize: '14px'}}>View-to-Redemption Rate</span>
-                        <span style={{fontWeight: 'bold', color: '#28a745'}}>
-                          {(deal.viewCount && redemptions.length) ? 
-                            ((redemptions.length / deal.viewCount) * 100).toFixed(1) : '0'}%
-                        </span>
-                      </div>
-                      <div style={{background: '#e9ecef', height: '8px', borderRadius: '4px', overflow: 'hidden'}}>
-                        <div style={{
-                          background: 'linear-gradient(90deg, #28a745, #20c997)',
-                          height: '100%',
-                          width: `${(deal.viewCount && redemptions.length) ? 
-                            Math.min(((redemptions.length / deal.viewCount) * 100), 100) : 0}%`,
-                          borderRadius: '4px'
-                        }} />
-                      </div>
-                    </div>
-                    <div style={{marginBottom: '15px'}}>
-                      <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '8px'}}>
-                        <span style={{color: '#6c757d', fontSize: '14px'}}>Deal Popularity</span>
-                        <span style={{fontWeight: 'bold', color: '#007bff'}}>
-                          {deal.viewCount > 100 ? 'High' : deal.viewCount > 50 ? 'Medium' : 'Low'}
-                        </span>
-                      </div>
-                      <div style={{background: '#e9ecef', height: '8px', borderRadius: '4px', overflow: 'hidden'}}>
-                        <div style={{
-                          background: 'linear-gradient(90deg, #007bff, #6610f2)',
-                          height: '100%',
-                          width: `${Math.min((deal.viewCount || 0) / 2, 100)}%`,
-                          borderRadius: '4px'
-                        }} />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div style={{background: '#fff', padding: '20px', borderRadius: '12px', border: '1px solid #e1e5e9', boxShadow: '0 2px 10px rgba(0,0,0,0.05)'}}>
-                    <h4 style={{color: '#495057', marginBottom: '15px', fontSize: '16px'}}>💰 Revenue Analysis</h4>
-                    <div style={{marginBottom: '12px'}}>
-                      <div style={{color: '#6c757d', fontSize: '14px', marginBottom: '4px'}}>Revenue per Redemption</div>
-                      <div style={{fontSize: '20px', fontWeight: 'bold', color: '#28a745'}}>
-                        ₵{redemptions.length > 0 ? 
-                          ((deal.totalRevenue || (redemptions.length * (deal.discountedPrice || 0))) / redemptions.length).toFixed(2) : 
-                          (deal.discountedPrice || deal.discounted_price || 0)}
-                      </div>
-                    </div>
-                    <div style={{marginBottom: '12px'}}>
-                      <div style={{color: '#6c757d', fontSize: '14px', marginBottom: '4px'}}>Potential Lost Revenue</div>
-                      <div style={{fontSize: '20px', fontWeight: 'bold', color: '#dc3545'}}>
-                        ₵{redemptions.length > 0 ? 
-                          (redemptions.length * ((deal.originalPrice || deal.original_price || 0) - (deal.discountedPrice || deal.discounted_price || 0))).toFixed(2) : 
-                          '0'}
-                      </div>
-                    </div>
-                    <div>
-                      <div style={{color: '#6c757d', fontSize: '14px', marginBottom: '4px'}}>Deal Efficiency</div>
-                      <div style={{fontSize: '16px', fontWeight: 'bold', color: '#ffc107'}}>
-                        {redemptions.length > 0 ? 'Active' : deal.viewCount > 0 ? 'Needs Boost' : 'Low Interest'}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+            {/* Analytics tab removed */}
           </div>
         </div>
       )}

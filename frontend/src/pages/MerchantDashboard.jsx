@@ -16,6 +16,7 @@ const MerchantDashboard = () => {
   const { getBusinessCategoryOptions } = useDynamicFields();
   const [deals, setDeals] = useState([]);
   const [plans, setPlans] = useState([]);
+  const [userPlans, setUserPlans] = useState([]);
   const [currentMerchantPlan, setCurrentMerchantPlan] = useState(null);
   const [upgradeRecommendations, setUpgradeRecommendations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -85,28 +86,35 @@ const MerchantDashboard = () => {
   // Fetch merchant plans for access level display
   const fetchPlans = async () => {
     try {
-      // Fetch merchant plans (not user plans!) for merchant upgrade recommendations
-      const plansResponse = await getAllPlans('merchant', true);
-      const allPlans = Array.isArray(plansResponse) ? plansResponse : plansResponse.plans || [];
-      setPlans(allPlans);
-      
-      // Find current merchant's plan
+      // Fetch both merchant plans (for merchant upgrade recommendations) and user plans
+      const [merchantPlansResponse, userPlansResponse] = await Promise.all([
+        getAllPlans('merchant', true),
+        getAllPlans('user', true)
+      ]);
+
+      const merchantPlans = Array.isArray(merchantPlansResponse) ? merchantPlansResponse : merchantPlansResponse.plans || [];
+      const uPlans = Array.isArray(userPlansResponse) ? userPlansResponse : userPlansResponse.plans || [];
+
+      // Merchant plans are used for merchant-specific upgrade recommendations
+      setPlans(merchantPlans);
+      // User plans are the canonical plans for requiredPlanPriority lookups
+      setUserPlans(uPlans);
+
+      // Find current merchant's plan (still match against merchant plans)
       const userPlanType = user?.membershipType || user?.membership || 'basic';
-      
-      // Primary matching should be by plan key, which matches membershipType
-      const foundPlan = allPlans.find(plan => 
+      const foundPlan = merchantPlans.find(plan => 
         plan.key?.toLowerCase() === userPlanType.toLowerCase()
-      ) || allPlans.find(plan => 
+      ) || merchantPlans.find(plan => 
         plan.name?.toLowerCase() === userPlanType.toLowerCase()
-      ) || allPlans.find(plan => 
+      ) || merchantPlans.find(plan => 
         plan.type === userPlanType
       );
-      
+
       setCurrentMerchantPlan(foundPlan);
 
-      // Get upgrade recommendations (plans with higher priority)
+      // Get upgrade recommendations (plans with higher priority) from merchant plans
       const currentPriority = foundPlan?.priority || 0;
-      const recommendations = allPlans
+      const recommendations = merchantPlans
         .filter(plan => plan.priority > currentPriority && plan.isActive)
         .sort((a, b) => a.priority - b.priority)
         .slice(0, 3); // Show max 3 upgrade options
@@ -120,17 +128,18 @@ const MerchantDashboard = () => {
   // Helper function to get plan name by priority
   const getPlanNameByPriority = (priority) => {
     if (!priority && priority !== 0) return 'All Members';
-    
-    const plan = plans.find(p => p.priority === priority);
+
+    // Prefer user plans (these correspond to requiredPlanPriority priorities used by backend)
+    const plan = userPlans.find(p => p.priority === priority) || plans.find(p => p.priority === priority);
     if (plan) {
       return `${plan.name} (${plan.key})`;
     }
-    
+
     // Fallback for unknown priorities
     if (priority === 1) return 'Silver';
     if (priority === 2) return 'Gold';  
     if (priority === 3) return 'Platinum';
-    
+
     return `Priority ${priority}`;
   };
 
@@ -221,10 +230,35 @@ const MerchantDashboard = () => {
   };
 
   // Helper function to check if contact info should be hidden for lower tier plans
+  const shouldBlurContactInfo = (membershipType) => {
+    // Blur contact info for silver and gold merchants (as per task requirement)
+    // Only platinum+ merchants get full visibility
+    switch (membershipType) {
+      case 'silver_merchant':
+      case 'silver_business':
+      case 'silver':
+      case 'gold_merchant':
+      case 'gold_business':
+      case 'gold':
+        return true;
+      case 'platinum_merchant':
+      case 'platinum_business':
+      case 'platinum_plus':
+      case 'platinum_plus_business':
+        return false;
+      default:
+        return true; // Hide for basic plans
+    }
+  };
+
   const shouldHideContactInfo = (membershipType) => {
-    const planLevel = getUserPlanLevel(membershipType);
-    // Hide contact info for basic and silver (premium) plans, show for gold+ (featured) plans
-    return planLevel === 'basic' || planLevel === 'premium';
+    // Only hide completely for basic plans, blur for silver/gold
+    return membershipType === 'basic' || !membershipType;
+  };
+
+  const blurText = (text, blurLength = 3) => {
+    if (!text || text.length <= blurLength) return '***';
+    return text.substring(0, Math.max(1, Math.floor(text.length / 3))) + '*'.repeat(blurLength) + text.substring(text.length - 1);
   };
 
   // Get merchant benefits based on plan data
@@ -369,7 +403,7 @@ const MerchantDashboard = () => {
       case 'gold_merchant':
       case 'gold_business':
       case 'gold':
-        // Gold plans - full features (DISABLE view analytics and deal analytics)
+        // Gold plans - full features (DISABLE statistics, view analytics and deal analytics)
         access = {
           analytics: true,
           advancedStats: true,
@@ -377,7 +411,7 @@ const MerchantDashboard = () => {
           dealPosting: 'unlimited', // Maximum deal posting
           priorityListing: true,
           featuredPlacement: true,
-          statisticsPanel: true, // ENABLED for gold
+          statisticsPanel: false, // DISABLED for gold (per task requirement)
           viewAnalyticsButton: false, // DISABLED for gold
           dealAnalyticsButton: false // DISABLED for gold
         };
@@ -671,21 +705,12 @@ const MerchantDashboard = () => {
   };
 
   const handleEditDeal = (deal) => {
-    console.log('[DEBUG] handleEditDeal called with deal:', deal);
-    console.log('[DEBUG] Deal status:', deal.status);
-    console.log('[DEBUG] Allowed statuses:', ['pending_approval', 'rejected']);
-    console.log('[DEBUG] Status check result:', ['pending_approval', 'rejected'].includes(deal.status));
-    
-    // Check if deal can be edited
-    if (!['pending_approval', 'rejected'].includes(deal.status)) {
-      console.log('[DEBUG] Deal cannot be edited - wrong status');
-      showNotification('Can only edit deals that are pending approval or rejected', 'error');
+    // Allow editing for pending_approval, rejected, or active deals
+    if (!['pending_approval', 'rejected', 'active'].includes(deal.status)) {
+      showNotification('Can only edit deals that are pending approval, rejected, or live (active)', 'error');
       return;
     }
-    
-    console.log('[DEBUG] Setting editingDeal to:', deal);
     setEditingDeal(deal);
-    console.log('[DEBUG] Setting showDealForm to true');
     setShowDealForm(true);
   };
 
@@ -968,19 +993,19 @@ const MerchantDashboard = () => {
           <div className="basic-stats-message">
             <div className="upgrade-prompt">
               <h3><i className="fas fa-star"></i> Upgrade to Access Statistics</h3>
-              <p>Get detailed statistics about your business performance with our Gold or Platinum plans.</p>
+              <p>Get detailed statistics about your business performance with our Platinum plans.</p>
               <div className="basic-features">
                 <div className="basic-feature">
                   <i className="fas fa-check"></i> Business listing included
                 </div>
                 <div className="basic-feature">
-                  <i className="fas fa-times"></i> Analytics & stats (Premium+)
+                  <i className="fas fa-times"></i> Analytics & stats (Platinum+)
                 </div>
                 <div className="basic-feature">
-                  <i className="fas fa-times"></i> Deal posting (Premium+)
+                  <i className="fas fa-times"></i> Deal posting (Silver+)
                 </div>
                 <div className="basic-feature">
-                  <i className="fas fa-times"></i> Featured placement (Featured plans)
+                  <i className="fas fa-times"></i> Featured placement (Gold+)
                 </div>
               </div>
               <button className="btn btn-primary">
@@ -1343,12 +1368,7 @@ const MerchantDashboard = () => {
                 <div className="redemption-info">
                   <div className="user-info">
                     <i className="fas fa-user-circle"></i>
-                    {!shouldHideContactInfo(userInfo?.membershipType) ? (
-                      <>
-                        <span className="user-name">{redemption.fullName}</span>
-                        <span className="membership-number">#{redemption.membershipNumber}</span>
-                      </>
-                    ) : (
+                    {shouldHideContactInfo(userInfo?.membershipType) ? (
                       <>
                         <span className="user-name-hidden">Customer</span>
                         <button 
@@ -1358,6 +1378,19 @@ const MerchantDashboard = () => {
                           <i className="fas fa-lock"></i>
                           View Details
                         </button>
+                      </>
+                    ) : shouldBlurContactInfo(userInfo?.membershipType) ? (
+                      <>
+                        <span className="user-name">{blurText(redemption.fullName)}</span>
+                        <span className="membership-number">#{redemption.membershipNumber}</span>
+                        <small className="text-muted">
+                          <i className="fas fa-eye-slash"></i> Upgrade to Premium for full details
+                        </small>
+                      </>
+                    ) : (
+                      <>
+                        <span className="user-name">{redemption.fullName}</span>
+                        <span className="membership-number">#{redemption.membershipNumber}</span>
                       </>
                     )}
                   </div>
@@ -1478,6 +1511,13 @@ const MerchantDashboard = () => {
                   <div key={deal.id} className={`deal-card ${isExpired ? 'expired-deal' : ''}`}>
                       {deal.bannerImage && (
                       <div className="deal-banner-container">
+                        {/* Limited Badge - Show when member limit is set */}
+                        {(deal.member_limit || deal.memberLimit) && (
+                          <div className="deal-limited-badge">
+                            <i className="fas fa-users"></i>
+                            Limited
+                          </div>
+                        )}
                         <SmartImage 
                           src={getDealBannerUrl(deal)} 
                           alt={deal.title} 
@@ -1488,9 +1528,18 @@ const MerchantDashboard = () => {
                     )}
                     <div className="deal-header">
                       <h3>{deal.title}</h3>
-                      <span className={`status-badge ${isExpired ? 'expired' : deal.status}`}>
-                        {displayStatus}
-                      </span>
+                      <div className="deal-header-badges">
+                        <span className={`status-badge ${isExpired ? 'expired' : deal.status}`}>
+                          {displayStatus}
+                        </span>
+                        {/* Limited Badge for deals without banners */}
+                        {!deal.bannerImage && (deal.member_limit || deal.memberLimit) && (
+                          <span className="limited-badge-inline">
+                            <i className="fas fa-users"></i>
+                            Limited
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <p className="deal-description">{deal.description}</p>
                     
@@ -1563,8 +1612,8 @@ const MerchantDashboard = () => {
                       <button 
                         className="btn btn-sm btn-secondary" 
                         onClick={() => handleEditDeal(deal)}
-                        disabled={!['pending_approval', 'rejected'].includes(deal.status)}
-                        title={['pending_approval', 'rejected'].includes(deal.status) ? 'Edit deal' : 'Can only edit pending or rejected deals'}
+                        disabled={!['pending_approval', 'rejected', 'active'].includes(deal.status)}
+                        title={['pending_approval', 'rejected', 'active'].includes(deal.status) ? 'Edit deal' : 'Can only edit pending, rejected, or live (active) deals'}
                       >
                         <i className="fas fa-edit"></i> Edit
                       </button>
@@ -1676,18 +1725,7 @@ const MerchantDashboard = () => {
                           </div>
                           <div className="customer-info">
                             <div className="customer-details">
-                              {!shouldHideContactInfo(userInfo?.membershipType) ? (
-                                <>
-                                  <div className="customer-name">
-                                    <i className="fas fa-user"></i>
-                                    <strong>{request.userName || 'Customer'}</strong>
-                                  </div>
-                                  <div className="customer-contact">
-                                    <i className="fas fa-phone"></i>
-                                    <span>{request.phone || 'Phone not available'}</span>
-                                  </div>
-                                </>
-                              ) : (
+                              {shouldHideContactInfo(userInfo?.membershipType) ? (
                                 <div className="customer-private">
                                   <i className="fas fa-user-shield"></i>
                                   <strong>Customer Information</strong>
@@ -1699,6 +1737,34 @@ const MerchantDashboard = () => {
                                     View Details
                                   </button>
                                 </div>
+                              ) : shouldBlurContactInfo(userInfo?.membershipType) ? (
+                                <>
+                                  <div className="customer-name">
+                                    <i className="fas fa-user"></i>
+                                    <strong>{blurText(request.userName || 'Customer')}</strong>
+                                    <small className="text-muted ml-2">
+                                      <i className="fas fa-eye-slash"></i> Upgrade for full details
+                                    </small>
+                                  </div>
+                                  <div className="customer-contact">
+                                    <i className="fas fa-phone"></i>
+                                    <span>{blurText(request.phone || 'Phone not available')}</span>
+                                    <small className="text-muted ml-2">
+                                      <i className="fas fa-lock"></i> Upgrade to view
+                                    </small>
+                                  </div>
+                                </>
+                              ) : (
+                                <>
+                                  <div className="customer-name">
+                                    <i className="fas fa-user"></i>
+                                    <strong>{request.userName || 'Customer'}</strong>
+                                  </div>
+                                  <div className="customer-contact">
+                                    <i className="fas fa-phone"></i>
+                                    <span>{request.phone || 'Phone not available'}</span>
+                                  </div>
+                                </>
                               )}
                               {request.membershipNumber && (
                                 <div className="membership-number">
@@ -2231,12 +2297,19 @@ const MerchantDashboard = () => {
                                   day: '2-digit'
                                 })}</td>
                                 <td>
-                                  {!shouldHideContactInfo(userInfo?.membershipType) ? (
-                                    redemption.user_name
-                                  ) : (
+                                  {shouldHideContactInfo(userInfo?.membershipType) ? (
                                     <span className="private-info">
                                       <i className="fas fa-lock"></i> Private
                                     </span>
+                                  ) : shouldBlurContactInfo(userInfo?.membershipType) ? (
+                                    <>
+                                      {blurText(redemption.user_name)}
+                                      <small className="text-muted">
+                                        <i className="fas fa-eye-slash"></i> Upgrade for full details
+                                      </small>
+                                    </>
+                                  ) : (
+                                    redemption.user_name
                                   )}
                                 </td>
                                 <td>
@@ -2250,7 +2323,24 @@ const MerchantDashboard = () => {
                                   </span>
                                 </td>
                                 <td>
-                                  {!shouldHideContactInfo(userInfo?.membershipType) ? (
+                                  {shouldHideContactInfo(userInfo?.membershipType) ? (
+                                    <span className="private-contact">
+                                      <i className="fas fa-lock"></i> Upgrade to view
+                                    </span>
+                                  ) : shouldBlurContactInfo(userInfo?.membershipType) ? (
+                                    redemption.user_phone ? (
+                                      <>
+                                        <span className="blurred-contact">
+                                          <i className="fas fa-phone"></i> {blurText(redemption.user_phone)}
+                                        </span>
+                                        <small className="text-muted">
+                                          <i className="fas fa-eye-slash"></i> Upgrade to view
+                                        </small>
+                                      </>
+                                    ) : (
+                                      <span className="no-contact">Not available</span>
+                                    )
+                                  ) : (
                                     redemption.user_phone ? (
                                       <a href={`tel:${redemption.user_phone}`} className="contact-link">
                                         <i className="fas fa-phone"></i> {redemption.user_phone}
@@ -2258,10 +2348,6 @@ const MerchantDashboard = () => {
                                     ) : (
                                       <span className="no-contact">Not available</span>
                                     )
-                                  ) : (
-                                    <span className="private-contact">
-                                      <i className="fas fa-lock"></i> Upgrade to view
-                                    </span>
                                   )}
                                 </td>
                               </tr>
@@ -2391,11 +2477,7 @@ const MerchantDashboard = () => {
             <div className="modal-footer">
               <button 
                 className="btn btn-secondary" 
-                onClick={() => {
-                  setShowMemberVerification(false);
-                  setMembershipSearch('');
-                  setMemberVerificationResult(null);
-                }}
+                onClick={() => setShowMemberVerification(false)}
               >
                 Close
               </button>

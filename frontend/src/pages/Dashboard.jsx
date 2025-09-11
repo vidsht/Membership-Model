@@ -69,16 +69,32 @@ const Dashboard = () => {
   const getMembershipBenefits = (planData, userType) => {
     console.log('Dashboard: getMembershipBenefits called with:', { planData, userType });
     
+    // Benefits to exclude from display
+    const excludedBenefitTypes = [
+      'community updates', 'cashback offers', 'curated deals', 'flash deals'
+    ];
+    
+    const filterBenefits = (benefits) => {
+      return benefits.filter(benefit => {
+        const benefitLower = benefit.toLowerCase();
+        // Exclude benefits that contain any of the excluded types
+        return !excludedBenefitTypes.some(excluded => 
+          benefitLower.includes(excluded) || benefitLower.startsWith('access to')
+        );
+      });
+    };
+    
     // First priority: Use features from API if available
     if (planData?.features && Array.isArray(planData.features) && planData.features.length > 0) {
       console.log('Dashboard: Using API features array:', planData.features);
-      return planData.features.filter(feature => feature && feature.trim());
+      const filteredFeatures = filterBenefits(planData.features.filter(feature => feature && feature.trim()));
+      return filteredFeatures;
     }
 
     // Second priority: Use benefits array if available
     if (planData?.benefits && Array.isArray(planData.benefits)) {
       console.log('Dashboard: Using benefits array:', planData.benefits);
-      return planData.benefits;
+      return filterBenefits(planData.benefits);
     }
 
     // Third priority: Parse features as string if it's a comma-separated string
@@ -86,7 +102,7 @@ const Dashboard = () => {
       const featuresArray = planData.features.split(',').map(f => f.trim()).filter(f => f);
       if (featuresArray.length > 0) {
         console.log('Dashboard: Using parsed features string:', featuresArray);
-        return featuresArray;
+        return filterBenefits(featuresArray);
       }
     }
 
@@ -94,88 +110,93 @@ const Dashboard = () => {
     // Fallback to hardcoded benefits based on plan name/type
     const planName = planData?.name?.toLowerCase() || planData?.type?.toLowerCase() || 'basic';
     
+    let hardcodedBenefits = [];
+    
     if (userType === 'merchant') {
       switch (planName) {
         case 'platinum':
         case 'platinum_business':
         case 'featured':
-          return [
+          hardcodedBenefits = [
             'Premium business listing with featured placement',
             'Unlimited deal creation and promotion',
             'Advanced analytics and customer insights',
             'Priority customer support',
-            'Community networking events access',
             'Monthly performance reports',
             'Featured logo placement on homepage'
           ];
+          break;
         case 'gold':
         case 'gold_business':
         case 'premium':
-          return [
+          hardcodedBenefits = [
             'Enhanced business listing',
             'Up to 20 deals per month',
             'Basic analytics dashboard',
-            'Community networking access',
             'Email marketing support',
             'Monthly newsletter feature'
           ];
+          break;
         case 'silver':
         case 'silver_business':
-          return [
+          hardcodedBenefits = [
             'Standard business listing',
             'Up to 10 deals per month',
             'Basic business profile',
             'Community directory inclusion',
             'Event notifications'
           ];
+          break;
         default:
-          return [
+          hardcodedBenefits = [
             'Basic business listing',
             'Up to 5 deals per month',
-            'Community directory access',
             'Basic customer support'
           ];
       }
     } else {
-      // Regular user benefits
+      // Regular user benefits (filtered to exclude specified types)
       switch (planName) {
         case 'platinum':
         case 'lifetime':
-          return [
-            'Unlimited exclusive deals access',
-            'VIP event access and priority booking',
+          hardcodedBenefits = [
+            'Unlimited exclusive deals',
+            'VIP event booking',
             'Concierge support services',
             'Digital membership card with premium design',
-            'Community networking events',
             'Travel assistance and discounts',
             'Priority customer support'
           ];
+          break;
         case 'gold':
-          return [
-            'Access to premium deals (up to 50% off)',
+          hardcodedBenefits = [
+            'Premium deals (up to 50% off)',
             'Priority event booking',
             'Enhanced member support',
             'Digital membership card',
-            'Monthly community newsletter',
+            'Monthly newsletter',
             'Networking event invitations'
           ];
+          break;
         case 'silver':
-          return [
-            'Access to standard deals (up to 30% off)',
+          hardcodedBenefits = [
+            'Standard deals (up to 30% off)',
             'Event notifications and booking',
             'Digital membership card',
-            'Community directory access',
             'Basic member support'
           ];
+          break;
         default:
-          return [
+          hardcodedBenefits = [
             'Basic membership card',
-            'Community event updates',
-            'Member directory access',
+            'Member directory listing',
             'Newsletter subscription'
           ];
       }
     }
+    
+    // Apply the same filtering to hardcoded benefits
+    return filterBenefits(hardcodedBenefits);
   };
 
   const getNextMembershipType = (current) => {
@@ -229,85 +250,82 @@ const Dashboard = () => {
           {user.userType === 'merchant' ? <MerchantCertificate /> : <MembershipCard />}
         </div>
 
-        {/* Benefits Section */}
-        <div className="benefits-section">
-          <div className="benefits-header">
-            <h2>
-              <i className={`fas ${user.userType === 'merchant' ? 'fa-handshake' : 'fa-gift'}`}></i>
-              Your {currentPlan?.name || 'Current'} Plan Benefits
-            </h2>
-            <p>
-              {user.userType === 'merchant' 
-                ? 'Exclusive advantages for business partners' 
-                : 'Exclusive privileges for community members'
-              }
-            </p>
-          </div>
-
-          {/* Plan Details Card */}
-          {currentPlan && (
-            <div className="plan-details-card">
-              <div className="plan-details-header">
-                <div className="plan-info">
-                  <h3>{currentPlan.name}</h3>
-                  <p className="plan-description">{currentPlan.description || 'Premium membership plan'}</p>
-                </div>
-                <div className="plan-pricing">
-                  <span className="price-amount">{currentPlan.currency} {currentPlan.price}</span>
-                  <span className="billing-cycle">/{currentPlan.billingCycle}</span>
-                </div>
-              </div>
-              
-              <div className="plan-details-stats">
-                {currentPlan.maxRedemptions && (
-                  <div className="plan-stat">
-                    <i className="fas fa-tags"></i>
-                    <span>Up to {currentPlan.maxRedemptions} redemptions</span>
-                  </div>
-                )}
-                {currentPlan.dealPostingLimit && (
-                  <div className="plan-stat">
-                    <i className="fas fa-bullhorn"></i>
-                    <span>Up to {currentPlan.dealPostingLimit} deals/month</span>
-                  </div>
-                )}
-                {currentPlan.priority && (
-                  <div className="plan-stat">
-                    <i className="fas fa-star"></i>
-                    <span>Priority Level {currentPlan.priority}</span>
-                  </div>
-                )}
-                {user.validationDate && (
-                  <div className="plan-stat">
-                    <i className="fas fa-calendar-check"></i>
-                    <span>Valid until {new Date(user.validationDate).toLocaleDateString()}</span>
-                  </div>
-                )}
-              </div>
+        {/* Benefits Section - Hidden for merchants */}
+        {user.userType !== 'merchant' && (
+          <div className="benefits-section">
+            <div className="benefits-header">
+              <h2>
+                <i className="fas fa-gift"></i>
+                Your {currentPlan?.name || 'Current'} Plan Benefits
+              </h2>
+              <p>Exclusive privileges for community members</p>
             </div>
-          )}
-          
-          <div className="benefits-grid">
-            {getMembershipBenefits(currentPlan, user.userType).map((benefit, index) => (
-              <div key={index} className="benefit-card">
-                <div className="benefit-icon">
-                  <i className={`fas ${
-                    benefit.includes('VIP') || benefit.includes('Priority') ? 'fa-crown' :
-                    benefit.includes('deal') || benefit.includes('Deal') ? 'fa-tags' :
-                    benefit.includes('event') || benefit.includes('Event') ? 'fa-calendar-alt' :
-                    benefit.includes('support') || benefit.includes('Support') ? 'fa-headset' :
-                    benefit.includes('analytics') || benefit.includes('Analytics') ? 'fa-chart-line' :
-                    benefit.includes('card') || benefit.includes('Card') ? 'fa-id-card' :
-                    benefit.includes('listing') || benefit.includes('Listing') ? 'fa-store' :
-                    'fa-check-circle'
-                  }`}></i>
+
+            {/* Plan Details Card */}
+            {currentPlan && (
+              <div className="plan-details-card">
+                <div className="plan-details-header">
+                  <div className="plan-info">
+                    <h3>{currentPlan.name}</h3>
+                    <p className="plan-description">{currentPlan.description || 'Premium membership plan'}</p>
+                  </div>
+                  <div className="plan-pricing">
+                    <span className="price-amount">{currentPlan.currency} {currentPlan.price}</span>
+                    <span className="billing-cycle">/{currentPlan.billingCycle}</span>
+                  </div>
                 </div>
-                <h3>{benefit.split(' ').slice(0, 3).join(' ')}</h3>
-                <p>{benefit}</p>
+                
+                <div className="plan-details-stats">
+                  {currentPlan.maxRedemptions && (
+                    <div className="plan-stat">
+                      <i className="fas fa-tags"></i>
+                      <span>Up to {currentPlan.maxRedemptions} redemptions</span>
+                    </div>
+                  )}
+                  {currentPlan.dealPostingLimit && (
+                    <div className="plan-stat">
+                      <i className="fas fa-bullhorn"></i>
+                      <span>Up to {currentPlan.dealPostingLimit} deals/month</span>
+                    </div>
+                  )}
+                  {currentPlan.priority && (
+                    <div className="plan-stat">
+                      <i className="fas fa-star"></i>
+                      <span>Priority Level {currentPlan.priority}</span>
+                    </div>
+                  )}
+                  {user.validationDate && (
+                    <div className="plan-stat">
+                      <i className="fas fa-calendar-check"></i>
+                      <span>Valid until {new Date(user.validationDate).toLocaleDateString()}</span>
+                    </div>
+                  )}
+                </div>
               </div>
-            ))}
+            )}
+            
+            <div className="benefits-grid">
+              {getMembershipBenefits(currentPlan, user.userType).map((benefit, index) => (
+                <div key={index} className="benefit-card">
+                  <div className="benefit-icon">
+                    <i className={`fas ${
+                      benefit.includes('VIP') || benefit.includes('Priority') ? 'fa-crown' :
+                      benefit.includes('deal') || benefit.includes('Deal') ? 'fa-tags' :
+                      benefit.includes('event') || benefit.includes('Event') ? 'fa-calendar-alt' :
+                      benefit.includes('support') || benefit.includes('Support') ? 'fa-headset' :
+                      benefit.includes('analytics') || benefit.includes('Analytics') ? 'fa-chart-line' :
+                      benefit.includes('card') || benefit.includes('Card') ? 'fa-id-card' :
+                      benefit.includes('listing') || benefit.includes('Listing') ? 'fa-store' :
+                      'fa-check-circle'
+                    }`}></i>
+                  </div>
+                  <h3>{benefit.split(' ').slice(0, 3).join(' ')}</h3>
+                  <p>{benefit}</p>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Upgrade Recommendations Section */}
         {upgradeRecommendations.length > 0 && (

@@ -14,11 +14,6 @@ const Activities = () => {
   const { validateSession, handleSessionExpired } = useAuth();
   const [activities, setActivities] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [filters, setFilters] = useState({
-    type: 'all',
-    dateRange: '7',
-    search: ''
-  });
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
@@ -26,18 +21,17 @@ const Activities = () => {
     totalActivities: 0
   });
   
+  // Fetch activities when page or page size changes
   useEffect(() => {
     fetchActivities();
-  }, [filters, pagination.currentPage]);
+  }, [pagination.currentPage, pagination.pageSize]);
 
   const fetchActivities = async () => {
     try {
       setIsLoading(true);
       
+      // No filters applied — request only pagination params
       const queryParams = new URLSearchParams({
-        type: filters.type,
-        dateRange: filters.dateRange,
-        search: filters.search,
         page: pagination.currentPage,
         limit: pagination.pageSize
       });
@@ -56,11 +50,6 @@ const Activities = () => {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleFilterChange = (key, value) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
-    setPagination(prev => ({ ...prev, currentPage: 1 }));
   };
 
   const handlePageChange = (page) => {
@@ -163,63 +152,12 @@ const Activities = () => {
         </div>
       </div>
 
+      {/* Simple toolbar: removed filters per request. Keep reload action. */}
       <div className="user-filters">
-        <div className="search-bar">
-          <input
-            type="text"
-            placeholder="Search activities..."
-            value={filters.search}
-            onChange={(e) => handleFilterChange('search', e.target.value)}
-          />
-          <button type="button">
-            <i className="fas fa-search"></i>
-          </button>
-        </div>
-        
         <div className="filter-controls">
           <div className="filter-group">
-            <label htmlFor="type-filter">Activity Type</label>
-            <select
-              id="type-filter"
-              value={filters.type}
-              onChange={(e) => handleFilterChange('type', e.target.value)}
-            >
-              <option value="all">All Activities</option>
-              <option value="user_registered">User Registrations</option>
-              <option value="user_approved">User Approvals</option>
-              <option value="user_rejected">User Rejections</option>
-              <option value="business_registered">Business Registrations</option>
-              <option value="deal_created">Deal Creation</option>
-              <option value="plan_assigned">Plan Assignments</option>
-              <option value="role_assigned">Role Assignments</option>
-              <option value="login">Login Activities</option>
-              <option value="admin_action">Admin Actions</option>
-            </select>
-          </div>
-
-          <div className="filter-group">
-            <label htmlFor="date-filter">Date Range</label>
-            <select
-              id="date-filter"
-              value={filters.dateRange}
-              onChange={(e) => handleFilterChange('dateRange', e.target.value)}
-            >
-              <option value="1">Last 24 hours</option>
-              <option value="7">Last 7 days</option>
-              <option value="30">Last 30 days</option>
-              <option value="90">Last 90 days</option>
-              <option value="all">All time</option>
-            </select>
-          </div>
-
-          <div className="filter-actions">
-            <button
-              type="button"
-              className="btn-clear"
-              onClick={() => setFilters({ type: 'all', dateRange: '7', search: '' })}
-            >
-              <i className="fas fa-times"></i>
-              Clear Filters
+            <button className="btn-refresh" onClick={fetchActivities}>
+              <i className="fas fa-sync"></i> Reload Activities
             </button>
           </div>
         </div>
@@ -236,9 +174,9 @@ const Activities = () => {
       ) : activities.length === 0 ? (
         <div className="empty-state">
           <i className="fas fa-calendar-times"></i>
-          <p>No activities match your current filters.</p>
-          <button className="btn-outline" onClick={() => setFilters({ type: 'all', dateRange: '7', search: '' })}>
-            Clear Filters
+          <p>No recent activities.</p>
+          <button className="btn-outline" onClick={fetchActivities}>
+            Reload
           </button>
         </div>
       ) : (

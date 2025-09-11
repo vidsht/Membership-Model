@@ -14,7 +14,7 @@ const UserDetailEdit = () => {
   const { validateSession, handleSessionExpired } = useAuth();
   const { showNotification } = useNotification();
   const { getProfileImageUrl } = useImageUrl();
-  const { getCommunityOptions, isLoading: fieldsLoading } = useDynamicFields();
+  const { getCommunityOptions, getCountryOptions, getStateOptions, isLoading: fieldsLoading } = useDynamicFields();
 
   // State Management
   const [user, setUser] = useState(null);
@@ -31,7 +31,7 @@ const UserDetailEdit = () => {
     address: '',
     dob: '',
     community: '',
-    country: 'Ghana',
+    country: '',
     state: '',
     city: '',
     userType: 'user',
@@ -130,7 +130,7 @@ const UserDetailEdit = () => {
           address: typeof userData.address === 'string' ? userData.address : JSON.stringify(userData.address || ''),
           dob: userData.dob ? userData.dob.split('T')[0] : '',
           community: userData.community || '',
-          country: userData.country || 'Ghana',
+          country: userData.country || '',
           state: userData.state || '',
           city: userData.city || '',
           userType: userData.userType || 'user',
@@ -251,7 +251,7 @@ const UserDetailEdit = () => {
         address: typeof user.address === 'string' ? user.address : JSON.stringify(user.address || ''),
         dob: user.dob ? user.dob.split('T')[0] : '',
         community: user.community || '',
-        country: user.country || 'Ghana',
+        country: user.country || '',
         state: user.state || '',
         city: user.city || '',
         userType: user.userType || 'user',
@@ -601,7 +601,16 @@ const UserDetailEdit = () => {
                       onChange={(e) => handleInputChange('country', e.target.value)}
                       className="edit-input"
                     >
-                      <option value="Ghana">Ghana</option>
+                      <option value="">Select country</option>
+                      {fieldsLoading ? (
+                        <option disabled>Loading countries...</option>
+                      ) : (
+                        getCountryOptions().map(option => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))
+                      )}
                     </select>
                   ) : (
                     <span>{user.country || 'N/A'}</span>
@@ -611,13 +620,22 @@ const UserDetailEdit = () => {
                 <div className="detail-item">
                   <label>State/Region</label>
                   {editMode ? (
-                    <input
-                      type="text"
+                    <select
                       value={formData.state}
                       onChange={(e) => handleInputChange('state', e.target.value)}
                       className="edit-input"
-                      placeholder="State or region"
-                    />
+                    >
+                      <option value="">Select state/region</option>
+                      {fieldsLoading ? (
+                        <option disabled>Loading states...</option>
+                      ) : (
+                        getStateOptions().map(option => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))
+                      )}
+                    </select>
                   ) : (
                     <span>{user.state || 'N/A'}</span>
                   )}
