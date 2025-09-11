@@ -387,6 +387,7 @@
   font-weight: 600;
   text-transform: capitalize;
   display: inline-block;
+  justify-content: center;
 }
 
 .plan-badge.community,

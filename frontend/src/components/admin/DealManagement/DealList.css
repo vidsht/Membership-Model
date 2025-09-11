@@ -44,7 +44,7 @@
   color: #0c905d;
 }
 .deal-stat:nth-child(2) .stat-value {
-  color: #007bff;
+  color: #8B1515;
 }
 .deal-stat:nth-child(3) .stat-value {
   color: #dc3545;
@@ -229,7 +229,7 @@
 }
 
 .access-level.full {
-  color: #007bff;
+  color: #8B1515;
 }
 
 /* Action Buttons */

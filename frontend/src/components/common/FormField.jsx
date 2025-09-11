@@ -1,5 +1,5 @@
 import React from 'react';
-import '../styles/FormValidation.css';
+import '../../styles/FormValidation.css';
 
 /**
  * FormField Component with built-in validation display

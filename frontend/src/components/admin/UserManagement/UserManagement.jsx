@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useNotification } from '../../../contexts/NotificationContext';
 import { useAuth } from '../../../contexts/AuthContext';
 import api from '../../../services/api';
+import useFilterPersistence from '../../../hooks/useFilterPersistence';
 import UserTable from './components/UserTable';
 import UserFilters from './components/UserFilters';
 import UserModal from './components/UserModal';
@@ -61,7 +62,7 @@ const UserManagement = () => {
     user: null
   });
 
-  const [filters, setFilters] = useState({
+  const [filters, setFilters, resetFilters] = useFilterPersistence('admin-user-management-filters', {
     search: '',
     status: 'all',
     userType: 'all',

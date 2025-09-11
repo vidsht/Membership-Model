@@ -12,6 +12,12 @@
   border-bottom: 1px solid #e1e1e1;
 }
 
+.registration-header .header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
 .registration-header h2 {
   display: flex;
   align-items: center;
@@ -23,6 +29,25 @@
 .registration-header h2 i {
   margin-right: 10px;
   color: #3498db;
+}
+
+.back-to-dashboard {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  text-decoration: none;
+  border: 1px solid #8B1515;
+  color: #8B1515;
+  background: transparent;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.back-to-dashboard:hover {
+  background-color: #8B1515;
+  color: white;
 }
 
 .step-indicator {

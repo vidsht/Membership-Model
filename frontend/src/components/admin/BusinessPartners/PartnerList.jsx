@@ -4,6 +4,7 @@ import { useNotification } from '../../../contexts/NotificationContext';
 import { useAuth } from '../../../contexts/AuthContext';
 import api from '../../../services/api';
 import { useDynamicFields } from '../../../hooks/useDynamicFields';
+import useFilterPersistence from '../../../hooks/useFilterPersistence';
 import './PartnerList.css';
 import PartnerDetail from './PartnerDetail';
 import ConfirmationDialog from '../../common/ConfirmationDialog';
@@ -33,8 +34,8 @@ const PartnerList = () => {
     partnerName: ''
   });
   
-  // Filter states
-  const [filters, setFilters] = useState({
+  // Filter states with persistence
+  const [filters, setFilters, resetFilters] = useFilterPersistence('admin-partner-filters', {
     status: searchParams.get('status') || 'all',
     category: 'all',
     search: '',

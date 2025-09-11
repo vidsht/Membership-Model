@@ -7,6 +7,7 @@ import api from '../../../services/api';
 import UserDetail from './UserDetail';
 import Modal from '../../shared/Modal';
 import { useModal } from '../../../hooks/useModal';
+import useFilterPersistence from '../../../hooks/useFilterPersistence';
 import './UserList.css';
 import useImageUrl from '../../../hooks/useImageUrl';
 
@@ -32,8 +33,8 @@ const UserList = () => {
     userName: ''
   });
 
-  // Filter states
-  const [filters, setFilters] = useState({
+  // Filter states with persistence
+  const [filters, setFilters, resetFilters] = useFilterPersistence('admin-user-filters', {
     status: searchParams.get('filter') || 'all',
     plan: 'all',
     search: '',

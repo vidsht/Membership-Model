@@ -20,6 +20,12 @@ const BusinessDirectory = () => {
   const { getMerchantLogoUrl } = useImageUrl();
   const { dynamicFields, isLoading: dynamicLoading } = useDynamicFields();
 
+  // Ensure website URLs include protocol and won't be treated as internal navigation
+  const sanitizeUrl = (u) => {
+    if (!u) return '';
+    return /^https?:\/\//i.test(u) ? u : `https://${u}`;
+  };
+
   // Use dynamic business categories from hook
   const categories = dynamicFields.businessCategories && dynamicFields.businessCategories.length > 0
     ? dynamicFields.businessCategories.map(cat => cat.name || cat)
@@ -282,9 +288,20 @@ Discover quality services and support our community businesses! 🇮🇳🇬🇭
                 
                 <div className="business-actions">
                   {website && (
-                    <a href={website} target="_blank" rel="noopener noreferrer" className="business-website">
-                      <i className="fas fa-globe"></i> Visit Website
-                    </a>
+                    (() => {
+                      const websiteUrl = sanitizeUrl(website);
+                      return websiteUrl ? (
+                        <a
+                          href={websiteUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="business-website"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <i className="fas fa-globe"></i> Visit Website
+                        </a>
+                      ) : null;
+                    })()
                   )}
                   <button 
                     className="business-share-btn"
@@ -398,9 +415,21 @@ Discover quality services and support our community businesses! 🇮🇳🇬🇭
                   {selectedBusiness.website && (
                     <div className="modal-section">
                       <h4>Website</h4>
-                      <a href={selectedBusiness.website} target="_blank" rel="noopener noreferrer" className="business-website-modal">
-                        <i className="fas fa-globe"></i> {selectedBusiness.website}
-                      </a>
+                      {(() => {
+                        const websiteUrlModal = sanitizeUrl(selectedBusiness.website);
+                        return websiteUrlModal ? (
+                          <a
+                            href={websiteUrlModal}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="business-website-modal"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <i className="fas fa-globe"></i> {websiteUrlModal}
+                          </a>
+                        ) : null;
+                      })()}
+                      
                     </div>
                   )}
                 </div>
