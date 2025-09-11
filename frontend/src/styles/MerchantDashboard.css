@@ -3881,6 +3881,56 @@ background: white;
   margin: 0;
 }
 
+/* Blurred Contact Info Styles */
+.blurred-contact {
+  font-family: monospace;
+  color: #6c757d;
+  position: relative;
+  letter-spacing: 1px;
+}
+
+.blurred-contact small.text-muted {
+  display: block;
+  font-size: 0.75rem;
+  color: #adb5bd;
+  margin-top: 3px;
+}
+
+.customer-name strong {
+  position: relative;
+}
+
+.customer-name .text-muted {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: normal;
+  margin-top: 3px;
+}
+
+.customer-contact .text-muted {
+  display: block;
+  font-size: 0.75rem;
+  margin-top: 3px;
+}
+
+/* Enhanced styling for blurred text */
+.customer-details .text-muted i {
+  color: #6c757d;
+  margin-right: 3px;
+}
+
+.customer-details .customer-name,
+.customer-details .customer-contact {
+  margin-bottom: 8px;
+}
+
+.redemptions-table .text-muted {
+  font-size: 0.75rem;
+  color: #6c757d;
+  display: block;
+  margin-top: 2px;
+}
+
 /* Upgrade Button Styles */
 .upgrade-btn {
   font-size: 0.8rem;

@@ -221,10 +221,35 @@ const MerchantDashboard = () => {
   };
 
   // Helper function to check if contact info should be hidden for lower tier plans
+  const shouldBlurContactInfo = (membershipType) => {
+    // Blur contact info for silver and gold merchants (as per task requirement)
+    // Only platinum+ merchants get full visibility
+    switch (membershipType) {
+      case 'silver_merchant':
+      case 'silver_business':
+      case 'silver':
+      case 'gold_merchant':
+      case 'gold_business':
+      case 'gold':
+        return true;
+      case 'platinum_merchant':
+      case 'platinum_business':
+      case 'platinum_plus':
+      case 'platinum_plus_business':
+        return false;
+      default:
+        return true; // Hide for basic plans
+    }
+  };
+
   const shouldHideContactInfo = (membershipType) => {
-    const planLevel = getUserPlanLevel(membershipType);
-    // Hide contact info for basic and silver (premium) plans, show for gold+ (featured) plans
-    return planLevel === 'basic' || planLevel === 'premium';
+    // Only hide completely for basic plans, blur for silver/gold
+    return membershipType === 'basic' || !membershipType;
+  };
+
+  const blurText = (text, blurLength = 3) => {
+    if (!text || text.length <= blurLength) return '***';
+    return text.substring(0, Math.max(1, Math.floor(text.length / 3))) + '*'.repeat(blurLength) + text.substring(text.length - 1);
   };
 
   // Get merchant benefits based on plan data
@@ -1334,12 +1359,7 @@ const MerchantDashboard = () => {
                 <div className="redemption-info">
                   <div className="user-info">
                     <i className="fas fa-user-circle"></i>
-                    {!shouldHideContactInfo(userInfo?.membershipType) ? (
-                      <>
-                        <span className="user-name">{redemption.fullName}</span>
-                        <span className="membership-number">#{redemption.membershipNumber}</span>
-                      </>
-                    ) : (
+                    {shouldHideContactInfo(userInfo?.membershipType) ? (
                       <>
                         <span className="user-name-hidden">Customer</span>
                         <button 
@@ -1349,6 +1369,19 @@ const MerchantDashboard = () => {
                           <i className="fas fa-lock"></i>
                           View Details
                         </button>
+                      </>
+                    ) : shouldBlurContactInfo(userInfo?.membershipType) ? (
+                      <>
+                        <span className="user-name">{blurText(redemption.fullName)}</span>
+                        <span className="membership-number">#{redemption.membershipNumber}</span>
+                        <small className="text-muted">
+                          <i className="fas fa-eye-slash"></i> Upgrade to Premium for full details
+                        </small>
+                      </>
+                    ) : (
+                      <>
+                        <span className="user-name">{redemption.fullName}</span>
+                        <span className="membership-number">#{redemption.membershipNumber}</span>
                       </>
                     )}
                   </div>
@@ -1683,18 +1716,7 @@ const MerchantDashboard = () => {
                           </div>
                           <div className="customer-info">
                             <div className="customer-details">
-                              {!shouldHideContactInfo(userInfo?.membershipType) ? (
-                                <>
-                                  <div className="customer-name">
-                                    <i className="fas fa-user"></i>
-                                    <strong>{request.userName || 'Customer'}</strong>
-                                  </div>
-                                  <div className="customer-contact">
-                                    <i className="fas fa-phone"></i>
-                                    <span>{request.phone || 'Phone not available'}</span>
-                                  </div>
-                                </>
-                              ) : (
+                              {shouldHideContactInfo(userInfo?.membershipType) ? (
                                 <div className="customer-private">
                                   <i className="fas fa-user-shield"></i>
                                   <strong>Customer Information</strong>
@@ -1706,6 +1728,34 @@ const MerchantDashboard = () => {
                                     View Details
                                   </button>
                                 </div>
+                              ) : shouldBlurContactInfo(userInfo?.membershipType) ? (
+                                <>
+                                  <div className="customer-name">
+                                    <i className="fas fa-user"></i>
+                                    <strong>{blurText(request.userName || 'Customer')}</strong>
+                                    <small className="text-muted ml-2">
+                                      <i className="fas fa-eye-slash"></i> Upgrade to Premium for full details
+                                    </small>
+                                  </div>
+                                  <div className="customer-contact">
+                                    <i className="fas fa-phone"></i>
+                                    <span>{blurText(request.phone || 'Phone not available')}</span>
+                                    <small className="text-muted ml-2">
+                                      <i className="fas fa-lock"></i> Upgrade to view
+                                    </small>
+                                  </div>
+                                </>
+                              ) : (
+                                <>
+                                  <div className="customer-name">
+                                    <i className="fas fa-user"></i>
+                                    <strong>{request.userName || 'Customer'}</strong>
+                                  </div>
+                                  <div className="customer-contact">
+                                    <i className="fas fa-phone"></i>
+                                    <span>{request.phone || 'Phone not available'}</span>
+                                  </div>
+                                </>
                               )}
                               {request.membershipNumber && (
                                 <div className="membership-number">
@@ -2238,12 +2288,19 @@ const MerchantDashboard = () => {
                                   day: '2-digit'
                                 })}</td>
                                 <td>
-                                  {!shouldHideContactInfo(userInfo?.membershipType) ? (
-                                    redemption.user_name
-                                  ) : (
+                                  {shouldHideContactInfo(userInfo?.membershipType) ? (
                                     <span className="private-info">
                                       <i className="fas fa-lock"></i> Private
                                     </span>
+                                  ) : shouldBlurContactInfo(userInfo?.membershipType) ? (
+                                    <>
+                                      {blurText(redemption.user_name)}
+                                      <small className="text-muted">
+                                        <i className="fas fa-eye-slash"></i> Upgrade for full details
+                                      </small>
+                                    </>
+                                  ) : (
+                                    redemption.user_name
                                   )}
                                 </td>
                                 <td>
@@ -2257,7 +2314,24 @@ const MerchantDashboard = () => {
                                   </span>
                                 </td>
                                 <td>
-                                  {!shouldHideContactInfo(userInfo?.membershipType) ? (
+                                  {shouldHideContactInfo(userInfo?.membershipType) ? (
+                                    <span className="private-contact">
+                                      <i className="fas fa-lock"></i> Upgrade to view
+                                    </span>
+                                  ) : shouldBlurContactInfo(userInfo?.membershipType) ? (
+                                    redemption.user_phone ? (
+                                      <>
+                                        <span className="blurred-contact">
+                                          <i className="fas fa-phone"></i> {blurText(redemption.user_phone)}
+                                        </span>
+                                        <small className="text-muted">
+                                          <i className="fas fa-eye-slash"></i> Upgrade to view
+                                        </small>
+                                      </>
+                                    ) : (
+                                      <span className="no-contact">Not available</span>
+                                    )
+                                  ) : (
                                     redemption.user_phone ? (
                                       <a href={`tel:${redemption.user_phone}`} className="contact-link">
                                         <i className="fas fa-phone"></i> {redemption.user_phone}
@@ -2265,10 +2339,6 @@ const MerchantDashboard = () => {
                                     ) : (
                                       <span className="no-contact">Not available</span>
                                     )
-                                  ) : (
-                                    <span className="private-contact">
-                                      <i className="fas fa-lock"></i> Upgrade to view
-                                    </span>
                                   )}
                                 </td>
                               </tr>
