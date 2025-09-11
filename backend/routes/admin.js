@@ -826,12 +826,55 @@ router.post('/users', [
 
     const adminUserId = getAdminUserId(req);
 
+    // Calculate validationDate based on plan's billing cycle (similar to regular registration)
+    let validationDate = new Date();
+    let planBillingCycle = 'yearly'; // default
+    
+    // Get plan details to determine billing cycle
+    if (membershipType && membershipType !== 'community') {
+      try {
+        const planResult = await queryAsync('SELECT billingCycle FROM plans WHERE `key` = ? AND isActive = 1', [membershipType]);
+        if (planResult.length > 0) {
+          planBillingCycle = planResult[0].billingCycle || 'yearly';
+        }
+      } catch (err) {
+        console.warn('Could not fetch plan billing cycle for admin user creation, using default yearly:', err);
+      }
+    }
+    
+    // Calculate validation date based on billing cycle
+    switch (planBillingCycle.toLowerCase()) {
+      case 'monthly':
+        validationDate.setMonth(validationDate.getMonth() + 1);
+        break;
+      case 'quarterly':
+        validationDate.setMonth(validationDate.getMonth() + 3);
+        break;
+      case 'yearly':
+      case 'annual':
+        validationDate.setFullYear(validationDate.getFullYear() + 1);
+        break;
+      case 'lifetime':
+        validationDate = null;
+        break;
+      case 'weekly':
+        validationDate.setDate(validationDate.getDate() + 7);
+        break;
+      case 'none':
+        // Community plan - set to 1 year from now
+        validationDate.setFullYear(validationDate.getFullYear() + 1);
+        break;
+      default:
+        validationDate.setFullYear(validationDate.getFullYear() + 1);
+        break;
+    }
+
     const result = await queryAsync(`
       INSERT INTO users (
         fullName, email, password, phone, userType, membershipType, community,
         address, city, state, country, dob, status, membershipNumber, bloodGroup,
-        createdAt, planAssignedAt, planAssignedBy
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), ?)
+        createdAt, planAssignedAt, planAssignedBy, validationDate
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), ?, ?)
     `, [
       fullName,
       email,
@@ -848,7 +891,8 @@ router.post('/users', [
       status || 'approved',
       membershipNumber,
       bloodGroup || null,
-      adminUserId
+      adminUserId,
+      validationDate ? validationDate.toISOString().slice(0, 19).replace('T', ' ') : null
     ]);
 
     const newUser = await queryAsync(`
