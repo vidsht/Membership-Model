@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useDynamicFields } from '../../../hooks/useDynamicFields';
+import { useFormValidation } from '../../../hooks/useFormValidation';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useNotification } from '../../../contexts/NotificationContext';
+import FormField from '../../common/FormField';
+import FormErrorSummary from '../../common/FormErrorSummary';
 import adminApi from '../../../services/adminApi';
 import api from '../../../services/api';
 import './PartnerRegistration.css';
+import '../../../styles/FormValidation.css';
 
 /**
  * PartnerRegistration component for registering new business partners
@@ -15,6 +19,88 @@ const PartnerRegistration = () => {
   const { showNotification } = useNotification();
   const navigate = useNavigate();
   const { id: partnerId } = useParams();
+
+  // Initialize form validation
+  const {
+    errors,
+    touchedFields,
+    hasErrors,
+    validateForm,
+    validateField,
+    markFieldTouched,
+    clearAllErrors,
+    setFieldError,
+    clearFieldError
+  } = useFormValidation();
+
+  // Partner validation schema for different steps
+  const partnerValidationSchema = {
+    // Step 1: Basic Information
+    businessName: {
+      rules: ['required', 'businessName'],
+      displayName: 'Business Name'
+    },
+    category: {
+      rules: ['required'],
+      displayName: 'Business Category'
+    },
+    planType: {
+      rules: ['required'],
+      displayName: 'Business Plan'
+    },
+    ownerName: {
+      rules: ['required', { type: 'minLength', minLength: 2 }],
+      displayName: 'Owner Name'
+    },
+    email: {
+      rules: ['required', 'email'],
+      displayName: 'Email'
+    },
+    phone: {
+      rules: ['required', 'phone'],
+      displayName: 'Phone Number'
+    },
+    // Step 2: Address Information
+    address: {
+      rules: ['required'],
+      displayName: 'Address'
+    },
+    city: {
+      rules: ['required'],
+      displayName: 'City'
+    },
+    state: {
+      rules: ['required'],
+      displayName: 'State'
+    },
+    website: {
+      rules: ['url'],
+      displayName: 'Website'
+    },
+    taxId: {
+      rules: ['taxId'],
+      displayName: 'Tax ID'
+    }
+  };
+
+  const fieldLabels = {
+    businessName: 'Business Name',
+    category: 'Business Category',
+    planType: 'Business Plan',
+    ownerName: 'Owner Name',
+    email: 'Email',
+    phone: 'Phone Number',
+    address: 'Address',
+    city: 'City',
+    state: 'State',
+    zipCode: 'ZIP Code',
+    website: 'Website',
+    description: 'Description',
+    businessLicense: 'Business License',
+    taxId: 'Tax ID',
+    logoFile: 'Logo File',
+    bloodGroup: 'Blood Group'
+  };
   const [formData, setFormData] = useState({
     businessName: '',
     category: '',
@@ -35,7 +121,6 @@ const PartnerRegistration = () => {
     bloodGroup: ''
   });
   const [isEditMode, setIsEditMode] = useState(false);
-    const [formErrors, setFormErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [step, setStep] = useState(1);
   const [merchantPlans, setMerchantPlans] = useState([]);
@@ -147,11 +232,19 @@ const PartnerRegistration = () => {
       setFormData({ ...formData, [name]: value });
      }
      
-     // Clear error when field is edited
-     if (formErrors[name]) {
-       setFormErrors({ ...formErrors, [name]: '' });
+     // Validate field on change if it was already touched
+     if (touchedFields[name]) {
+       validateField(name, type === 'checkbox' ? checked : value, partnerValidationSchema[name]?.rules || [], fieldLabels[name]);
      }
    };
+
+  const handleFieldBlur = (e) => {
+    const { name, value, type, checked } = e.target;
+    const fieldValue = type === 'checkbox' ? checked : value;
+    
+    markFieldTouched(name);
+    validateField(name, fieldValue, partnerValidationSchema[name]?.rules || [], fieldLabels[name]);
+  };
   
   const handleFileChange = (e) => {
     const { name, files } = e.target;
@@ -159,68 +252,55 @@ const PartnerRegistration = () => {
     if (files && files[0]) {
       // Validate file size (max 5MB)
       if (files[0].size > 5 * 1024 * 1024) {
-        setFormErrors({
-          ...formErrors,
-          [name]: 'File size must be less than 5MB'
-        });
+        setFieldError(name, 'File size must be less than 5MB');
         return;
       }
       
       setFormData({ ...formData, [name]: files[0] });
-      
-      // Clear error when field is edited
-      if (formErrors[name]) {
-        setFormErrors({ ...formErrors, [name]: '' });
-      }
+      clearFieldError(name);
     }
   };
-  
+
   const validateStep = (currentStep) => {
-    const newErrors = {};
+    const stepFields = getStepFields(currentStep);
+    let isStepValid = true;
     
-    if (currentStep === 1) {
-      if (!formData.businessName.trim()) {
-        newErrors.businessName = 'Business name is required';
+    // Create validation schema for current step only
+    const stepValidationSchema = {};
+    stepFields.forEach(fieldName => {
+      if (partnerValidationSchema[fieldName]) {
+        stepValidationSchema[fieldName] = partnerValidationSchema[fieldName];
       }
-        if (!formData.category) {
-        newErrors.category = 'Category is required';
-      }
-      
-      if (!formData.planType) {
-        newErrors.planType = 'Business plan is required';
-      }
-      
-      if (!formData.ownerName.trim()) {
-        newErrors.ownerName = 'Owner name is required';
-      }
-      
-      if (!formData.email.trim()) {
-        newErrors.email = 'Email is required';
-      } else if (!/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i.test(formData.email)) {
-        newErrors.email = 'Invalid email address';
-      }
-      
-      if (!formData.phone.trim()) {
-        newErrors.phone = 'Phone number is required';
-      }
-    } else if (currentStep === 2) {
-      if (!formData.address.trim()) {
-        newErrors.address = 'Address is required';
-      }
-      
-      if (!formData.city.trim()) {
-        newErrors.city = 'City is required';
-      }
-      
-      if (!formData.taxId.trim()) {
-        newErrors.taxId = 'Tax ID / Business Registration Number is required';
-      }
-      
-      // Business license is now optional, so no validation here
+    });
+    
+    // Get only the data for this step
+    const stepData = {};
+    stepFields.forEach(fieldName => {
+      stepData[fieldName] = formData[fieldName];
+    });
+    
+    // Validate step data
+    const stepIsValid = validateForm(stepData, stepValidationSchema);
+    
+    if (!stepIsValid) {
+      showNotification(`Please correct the errors in step ${currentStep} before proceeding`, 'error');
+      return false;
     }
     
-    setFormErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return true;
+  };
+
+  const getStepFields = (stepNumber) => {
+    switch (stepNumber) {
+      case 1:
+        return ['businessName', 'category', 'planType', 'ownerName', 'email', 'phone'];
+      case 2:
+        return ['address', 'city', 'state', 'website', 'taxId'];
+      case 3:
+        return []; // Final step, no additional validation needed
+      default:
+        return [];
+    }
   };
   
   const handleNextStep = () => {
@@ -235,18 +315,19 @@ const PartnerRegistration = () => {
   
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
     // Validate final step
     if (!validateStep(step)) {
       return;
     }
+    
     // Validate terms agreement
     if (!formData.hasAgreedToTerms) {
-      setFormErrors({
-        ...formErrors,
-        hasAgreedToTerms: 'You must agree to the terms and conditions'
-      });
+      setFieldError('hasAgreedToTerms', 'You must agree to the terms and conditions');
+      showNotification('You must agree to the terms and conditions', 'error');
       return;
     }
+    
     try {
       setIsLoading(true);
       const businessAddress = `${formData.address}, ${formData.city}, ${formData.state}, ${formData.zipCode}`;
