@@ -2939,6 +2939,376 @@ background: white;
   background-color: #f8f9fa;
 }
 
+/* Enhanced Merchant Deal Cards Grid Layout */
+.merchant-dashboard .deals-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 1.5rem;
+  padding: 0;
+  margin: 1.5rem 0;
+}
+
+.merchant-dashboard .deal-card {
+  background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
+  border-radius: 16px;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+  border: 1px solid rgba(0,0,0,0.06);
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: fit-content;
+}
+
+.merchant-dashboard .deal-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 15px 40px rgba(102, 126, 234, 0.12);
+  border-color: rgba(102, 126, 234, 0.15);
+}
+
+/* Deal Banner Container */
+.merchant-dashboard .deal-banner-container {
+  width: 100%;
+  height: 160px;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+}
+
+.merchant-dashboard .deal-table-banner {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.merchant-dashboard .deal-card:hover .deal-table-banner {
+  transform: scale(1.03);
+}
+
+.merchant-dashboard .deal-banner-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  color: #94a3b8;
+  font-size: 0.9rem;
+  gap: 0.5rem;
+}
+
+/* Deal Header Section */
+.merchant-dashboard .deal-header {
+  padding: 1.25rem 1.25rem 0.75rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.merchant-dashboard .deal-header h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+  line-height: 1.4;
+  flex: 1;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.merchant-dashboard .status-badge {
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  flex-shrink: 0;
+  border: 1px solid transparent;
+}
+
+.merchant-dashboard .status-badge.active {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
+}
+
+.merchant-dashboard .status-badge.pending_approval {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.25);
+}
+
+.merchant-dashboard .status-badge.rejected {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.25);
+}
+
+.merchant-dashboard .status-badge.expired {
+  background: linear-gradient(135deg, #6b7280, #4b5563);
+  color: white;
+  box-shadow: 0 2px 8px rgba(107, 114, 128, 0.25);
+}
+
+/* Deal Description */
+.merchant-dashboard .deal-description {
+  padding: 0 1.25rem;
+  color: #6b7280;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0 0 1rem 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Rejection Reason */
+.merchant-dashboard .rejection-reason {
+  margin: 0 1.25rem 1rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 0.75rem;
+}
+
+.merchant-dashboard .rejection-reason-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #dc2626;
+  margin-bottom: 0.5rem;
+}
+
+.merchant-dashboard .rejection-reason-text {
+  font-size: 0.8rem;
+  color: #991b1b;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Deal Access Level */
+.merchant-dashboard .deal-access-level {
+  margin: 0 1.25rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: #6366f1;
+  background: #f0f9ff;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid #e0e7ff;
+}
+
+.merchant-dashboard .deal-access-level i {
+  font-size: 0.9rem;
+}
+
+/* Deal Meta Information */
+.merchant-dashboard .deal-meta {
+  padding: 0 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.merchant-dashboard .deal-discount {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 25px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.25);
+}
+
+.merchant-dashboard .deal-expiry {
+  font-size: 0.8rem;
+  color: #374151;
+  text-align: right;
+  font-weight: 500;
+}
+
+.merchant-dashboard .deal-expiry.expired-date {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+/* Deal Stats */
+.merchant-dashboard .deal-stats {
+  padding: 0 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.merchant-dashboard .stat-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: #6b7280;
+  background: #f9fafb;
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  flex: 1;
+  justify-content: center;
+  min-width: 0;
+}
+
+.merchant-dashboard .stat-item i {
+  font-size: 0.85rem;
+  color: #9ca3af;
+}
+
+.merchant-dashboard .stat-item span {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Deal Actions */
+.merchant-dashboard .deal-actions {
+  padding: 1rem 1.25rem 1.25rem;
+  display: flex;
+  gap: 0.5rem;
+  border-top: 1px solid #f3f4f6;
+  background: #fafbfc;
+}
+
+.merchant-dashboard .deal-actions .btn {
+  flex: 1;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  border: 1px solid transparent;
+}
+
+.merchant-dashboard .deal-actions .btn:hover {
+  transform: translateY(-1px);
+}
+
+.merchant-dashboard .deal-actions .btn-accent {
+  background: linear-gradient(135deg, #06b6d4, #0891b2);
+  color: white;
+  box-shadow: 0 2px 6px rgba(6, 182, 212, 0.25);
+}
+
+.merchant-dashboard .deal-actions .btn-accent:hover {
+  background: linear-gradient(135deg, #0891b2, #0e7490);
+  box-shadow: 0 4px 12px rgba(6, 182, 212, 0.35);
+}
+
+.merchant-dashboard .deal-actions .btn-secondary {
+  background: #ffffff;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.merchant-dashboard .deal-actions .btn-secondary:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.merchant-dashboard .deal-actions .btn-danger {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.25);
+}
+
+.merchant-dashboard .deal-actions .btn-danger:hover {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
+}
+
+.merchant-dashboard .deal-actions .btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* Expired Deal Styling */
+.merchant-dashboard .deal-card.expired-deal {
+  opacity: 0.8;
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+}
+
+.merchant-dashboard .deal-card.expired-deal .deal-table-banner {
+  filter: grayscale(30%);
+}
+
+/* Responsive Design for Deal Cards */
+@media (max-width: 1200px) {
+  .merchant-dashboard .deals-grid {
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1.25rem;
+  }
+}
+
+@media (max-width: 900px) {
+  .merchant-dashboard .deals-grid {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1rem;
+  }
+  
+  .merchant-dashboard .deal-header {
+    padding: 1rem 1rem 0.5rem;
+  }
+  
+  .merchant-dashboard .deal-actions {
+    padding: 0.75rem 1rem 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .merchant-dashboard .deals-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .merchant-dashboard .deal-stats {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .merchant-dashboard .stat-item {
+    justify-content: flex-start;
+  }
+  
+  .merchant-dashboard .deal-actions {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .merchant-dashboard .deal-actions .btn {
+    flex: none;
+  }
+}
+
 /* Responsive pagination */
 @media (max-width: 768px) {
   .pagination-wrapper {
