@@ -707,26 +707,36 @@ router.put('/deals/:dealId', checkMerchantAccess, [
     }
 
     // Check if deal exists and belongs to this merchant
+    console.log(`[DEBUG] Checking deal ${dealId} for merchant businessId: ${merchant.businessId}`);
     const checkQuery = `
-      SELECT id, status, title FROM deals 
-      WHERE id = ? AND businessId = ?
+      SELECT id, status, title, businessId FROM deals 
+      WHERE id = ?
     `;
     
-    const existingDeal = await queryAsync(checkQuery, [dealId, merchant.businessId]);
+    const existingDeal = await queryAsync(checkQuery, [dealId]);
+    console.log(`[DEBUG] Deal found:`, existingDeal[0]);
     
     if (existingDeal.length === 0) {
       return res.status(404).json({ 
         success: false, 
-        message: 'Deal not found or you do not have permission to edit this deal.' 
+        message: 'Deal not found.' 
       });
     }
 
-    // Check if deal status allows editing
-    const allowedStatuses = ['pending_approval', 'rejected', 'active'];
+    // Check if deal belongs to this merchant
+    if (existingDeal[0].businessId !== merchant.businessId) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'You do not have permission to edit this deal. This deal belongs to a different business.' 
+      });
+    }
+
+    // Check if deal status allows editing (allow all statuses now)
+    const allowedStatuses = ['pending_approval', 'rejected', 'active', 'inactive', 'expired'];
     if (!allowedStatuses.includes(existingDeal[0].status)) {
       return res.status(403).json({ 
         success: false, 
-        message: `Deal with status '${existingDeal[0].status}' cannot be edited. Only pending, rejected, or active deals can be modified.` 
+        message: `Deal with status '${existingDeal[0].status}' cannot be edited.` 
       });
     }
 
@@ -803,26 +813,36 @@ router.delete('/deals/:dealId', checkMerchantAccess, async (req, res) => {
     }
 
     // Check if deal exists and belongs to this merchant
+    console.log(`[DEBUG] Checking deal ${dealId} for deletion, merchant businessId: ${merchant.businessId}`);
     const checkQuery = `
-      SELECT id, status, title FROM deals 
-      WHERE id = ? AND businessId = ?
+      SELECT id, status, title, businessId FROM deals 
+      WHERE id = ?
     `;
     
-    const existingDeal = await queryAsync(checkQuery, [dealId, merchant.businessId]);
+    const existingDeal = await queryAsync(checkQuery, [dealId]);
+    console.log(`[DEBUG] Deal found for deletion:`, existingDeal[0]);
     
     if (existingDeal.length === 0) {
       return res.status(404).json({ 
         success: false, 
-        message: 'Deal not found or you do not have permission to delete this deal.' 
+        message: 'Deal not found.' 
       });
     }
 
-    // Check if deal status allows deletion
-    const allowedStatuses = ['pending_approval', 'rejected', 'active'];
+    // Check if deal belongs to this merchant
+    if (existingDeal[0].businessId !== merchant.businessId) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'You do not have permission to delete this deal. This deal belongs to a different business.' 
+      });
+    }
+
+    // Check if deal status allows deletion (allow all statuses now)
+    const allowedStatuses = ['pending_approval', 'rejected', 'active', 'inactive', 'expired'];
     if (!allowedStatuses.includes(existingDeal[0].status)) {
       return res.status(403).json({ 
         success: false, 
-        message: `Deal with status '${existingDeal[0].status}' cannot be deleted. Only pending, rejected, or active deals can be removed.` 
+        message: `Deal with status '${existingDeal[0].status}' cannot be deleted.` 
       });
     }
 
