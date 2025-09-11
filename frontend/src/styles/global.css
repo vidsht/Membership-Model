@@ -576,9 +576,8 @@ color: white;
 }
 
 /* Mobile and Tablet (iPad Pro/Air) responsive header */
-@media (max-width: 768px), 
-       (min-width: 834px) and (max-width: 1024px) and (orientation: portrait),
-       (min-width: 1024px) and (max-width: 1366px) and (orientation: landscape) {  .main-nav ul li a .nav-icon {
+@media (max-width: 768px) {  
+  .main-nav ul li a .nav-icon {
     margin: 0;
   }
   
@@ -717,9 +716,7 @@ color: white;
 }
 
 /* Desktop: center main navigation between logo (left) and auth (right) */
-@media (min-width: 769px) and (max-width: 833px),
-       (min-width: 1025px) and (orientation: portrait),
-       (min-width: 1367px) {
+@media (min-width: 769px) {
   .header-content {
     display: flex;
     align-items: center;
