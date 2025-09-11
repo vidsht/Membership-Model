@@ -118,7 +118,17 @@ const checkDealAccess = async (req, res, next) => {
     // Check redemption limits for the current month
 
     // Check monthly redemption limit only if user has a valid positive limit (exclude unlimited -1)
-    if (user.maxRedemptions && user.maxRedemptions > 0) {
+    // We normalize redemption limit values and treat -1 as unlimited.
+    // Only run checks when we have a finite positive limit.
+    const computedMaxRedemptions = (() => {
+      // Prefer explicit custom limit if provided (may be negative -1 for unlimited)
+      if (user.customRedemptionLimit !== undefined && user.customRedemptionLimit !== null && !isNaN(user.customRedemptionLimit)) return parseInt(user.customRedemptionLimit);
+      if (user.maxRedemptionsPerMonth !== undefined && user.maxRedemptionsPerMonth !== null && !isNaN(user.maxRedemptionsPerMonth)) return parseInt(user.maxRedemptionsPerMonth);
+      if (user.maxRedemptions !== undefined && user.maxRedemptions !== null && !isNaN(user.maxRedemptions)) return parseInt(user.maxRedemptions);
+      return null;
+    })();
+
+    if (computedMaxRedemptions !== null && computedMaxRedemptions > 0) {
       // YYYY-MM format
       const currentMonth = new Date().toISOString().slice(0, 7);
       const redemptionsThisMonth = await queryAsync(
@@ -128,12 +138,13 @@ const checkDealAccess = async (req, res, next) => {
         [userId, currentMonth]
       );
 
-      const redemptionLimit = user.customRedemptionLimit || user.maxRedemptions;
-      
-      // Skip limit check if redemptionLimit is -1 (unlimited)
+      const redemptionLimit = computedMaxRedemptions;
+
       if (redemptionLimit > 0 && redemptionsThisMonth[0].count >= redemptionLimit) {
+        // Compose a safe display value (never show -1)
+        const displayLimit = redemptionLimit === -1 ? 'Unlimited' : redemptionLimit;
         return res.status(403).json({ 
-          message: `You have reached your monthly redemption limit of ${redemptionLimit}. Please upgrade your plan for more deals.`,
+          message: `You have reached your monthly redemption limit of ${displayLimit}. Please upgrade your plan for more deals.`,
           statusCheck: 'limit_reached',
           redemptionsUsed: redemptionsThisMonth[0].count,
           redemptionLimit: redemptionLimit,
@@ -488,21 +499,19 @@ router.post('/:id/redeem', checkDealAccess, (req, res) => {
       }
 
       const redemptionsThisMonth = limitResults[0]?.redemptionsThisMonth || 0;
-      // Robust fallback for monthly limit fields
-      let monthlyLimit = 0;
-      if (user.customRedemptionLimit && !isNaN(user.customRedemptionLimit)) {
-        monthlyLimit = parseInt(user.customRedemptionLimit);
-      } else if (user.maxRedemptionsPerMonth && !isNaN(user.maxRedemptionsPerMonth)) {
-        monthlyLimit = parseInt(user.maxRedemptionsPerMonth);
-      } else if (user.maxRedemptions && !isNaN(user.maxRedemptions)) {
-        monthlyLimit = parseInt(user.maxRedemptions);
-      }
+      // Compute monthly limit consistently (treat -1 as unlimited)
+      const computedMonthlyLimit = (() => {
+        if (user.customRedemptionLimit !== undefined && user.customRedemptionLimit !== null && !isNaN(user.customRedemptionLimit)) return parseInt(user.customRedemptionLimit);
+        if (user.maxRedemptionsPerMonth !== undefined && user.maxRedemptionsPerMonth !== null && !isNaN(user.maxRedemptionsPerMonth)) return parseInt(user.maxRedemptionsPerMonth);
+        if (user.maxRedemptions !== undefined && user.maxRedemptions !== null && !isNaN(user.maxRedemptions)) return parseInt(user.maxRedemptions);
+        return null;
+      })();
 
-      // Only check limit if it's a positive number (skip if -1 for unlimited or 0 for no limit)
-      if (monthlyLimit > 0 && redemptionsThisMonth >= monthlyLimit) {
+      if (computedMonthlyLimit !== null && computedMonthlyLimit > 0 && redemptionsThisMonth >= computedMonthlyLimit) {
+        const displayLimit = computedMonthlyLimit === -1 ? 'Unlimited' : computedMonthlyLimit;
         return res.status(403).json({ 
-          message: `You have reached your monthly redemption limit of ${monthlyLimit}. Upgrade your plan for more redemptions.`,
-          monthlyLimit,
+          message: `You have reached your monthly redemption limit of ${displayLimit}. Upgrade your plan for more redemptions.`,
+          monthlyLimit: computedMonthlyLimit,
           redemptionsUsed: redemptionsThisMonth
         });
       }      // Get deal details to verify it's still active
