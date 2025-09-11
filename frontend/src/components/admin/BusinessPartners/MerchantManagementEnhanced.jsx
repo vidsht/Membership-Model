@@ -537,72 +537,115 @@ const MerchantManagementEnhanced = () => {
 
       let successCount = 0;
       let lastError = null;
+      let actualSuccess = false;
 
       // Use dedicated endpoints for approve/reject, but try both users and partners
       if (newStatus === 'approved') {
         try {
           const partnersRes = await api.post(`/admin/partners/${merchantId}/approve`);
-          if (partnersRes.data?.success) {
+          if (partnersRes.data && partnersRes.data.success !== false) {
             successCount++;
+            actualSuccess = true;
           }
         } catch (error) {
           console.log('Partners approve error:', error);
-          lastError = error;
+          // Check if this was actually successful
+          if (error.response && error.response.status === 200 && error.response.data?.success) {
+            successCount++;
+            actualSuccess = true;
+          } else {
+            lastError = error;
+          }
         }
 
         try {
           const usersRes = await api.put(`/admin/users/${merchantId}/status`, { status: 'approved' });
-          if (usersRes.data?.success) {
+          if (usersRes.data && usersRes.data.success !== false) {
             successCount++;
+            actualSuccess = true;
           }
         } catch (error) {
           console.log('Users approve error:', error);
-          if (!lastError) lastError = error;
+          // Check if this was actually successful
+          if (error.response && error.response.status === 200 && error.response.data?.success) {
+            successCount++;
+            actualSuccess = true;
+          } else if (!lastError) {
+            lastError = error;
+          }
         }
       } else if (newStatus === 'rejected') {
         try {
           const partnersRes = await api.post(`/admin/partners/${merchantId}/reject`);
-          if (partnersRes.data?.success) {
+          if (partnersRes.data && partnersRes.data.success !== false) {
             successCount++;
+            actualSuccess = true;
           }
         } catch (error) {
           console.log('Partners reject error:', error);
-          lastError = error;
+          // Check if this was actually successful
+          if (error.response && error.response.status === 200 && error.response.data?.success) {
+            successCount++;
+            actualSuccess = true;
+          } else {
+            lastError = error;
+          }
         }
 
         try {
           const usersRes = await api.put(`/admin/users/${merchantId}/status`, { status: 'rejected' });
-          if (usersRes.data?.success) {
+          if (usersRes.data && usersRes.data.success !== false) {
             successCount++;
+            actualSuccess = true;
           }
         } catch (error) {
           console.log('Users reject error:', error);
-          if (!lastError) lastError = error;
+          // Check if this was actually successful
+          if (error.response && error.response.status === 200 && error.response.data?.success) {
+            successCount++;
+            actualSuccess = true;
+          } else if (!lastError) {
+            lastError = error;
+          }
         }
       } else {
         // For other status changes (suspended, pending), try both endpoints
         try {
           const partnersRes = await api.put(`/admin/partners/${merchantId}/status`, { status: newStatus });
-          if (partnersRes.data?.success) {
+          if (partnersRes.data && partnersRes.data.success !== false) {
             successCount++;
+            actualSuccess = true;
           }
         } catch (error) {
           console.log('Partners status error:', error);
-          lastError = error;
+          // Check if this was actually successful
+          if (error.response && error.response.status === 200 && error.response.data?.success) {
+            successCount++;
+            actualSuccess = true;
+          } else {
+            lastError = error;
+          }
         }
 
         try {
           const usersRes = await api.put(`/admin/users/${merchantId}/status`, { status: newStatus });
-          if (usersRes.data?.success) {
+          if (usersRes.data && usersRes.data.success !== false) {
             successCount++;
+            actualSuccess = true;
           }
         } catch (error) {
           console.log('Users status error:', error);
-          if (!lastError) lastError = error;
+          // Check if this was actually successful
+          if (error.response && error.response.status === 200 && error.response.data?.success) {
+            successCount++;
+            actualSuccess = true;
+          } else if (!lastError) {
+            lastError = error;
+          }
         }
       }
       
-      if (successCount > 0) {
+      if (successCount > 0 || actualSuccess) {
         showNotification(`Partner ${newStatus} successfully`, 'success');
         fetchMerchants();
         // Refresh stats after successful status change, but don't let stats errors affect success message
@@ -624,31 +667,75 @@ const MerchantManagementEnhanced = () => {
   // Dedicated approve handler
   const handleApproveMerchant = async (merchantId) => {
     try {
-      await api.post(`/admin/partners/${merchantId}/approve`);
-      showNotification('Partner approved successfully', 'success');
-      fetchMerchants();
-      // Refresh stats after successful approval, but don't let stats errors affect success message
-      try {
-        fetchMerchantStats();
-      } catch (statsError) {
-        console.error('Error refreshing merchant stats:', statsError);
+      const response = await api.post(`/admin/partners/${merchantId}/approve`);
+      
+      // Check if the response indicates success
+      if (response.data && response.data.success !== false) {
+        showNotification('Partner approved successfully', 'success');
+        fetchMerchants();
+        // Refresh stats after successful approval, but don't let stats errors affect success message
+        try {
+          fetchMerchantStats();
+        } catch (statsError) {
+          console.error('Error refreshing merchant stats:', statsError);
+        }
+      } else {
+        // Backend returned success: false
+        const errorMessage = response.data?.message || 'Failed to approve partner';
+        showNotification(errorMessage, 'error');
       }
     } catch (err) {
       console.error('Error approving merchant:', err);
-      showNotification('Error approving partner', 'error');
+      
+      // Enhanced error handling - check if it's a successful response that threw an error
+      if (err.response && err.response.status === 200 && err.response.data?.success) {
+        // This was actually successful but something in response parsing failed
+        console.log('Partner approval was successful, updating UI...');
+        showNotification('Partner approved successfully', 'success');
+        fetchMerchants();
+        try {
+          fetchMerchantStats();
+        } catch (statsError) {
+          console.error('Error refreshing merchant stats:', statsError);
+        }
+      } else {
+        // Actual error
+        const errorMessage = err.response?.data?.message || 'Error approving partner';
+        showNotification(errorMessage, 'error');
+      }
     }
   };
 
   // Dedicated reject handler
   const handleRejectMerchant = async (merchantId) => {
     try {
-      await api.post(`/admin/partners/${merchantId}/reject`);
-      showNotification('Partner rejected successfully', 'success');
-      fetchMerchants();
-      fetchMerchantStats(); // Refresh stats after rejection
+      const response = await api.post(`/admin/partners/${merchantId}/reject`);
+      
+      // Check if the response indicates success
+      if (response.data && response.data.success !== false) {
+        showNotification('Partner rejected successfully', 'success');
+        fetchMerchants();
+        fetchMerchantStats(); // Refresh stats after rejection
+      } else {
+        // Backend returned success: false
+        const errorMessage = response.data?.message || 'Failed to reject partner';
+        showNotification(errorMessage, 'error');
+      }
     } catch (err) {
       console.error('Error rejecting merchant:', err);
-      showNotification('Error rejecting partner', 'error');
+      
+      // Enhanced error handling - check if it's a successful response that threw an error
+      if (err.response && err.response.status === 200 && err.response.data?.success) {
+        // This was actually successful but something in response parsing failed
+        console.log('Partner rejection was successful, updating UI...');
+        showNotification('Partner rejected successfully', 'success');
+        fetchMerchants();
+        fetchMerchantStats();
+      } else {
+        // Actual error
+        const errorMessage = err.response?.data?.message || 'Error rejecting partner';
+        showNotification(errorMessage, 'error');
+      }
     }
   };
 
