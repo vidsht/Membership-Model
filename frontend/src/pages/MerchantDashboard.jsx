@@ -394,7 +394,7 @@ const MerchantDashboard = () => {
       case 'gold_merchant':
       case 'gold_business':
       case 'gold':
-        // Gold plans - full features (DISABLE view analytics and deal analytics)
+        // Gold plans - full features (DISABLE statistics, view analytics and deal analytics)
         access = {
           analytics: true,
           advancedStats: true,
@@ -402,7 +402,7 @@ const MerchantDashboard = () => {
           dealPosting: 'unlimited', // Maximum deal posting
           priorityListing: true,
           featuredPlacement: true,
-          statisticsPanel: true, // ENABLED for gold
+          statisticsPanel: false, // DISABLED for gold (per task requirement)
           viewAnalyticsButton: false, // DISABLED for gold
           dealAnalyticsButton: false // DISABLED for gold
         };
@@ -984,19 +984,19 @@ const MerchantDashboard = () => {
           <div className="basic-stats-message">
             <div className="upgrade-prompt">
               <h3><i className="fas fa-star"></i> Upgrade to Access Statistics</h3>
-              <p>Get detailed statistics about your business performance with our Gold or Platinum plans.</p>
+              <p>Get detailed statistics about your business performance with our Platinum plans.</p>
               <div className="basic-features">
                 <div className="basic-feature">
                   <i className="fas fa-check"></i> Business listing included
                 </div>
                 <div className="basic-feature">
-                  <i className="fas fa-times"></i> Analytics & stats (Premium+)
+                  <i className="fas fa-times"></i> Analytics & stats (Platinum+)
                 </div>
                 <div className="basic-feature">
-                  <i className="fas fa-times"></i> Deal posting (Premium+)
+                  <i className="fas fa-times"></i> Deal posting (Silver+)
                 </div>
                 <div className="basic-feature">
-                  <i className="fas fa-times"></i> Featured placement (Featured plans)
+                  <i className="fas fa-times"></i> Featured placement (Gold+)
                 </div>
               </div>
               <button className="btn btn-primary">
