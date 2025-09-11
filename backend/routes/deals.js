@@ -117,6 +117,7 @@ const checkDealAccess = async (req, res, next) => {
 
     // Check redemption limits for the current month
 
+    // Check monthly redemption limit only if user has a valid positive limit (exclude unlimited -1)
     if (user.maxRedemptions && user.maxRedemptions > 0) {
       // YYYY-MM format
       const currentMonth = new Date().toISOString().slice(0, 7);
@@ -129,7 +130,8 @@ const checkDealAccess = async (req, res, next) => {
 
       const redemptionLimit = user.customRedemptionLimit || user.maxRedemptions;
       
-      if (redemptionsThisMonth[0].count >= redemptionLimit) {
+      // Skip limit check if redemptionLimit is -1 (unlimited)
+      if (redemptionLimit > 0 && redemptionsThisMonth[0].count >= redemptionLimit) {
         return res.status(403).json({ 
           message: `You have reached your monthly redemption limit of ${redemptionLimit}. Please upgrade your plan for more deals.`,
           statusCheck: 'limit_reached',
@@ -496,6 +498,7 @@ router.post('/:id/redeem', checkDealAccess, (req, res) => {
         monthlyLimit = parseInt(user.maxRedemptions);
       }
 
+      // Only check limit if it's a positive number (skip if -1 for unlimited or 0 for no limit)
       if (monthlyLimit > 0 && redemptionsThisMonth >= monthlyLimit) {
         return res.status(403).json({ 
           message: `You have reached your monthly redemption limit of ${monthlyLimit}. Upgrade your plan for more redemptions.`,
