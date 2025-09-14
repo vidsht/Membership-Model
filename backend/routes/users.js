@@ -71,17 +71,22 @@ router.get('/profile', auth, (req, res) => {
 router.get('/profile/complete', auth, (req, res) => {
   const userId = req.user.id;
   
-  // Get all available user fields
+  // Get all available user fields with plan information
     const query = `
       SELECT 
-        id, fullName, email, phone, dob, bloodGroup, 
-        community, address, country, state, city, profilePicture, profilePhoto,
-        membership, membershipType, membershipNumber, preferences, created_at, 
-        lastLogin, updated_at, validationDate, userType, customRedemptionLimit,
-        monthlyRedemptionCount, monthlyRedemptionLimit, monthlyRedemptionsRemaining,
-        monthlyDealCount, monthlyDealLimit, monthlyDealsRemaining
-      FROM users 
-      WHERE id = ?
+        u.id, u.fullName, u.email, u.phone, u.dob, u.bloodGroup, 
+        u.community, u.address, u.country, u.state, u.city, u.profilePicture, u.profilePhoto,
+        u.membership, u.membershipType, u.membershipNumber, u.preferences, u.created_at, 
+        u.lastLogin, u.updated_at, u.validationDate, u.userType, u.customRedemptionLimit,
+        u.monthlyRedemptionCount, u.monthlyRedemptionLimit, u.monthlyRedemptionsRemaining,
+        u.monthlyDealCount, u.monthlyDealLimit, u.monthlyDealsRemaining,
+        p.name as planName, p.price as planPrice, p.currency as planCurrency,
+        p.billingCycle, p.features as planFeatures, p.dealAccess,
+        p.maxDealRedemptions as planMaxDealRedemptions, p.maxRedemptions as planMaxRedemptions, 
+        p.priority as planPriority, p.\`key\` as planKey
+      FROM users u
+      LEFT JOIN plans p ON u.membershipType = p.\`key\` AND p.type = 'user'
+      WHERE u.id = ?
     `;
   
   db.query(query, [userId], (err, results) => {
@@ -120,8 +125,26 @@ router.get('/profile/complete', auth, (req, res) => {
         // Keep as string if not valid JSON
       }
     }
+
+    // Add pending requests count for current month
+    const currentDate = new Date();
+    const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+    const pendingQuery = `
+      SELECT COUNT(*) as pendingRequestsCount 
+      FROM deal_redemptions 
+      WHERE userId = ? AND status = 'pending' AND created_at >= ?
+    `;
     
-    res.json({ user });
+    db.query(pendingQuery, [userId, firstDayOfMonth], (pendingErr, pendingResults) => {
+      if (pendingErr) {
+        console.error('Error fetching pending requests:', pendingErr);
+        user.pendingRequestsCount = 0;
+      } else {
+        user.pendingRequestsCount = pendingResults[0]?.pendingRequestsCount || 0;
+      }
+      
+      res.json({ user });
+    });
   });
 });
 

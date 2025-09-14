@@ -251,28 +251,44 @@ const Dashboard = () => {
             <>
               <MerchantCertificate />
 
-              {/* Static Merchant Benefits - shown for merchants below certificate */}
+              {/* Merchant Benefits Section */}
               <section className="current-plan-features">
                 <div className="section-header">
-                  <h2>Your Current Plan Features</h2>
-                  <p>{currentPlan?.name || 'Basic'} plan benefits</p>
+                  <h2>Merchant Benefits</h2>
+                  <p>Unlock your business potential with these features</p>
                 </div>
 
                 <div className="plan-features-list">
-                  {currentPlan && getMembershipBenefits(currentPlan, 'merchant').length > 0 ? (
-                    <ul className="features-points">
-                      {getMembershipBenefits(currentPlan, 'merchant').map((feature, index) => (
-                        <li key={index} className="feature-point">
-                          <i className="fas fa-check-circle"></i>
-                          <span>{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <div className="no-features">
-                      <p>No specific features available for your current plan.</p>
-                    </div>
-                  )}
+                  <ul className="features-points">
+                    <li className="feature-point">
+                      <i className="fas fa-bullhorn"></i>
+                      <div>
+                        <h4>Promote Deals & Offers</h4>
+                        <p>Showcase exclusive discounts each month to capture new customers and keep loyal ones coming back.</p>
+                      </div>
+                    </li>
+                    <li className="feature-point">
+                      <i className="fas fa-users"></i>
+                      <div>
+                        <h4>Expand Community Reach</h4>
+                        <p>Get featured in our trusted business directory and gain visibility across a wider local network.</p>
+                      </div>
+                    </li>
+                    <li className="feature-point">
+                      <i className="fas fa-heart"></i>
+                      <div>
+                        <h4>Engage Your Customers</h4>
+                        <p>Build stronger connections with your audience through our interactive platform that fosters loyalty.</p>
+                      </div>
+                    </li>
+                    <li className="feature-point">
+                      <i className="fas fa-headset"></i>
+                      <div>
+                        <h4>Reliable Support Team</h4>
+                        <p>Count on our dedicated support specialists to assist you in maximizing your business profile anytime.</p>
+                      </div>
+                    </li>
+                  </ul>
                 </div>
               </section>
             </>
@@ -280,28 +296,44 @@ const Dashboard = () => {
             <>
               <MembershipCard />
 
-              {/* Static User Benefits - shown for regular users below membership card */}
+              {/* User Benefits Section */}
               <section className="current-plan-features">
                 <div className="section-header">
-                  <h2>Your Current Plan Features</h2>
-                  <p>{currentPlan?.name || 'Basic'} plan benefits</p>
+                  <h2>Member Benefits</h2>
+                  <p>Exclusive advantages for our valued members</p>
                 </div>
 
                 <div className="plan-features-list">
-                  {currentPlan && getMembershipBenefits(currentPlan, user.userType).length > 0 ? (
-                    <ul className="features-points">
-                      {getMembershipBenefits(currentPlan, user.userType).map((feature, index) => (
-                        <li key={index} className="feature-point">
-                          <i className="fas fa-check-circle"></i>
-                          <span>{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <div className="no-features">
-                      <p>No specific features available for your current plan.</p>
-                    </div>
-                  )}
+                  <ul className="features-points">
+                    <li className="feature-point">
+                      <i className="fas fa-id-card"></i>
+                      <div>
+                        <h4>Digital Membership Card</h4>
+                        <p>Unlock instant access to your digital card — your passport to exclusive discounts, deals, and partner rewards anytime, anywhere.</p>
+                      </div>
+                    </li>
+                    <li className="feature-point">
+                      <i className="fas fa-percentage"></i>
+                      <div>
+                        <h4>Exclusive Partner Discounts</h4>
+                        <p>Enjoy special offers and savings from our network of trusted partner businesses, designed to give you more value every day.</p>
+                      </div>
+                    </li>
+                    <li className="feature-point">
+                      <i className="fas fa-calendar-star"></i>
+                      <div>
+                        <h4>Community Perks & Events</h4>
+                        <p>Get insider access to community-driven promotions, seasonal deals, and special invitations to local events and activities.</p>
+                      </div>
+                    </li>
+                    <li className="feature-point">
+                      <i className="fas fa-envelope"></i>
+                      <div>
+                        <h4>Personalized Updates & Newsletter</h4>
+                        <p>Stay ahead with curated updates on new offers, featured partners, and member-only promotions delivered straight to your inbox.</p>
+                      </div>
+                    </li>
+                  </ul>
                 </div>
               </section>
             </>

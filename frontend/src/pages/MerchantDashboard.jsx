@@ -41,6 +41,11 @@ const MerchantDashboard = () => {
   const [rejectionReason, setRejectionReason] = useState('');
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   
+  // Bulk actions state
+  const [selectedRequests, setSelectedRequests] = useState([]);
+  const [selectAll, setSelectAll] = useState(false);
+  const [processingBulk, setProcessingBulk] = useState(false);
+  
   // Member verification state
   const [showMemberVerification, setShowMemberVerification] = useState(false);
   const [membershipSearch, setMembershipSearch] = useState('');
@@ -743,6 +748,127 @@ const MerchantDashboard = () => {
     }
   };
 
+  // Bulk action handlers
+  const handleSelectRequest = (requestId) => {
+    setSelectedRequests(prev => {
+      if (prev.includes(requestId)) {
+        return prev.filter(id => id !== requestId);
+      } else {
+        return [...prev, requestId];
+      }
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectAll) {
+      setSelectedRequests([]);
+    } else {
+      const visibleRequests = redemptionRequests.slice(
+        (redemptionRequestsPage - 1) * itemsPerPage, 
+        redemptionRequestsPage * itemsPerPage
+      );
+      setSelectedRequests(visibleRequests.map(request => request.id));
+    }
+    setSelectAll(!selectAll);
+  };
+
+  const handleBulkApprove = async () => {
+    if (selectedRequests.length === 0) {
+      showNotification('Please select requests to approve', 'warning');
+      return;
+    }
+
+    if (!planAccess.canAccess('general')) {
+      showNotification(planAccess.getBlockingMessage('general'), 'warning');
+      return;
+    }
+
+    try {
+      setProcessingBulk(true);
+      let successful = 0;
+      let failed = 0;
+
+      for (const requestId of selectedRequests) {
+        try {
+          const response = await approveRedemptionRequest(requestId);
+          if (response.success) {
+            successful++;
+          } else {
+            failed++;
+          }
+        } catch (error) {
+          failed++;
+        }
+      }
+
+      if (successful > 0) {
+        showNotification(`${successful} requests approved successfully!`, 'success');
+      }
+      if (failed > 0) {
+        showNotification(`${failed} requests failed to approve`, 'error');
+      }
+
+      setSelectedRequests([]);
+      setSelectAll(false);
+      await fetchRedemptionRequests();
+      await fetchDashboardData();
+    } catch (error) {
+      console.error('Error in bulk approve:', error);
+      showNotification('Error approving requests', 'error');
+    } finally {
+      setProcessingBulk(false);
+    }
+  };
+
+  const handleBulkReject = async () => {
+    if (selectedRequests.length === 0) {
+      showNotification('Please select requests to reject', 'warning');
+      return;
+    }
+
+    if (!planAccess.canAccess('general')) {
+      showNotification(planAccess.getBlockingMessage('general'), 'warning');
+      return;
+    }
+
+    const reason = 'Bulk rejection by merchant';
+
+    try {
+      setProcessingBulk(true);
+      let successful = 0;
+      let failed = 0;
+
+      for (const requestId of selectedRequests) {
+        try {
+          const response = await rejectRedemptionRequest(requestId, reason);
+          if (response.success) {
+            successful++;
+          } else {
+            failed++;
+          }
+        } catch (error) {
+          failed++;
+        }
+      }
+
+      if (successful > 0) {
+        showNotification(`${successful} requests rejected`, 'success');
+      }
+      if (failed > 0) {
+        showNotification(`${failed} requests failed to reject`, 'error');
+      }
+
+      setSelectedRequests([]);
+      setSelectAll(false);
+      await fetchRedemptionRequests();
+    } catch (error) {
+      console.error('Error in bulk reject:', error);
+      showNotification('Error rejecting requests', 'error');
+    } finally {
+      setProcessingBulk(false);
+    }
+  };
+
   const handleBusinessUpdate = (updatedBusiness) => {
     setBusinessInfo(updatedBusiness);
     setShowBusinessForm(false);
@@ -835,37 +961,6 @@ ${userInfo?.fullName || userInfo?.name || user?.fullName || user?.name || 'Merch
     } catch (error) {
       console.error('Error deleting deal:', error);
       showNotification(error.response?.data?.message || 'Failed to delete deal', 'error');
-    }
-  };
-
-  // Share deal function for merchant dashboard
-  const handleShareDeal = async (deal) => {
-    const dealUrl = `${window.location.origin}/deals?id=${deal.id}`;
-    const shareText = `🎉 Check out this amazing deal: *${deal.title}* at ${businessInfo?.businessName || 'our business'}! 
-
-💰 ${deal.discount} OFF - ${deal.description}
-
-Click to view details: ${dealUrl}
-
-Join Indians in Ghana Community for exclusive deals! 🇮🇳🇬🇭`;
-    
-    // Check if Web Share API is available (mobile devices)
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: `${deal.title} - ${businessInfo?.businessName || 'Business'}`,
-          text: shareText,
-          url: dealUrl
-        });
-        showNotification('Deal shared successfully!', 'success');
-      } catch (error) {
-        console.log('Error sharing:', error);
-        // Fallback to copying URL with text
-        copyToClipboard(shareText, deal.title);
-      }
-    } else {
-      // Desktop fallback - copy formatted text with URL
-      copyToClipboard(shareText, deal.title);
     }
   };
 
@@ -1756,13 +1851,6 @@ ${userInfo?.fullName || userInfo?.name || user?.fullName || user?.name || 'Merch
                       )}
                     </div>
                     <div className="deal-actions">
-                      <button 
-                        className="btn btn-sm btn-success" 
-                        onClick={() => handleShareDeal(deal)}
-                        title="Share deal"
-                      >
-                        <i className="fas fa-share-alt"></i> Share
-                      </button>
                       {featureAccess.dealAnalyticsButton && (
                         <button 
                           className="btn btn-sm btn-accent" 
@@ -1844,13 +1932,37 @@ ${userInfo?.fullName || userInfo?.name || user?.fullName || user?.name || 'Merch
                 <span className="request-count">{redemptionRequests.length}</span>
               )}
             </h2>
-            <button 
-              className="btn btn-outline btn-sm" 
-              onClick={() => setShowRedemptionRequests(!showRedemptionRequests)}
-            >
-              <i className={`fas ${showRedemptionRequests ? 'fa-eye-slash' : 'fa-eye'}`}></i>
-              {showRedemptionRequests ? 'Hide' : 'Show'} Requests
-            </button>
+            <div className="header-actions">
+              {/* Bulk Actions */}
+              {selectedRequests.length > 0 && (
+                <div className="bulk-actions">
+                  <span className="selected-count">{selectedRequests.length} selected</span>
+                  <button 
+                    className="btn btn-success btn-sm"
+                    onClick={handleBulkApprove}
+                    disabled={processingBulk}
+                  >
+                    <i className="fas fa-check"></i>
+                    {processingBulk ? 'Processing...' : 'Approve Selected'}
+                  </button>
+                  <button 
+                    className="btn btn-danger btn-sm"
+                    onClick={handleBulkReject}
+                    disabled={processingBulk}
+                  >
+                    <i className="fas fa-times"></i>
+                    {processingBulk ? 'Processing...' : 'Reject Selected'}
+                  </button>
+                </div>
+              )}
+              <button 
+                className="btn btn-outline btn-sm" 
+                onClick={() => setShowRedemptionRequests(!showRedemptionRequests)}
+              >
+                <i className={`fas ${showRedemptionRequests ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                {showRedemptionRequests ? 'Hide' : 'Show'} Requests
+              </button>
+            </div>
           </div>
           
           {showRedemptionRequests && (
@@ -1865,12 +1977,35 @@ ${userInfo?.fullName || userInfo?.name || user?.fullName || user?.name || 'Merch
                     </div>
                   </div>
                 ) : (
-                  <div className="requests-list">
+                  <>
+                    {/* Select All Checkbox */}
+                    <div className="select-all-container">
+                      <label className="checkbox-label">
+                        <input
+                          type="checkbox"
+                          checked={selectAll}
+                          onChange={handleSelectAll}
+                        />
+                        <span className="checkmark"></span>
+                        Select All
+                      </label>
+                    </div>
+                    <div className="requests-list">
                     {redemptionRequests.slice((redemptionRequestsPage - 1) * itemsPerPage, redemptionRequestsPage * itemsPerPage).map((request) => {
                       console.log('[DEBUG] Rendering request:', request);
                       return (
                         <div key={request.id} className="request-card">
                           <div className="request-header">
+                            <div className="request-checkbox">
+                              <label className="checkbox-label">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedRequests.includes(request.id)}
+                                  onChange={() => handleSelectRequest(request.id)}
+                                />
+                                <span className="checkmark"></span>
+                              </label>
+                            </div>
                             <div className="deal-info">
                               <h4>{request.dealTitle}</h4>
                               <span className="discount-badge">
@@ -1960,7 +2095,8 @@ ${userInfo?.fullName || userInfo?.name || user?.fullName || user?.name || 'Merch
                         </div>
                       );
                     })}
-                  </div>
+                    </div>
+                  </>
                 );
               })()}
               {redemptionRequests.length > 0 && (
