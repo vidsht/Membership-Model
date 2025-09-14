@@ -1152,7 +1152,7 @@ Join Indians in Ghana Community for exclusive deals! 🇮🇳🇬🇭`;
                   <i className="fas fa-times"></i> Featured placement (Platinum)
                 </div>
               </div>
-              <button className="btn btn-primary">
+              <button className="btn btn-primary" onClick={handleUpgradePlanEmail}>
                 <i className="fas fa-arrow-up"></i> Upgrade Your Plan
               </button>
             </div>
@@ -1466,7 +1466,39 @@ Join Indians in Ghana Community for exclusive deals! 🇮🇳🇬🇭`;
                   </div>
                 </div>
                 
-                <button className="btn-upgrade-plan">
+                <button 
+                  className="btn-upgrade-plan"
+                  onClick={() => {
+                    // Open email client with prewritten text for plan upgrade
+                    const currentPlan = userInfo?.membershipType || 'basic';
+                    const subject = encodeURIComponent('Plan Upgrade Request - Indians in Ghana Membership');
+                    const body = encodeURIComponent(`Dear Admin,
+
+I hope this email finds you well.
+
+I would like to upgrade my current plan for my Indians in Ghana membership account.
+
+Current Plan Details:
+- Current Plan: ${currentPlan}
+- Target Plan: ${plan.name}
+- Account Email: ${userInfo?.email || user?.email || 'N/A'}
+- Business Name: ${businessInfo?.businessName || 'N/A'}
+
+I am interested in upgrading to the ${plan.name} plan to access additional features and benefits. Please provide me with:
+1. Pricing details for the ${plan.name} plan
+2. Payment process
+3. Timeline for plan activation
+4. Any additional information about the upgrade
+
+Thank you for your time and assistance.
+
+Best regards,
+${userInfo?.fullName || userInfo?.name || user?.fullName || user?.name || 'Merchant'}`);
+                    
+                    const mailtoLink = `mailto:cards@indiansinghana.com?subject=${subject}&body=${body}`;
+                    window.open(mailtoLink, '_blank');
+                  }}
+                >
                   <i className="fas fa-arrow-up"></i>
                   Upgrade to {plan.name}
                 </button>
@@ -1573,19 +1605,21 @@ Join Indians in Ghana Community for exclusive deals! 🇮🇳🇬🇭`;
           <div className="section-header">
             <h2>Your Deals</h2>
             <button 
-              className={`btn ${stats.canPostDeals ? 'btn-primary' : 'btn-disabled'}`}
+              className={`btn ${stats.canPostDeals && planAccess.canAccess('post_deals') ? 'btn-primary' : 'btn-disabled'}`}
               onClick={() => {
-                if (stats.canPostDeals) {
+                if (!planAccess.canAccess('post_deals')) {
+                  showNotification(planAccess.getBlockingMessage('post_deals'), 'warning');
+                } else if (stats.canPostDeals) {
                   setShowDealForm(true);
                 } else {
                   alert(`You've reached your monthly deal limit of ${stats.dealLimit}. ${stats.isCustomLimit ? 'Contact admin to increase your custom limit.' : 'Upgrade your plan for more deals.'}`);
                 }
               }}
-              disabled={!stats.canPostDeals}
-              title={!stats.canPostDeals ? `Deal limit reached (${stats.actualDealsThisMonth}/${stats.dealLimit})` : ''}
+              disabled={!stats.canPostDeals || !planAccess.canAccess('post_deals')}
+              title={!planAccess.canAccess('post_deals') ? planAccess.getBlockingMessage('post_deals') : (!stats.canPostDeals ? `Deal limit reached (${stats.actualDealsThisMonth}/${stats.dealLimit})` : '')}
             >
               <i className="fas fa-plus"></i> Add New Deal
-              {!stats.canPostDeals && (
+              {(!stats.canPostDeals || !planAccess.canAccess('post_deals')) && (
                 <span className="limit-indicator">
                   <i className="fas fa-exclamation-triangle"></i>
                 </span>
@@ -1599,19 +1633,21 @@ Join Indians in Ghana Community for exclusive deals! 🇮🇳🇬🇭`;
               <h3>No Deals Yet</h3>
               <p>Create your first deal to start attracting customers!</p>
               <button 
-                className={`btn ${stats.canPostDeals ? 'btn-primary' : 'btn-disabled'}`}
+                className={`btn ${stats.canPostDeals && planAccess.canAccess('post_deals') ? 'btn-primary' : 'btn-disabled'}`}
                 onClick={() => {
-                  if (stats.canPostDeals) {
+                  if (!planAccess.canAccess('post_deals')) {
+                    showNotification(planAccess.getBlockingMessage('post_deals'), 'warning');
+                  } else if (stats.canPostDeals) {
                     setShowDealForm(true);
                   } else {
                     alert(`You've reached your monthly deal limit of ${stats.dealLimit}. ${stats.isCustomLimit ? 'Contact admin to increase your custom limit.' : 'Upgrade your plan for more deals.'}`);
                   }
                 }}
-                disabled={!stats.canPostDeals}
-                title={!stats.canPostDeals ? `Deal limit reached (${stats.actualDealsThisMonth}/${stats.dealLimit})` : ''}
+                disabled={!stats.canPostDeals || !planAccess.canAccess('post_deals')}
+                title={!planAccess.canAccess('post_deals') ? planAccess.getBlockingMessage('post_deals') : (!stats.canPostDeals ? `Deal limit reached (${stats.actualDealsThisMonth}/${stats.dealLimit})` : '')}
               >
                 Create Deal
-                {!stats.canPostDeals && (
+                {(!stats.canPostDeals || !planAccess.canAccess('post_deals')) && (
                   <span className="limit-indicator">
                     <i className="fas fa-exclamation-triangle"></i>
                   </span>

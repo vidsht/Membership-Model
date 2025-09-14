@@ -4601,7 +4601,7 @@ router.put('/plans/:id', auth, admin, async (req, res) => {
       return res.status(404).json({ success: false, message: 'Plans table not found' });
     }
 
-    const allowedFields = ['name', 'description', 'price', 'currency', 'billingCycle', 'features', 'dealAccess', 'isActive', 'priority', 'maxUsers', 'max_deals_per_month', 'maxRedemptions', 'type'];
+    const allowedFields = ['name', 'description', 'price', 'currency', 'billingCycle', 'features', 'dealAccess', 'isActive', 'priority', 'maxUsers', 'max_deals_per_month', 'maxDealRedemptions', 'type'];
     const updates = [];
     const values = [];
 
@@ -4655,7 +4655,7 @@ router.post('/plans', auth, admin, async (req, res) => {
       INSERT INTO plans (
         \`key\`, name, description, price, currency, billingCycle,
         features, dealAccess, type, isActive, priority, maxUsers, max_deals_per_month,
-        maxRedemptions, created_at, updated_at
+        maxDealRedemptions, created_at, updated_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
     `, [
       planData.key,
@@ -4671,7 +4671,7 @@ router.post('/plans', auth, admin, async (req, res) => {
       planData.priority || 999,
       planData.maxUsers || null,
       planData.max_deals_per_month || null,
-      planData.maxRedemptions || null
+      planData.maxDealRedemptions || null
     ]);
 
     res.status(201).json({
@@ -4760,7 +4760,7 @@ router.post('/plans/seed', auth, admin, async (req, res) => {
         priority: 1,
         maxUsers: null,
         max_deals_per_month: null,
-        maxRedemptions: 2
+        maxDealRedemptions: 2
       },
       {
         key: 'gold',
@@ -4775,7 +4775,7 @@ router.post('/plans/seed', auth, admin, async (req, res) => {
         priority: 2,
         maxUsers: null,
         max_deals_per_month: null,
-        maxRedemptions: 10
+        maxDealRedemptions: 10
       },
       {
         key: 'platinum',
@@ -4790,7 +4790,7 @@ router.post('/plans/seed', auth, admin, async (req, res) => {
         priority: 3,
         maxUsers: null,
         max_deals_per_month: null,
-        maxRedemptions: -1
+        maxDealRedemptions: -1
       },
       // MERCHANT PLANS
       {
@@ -4874,13 +4874,13 @@ router.post('/plans/seed', auth, admin, async (req, res) => {
         INSERT INTO plans (
           \`key\`, name, description, price, currency, billingCycle,
           features, dealAccess, type, isActive, priority, maxUsers, max_deals_per_month,
-          maxRedemptions, created_at, updated_at
+          maxDealRedemptions, created_at, updated_at
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
       `, [
         plan.key, plan.name, plan.description, plan.price, plan.currency,
         plan.billingCycle, plan.features, plan.dealAccess, plan.type,
         true, plan.priority, plan.maxUsers, plan.max_deals_per_month,
-        plan.maxRedemptions
+        plan.maxDealRedemptions
       ]);
     }
 

@@ -204,6 +204,20 @@
   padding: 1.5rem;
   background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
   border-bottom: 1px solid #e9ecef;
+  position: relative;
+}
+
+.serial-number {
+  position: absolute;
+  top: 0.5rem;
+  left: 0.5rem;
+  background: #007bff;
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
 }
 
 .plan-header h3 {
