@@ -404,6 +404,7 @@ const PlanManagement = () => {
         <table className="user-table">
           <thead>
             <tr>
+              <th>S.No</th>
               <th>User</th>
               <th>Email</th>
               <th>Current Plan</th>
@@ -411,13 +412,11 @@ const PlanManagement = () => {
               <th>Actions</th>
             </tr>
           </thead>
-          <tbody>            {users.slice(0, 10).map(user => (
+          <tbody>            {users.slice(0, 10).map((user, index) => (
               <tr key={user.id}>
+                <td>{index + 1}</td>
                 <td>
                   <div className="user-info">
-                    <div className="user-avatar">
-                      <i className="fas fa-user"></i>
-                    </div>
                     <div>
                       <strong>{user.fullName}</strong>
                     </div>
@@ -475,6 +474,7 @@ const PlanManagement = () => {
         <table className="merchant-table">
           <thead>
             <tr>
+              <th>S.No</th>
               <th>Business</th>
               <th>Owner</th>
               <th>Email</th>
@@ -483,8 +483,9 @@ const PlanManagement = () => {
               <th>Actions</th>
             </tr>
           </thead>
-          <tbody>            {merchants.slice(0, 10).map(merchant => (
+          <tbody>            {merchants.slice(0, 10).map((merchant, index) => (
               <tr key={merchant.id}>
+                <td>{index + 1}</td>
                 <td>
                   <div className="merchant-info">
                     <div className="merchant-avatar">

@@ -71,7 +71,7 @@ router.get('/profile', auth, (req, res) => {
 router.get('/profile/complete', auth, (req, res) => {
   const userId = req.user.id;
   
-  // Get all available user fields with plan information
+  // Get all available user fields with plan information and business data for merchants
     const query = `
       SELECT 
         u.id, u.fullName, u.email, u.phone, u.dob, u.bloodGroup, 
@@ -83,9 +83,12 @@ router.get('/profile/complete', auth, (req, res) => {
         p.name as planName, p.price as planPrice, p.currency as planCurrency,
         p.billingCycle, p.features as planFeatures, p.dealAccess,
         p.maxDealRedemptions as planMaxDealRedemptions, p.maxRedemptions as planMaxRedemptions, 
-        p.priority as planPriority, p.\`key\` as planKey
+        p.priority as planPriority, p.\`key\` as planKey,
+        b.businessName, b.businessDescription, b.businessCategory, b.businessAddress,
+        b.businessPhone, b.businessEmail, b.website, b.businessId
       FROM users u
       LEFT JOIN plans p ON u.membershipType = p.\`key\` AND p.type = 'user'
+      LEFT JOIN businesses b ON u.id = b.userId AND u.userType = 'merchant'
       WHERE u.id = ?
     `;
   
@@ -129,21 +132,46 @@ router.get('/profile/complete', auth, (req, res) => {
     // Add pending requests count for current month
     const currentDate = new Date();
     const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+    const currentMonth = currentDate.toISOString().slice(0, 7); // YYYY-MM format
+    
+    // Get actual redemption count for current month
+    const redemptionCountQuery = `
+      SELECT COUNT(*) as monthlyCount 
+      FROM deal_redemptions 
+      WHERE userId = ? AND DATE_FORMAT(created_at, '%Y-%m') = ? AND status = 'approved'
+    `;
+    
     const pendingQuery = `
       SELECT COUNT(*) as pendingRequestsCount 
       FROM deal_redemptions 
       WHERE userId = ? AND status = 'pending' AND created_at >= ?
     `;
     
-    db.query(pendingQuery, [userId, firstDayOfMonth], (pendingErr, pendingResults) => {
-      if (pendingErr) {
-        console.error('Error fetching pending requests:', pendingErr);
-        user.pendingRequestsCount = 0;
+    db.query(redemptionCountQuery, [userId, currentMonth], (countErr, countResults) => {
+      if (countErr) {
+        console.error('Error fetching redemption count:', countErr);
+        user.actualMonthlyRedemptionCount = 0;
       } else {
-        user.pendingRequestsCount = pendingResults[0]?.pendingRequestsCount || 0;
+        user.actualMonthlyRedemptionCount = countResults[0]?.monthlyCount || 0;
       }
       
-      res.json({ user });
+      db.query(pendingQuery, [userId, firstDayOfMonth], (pendingErr, pendingResults) => {
+        if (pendingErr) {
+          console.error('Error fetching pending requests:', pendingErr);
+          user.pendingRequestsCount = 0;
+        } else {
+          user.pendingRequestsCount = pendingResults[0]?.pendingRequestsCount || 0;
+        }
+        
+        // Calculate the effective redemption limit (custom limit overrides plan limit)
+        const effectiveLimit = user.customRedemptionLimit || user.planMaxDealRedemptions || 0;
+        
+        // Update the user object with calculated values
+        user.effectiveRedemptionLimit = effectiveLimit;
+        user.monthlyRedemptionsRemaining = Math.max(0, effectiveLimit - user.actualMonthlyRedemptionCount - user.pendingRequestsCount);
+        
+        res.json({ user });
+      });
     });
   });
 });
