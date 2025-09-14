@@ -86,12 +86,12 @@ const UserSettings = () => {
   }, [isMerchant, currentActiveTab]);
 
   const fetchUserProfileData = useCallback(async () => {
-  try {
-    setIsLoading(true);
-    
-    // For all users, prefer the authenticated user available from AuthContext
-    if (user) {
-      const userData = user;
+    try {
+      setIsLoading(true);
+      
+      // Always call the API to get fresh plan data including effectiveRedemptionLimit and planMaxDealRedemptions
+      const response = await api.get('/users/profile/complete');
+      const userData = response.data.user;
 
       // Parse address if it's a string
       let parsedAddress = { street: '', city: '', state: '', zipCode: '' };
@@ -142,83 +142,25 @@ const UserSettings = () => {
         monthlyRedemptionLimit: userData.monthlyRedemptionLimit,
         monthlyDealsRemaining: userData.monthlyDealsRemaining,
         monthlyDealCount: userData.monthlyDealCount,
-        monthlyDealLimit: userData.monthlyDealLimit
+        monthlyDealLimit: userData.monthlyDealLimit,
+        // Plan information from backend
+        planMaxDealRedemptions: userData.planMaxDealRedemptions,
+        planMaxRedemptions: userData.planMaxRedemptions,
+        planName: userData.planName,
+        planPrice: userData.planPrice,
+        planCurrency: userData.planCurrency,
+        customRedemptionLimit: userData.customRedemptionLimit,
+        // New backend calculated fields
+        actualMonthlyRedemptionCount: userData.actualMonthlyRedemptionCount,
+        effectiveRedemptionLimit: userData.effectiveRedemptionLimit
       });
-      return;
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      showNotification('Failed to load user profile data', 'error');
+    } finally {
+      setIsLoading(false);
     }
-
-    // Fallback: call the protected endpoint only if context user is not available
-    const response = await api.get('/users/profile/complete');
-    const userData = response.data.user || user;
-
-    // Parse address if it's a string
-    let parsedAddress = { street: '', city: '', state: '', zipCode: '' };
-    if (userData.address) {
-      if (typeof userData.address === 'object') {
-        parsedAddress = {
-          street: userData.address.street || userData.address.address || '',
-          city: userData.address.city || '',
-          state: userData.address.state || '',
-          zipCode: userData.address.zipCode || userData.address.zip || ''
-        };
-      } else if (typeof userData.address === 'string') {
-        try {
-          const parsed = JSON.parse(userData.address);
-          parsedAddress = {
-            street: parsed.street || parsed.address || userData.address || '',
-            city: parsed.city || '',
-            state: parsed.state || '',
-            zipCode: parsed.zipCode || parsed.zip || ''
-          };
-        } catch (e) {
-          parsedAddress = { street: userData.address, city: '', state: '', zipCode: '' };
-        }
-      }
-    }
-
-    setUserProfile({
-      fullName: userData.fullName || '',
-      firstName: userData.firstName || '',
-      lastName: userData.lastName || '',
-      email: userData.email || '',
-      phone: userData.phone || '',
-      dob: userData.dob ? userData.dob.split('T')[0] : '',
-      gender: userData.gender || '',
-      bloodGroup: userData.bloodGroup || '',
-      community: userData.community || '',
-      address: parsedAddress,
-      country: userData.country || 'Ghana',
-      profilePicture: userData.profilePicture || userData.profilePhoto || '',
-      membershipType: userData.membershipType || userData.membership || '',
-      membershipNumber: userData.membershipNumber || '',
-      createdAt: userData.created_at || '',
-      status: userData.status || '',
-      role: userData.role || '',
-      // Monthly counters and limits (may be provided by backend)
-      monthlyRedemptionsRemaining: userData.monthlyRedemptionsRemaining,
-      monthlyRedemptionCount: userData.monthlyRedemptionCount,
-      monthlyRedemptionLimit: userData.monthlyRedemptionLimit,
-      monthlyDealsRemaining: userData.monthlyDealsRemaining,
-      monthlyDealCount: userData.monthlyDealCount,
-      monthlyDealLimit: userData.monthlyDealLimit,
-      // Plan information from backend
-      planMaxDealRedemptions: userData.planMaxDealRedemptions,
-      planMaxRedemptions: userData.planMaxRedemptions,
-      planName: userData.planName,
-      planPrice: userData.planPrice,
-      planCurrency: userData.planCurrency,
-      customRedemptionLimit: userData.customRedemptionLimit,
-      // New backend calculated fields
-      actualMonthlyRedemptionCount: userData.actualMonthlyRedemptionCount,
-      effectiveRedemptionLimit: userData.effectiveRedemptionLimit
-    });
-  } catch (error) {
-    console.error('Error fetching user profile:', error);
-    showNotification('Failed to load user profile data', 'error');
-  } finally {
-    setIsLoading(false);
-  }
-}, [user, showNotification]);
+  }, [showNotification]);
 
 useEffect(() => {
         if (user) {
@@ -914,15 +856,16 @@ const RedemptionHistoryTab = () => {
 
   // Get user redemption limit info
   // Priority: backend effectiveRedemptionLimit -> customRedemptionLimit -> planMaxDealRedemptions -> fallback values
+  // FIXED: Properly prioritize dynamic plan data from database over hardcoded values
   const userRedemptionLimit = user?.effectiveRedemptionLimit ||
                               userProfile?.effectiveRedemptionLimit ||
                               user?.customRedemptionLimit || 
                               userProfile?.customRedemptionLimit || 
-                              user?.planMaxDealRedemptions || 
                               userProfile?.planMaxDealRedemptions ||
+                              user?.planMaxDealRedemptions || 
                               userProfile?.maxRedemptionsPerMonth || 
                               userProfile?.maxRedemptions || 
-                              // Default fallback based on plan type
+                              // Default fallback based on plan type (only if no plan data available)
                               (userProfile?.membershipType === 'platinum' ? 3 : 
                                userProfile?.membershipType === 'gold' ? 2 : 1);
   const isCustomLimit = !!(user?.customRedemptionLimit || userProfile?.customRedemptionLimit);

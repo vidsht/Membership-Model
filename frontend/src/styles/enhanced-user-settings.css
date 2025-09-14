@@ -1406,7 +1406,7 @@
 .business-name {
   display: flex;
   align-items: center;
-  /* justify-content: center; */
+  justify-content: center;
   gap: 10px;
   font-weight: 600;
   color: #374151;
