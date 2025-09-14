@@ -171,13 +171,13 @@ router.get('/profile/complete', auth, (req, res) => {
     const redemptionCountQuery = `
       SELECT COUNT(*) as monthlyCount 
       FROM deal_redemptions 
-      WHERE userId = ? AND DATE_FORMAT(created_at, '%Y-%m') = ? AND status = 'approved'
+      WHERE user_id = ? AND DATE_FORMAT(redeemed_at, '%Y-%m') = ? AND status = 'approved'
     `;
     
     const pendingQuery = `
       SELECT COUNT(*) as pendingRequestsCount 
       FROM deal_redemptions 
-      WHERE userId = ? AND status = 'pending' AND created_at >= ?
+      WHERE user_id = ? AND status = 'pending' AND created_at >= ?
     `;
     
     db.query(redemptionCountQuery, [userId, currentMonth], (countErr, countResults) => {
