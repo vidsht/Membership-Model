@@ -39,6 +39,14 @@ export const AuthProvider = ({ children }) => {
         role: updatedUser.role,
         userType: updatedUser.userType,
         business: updatedUser.business, // Include business data for merchants
+        businessName: updatedUser.businessName, // Business name for merchants
+        businessDescription: updatedUser.businessDescription,
+        businessCategory: updatedUser.businessCategory,
+        businessAddress: updatedUser.businessAddress,
+        businessPhone: updatedUser.businessPhone,
+        businessEmail: updatedUser.businessEmail,
+        website: updatedUser.website,
+        businessId: updatedUser.businessId,
         // Add other non-sensitive fields as needed
         dob: updatedUser.dob,
         bloodGroup: updatedUser.bloodGroup,

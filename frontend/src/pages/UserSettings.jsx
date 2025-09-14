@@ -52,6 +52,10 @@ const UserSettings = () => {
   });
   const [userRedemptions, setUserRedemptions] = useState([]);
   const [redemptionsLoadingState, setRedemptionsLoadingState] = useState(false);
+  
+  // Pagination state for redemption history
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8; // Show 8 redemption cards per page
 
   // Edit modal state
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -196,7 +200,17 @@ const UserSettings = () => {
       monthlyRedemptionLimit: userData.monthlyRedemptionLimit,
       monthlyDealsRemaining: userData.monthlyDealsRemaining,
       monthlyDealCount: userData.monthlyDealCount,
-      monthlyDealLimit: userData.monthlyDealLimit
+      monthlyDealLimit: userData.monthlyDealLimit,
+      // Plan information from backend
+      planMaxDealRedemptions: userData.planMaxDealRedemptions,
+      planMaxRedemptions: userData.planMaxRedemptions,
+      planName: userData.planName,
+      planPrice: userData.planPrice,
+      planCurrency: userData.planCurrency,
+      customRedemptionLimit: userData.customRedemptionLimit,
+      // New backend calculated fields
+      actualMonthlyRedemptionCount: userData.actualMonthlyRedemptionCount,
+      effectiveRedemptionLimit: userData.effectiveRedemptionLimit
     });
   } catch (error) {
     console.error('Error fetching user profile:', error);
@@ -242,6 +256,16 @@ useEffect(() => {
     }));
   }
 }, [user?.profilePhoto, user?.profilePicture, isMerchant]);
+
+// Reset pagination when redemption data changes
+useEffect(() => {
+  const totalPages = Math.ceil(userRedemptions.length / itemsPerPage);
+  if (currentPage > totalPages && totalPages > 0) {
+    setCurrentPage(totalPages);
+  } else if (currentPage > 1 && userRedemptions.length === 0) {
+    setCurrentPage(1);
+  }
+}, [userRedemptions.length, currentPage, itemsPerPage]);
 
   const handleProfileInputChange = (e) => {
     const { name, value } = e.target;
@@ -889,8 +913,10 @@ const RedemptionHistoryTab = () => {
 
 
   // Get user redemption limit info
-  // Priority: customRedemptionLimit (admin override) -> planMaxDealRedemptions (from plan) -> fallback values
-  const userRedemptionLimit = user?.customRedemptionLimit || 
+  // Priority: backend effectiveRedemptionLimit -> customRedemptionLimit -> planMaxDealRedemptions -> fallback values
+  const userRedemptionLimit = user?.effectiveRedemptionLimit ||
+                              userProfile?.effectiveRedemptionLimit ||
+                              user?.customRedemptionLimit || 
                               userProfile?.customRedemptionLimit || 
                               user?.planMaxDealRedemptions || 
                               userProfile?.planMaxDealRedemptions ||
@@ -906,9 +932,13 @@ const RedemptionHistoryTab = () => {
   // Prefer backend-provided remaining/count/limit values when available to avoid discrepancies
   const backendRemaining = (user?.monthlyRedemptionsRemaining !== undefined && user?.monthlyRedemptionsRemaining !== null) ? user.monthlyRedemptionsRemaining :
                            (userProfile?.monthlyRedemptionsRemaining !== undefined && userProfile?.monthlyRedemptionsRemaining !== null) ? userProfile.monthlyRedemptionsRemaining : undefined;
-  const backendUsed = (user?.monthlyRedemptionCount !== undefined && user?.monthlyRedemptionCount !== null) ? user.monthlyRedemptionCount :
+  const backendUsed = (user?.actualMonthlyRedemptionCount !== undefined && user?.actualMonthlyRedemptionCount !== null) ? user.actualMonthlyRedemptionCount :
+                      (userProfile?.actualMonthlyRedemptionCount !== undefined && userProfile?.actualMonthlyRedemptionCount !== null) ? userProfile.actualMonthlyRedemptionCount :
+                      (user?.monthlyRedemptionCount !== undefined && user?.monthlyRedemptionCount !== null) ? user.monthlyRedemptionCount :
                       (userProfile?.monthlyRedemptionCount !== undefined && userProfile?.monthlyRedemptionCount !== null) ? userProfile.monthlyRedemptionCount : undefined;
-  const backendLimit = (user?.monthlyRedemptionLimit !== undefined && user?.monthlyRedemptionLimit !== null) ? user.monthlyRedemptionLimit :
+  const backendLimit = (user?.effectiveRedemptionLimit !== undefined && user?.effectiveRedemptionLimit !== null) ? user.effectiveRedemptionLimit :
+                       (userProfile?.effectiveRedemptionLimit !== undefined && userProfile?.effectiveRedemptionLimit !== null) ? userProfile.effectiveRedemptionLimit :
+                       (user?.monthlyRedemptionLimit !== undefined && user?.monthlyRedemptionLimit !== null) ? user.monthlyRedemptionLimit :
                        (userProfile?.monthlyRedemptionLimit !== undefined && userProfile?.monthlyRedemptionLimit !== null) ? userProfile.monthlyRedemptionLimit : undefined;
 
   const redemptionsRemaining = backendRemaining !== undefined ? (backendRemaining === -1 ? 'Unlimited' : Math.max(0, backendRemaining)) : (userRedemptionLimit === -1 ? 'Unlimited' : Math.max(0, userRedemptionLimit - redemptionsUsed));
@@ -1029,60 +1059,115 @@ const RedemptionHistoryTab = () => {
             <p>You haven't redeemed any deals yet. Start exploring deals to see your redemption history here!</p>
           </div>
         ) : (
-          <div className="redemption-cards-grid">
-            {userRedemptions.map((redemption, index) => (
-              <div key={redemption.id || index} className="redemption-card">
-                <div className="redemption-card-header">
-                  <h4 className="deal-title">{redemption.dealTitle || redemption.title || 'Deal'}</h4>
-                  <span className="redemption-date">
-                    {redemption.redeemed_at ? new Date(redemption.redeemed_at).toLocaleDateString('en-GB', {
-                      year: 'numeric',
-                      month: '2-digit',
-                      day: '2-digit'
-                    }) : 'Date not available'}
-                  </span>
-                </div>
-                <div className="redemption-card-body">
-                  <p className="business-name">
-                    <i className="fas fa-store"></i>
-                    {redemption.businessName || 'Business Name Not Available'}
-                  </p>
-                  {redemption.businessAddress && (
-                    <p className="business-address">
-                      <i className="fas fa-map-marker-alt"></i>
-                      {redemption.businessAddress}
-                    </p>
-                  )}
-                  <p className="redemption-code">
-                    {redemption.discount ? (
-                      <span className="discount-badge">
-                        {redemption.discountType === 'percentage' 
-                          ? `${redemption.discount}% OFF` 
-                          : `$${redemption.discount} OFF`
-                        }
-                      </span>
-                    ) : (
-                      <span>Discount not available</span>
-                    )}
-                  </p>
-                  <div className="redemption-status">
-                    <span className={`status-badge status-${redemption.status || 'redeemed'}`}>
-                      {redemption.status?.charAt(0).toUpperCase() + redemption.status?.slice(1) || 'Redeemed'}
+          <>
+            <div className="pagination-info">
+              <p>Showing {Math.min((currentPage - 1) * itemsPerPage + 1, userRedemptions.length)} - {Math.min(currentPage * itemsPerPage, userRedemptions.length)} of {userRedemptions.length} redemptions</p>
+            </div>
+            <div className="redemption-cards-grid">
+              {userRedemptions
+                .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                .map((redemption, index) => (
+                <div key={redemption.id || index} className="redemption-card">
+                  <div className="redemption-card-header">
+                    <h4 className="deal-title">{redemption.dealTitle || redemption.title || 'Deal'}</h4>
+                    <span className="redemption-date">
+                      {redemption.redeemedAt || redemption.redeemed_at ? new Date(redemption.redeemedAt || redemption.redeemed_at).toLocaleDateString('en-GB', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit'
+                      }) : 'Date not available'}
                     </span>
                   </div>
-
-                  {/* Robust rejection reason display: handle snake_case/camelCase and variant status values */}
-                  {(['rejected','declined','rejected_by_admin','rejected_by_merchant'].includes((redemption.status || '').toLowerCase())) && (
-                    <div className="rejection-reason">
-                      <small>
-                        Reason: {redemption.rejectionReason || redemption.rejection_reason || redemption.rejection || 'Not provided'}
-                      </small>
+                  <div className="redemption-card-body">
+                    <p className="business-name">
+                      <i className="fas fa-store"></i>
+                      {redemption.businessName || 'Business Name Not Available'}
+                    </p>
+                    {redemption.businessAddress && (
+                      <p className="business-address">
+                        <i className="fas fa-map-marker-alt"></i>
+                        {redemption.businessAddress}
+                      </p>
+                    )}
+                    <p className="redemption-code">
+                      {redemption.discount ? (
+                        <span className="discount-badge">
+                          {redemption.discountType === 'percentage' 
+                            ? `${redemption.discount}% OFF` 
+                            : `$${redemption.discount} OFF`
+                          }
+                        </span>
+                      ) : (
+                        <span>Discount not available</span>
+                      )}
+                    </p>
+                    <div className="redemption-status">
+                      <span className={`status-badge status-${redemption.status || 'redeemed'}`}>
+                        {redemption.status?.charAt(0).toUpperCase() + redemption.status?.slice(1) || 'Redeemed'}
+                      </span>
                     </div>
-                  )}
+
+                    {/* Robust rejection reason display: handle snake_case/camelCase and variant status values */}
+                    {(['rejected','declined','rejected_by_admin','rejected_by_merchant'].includes((redemption.status || '').toLowerCase())) && (
+                      <div className="rejection-reason">
+                        <small>
+                          Reason: {redemption.rejectionReason || redemption.rejection_reason || redemption.rejection || 'Not provided'}
+                        </small>
+                      </div>
+                    )}
+                  </div>
                 </div>
+              ))}
+            </div>
+            {/* Pagination Controls */}
+            {userRedemptions.length > itemsPerPage && (
+              <div className="pagination-controls">
+                <button 
+                  className="pagination-btn prev-btn"
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                >
+                  <i className="fas fa-chevron-left"></i>
+                  Previous
+                </button>
+                
+                <div className="pagination-numbers">
+                  {Array.from({ length: Math.ceil(userRedemptions.length / itemsPerPage) }, (_, i) => i + 1)
+                    .filter(page => {
+                      const totalPages = Math.ceil(userRedemptions.length / itemsPerPage);
+                      if (totalPages <= 7) return true;
+                      if (page === 1 || page === totalPages) return true;
+                      if (page >= currentPage - 1 && page <= currentPage + 1) return true;
+                      if ((page === 2 && currentPage <= 4) || (page === totalPages - 1 && currentPage >= totalPages - 3)) return true;
+                      return false;
+                    })
+                    .map((page, index, array) => (
+                      <React.Fragment key={page}>
+                        {index > 0 && array[index - 1] !== page - 1 && (
+                          <span className="pagination-ellipsis">...</span>
+                        )}
+                        <button
+                          className={`pagination-btn page-number ${currentPage === page ? 'active' : ''}`}
+                          onClick={() => setCurrentPage(page)}
+                        >
+                          {page}
+                        </button>
+                      </React.Fragment>
+                    ))
+                  }
+                </div>
+                
+                <button 
+                  className="pagination-btn next-btn"
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(userRedemptions.length / itemsPerPage)))}
+                  disabled={currentPage === Math.ceil(userRedemptions.length / itemsPerPage)}
+                >
+                  Next
+                  <i className="fas fa-chevron-right"></i>
+                </button>
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
       </div>
     </div>

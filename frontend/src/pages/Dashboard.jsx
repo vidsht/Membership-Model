@@ -199,6 +199,142 @@ const Dashboard = () => {
     return filterBenefits(hardcodedBenefits);
   };
 
+  // Helper function to get appropriate icon for a benefit
+  const getBenefitIcon = (benefit, index) => {
+    const benefitLower = benefit.toLowerCase();
+    
+    // Icon mapping based on benefit content
+    if (benefitLower.includes('deal') || benefitLower.includes('offer') || benefitLower.includes('discount')) {
+      return 'fas fa-bullhorn';
+    } else if (benefitLower.includes('card') || benefitLower.includes('membership')) {
+      return 'fas fa-id-card';
+    } else if (benefitLower.includes('support') || benefitLower.includes('customer service')) {
+      return 'fas fa-headset';
+    } else if (benefitLower.includes('analytic') || benefitLower.includes('report') || benefitLower.includes('insight')) {
+      return 'fas fa-chart-bar';
+    } else if (benefitLower.includes('event') || benefitLower.includes('booking') || benefitLower.includes('community')) {
+      return 'fas fa-calendar-star';
+    } else if (benefitLower.includes('listing') || benefitLower.includes('directory') || benefitLower.includes('profile')) {
+      return 'fas fa-store';
+    } else if (benefitLower.includes('marketing') || benefitLower.includes('newsletter') || benefitLower.includes('email')) {
+      return 'fas fa-envelope';
+    } else if (benefitLower.includes('travel') || benefitLower.includes('assistance')) {
+      return 'fas fa-plane';
+    } else if (benefitLower.includes('priority') || benefitLower.includes('vip') || benefitLower.includes('premium')) {
+      return 'fas fa-crown';
+    } else if (benefitLower.includes('unlimited') || benefitLower.includes('exclusive')) {
+      return 'fas fa-infinity';
+    } else if (benefitLower.includes('reach') || benefitLower.includes('network') || benefitLower.includes('connection')) {
+      return 'fas fa-users';
+    } else if (benefitLower.includes('engage') || benefitLower.includes('loyalty') || benefitLower.includes('relationship')) {
+      return 'fas fa-heart';
+    }
+    
+    // Default icons based on index for variety
+    const defaultIcons = [
+      'fas fa-star',
+      'fas fa-gift',
+      'fas fa-percentage',
+      'fas fa-check-circle',
+      'fas fa-thumbs-up',
+      'fas fa-medal'
+    ];
+    
+    return defaultIcons[index % defaultIcons.length];
+  };
+
+  // Helper function to extract or generate title from benefit text
+  const getBenefitTitle = (benefit) => {
+    // If the benefit is already structured as a title, use it as-is
+    if (benefit.length <= 50 && !benefit.includes('.')) {
+      return benefit;
+    }
+    
+    // Extract meaningful title from longer text
+    const benefitLower = benefit.toLowerCase();
+    
+    if (benefitLower.includes('deal') && benefitLower.includes('unlimited')) {
+      return 'Unlimited Deal Creation';
+    } else if (benefitLower.includes('deal')) {
+      return 'Deal & Offer Promotion';
+    } else if (benefitLower.includes('listing') && benefitLower.includes('premium')) {
+      return 'Premium Business Listing';
+    } else if (benefitLower.includes('listing') && benefitLower.includes('featured')) {
+      return 'Featured Business Listing';
+    } else if (benefitLower.includes('listing')) {
+      return 'Business Directory Listing';
+    } else if (benefitLower.includes('analytic')) {
+      return 'Business Analytics';
+    } else if (benefitLower.includes('support') && benefitLower.includes('priority')) {
+      return 'Priority Customer Support';
+    } else if (benefitLower.includes('support')) {
+      return 'Customer Support';
+    } else if (benefitLower.includes('marketing')) {
+      return 'Marketing Support';
+    } else if (benefitLower.includes('card')) {
+      return 'Digital Membership Card';
+    } else if (benefitLower.includes('event')) {
+      return 'Exclusive Events Access';
+    } else if (benefitLower.includes('travel')) {
+      return 'Travel Benefits';
+    } else if (benefitLower.includes('newsletter')) {
+      return 'Newsletter Features';
+    } else if (benefitLower.includes('concierge')) {
+      return 'Concierge Services';
+    }
+    
+    // Fallback: use first few words as title
+    const words = benefit.split(' ');
+    if (words.length <= 4) {
+      return benefit;
+    }
+    return words.slice(0, 4).join(' ') + '...';
+  };
+
+  // Helper function to extract or generate description from benefit text
+  const getBenefitDescription = (benefit) => {
+    // If it's already a good description (contains periods), use it
+    if (benefit.includes('.') && benefit.length > 50) {
+      return benefit;
+    }
+    
+    // Generate descriptions for common benefit types
+    const benefitLower = benefit.toLowerCase();
+    
+    if (benefitLower.includes('deal') && benefitLower.includes('unlimited')) {
+      return 'Create and promote unlimited deals and offers to attract new customers and boost sales throughout the month.';
+    } else if (benefitLower.includes('deal')) {
+      return 'Showcase exclusive discounts and special offers to capture new customers and keep loyal ones coming back.';
+    } else if (benefitLower.includes('listing') && benefitLower.includes('premium')) {
+      return 'Get premium placement in our business directory with enhanced visibility and featured positioning.';
+    } else if (benefitLower.includes('listing') && benefitLower.includes('featured')) {
+      return 'Featured placement in our trusted business directory with priority visibility across the community.';
+    } else if (benefitLower.includes('listing')) {
+      return 'Get listed in our comprehensive business directory to increase your visibility in the local community.';
+    } else if (benefitLower.includes('analytic')) {
+      return 'Access detailed analytics and insights about your business performance and customer engagement.';
+    } else if (benefitLower.includes('support') && benefitLower.includes('priority')) {
+      return 'Get priority access to our dedicated support team for faster resolution of any issues or questions.';
+    } else if (benefitLower.includes('support')) {
+      return 'Access to our reliable customer support team to help you make the most of your membership.';
+    } else if (benefitLower.includes('marketing')) {
+      return 'Professional marketing support to help promote your business and reach a wider audience.';
+    } else if (benefitLower.includes('card')) {
+      return 'Access your digital membership card anytime, anywhere for exclusive discounts and partner benefits.';
+    } else if (benefitLower.includes('event')) {
+      return 'Get exclusive access to community events, networking opportunities, and special member gatherings.';
+    } else if (benefitLower.includes('travel')) {
+      return 'Enjoy special travel discounts and assistance services to make your journeys more affordable and convenient.';
+    } else if (benefitLower.includes('newsletter')) {
+      return 'Stay updated with our newsletter featuring the latest offers, community news, and member benefits.';
+    } else if (benefitLower.includes('concierge')) {
+      return 'Access premium concierge services for personalized assistance with your membership needs.';
+    }
+    
+    // Default description
+    return `Enjoy this exclusive benefit as part of your membership plan, designed to enhance your experience with our community.`;
+  };
+
   const getNextMembershipType = (current) => {
     switch (current) {
       case 'community': return 'silver';
@@ -237,7 +373,7 @@ const Dashboard = () => {
       )}
       
       <div className="dashboard-header">
-        <h1>Welcome back, {user.fullName}!</h1>
+        <h1>Welcome back, {user.userType === 'merchant' && user.businessName ? user.businessName : user.fullName}!</h1>
         <p>Manage your membership and explore community benefits</p>
       </div>
 
@@ -252,43 +388,71 @@ const Dashboard = () => {
               <MerchantCertificate />
 
               {/* Merchant Benefits Section */}
-              <section className="current-plan-features">
+              <section className="current-plan-features merchant-benefits">
                 <div className="section-header">
-                  <h2>Merchant Benefits</h2>
-                  <p>Unlock your business potential with these features</p>
+                  <h2>
+                    <i className="fas fa-store"></i>
+                    Merchant Benefits
+                  </h2>
+                  <p>Unlock your business potential with these powerful features</p>
                 </div>
 
-                <div className="plan-features-list">
-                  <ul className="features-points">
-                    <li className="feature-point">
-                      <i className="fas fa-bullhorn"></i>
-                      <div>
-                        <h4>Promote Deals & Offers</h4>
-                        <p>Showcase exclusive discounts each month to capture new customers and keep loyal ones coming back.</p>
-                      </div>
-                    </li>
-                    <li className="feature-point">
-                      <i className="fas fa-users"></i>
-                      <div>
-                        <h4>Expand Community Reach</h4>
-                        <p>Get featured in our trusted business directory and gain visibility across a wider local network.</p>
-                      </div>
-                    </li>
-                    <li className="feature-point">
-                      <i className="fas fa-heart"></i>
-                      <div>
-                        <h4>Engage Your Customers</h4>
-                        <p>Build stronger connections with your audience through our interactive platform that fosters loyalty.</p>
-                      </div>
-                    </li>
-                    <li className="feature-point">
-                      <i className="fas fa-headset"></i>
-                      <div>
-                        <h4>Reliable Support Team</h4>
-                        <p>Count on our dedicated support specialists to assist you in maximizing your business profile anytime.</p>
-                      </div>
-                    </li>
-                  </ul>
+                <div className="benefits-container">
+                  <div className="benefits-grid">
+                    {currentPlan ? (
+                      getMembershipBenefits(currentPlan, 'merchant').map((benefit, index) => (
+                        <div key={index} className="benefit-card">
+                          <div className="benefit-icon">
+                            <i className={getBenefitIcon(benefit, index)}></i>
+                          </div>
+                          <div className="benefit-content">
+                            <h4>{getBenefitTitle(benefit)}</h4>
+                            <p>{getBenefitDescription(benefit)}</p>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      // Fallback benefits when no plan data is available
+                      <>
+                        <div className="benefit-card">
+                          <div className="benefit-icon">
+                            <i className="fas fa-bullhorn"></i>
+                          </div>
+                          <div className="benefit-content">
+                            <h4>Promote Deals & Offers</h4>
+                            <p>Showcase exclusive discounts each month to capture new customers and keep loyal ones coming back.</p>
+                          </div>
+                        </div>
+                        <div className="benefit-card">
+                          <div className="benefit-icon">
+                            <i className="fas fa-users"></i>
+                          </div>
+                          <div className="benefit-content">
+                            <h4>Expand Community Reach</h4>
+                            <p>Get featured in our trusted business directory and gain visibility across a wider local network.</p>
+                          </div>
+                        </div>
+                        <div className="benefit-card">
+                          <div className="benefit-icon">
+                            <i className="fas fa-heart"></i>
+                          </div>
+                          <div className="benefit-content">
+                            <h4>Engage Your Customers</h4>
+                            <p>Build stronger connections with your audience through our interactive platform that fosters loyalty.</p>
+                          </div>
+                        </div>
+                        <div className="benefit-card">
+                          <div className="benefit-icon">
+                            <i className="fas fa-headset"></i>
+                          </div>
+                          <div className="benefit-content">
+                            <h4>Reliable Support Team</h4>
+                            <p>Count on our dedicated support specialists to assist you in maximizing your business profile anytime.</p>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
               </section>
             </>
@@ -297,43 +461,71 @@ const Dashboard = () => {
               <MembershipCard />
 
               {/* User Benefits Section */}
-              <section className="current-plan-features">
+              <section className="current-plan-features member-benefits">
                 <div className="section-header">
-                  <h2>Member Benefits</h2>
-                  <p>Exclusive advantages for our valued members</p>
+                  <h2>
+                    <i className="fas fa-star"></i>
+                    Member Benefits
+                  </h2>
+                  <p>Exclusive advantages for our valued community members</p>
                 </div>
 
-                <div className="plan-features-list">
-                  <ul className="features-points">
-                    <li className="feature-point">
-                      <i className="fas fa-id-card"></i>
-                      <div>
-                        <h4>Digital Membership Card</h4>
-                        <p>Unlock instant access to your digital card — your passport to exclusive discounts, deals, and partner rewards anytime, anywhere.</p>
-                      </div>
-                    </li>
-                    <li className="feature-point">
-                      <i className="fas fa-percentage"></i>
-                      <div>
-                        <h4>Exclusive Partner Discounts</h4>
-                        <p>Enjoy special offers and savings from our network of trusted partner businesses, designed to give you more value every day.</p>
-                      </div>
-                    </li>
-                    <li className="feature-point">
-                      <i className="fas fa-calendar-star"></i>
-                      <div>
-                        <h4>Community Perks & Events</h4>
-                        <p>Get insider access to community-driven promotions, seasonal deals, and special invitations to local events and activities.</p>
-                      </div>
-                    </li>
-                    <li className="feature-point">
-                      <i className="fas fa-envelope"></i>
-                      <div>
-                        <h4>Personalized Updates & Newsletter</h4>
-                        <p>Stay ahead with curated updates on new offers, featured partners, and member-only promotions delivered straight to your inbox.</p>
-                      </div>
-                    </li>
-                  </ul>
+                <div className="benefits-container">
+                  <div className="benefits-grid">
+                    {currentPlan ? (
+                      getMembershipBenefits(currentPlan, 'user').map((benefit, index) => (
+                        <div key={index} className="benefit-card">
+                          <div className="benefit-icon">
+                            <i className={getBenefitIcon(benefit, index)}></i>
+                          </div>
+                          <div className="benefit-content">
+                            <h4>{getBenefitTitle(benefit)}</h4>
+                            <p>{getBenefitDescription(benefit)}</p>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      // Fallback benefits when no plan data is available
+                      <>
+                        <div className="benefit-card">
+                          <div className="benefit-icon">
+                            <i className="fas fa-id-card"></i>
+                          </div>
+                          <div className="benefit-content">
+                            <h4>Digital Membership Card</h4>
+                            <p>Unlock instant access to your digital card — your passport to exclusive discounts, deals, and partner rewards anytime, anywhere.</p>
+                          </div>
+                        </div>
+                        <div className="benefit-card">
+                          <div className="benefit-icon">
+                            <i className="fas fa-percentage"></i>
+                          </div>
+                          <div className="benefit-content">
+                            <h4>Exclusive Partner Discounts</h4>
+                            <p>Enjoy special offers and savings from our network of trusted partner businesses, designed to give you more value every day.</p>
+                          </div>
+                        </div>
+                        <div className="benefit-card">
+                          <div className="benefit-icon">
+                            <i className="fas fa-calendar-star"></i>
+                          </div>
+                          <div className="benefit-content">
+                            <h4>Community Perks & Events</h4>
+                            <p>Get insider access to community-driven promotions, seasonal deals, and special invitations to local events and activities.</p>
+                          </div>
+                        </div>
+                        <div className="benefit-card">
+                          <div className="benefit-icon">
+                            <i className="fas fa-envelope"></i>
+                          </div>
+                          <div className="benefit-content">
+                            <h4>Personalized Updates & Newsletter</h4>
+                            <p>Stay ahead with curated updates on new offers, featured partners, and member-only promotions delivered straight to your inbox.</p>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
               </section>
             </>

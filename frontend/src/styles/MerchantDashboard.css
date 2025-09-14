@@ -4161,3 +4161,216 @@ background: white;
     padding: 3px 6px;
   }
 }
+
+/* Enhanced Benefits Section Styling */
+.current-plan-features {
+  margin: 2rem 0;
+  padding: 2rem;
+  background: linear-gradient(135deg, #ffffff 0%, #fcfcfc 100%);
+  border-radius: 20px;
+  border: 1px solid #e8e8e8;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  position: relative;
+  overflow: hidden;
+}
+
+.current-plan-features::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #4D0808 0%, #8B1515 50%, #4D0808 100%);
+}
+
+.current-plan-features .section-header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+  position: relative;
+}
+
+.current-plan-features .section-header h2 {
+  color: #4D0808;
+  font-size: 2.2rem;
+  font-weight: 700;
+  margin: 0 0 0.8rem 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+}
+
+.current-plan-features .section-header h2 i {
+  color: #8B1515;
+  font-size: 2rem;
+}
+
+.current-plan-features .section-header p {
+  color: #666;
+  font-size: 1.1rem;
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+.benefits-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.benefits-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.8rem;
+  margin-top: 2rem;
+}
+
+.benefit-card {
+  background: linear-gradient(135deg, #ffffff 0%, #fafafa 100%);
+  border: 2px solid #f0e6e6;
+  border-radius: 16px;
+  padding: 2rem;
+  text-align: center;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.benefit-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(45deg, #4D0808 0%, #8B1515 100%);
+  transform: scaleX(0);
+  transition: transform 0.4s ease;
+}
+
+.benefit-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 25px 50px rgba(77, 8, 8, 0.15);
+  border-color: #4D0808;
+}
+
+.benefit-card:hover::before {
+  transform: scaleX(1);
+}
+
+.benefit-icon {
+  width: 70px;
+  height: 70px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #4D0808 0%, #8B1515 100%);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem;
+  font-size: 1.6rem;
+  box-shadow: 0 8px 20px rgba(77, 8, 8, 0.3);
+  transition: all 0.3s ease;
+}
+
+.benefit-card:hover .benefit-icon {
+  transform: scale(1.1);
+  box-shadow: 0 12px 25px rgba(77, 8, 8, 0.4);
+}
+
+.benefit-content h4 {
+  color: #333;
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin: 0 0 0.8rem 0;
+  line-height: 1.4;
+}
+
+.benefit-content p {
+  color: #666;
+  font-size: 1rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Specific styling for merchant and member benefits */
+.merchant-benefits {
+  border-left: 4px solid #8B1515;
+}
+
+.member-benefits {
+  border-left: 4px solid #4D0808;
+}
+
+/* Mobile Responsive Design */
+@media (max-width: 768px) {
+  .current-plan-features {
+    margin: 1.5rem 0;
+    padding: 1.5rem;
+    border-radius: 16px;
+  }
+
+  .current-plan-features .section-header h2 {
+    font-size: 1.8rem;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .current-plan-features .section-header h2 i {
+    font-size: 1.6rem;
+  }
+
+  .current-plan-features .section-header p {
+    font-size: 1rem;
+  }
+
+  .benefits-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .benefit-card {
+    padding: 1.5rem;
+  }
+
+  .benefit-icon {
+    width: 60px;
+    height: 60px;
+    font-size: 1.4rem;
+  }
+
+  .benefit-content h4 {
+    font-size: 1.1rem;
+  }
+
+  .benefit-content p {
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .current-plan-features {
+    margin: 1rem 0;
+    padding: 1rem;
+  }
+
+  .current-plan-features .section-header {
+    margin-bottom: 1.5rem;
+  }
+
+  .current-plan-features .section-header h2 {
+    font-size: 1.5rem;
+  }
+
+  .benefit-card {
+    padding: 1.2rem;
+  }
+
+  .benefit-icon {
+    width: 50px;
+    height: 50px;
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+  }
+}

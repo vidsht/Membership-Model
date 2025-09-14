@@ -207,19 +207,6 @@
   position: relative;
 }
 
-.serial-number {
-  position: absolute;
-  top: 0.5rem;
-  left: 0.5rem;
-  background: #007bff;
-  color: white;
-  padding: 0.25rem 0.75rem;
-  border-radius: 1rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-}
-
 .plan-header h3 {
   margin: 0;
   font-size: 1.25rem;
