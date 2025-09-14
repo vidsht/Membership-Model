@@ -147,7 +147,28 @@ export const withPlanAccess = (WrappedComponent, requiredFeature = 'general') =>
               <button 
                 className="btn-contact-admin"
                 onClick={() => {
-                  window.location.href = 'mailto:cards@indiansinghana.com?subject=Plan Renewal Request';
+                  // Open email client with prewritten text for plan renewal
+                  const subject = encodeURIComponent('Plan Renewal Request - Indians in Ghana Membership');
+                  const body = encodeURIComponent(`Dear Admin,
+
+I hope this email finds you well.
+
+I am writing to request the renewal of my ${planStatus.planName} plan for my Indians in Ghana membership account.
+
+Current Plan Details:
+- Plan Type: ${planStatus.planName}
+- Account Email: ${userInfo.email || 'N/A'}
+- Access Issue: ${planAccess.getBlockingMessage(requiredFeature)}
+
+Please let me know the renewal process and payment details so I can continue enjoying the benefits of my membership.
+
+Thank you for your time and assistance.
+
+Best regards,
+${userInfo.fullName || userInfo.name || 'Member'}`);
+                  
+                  const mailtoLink = `mailto:cards@indiansinghana.com?subject=${subject}&body=${body}`;
+                  window.open(mailtoLink, '_blank');
                 }}
               >
                 <i className="fas fa-envelope"></i>
