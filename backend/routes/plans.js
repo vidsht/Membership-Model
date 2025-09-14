@@ -35,7 +35,7 @@ router.get('/', async (req, res) => {
       whereClause += ' AND isActive = ?';
       params.push(isActive === 'true' ? 1 : 0);
     }      const plans = await queryAsync(`
-        SELECT id, name, \`key\`, type, price, currency, billingCycle,
+        SELECT id, name, description, \`key\`, type, price, currency, billingCycle,
                features, dealAccess, priority, maxDealRedemptions as maxRedemptions, 
                max_deals_per_month as dealPostingLimit, metadata as customKeys, 
                isActive, sortOrder, created_at as createdAt, updated_at as updatedAt
@@ -80,7 +80,7 @@ router.get('/user-plans', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const planId = parseInt(req.params.id);      const plans = await queryAsync(`
-        SELECT id, name, \`key\`, type, price, currency, billingCycle,
+        SELECT id, name, description, \`key\`, type, price, currency, billingCycle,
                features, dealAccess, priority, maxDealRedemptions as maxRedemptions, 
                max_deals_per_month as dealPostingLimit, metadata as customKeys, 
                isActive, sortOrder, created_at as createdAt, updated_at as updatedAt

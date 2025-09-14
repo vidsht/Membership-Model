@@ -253,9 +253,10 @@ const PlanManagement = () => {
           </h2>
           <p>Membership plans for individual users</p>
         </div>        <div className="plan-cards">
-          {userPlans.length > 0 ? userPlans.map(plan => (
+          {userPlans.length > 0 ? userPlans.map((plan, index) => (
             <div key={plan.id} className={`plan-card ${plan.key} ${!plan.isActive ? 'inactive' : ''}`}>
               <div className="plan-header">
+                <div className="serial-number">#{index + 1}</div>
                 <h3>{plan.name}</h3>
                 <div className="plan-pricing">
                   <span className="price">{formatPrice(plan.price, plan.currency)}</span>
@@ -322,9 +323,10 @@ const PlanManagement = () => {
           </h2>
           <p>Membership plans for business merchants</p>
         </div>        <div className="plan-cards">
-          {merchantPlans.length > 0 ? merchantPlans.map(plan => (
+          {merchantPlans.length > 0 ? merchantPlans.map((plan, index) => (
             <div key={plan.id} className={`plan-card ${plan.key} ${!plan.isActive ? 'inactive' : ''}`}>
               <div className="plan-header">
+                <div className="serial-number">#{index + 1}</div>
                 <h3>{plan.name}</h3>
                 <div className="plan-pricing">
                   <span className="price">{formatPrice(plan.price, plan.currency)}</span>

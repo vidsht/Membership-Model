@@ -252,36 +252,27 @@ const Dashboard = () => {
               <MerchantCertificate />
 
               {/* Static Merchant Benefits - shown for merchants below certificate */}
-              <section className="merchant-benefits static-section">
+              <section className="current-plan-features">
                 <div className="section-header">
-                  <h2>Grow Your Business with Indians in Ghana</h2>
-                  <p>Merchant benefits and opportunities</p>
+                  <h2>Your Current Plan Features</h2>
+                  <p>{currentPlan?.name || 'Basic'} plan benefits</p>
                 </div>
 
-                <div className="features-grid">
-                  <div className="feature-card">
-                    <div className="feature-icon"><i className="fas fa-bullhorn"></i></div>
-                    <h3>Promote Deals &amp; Offers</h3>
-                    <p>Showcase exclusive discounts each month to capture new customers and keep loyal ones coming back.</p>
-                  </div>
-
-                  <div className="feature-card">
-                    <div className="feature-icon"><i className="fas fa-network-wired"></i></div>
-                    <h3>Expand Community Reach</h3>
-                    <p>Get featured in our trusted business directory and gain visibility across a wider local network.</p>
-                  </div>
-
-                  <div className="feature-card">
-                    <div className="feature-icon"><i className="fas fa-users"></i></div>
-                    <h3>Engage Your Customers</h3>
-                    <p>Build stronger connections with your audience through our interactive platform that fosters loyalty.</p>
-                  </div>
-
-                  <div className="feature-card">
-                    <div className="feature-icon"><i className="fas fa-headset"></i></div>
-                    <h3>Reliable Support Team</h3>
-                    <p>Count on our dedicated support specialists to assist you in maximizing your business profile anytime.</p>
-                  </div>
+                <div className="plan-features-list">
+                  {currentPlan && getMembershipBenefits(currentPlan, 'merchant').length > 0 ? (
+                    <ul className="features-points">
+                      {getMembershipBenefits(currentPlan, 'merchant').map((feature, index) => (
+                        <li key={index} className="feature-point">
+                          <i className="fas fa-check-circle"></i>
+                          <span>{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <div className="no-features">
+                      <p>No specific features available for your current plan.</p>
+                    </div>
+                  )}
                 </div>
               </section>
             </>
@@ -290,36 +281,27 @@ const Dashboard = () => {
               <MembershipCard />
 
               {/* Static User Benefits - shown for regular users below membership card */}
-              <section className="user-benefits static-section">
+              <section className="current-plan-features">
                 <div className="section-header">
-                  <h2>Member Benefits</h2>
-                  <p>What you get as a valued member</p>
+                  <h2>Your Current Plan Features</h2>
+                  <p>{currentPlan?.name || 'Basic'} plan benefits</p>
                 </div>
 
-                <div className="features-grid">
-                  <div className="feature-card">
-                    <div className="feature-icon"><i className="fas fa-id-card"></i></div>
-                    <h3>Digital Membership Card</h3>
-                    <p>Unlock instant access to your digital card — your passport to exclusive discounts, deals, and partner rewards anytime, anywhere.</p>
-                  </div>
-
-                  <div className="feature-card">
-                    <div className="feature-icon"><i className="fas fa-tags"></i></div>
-                    <h3>Exclusive Partner Discounts</h3>
-                    <p>Enjoy special offers and savings from our network of trusted partner businesses, designed to give you more value every day.</p>
-                  </div>
-
-                  <div className="feature-card">
-                    <div className="feature-icon"><i className="fas fa-users"></i></div>
-                    <h3>Community Perks &amp; Events</h3>
-                    <p>Get insider access to community-driven promotions, seasonal deals, and special invitations to local events and activities.</p>
-                  </div>
-
-                  <div className="feature-card">
-                    <div className="feature-icon"><i className="fas fa-envelope"></i></div>
-                    <h3>Personalized Updates &amp; Newsletter</h3>
-                    <p>Stay ahead with curated updates on new offers, featured partners, and member-only promotions delivered straight to your inbox.</p>
-                  </div>
+                <div className="plan-features-list">
+                  {currentPlan && getMembershipBenefits(currentPlan, user.userType).length > 0 ? (
+                    <ul className="features-points">
+                      {getMembershipBenefits(currentPlan, user.userType).map((feature, index) => (
+                        <li key={index} className="feature-point">
+                          <i className="fas fa-check-circle"></i>
+                          <span>{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <div className="no-features">
+                      <p>No specific features available for your current plan.</p>
+                    </div>
+                  )}
                 </div>
               </section>
             </>
@@ -343,7 +325,6 @@ const Dashboard = () => {
                 <div className="plan-details-header">
                   <div className="plan-info">
                     <h3>{currentPlan.name}</h3>
-                    <p className="plan-description">{currentPlan.description || 'Premium membership plan'}</p>
                   </div>
                   <div className="plan-pricing">
                     <span className="price-amount">{currentPlan.currency} {currentPlan.price}</span>
@@ -438,7 +419,39 @@ const Dashboard = () => {
                     </ul>
                   </div>
                   
-                  <button className="btn-upgrade-plan">
+                  <button 
+                    className="btn-upgrade-plan"
+                    onClick={() => {
+                      // Open email client with prewritten text for plan upgrade
+                      const currentPlan = currentPlan?.name || user?.membershipType || 'basic';
+                      const subject = encodeURIComponent('Plan Upgrade Request - Indians in Ghana Membership');
+                      const body = encodeURIComponent(`Dear Admin,
+
+I hope this email finds you well.
+
+I would like to upgrade my current plan for my Indians in Ghana membership account.
+
+Current Plan Details:
+- Current Plan: ${currentPlan}
+- Target Plan: ${plan.name}
+- Account Email: ${user?.email || 'N/A'}
+- User Name: ${user?.fullName || user?.name || 'N/A'}
+
+I am interested in upgrading to the ${plan.name} plan to access additional features and benefits. Please provide me with:
+1. Pricing details for the ${plan.name} plan
+2. Payment process
+3. Timeline for plan activation
+4. Any additional information about the upgrade
+
+Thank you for your time and assistance.
+
+Best regards,
+${user?.fullName || user?.name || 'Member'}`);
+                      
+                      const mailtoLink = `mailto:cards@indiansinghana.com?subject=${subject}&body=${body}`;
+                      window.open(mailtoLink, '_blank');
+                    }}
+                  >
                     <i className="fas fa-arrow-up"></i>
                     Upgrade to {plan.name}
                   </button>

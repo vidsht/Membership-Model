@@ -37,13 +37,31 @@ router.get('/profile', auth, (req, res) => {
     // Compute remaining allowances (limit - used). If limit is null treat as 0.
     const redemptionLimit = Number(user.monthlyRedemptionLimit || 0);
     const redemptionUsed = Number(user.monthlyRedemptionCount || 0);
-    user.monthlyRedemptionsRemaining = Math.max(redemptionLimit - redemptionUsed, 0);
+    
+    // Get pending requests count for this month
+    const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
+    const pendingQuery = `
+      SELECT COUNT(*) as pendingCount 
+      FROM deal_redemptions 
+      WHERE user_id = ? AND DATE_FORMAT(redeemed_at, '%Y-%m') = ? AND status = 'pending'
+    `;
+    
+    db.query(pendingQuery, [user.id, currentMonth], (pendingErr, pendingResults) => {
+      if (pendingErr) {
+        console.error('Get pending requests error:', pendingErr);
+        user.pendingRequestsCount = 0;
+      } else {
+        user.pendingRequestsCount = pendingResults[0]?.pendingCount || 0;
+      }
+      
+      user.monthlyRedemptionsRemaining = Math.max(redemptionLimit - redemptionUsed - user.pendingRequestsCount, 0);
 
-    const dealLimit = Number(user.monthlyDealLimit || 0);
-    const dealUsed = Number(user.monthlyDealCount || 0);
-    user.monthlyDealsRemaining = Math.max(dealLimit - dealUsed, 0);
+      const dealLimit = Number(user.monthlyDealLimit || 0);
+      const dealUsed = Number(user.monthlyDealCount || 0);
+      user.monthlyDealsRemaining = Math.max(dealLimit - dealUsed, 0);
 
-    res.json({ user });
+      res.json({ user });
+    });
   });
 });
 
@@ -163,13 +181,31 @@ router.get('/profile/with-plan', auth, (req, res) => {
     // Compute remaining allowances for frontend convenience
     const redemptionLimit = Number(user.monthlyRedemptionLimit || 0);
     const redemptionUsed = Number(user.monthlyRedemptionCount || 0);
-    user.monthlyRedemptionsRemaining = Math.max(redemptionLimit - redemptionUsed, 0);
-
-    const dealLimit = Number(user.monthlyDealLimit || 0);
-    const dealUsed = Number(user.monthlyDealCount || 0);
-    user.monthlyDealsRemaining = Math.max(dealLimit - dealUsed, 0);
     
-    res.json({ user });
+    // Get pending requests count for this month
+    const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
+    const pendingQuery = `
+      SELECT COUNT(*) as pendingCount 
+      FROM deal_redemptions 
+      WHERE user_id = ? AND DATE_FORMAT(redeemed_at, '%Y-%m') = ? AND status = 'pending'
+    `;
+    
+    db.query(pendingQuery, [user.id, currentMonth], (pendingErr, pendingResults) => {
+      if (pendingErr) {
+        console.error('Get pending requests error:', pendingErr);
+        user.pendingRequestsCount = 0;
+      } else {
+        user.pendingRequestsCount = pendingResults[0]?.pendingCount || 0;
+      }
+      
+      user.monthlyRedemptionsRemaining = Math.max(redemptionLimit - redemptionUsed - user.pendingRequestsCount, 0);
+
+      const dealLimit = Number(user.monthlyDealLimit || 0);
+      const dealUsed = Number(user.monthlyDealCount || 0);
+      user.monthlyDealsRemaining = Math.max(dealLimit - dealUsed, 0);
+
+      res.json({ user });
+    });
   });
 });
 

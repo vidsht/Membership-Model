@@ -670,22 +670,15 @@ function Register() {
 
                 {/* Terms and Conditions */}
                 <div className="form-section" style={{ marginTop: '30px' }}>
-                  <div style={{ 
-                    display: 'flex', 
-                    alignItems: 'flex-start', 
-                    padding: '15px', 
-                    border: '1px solid #ddd', 
-                    borderRadius: '5px',
-                    backgroundColor: '#f9f9f9'
-                  }}>
+                  <div className="checkbox-container">
                     <input 
                       type="checkbox" 
                       id="terms"
                       checked={termsAccepted}
                       onChange={(e) => setTermsAccepted(e.target.checked)}
-                      style={{ marginRight: '10px', marginTop: '2px' }}
                       required
                     />
+                    <span className="checkmark"></span>
                     <label htmlFor="terms" style={{ flex: 1, margin: 0, cursor: 'pointer', fontSize: '0.9em' }}>
                       I agree to the <a href="/terms" target="_blank" style={{ color: '#3b82f6' }}>Terms and Conditions</a> and 
                       <a href="/privacy" target="_blank" style={{ color: '#3b82f6' }}> Privacy Policy</a>. 

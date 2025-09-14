@@ -496,12 +496,15 @@ router.post('/:id/redeem', checkDealAccess, (req, res) => {
         isPending: true
       });
     }
-    // Check monthly redemption limit
+    // Check monthly redemption limit (including both approved and pending requests)
     const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
     const monthlyLimitQuery = `
-      SELECT COUNT(*) as redemptionsThisMonth
+      SELECT 
+        COUNT(CASE WHEN status = 'approved' THEN 1 END) as redemptionsThisMonth,
+        COUNT(CASE WHEN status = 'pending' THEN 1 END) as pendingRequestsThisMonth,
+        COUNT(*) as totalRequestsThisMonth
       FROM deal_redemptions
-      WHERE user_id = ? AND DATE_FORMAT(redeemed_at, '%Y-%m') = ? AND status = 'approved'
+      WHERE user_id = ? AND DATE_FORMAT(redeemed_at, '%Y-%m') = ? AND status IN ('approved', 'pending')
     `;
 
     db.query(monthlyLimitQuery, [userId, currentMonth], (err2, limitResults) => {
@@ -511,6 +514,9 @@ router.post('/:id/redeem', checkDealAccess, (req, res) => {
       }
 
       const redemptionsThisMonth = limitResults[0]?.redemptionsThisMonth || 0;
+      const pendingRequestsThisMonth = limitResults[0]?.pendingRequestsThisMonth || 0;
+      const totalRequestsThisMonth = limitResults[0]?.totalRequestsThisMonth || 0;
+      
       // Compute monthly limit consistently (treat -1 as unlimited)
       const computedMonthlyLimit = (() => {
         if (user.customRedemptionLimit !== undefined && user.customRedemptionLimit !== null && !isNaN(user.customRedemptionLimit)) return parseInt(user.customRedemptionLimit);
@@ -519,12 +525,15 @@ router.post('/:id/redeem', checkDealAccess, (req, res) => {
         return null;
       })();
 
-      if (computedMonthlyLimit !== null && computedMonthlyLimit > 0 && redemptionsThisMonth >= computedMonthlyLimit) {
+      // Check total requests (approved + pending) against limit
+      if (computedMonthlyLimit !== null && computedMonthlyLimit > 0 && totalRequestsThisMonth >= computedMonthlyLimit) {
         const displayLimit = computedMonthlyLimit === -1 ? 'Unlimited' : computedMonthlyLimit;
         return res.status(403).json({ 
-          message: `You have reached your monthly redemption limit of ${displayLimit}. Upgrade your plan for more redemptions.`,
+          message: `You have reached your monthly redemption limit of ${displayLimit}. ${pendingRequestsThisMonth > 0 ? `You have ${pendingRequestsThisMonth} pending request(s). ` : ''}Upgrade your plan for more redemptions.`,
           monthlyLimit: computedMonthlyLimit,
-          redemptionsUsed: redemptionsThisMonth
+          redemptionsUsed: redemptionsThisMonth,
+          pendingRequests: pendingRequestsThisMonth,
+          totalRequests: totalRequestsThisMonth
         });
       }      // Get deal details to verify it's still active
       db.query('SELECT * FROM deals WHERE id = ? AND status = "active"', [dealId], (err3, dealResults) => {

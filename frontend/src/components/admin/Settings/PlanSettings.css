@@ -110,6 +110,17 @@
   gap: 0.5rem;
 }
 
+.serial-number {
+  background: var(--primary);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  align-self: flex-start;
+  letter-spacing: 0.5px;
+}
+
 .plan-title h3 {
   margin: 0;
   color: var(--neutral-dark);

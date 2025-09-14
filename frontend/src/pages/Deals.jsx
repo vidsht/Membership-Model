@@ -82,21 +82,7 @@ function checkRedemptionLimit(user) {
   const monthlyRedemptionCount = user.monthlyRedemptionCount || 0;
   const pendingRequestsCount = user.pendingRequestsCount || 0;
 
-  // If backend provides remaining count, use it
-  if (monthlyRedemptionsRemaining !== undefined && monthlyRedemptionsRemaining !== null) {
-    if (monthlyRedemptionsRemaining === -1) {
-      return { canRedeem: true, message: '' };
-    }
-    if (monthlyRedemptionsRemaining <= 0) {
-      return { 
-        canRedeem: false, 
-        message: 'You have reached your monthly redemption limit. Upgrade your plan for more redemptions.' 
-      };
-    }
-    return { canRedeem: true, message: '' };
-  }
-
-  // Fallback to calculating from limit and count (including pending requests)
+  // Consistent logic: always check total requests (completed + pending) against limit
   if (monthlyRedemptionLimit !== undefined && monthlyRedemptionLimit !== null) {
     if (monthlyRedemptionLimit === -1) {
       return { canRedeem: true, message: '' };
@@ -108,6 +94,22 @@ function checkRedemptionLimit(user) {
       return { 
         canRedeem: false, 
         message: `You have reached your monthly redemption limit of ${monthlyRedemptionLimit}. ${pendingRequestsCount > 0 ? `You have ${pendingRequestsCount} pending request(s). ` : ''}Upgrade your plan for more redemptions.` 
+      };
+    }
+    return { canRedeem: true, message: '' };
+  }
+
+  // If backend provides remaining count as backup, use it but still account for pending requests
+  if (monthlyRedemptionsRemaining !== undefined && monthlyRedemptionsRemaining !== null) {
+    if (monthlyRedemptionsRemaining === -1) {
+      return { canRedeem: true, message: '' };
+    }
+    // Subtract pending requests from remaining to ensure consistency
+    const effectiveRemaining = monthlyRedemptionsRemaining - pendingRequestsCount;
+    if (effectiveRemaining <= 0) {
+      return { 
+        canRedeem: false, 
+        message: `You have reached your monthly redemption limit. ${pendingRequestsCount > 0 ? `You have ${pendingRequestsCount} pending request(s). ` : ''}Upgrade your plan for more redemptions.` 
       };
     }
     return { canRedeem: true, message: '' };

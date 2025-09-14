@@ -333,10 +333,11 @@ const PlanSettings = () => {
         </div>
       ) : (
         <div className="plans-grid">
-          {(activeTab === 'user' ? userPlans : merchantPlans).map((plan) => (
+          {(activeTab === 'user' ? userPlans : merchantPlans).map((plan, index) => (
             <div key={plan.id || plan._id} className={`plan-card ${!plan.isActive ? 'inactive' : ''}`}>
               <div className="plan-header">
                 <div className="plan-title">
+                  <div className="serial-number">#{index + 1}</div>
                   <h3>{plan.name}</h3>
                   <span className={`status-badge ${plan.isActive ? 'approved' : 'suspended'}`}>
                     {plan.isActive ? 'Active' : 'Inactive'}
@@ -375,10 +376,10 @@ const PlanSettings = () => {
 
                 {/* Plan Limits Section */}
                 <div className="plan-limits">
-                  {plan.type === 'merchant' && plan.max_deals_per_month !== null && plan.max_deals_per_month !== undefined && (
+                  {plan.type === 'merchant' && plan.dealPostingLimit !== null && plan.dealPostingLimit !== undefined && (
                     <div className="limit-badge deals">
                       <i className="fas fa-tags"></i>
-                      <span>{plan.max_deals_per_month === -1 ? 'Unlimited Deals' : `${plan.max_deals_per_month} Deals/Month`}</span>
+                      <span>{plan.dealPostingLimit === -1 ? 'Unlimited Deals' : `${plan.dealPostingLimit} Deals/Month`}</span>
                     </div>
                   )}
                   {plan.type === 'user' && plan.maxRedemptions !== null && plan.maxRedemptions !== undefined && (
@@ -431,10 +432,10 @@ const PlanSettings = () => {
                       <span>{plan.maxUsers}</span>
                     </div>
                   )}
-                  {(plan.max_deals_per_month !== null && plan.max_deals_per_month !== undefined) && (
+                  {(plan.dealPostingLimit !== null && plan.dealPostingLimit !== undefined) && (
                     <div className="meta-item">
                       <label>Max Deals/Month:</label>
-                      <span>{plan.max_deals_per_month === -1 ? 'Unlimited' : plan.max_deals_per_month}</span>
+                      <span>{plan.dealPostingLimit === -1 ? 'Unlimited' : plan.dealPostingLimit}</span>
                     </div>
                   )}
                   {(plan.maxRedemptions !== null && plan.maxRedemptions !== undefined) && (
@@ -606,7 +607,7 @@ const PlanModal = ({ isOpen, onClose, onSubmit, plan, userType }) => {
         billingCycle: plan.billingCycle || plan.billing_cycle || 'monthly',
         priority: plan.priority || 0,
         userType: plan.metadata?.userType || plan.type || userType || 'user',
-        max_deals_per_month: plan.max_deals_per_month || '',
+        max_deals_per_month: plan.dealPostingLimit || '',
         maxRedemptions: plan.maxRedemptions || ''
       });
       // If editing, set planKeyType and customKey accordingly
@@ -713,8 +714,8 @@ const PlanModal = ({ isOpen, onClose, onSubmit, plan, userType }) => {
         price: parseFloat(formData.price),
         priority: parseInt(formData.priority) || 0,
         maxUsers: formData.maxUsers ? parseInt(formData.maxUsers) : null,
-        max_deals_per_month: formData.max_deals_per_month ? parseInt(formData.max_deals_per_month) : null,
-        maxRedemptions: formData.maxRedemptions ? parseInt(formData.maxRedemptions) : null,
+        dealPostingLimit: formData.max_deals_per_month ? parseInt(formData.max_deals_per_month) : null,
+        maxDealRedemptions: formData.maxRedemptions ? parseInt(formData.maxRedemptions) : null,
         type: formData.userType, // Backend uses 'type' field
         metadata: {
           userType: formData.userType
