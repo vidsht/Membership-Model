@@ -1164,15 +1164,14 @@ const MerchantManagementEnhanced = () => {
                 <td className="business-cell" data-label="Business & Owner">
                   <div className="business-info-compact">
                     <div className="business-name">{merchant.businessName || 'N/A'}</div>
-                    <div className="business-desc">{merchant.businessDescription || ''}</div>
                     <div className="owner-name">{merchant.fullName}</div>
-                    <div className="joined-date">{formatDate(merchant.createdAt)}</div>
+                    <div className="joined-date">join: {formatDate(merchant.createdAt)}</div>
                   </div>
                 </td>
                 <td className="contact-cell" data-label="Contact">
                   <div className="contact-info-stacked">
                     <div className="email">{merchant.email}</div>
-                    <div className="phone">{merchant.phone || 'N/A'}</div>
+                    <div className="phone">mob: {merchant.phone || 'N/A'}</div>
                   </div>
                 </td>
                 <td className="category-cell" data-label="Category">
