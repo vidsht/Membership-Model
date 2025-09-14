@@ -4,6 +4,7 @@ import api from '../../../services/api';
 import { useNotification } from '../../../contexts/NotificationContext';
 import { useDynamicFields } from '../../../hooks/useDynamicFields';
 import useImageUrl from '../../../hooks/useImageUrl';
+import useFilterPersistence from '../../../hooks/useFilterPersistence';
 import QuickChangePassword from './QuickChangePassword';
 import MerchantFilters from './components/MerchantFilters';
 import './MerchantManagementEnhanced.css';
@@ -60,7 +61,7 @@ const MerchantManagementEnhanced = () => {
     }
   });
   const [selectedMerchants, setSelectedMerchants] = useState([]);
-  const [filters, setFilters] = useState({
+  const [filters, setFilters, resetFilters] = useFilterPersistence('admin-merchant-filters', {
     search: '',
     status: 'all',
     category: 'all',

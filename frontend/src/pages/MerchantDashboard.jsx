@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { useDynamicFields } from '../hooks/useDynamicFields';
+import usePlanAccess from '../hooks/usePlanAccess.jsx';
 import { merchantApi, getNotifications, markNotificationAsRead, markAllNotificationsAsRead, getRedemptionRequests, approveRedemptionRequest, rejectRedemptionRequest, getAllPlans } from '../services/api';
 import MerchantDealForm from '../components/MerchantDealForm';
 import PlanExpiryBanner from '../components/PlanExpiryBanner';
@@ -14,6 +15,7 @@ const MerchantDashboard = () => {
   const { showNotification } = useNotification();
   const { getDealBannerUrl } = useImageUrl(); 
   const { getBusinessCategoryOptions } = useDynamicFields();
+  const planAccess = usePlanAccess();
   const [deals, setDeals] = useState([]);
   const [plans, setPlans] = useState([]);
   const [userPlans, setUserPlans] = useState([]);
@@ -82,6 +84,43 @@ const MerchantDashboard = () => {
     fetchNotifications();
     fetchPlans();
   }, []);
+
+  // Check plan expiry and handle deal expiration
+  useEffect(() => {
+    const checkPlanExpiryAndExpireDeals = async () => {
+      if (!planAccess.canAccess('general') && deals.length > 0) {
+        // Plan has expired, expire all active deals
+        const activeDeals = deals.filter(deal => 
+          deal.status === 'approved' && 
+          new Date(deal.validUntil) >= new Date()
+        );
+        
+        if (activeDeals.length > 0) {
+          try {
+            // Expire all active deals by updating their status
+            const expirePromises = activeDeals.map(deal => 
+              merchantApi.updateDeal(deal.id, { status: 'expired' })
+            );
+            
+            await Promise.all(expirePromises);
+            
+            // Refresh deals to show updated status
+            const updatedDeals = await merchantApi.getDeals();
+            setDeals(updatedDeals);
+            
+            showNotification(`Your plan has expired. ${activeDeals.length} active deal(s) have been deactivated.`, 'warning');
+          } catch (error) {
+            console.error('Error expiring deals due to plan expiry:', error);
+            showNotification('Error deactivating deals due to plan expiry. Please contact support.', 'error');
+          }
+        }
+      }
+    };
+
+    if (userInfo.validationDate && deals.length > 0) {
+      checkPlanExpiryAndExpireDeals();
+    }
+  }, [userInfo.validationDate, deals, planAccess]);
 
   // Fetch merchant plans for access level display
   const fetchPlans = async () => {
@@ -227,6 +266,25 @@ const MerchantDashboard = () => {
 
   const isBasicPlan = (membershipType) => {
     return membershipType === 'basic' || !membershipType;
+  };
+
+  // Helper functions for plan level restrictions (Task 3)
+  const isStatisticsDisabled = (membershipType) => {
+    // Statistics disabled for basic, silver, gold plans (enabled only for platinum+)
+    const disabledPlans = ['basic', 'silver', 'silver_merchant', 'silver_business', 'gold', 'gold_merchant', 'gold_business'];
+    return disabledPlans.includes(membershipType) || !membershipType;
+  };
+
+  const isAnalyticsDisabled = (membershipType) => {
+    // Analytics disabled for basic, silver, gold, platinum plans (enabled only for platinum_plus)
+    const disabledPlans = ['basic', 'silver', 'silver_merchant', 'silver_business', 'gold', 'gold_merchant', 'gold_business', 'platinum', 'platinum_merchant', 'platinum_business'];
+    return disabledPlans.includes(membershipType) || !membershipType;
+  };
+
+  const isFeaturesDisabled = (membershipType) => {
+    // Features disabled for basic, silver, gold plans (enabled for platinum+)
+    const disabledPlans = ['basic', 'silver', 'silver_merchant', 'silver_business', 'gold', 'gold_merchant', 'gold_business'];
+    return disabledPlans.includes(membershipType) || !membershipType;
   };
 
   // Helper function to check if contact info should be hidden for lower tier plans
@@ -386,9 +444,9 @@ const MerchantDashboard = () => {
       case 'silver_merchant':
       case 'silver_business':
       case 'silver':
-        // Silver plans - limited features (DISABLE statistics, view analytics, deal analytics)
+        // Silver plans - limited features (DISABLE statistics, analytics, view analytics, deal analytics)
         access = {
-          analytics: true,
+          analytics: false, // DISABLED for silver (per task requirement)
           advancedStats: false,
           businessDashboard: true,
           dealPosting: 'limited', // Limited deal posting
@@ -403,9 +461,9 @@ const MerchantDashboard = () => {
       case 'gold_merchant':
       case 'gold_business':
       case 'gold':
-        // Gold plans - full features (DISABLE statistics, view analytics and deal analytics)
+        // Gold plans - full features (DISABLE statistics, analytics, view analytics and deal analytics)
         access = {
-          analytics: true,
+          analytics: false, // DISABLED for gold (per task requirement)
           advancedStats: true,
           businessDashboard: true,
           dealPosting: 'unlimited', // Maximum deal posting
@@ -420,9 +478,9 @@ const MerchantDashboard = () => {
       case 'platinum_merchant':
       case 'platinum_business':
       case 'platinum':
-        // Platinum plans - premium features (DISABLE only view analytics button)
+        // Platinum plans - premium features (DISABLE analytics and view analytics button)
         access = {
-          analytics: true,
+          analytics: false, // DISABLED for platinum (per task requirement)
           advancedStats: true,
           businessDashboard: true,
           dealPosting: 'unlimited', // Maximum deal posting
@@ -622,6 +680,11 @@ const MerchantDashboard = () => {
   };
 
   const handleApproveRequest = async (requestId) => {
+    if (!planAccess.canAccess('general')) {
+      showNotification(planAccess.getBlockingMessage('general'), 'warning');
+      return;
+    }
+    
     try {
       setProcessingRequest(requestId);
       const response = await approveRedemptionRequest(requestId);
@@ -640,6 +703,11 @@ const MerchantDashboard = () => {
   };
 
   const handleRejectRequest = async (requestId, reason = '') => {
+    if (!planAccess.canAccess('general')) {
+      showNotification(planAccess.getBlockingMessage('general'), 'warning');
+      return;
+    }
+    
     if (!reason) {
       // Show rejection modal to get reason
       setRejectionRequestId(requestId);
@@ -680,6 +748,36 @@ const MerchantDashboard = () => {
     setShowBusinessForm(false);
     // Refresh dashboard data to get latest info
     fetchDashboardData();
+  };
+
+  // Email functionality for contacting admin and upgrading plan
+  const handleUpgradePlanEmail = () => {
+    const currentPlan = userInfo?.membershipType || 'basic';
+    const subject = encodeURIComponent('Plan Upgrade Request - Indians in Ghana Membership');
+    const body = encodeURIComponent(`Dear Admin,
+
+I hope this email finds you well.
+
+I would like to upgrade my current plan for my Indians in Ghana membership account.
+
+Current Plan Details:
+- Current Plan: ${currentPlan}
+- Account Email: ${userInfo?.email || user?.email || 'N/A'}
+- Business Name: ${businessInfo?.businessName || 'N/A'}
+
+I am interested in upgrading to a higher tier plan to access additional features and benefits. Please provide me with:
+1. Available upgrade options
+2. Pricing details for each plan
+3. Payment process
+4. Timeline for plan activation
+
+Thank you for your time and assistance.
+
+Best regards,
+${userInfo?.fullName || userInfo?.name || user?.fullName || user?.name || 'Merchant'}`);
+    
+    const mailtoLink = `mailto:cards@indiansinghana.com?subject=${subject}&body=${body}`;
+    window.open(mailtoLink, '_blank');
   };
 
   // Deal management functions
@@ -737,6 +835,48 @@ const MerchantDashboard = () => {
     } catch (error) {
       console.error('Error deleting deal:', error);
       showNotification(error.response?.data?.message || 'Failed to delete deal', 'error');
+    }
+  };
+
+  // Share deal function for merchant dashboard
+  const handleShareDeal = async (deal) => {
+    const dealUrl = `${window.location.origin}/deals?id=${deal.id}`;
+    const shareText = `🎉 Check out this amazing deal: *${deal.title}* at ${businessInfo?.businessName || 'our business'}! 
+
+💰 ${deal.discount} OFF - ${deal.description}
+
+Click to view details: ${dealUrl}
+
+Join Indians in Ghana Community for exclusive deals! 🇮🇳🇬🇭`;
+    
+    // Check if Web Share API is available (mobile devices)
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `${deal.title} - ${businessInfo?.businessName || 'Business'}`,
+          text: shareText,
+          url: dealUrl
+        });
+        showNotification('Deal shared successfully!', 'success');
+      } catch (error) {
+        console.log('Error sharing:', error);
+        // Fallback to copying URL with text
+        copyToClipboard(shareText, deal.title);
+      }
+    } else {
+      // Desktop fallback - copy formatted text with URL
+      copyToClipboard(shareText, deal.title);
+    }
+  };
+
+  // Copy to clipboard function
+  const copyToClipboard = async (text, title) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      showNotification(`${title} details copied to clipboard!`, 'success');
+    } catch (error) {
+      console.error('Error copying to clipboard:', error);
+      showNotification('Failed to copy to clipboard', 'error');
     }
   };
 
@@ -896,21 +1036,25 @@ const MerchantDashboard = () => {
             </div>
             <div className="plan-features-preview">
               <div className="feature-items">
-                <span className={`feature-item ${featureAccess.analytics ? 'enabled' : 'disabled'}`}>
-                  <i className={`fas ${featureAccess.analytics ? 'fa-chart-line' : 'fa-ban'}`}></i>
-                  Analytics {featureAccess.analytics ? '✓' : '✗'}
+                <span className={`feature-item ${isStatisticsDisabled(userInfo?.membershipType) ? 'disabled' : 'enabled'}`}>
+                  <i className={`fas ${isStatisticsDisabled(userInfo?.membershipType) ? 'fa-ban' : 'fa-chart-bar'}`}></i>
+                  Statistics {isStatisticsDisabled(userInfo?.membershipType) ? '✗' : '✓'}
+                </span>
+                <span className={`feature-item ${isAnalyticsDisabled(userInfo?.membershipType) ? 'disabled' : 'enabled'}`}>
+                  <i className={`fas ${isAnalyticsDisabled(userInfo?.membershipType) ? 'fa-ban' : 'fa-chart-line'}`}></i>
+                  Analytics {isAnalyticsDisabled(userInfo?.membershipType) ? '✗' : '✓'}
                 </span>
                 <span className={`feature-item ${featureAccess.dealPosting !== 'none' ? 'enabled' : 'disabled'}`}>
                   <i className={`fas ${featureAccess.dealPosting !== 'none' ? 'fa-tags' : 'fa-ban'}`}></i>
                   Deal Posting {featureAccess.dealPosting !== 'none' ? '✓' : '✗'}
                 </span>
-                <span className={`feature-item ${featureAccess.featuredPlacement ? 'enabled' : 'disabled'}`}>
-                  <i className={`fas ${featureAccess.featuredPlacement ? 'fa-crown' : 'fa-ban'}`}></i>
-                  Featured {featureAccess.featuredPlacement ? '✓' : '✗'}
+                <span className={`feature-item ${isFeaturesDisabled(userInfo?.membershipType) ? 'disabled' : 'enabled'}`}>
+                  <i className={`fas ${isFeaturesDisabled(userInfo?.membershipType) ? 'fa-ban' : 'fa-crown'}`}></i>
+                  Featured {isFeaturesDisabled(userInfo?.membershipType) ? '✗' : '✓'}
                 </span>
               </div>
               {isBasicPlan(userInfo?.membershipType) && (
-                <button className="btn btn-upgrade">
+                <button className="btn btn-upgrade" onClick={handleUpgradePlanEmail}>
                   <i className="fas fa-arrow-up"></i> Upgrade Plan
                 </button>
               )}
@@ -1002,10 +1146,10 @@ const MerchantDashboard = () => {
                   <i className="fas fa-times"></i> Analytics & stats (Platinum+)
                 </div>
                 <div className="basic-feature">
-                  <i className="fas fa-times"></i> Deal posting (Silver+)
+                  <i className="fas fa-times"></i> Deal posting (Silver)
                 </div>
                 <div className="basic-feature">
-                  <i className="fas fa-times"></i> Featured placement (Gold+)
+                  <i className="fas fa-times"></i> Featured placement (Platinum)
                 </div>
               </div>
               <button className="btn btn-primary">
@@ -1188,11 +1332,18 @@ const MerchantDashboard = () => {
                 </span>
               </div>
             </div>
-            {planInfo.features && planInfo.features.length > 0 && (
+            {(currentMerchantPlan?.features || planInfo.features) && (
               <div className="plan-features">
                 <strong>Plan Features:</strong>
                 <ul>
-                  {planInfo.features.map((feature, index) => (
+                  {/* Use currentMerchantPlan features from database if available, otherwise fallback to planInfo */}
+                  {(currentMerchantPlan?.features ? 
+                    (Array.isArray(currentMerchantPlan.features) ? 
+                      currentMerchantPlan.features : 
+                      currentMerchantPlan.features.split(',').map(f => f.trim())
+                    ) : 
+                    planInfo.features || []
+                  ).map((feature, index) => (
                     <li key={index}><i className="fas fa-check"></i> {feature}</li>
                   ))}
                 </ul>
@@ -1201,65 +1352,7 @@ const MerchantDashboard = () => {
           </div>
         </div>
 
-        {/* Dynamic Plan Benefits for Merchants */}
-        <div className="plan-benefits-card">
-          <div className="card-header">
-            <h2><i className="fas fa-star"></i> Your Current Plan Benefits</h2>
-          </div>
-          <div className="benefits-content">
-            {(() => {
-              console.log('[DEBUG] Merchant Plan Benefits - currentMerchantPlan:', currentMerchantPlan);
-              console.log('[DEBUG] Merchant Plan Benefits - planInfo:', planInfo);
-              console.log('[DEBUG] Merchant Plan Benefits - userInfo.membershipType:', userInfo?.membershipType);
-              
-              // Try to get benefits from current merchant plan data
-              if (currentMerchantPlan?.benefits && Array.isArray(currentMerchantPlan.benefits) && currentMerchantPlan.benefits.length > 0) {
-                console.log('[DEBUG] Using benefits from currentMerchantPlan:', currentMerchantPlan.benefits);
-                return (
-                  <ul className="benefits-list">
-                    {currentMerchantPlan.benefits.map((benefit, index) => (
-                      <li key={index} className="benefit-item">
-                        <i className="fas fa-check-circle text-success"></i>
-                        <span>{benefit}</span>
-                      </li>
-                    ))}
-                  </ul>
-                );
-              }
-              
-              // Fallback to planInfo benefits if available
-              if (planInfo?.benefits && Array.isArray(planInfo.benefits) && planInfo.benefits.length > 0) {
-                console.log('[DEBUG] Using benefits from planInfo:', planInfo.benefits);
-                return (
-                  <ul className="benefits-list">
-                    {planInfo.benefits.map((benefit, index) => (
-                      <li key={index} className="benefit-item">
-                        <i className="fas fa-check-circle text-success"></i>
-                        <span>{benefit}</span>
-                      </li>
-                    ))}
-                  </ul>
-                );
-              }
-              
-              // Final fallback: use getMerchantBenefits function
-              const membershipType = userInfo?.membershipType || planInfo?.key || 'basic';
-              const fallbackBenefits = getMerchantBenefits({ type: membershipType, name: membershipType });
-              console.log('[DEBUG] Using fallback benefits for membership type:', membershipType, fallbackBenefits);
-              
-              return (
-                <ul className="benefits-list">
-                  {fallbackBenefits.map((benefit, index) => (
-                    <li key={index} className="benefit-item">
-                      <i className="fas fa-check-circle text-success"></i>
-                      <span>{benefit}</span>
-                    </li>
-                  ))}
-                </ul>
-              );
-            })()}
-          </div>
-        </div>
+        {/* Dynamic Plan Benefits for Merchants - removed as per requirements */}
       </div>
 
       {/* Quick Actions */}
@@ -1267,9 +1360,13 @@ const MerchantDashboard = () => {
         <h2>Quick Actions</h2>
         <div className="action-buttons">
           <button 
-            className={`btn ${stats.canPostDeals ? 'btn-primary' : 'btn-disabled'}`}
+            className={`btn ${stats.canPostDeals && planAccess.canAccess('post_deals') ? 'btn-primary' : 'btn-disabled'}`}
             onClick={() => {
               console.log('Create New Deal button clicked');
+              if (!planAccess.canAccess('post_deals')) {
+                showNotification(planAccess.getBlockingMessage('post_deals'), 'warning');
+                return;
+              }
               if (stats.canPostDeals) {
                 setShowDealForm(true);
                 console.log('setShowDealForm(true)');
@@ -1277,11 +1374,11 @@ const MerchantDashboard = () => {
                 alert(`You've reached your monthly deal limit of ${stats.dealLimit}. ${businessInfo.customDealLimit ? 'Contact admin to increase your custom limit.' : 'Upgrade your plan for more deals.'}`);
               }
             }}
-            disabled={!stats.canPostDeals}
-            title={!stats.canPostDeals ? `Deal limit reached (${stats.actualDealsThisMonth}/${stats.dealLimit})` : ''}
+            disabled={!stats.canPostDeals || !planAccess.canAccess('post_deals')}
+            title={!planAccess.canAccess('post_deals') ? planAccess.getBlockingMessage('post_deals') : (!stats.canPostDeals ? `Deal limit reached (${stats.actualDealsThisMonth}/${stats.dealLimit})` : '')}
           >
             <i className="fas fa-plus"></i> Create New Deal
-            {!stats.canPostDeals && (
+            {(!stats.canPostDeals || !planAccess.canAccess('post_deals')) && (
               <span className="limit-indicator">
                 <i className="fas fa-exclamation-triangle"></i>
               </span>
@@ -1295,8 +1392,24 @@ const MerchantDashboard = () => {
               <i className="fas fa-chart-bar"></i> View Analytics
             </button>
           )}
-          <button className="btn btn-info" onClick={() => setShowMemberVerification(true)}>
+          <button 
+            className={`btn ${planAccess.canAccess('general') ? 'btn-info' : 'btn-disabled'}`} 
+            onClick={() => {
+              if (!planAccess.canAccess('general')) {
+                showNotification(planAccess.getBlockingMessage('general'), 'warning');
+                return;
+              }
+              setShowMemberVerification(true);
+            }}
+            disabled={!planAccess.canAccess('general')}
+            title={!planAccess.canAccess('general') ? planAccess.getBlockingMessage('general') : ''}
+          >
             <i className="fas fa-user-check"></i> Verify Member
+            {!planAccess.canAccess('general') && (
+              <span className="limit-indicator">
+                <i className="fas fa-exclamation-triangle"></i>
+              </span>
+            )}
           </button>
         </div>
       </div>
@@ -1327,7 +1440,14 @@ const MerchantDashboard = () => {
                 <div className="plan-benefits">
                   <h4>What You'll Get:</h4>
                   <ul>
-                    {getMerchantBenefits(plan).slice(0, 5).map((benefit, index) => (
+                    {/* Use dynamic features from database first, then fallback to getMerchantBenefits */}
+                    {(plan.features ? 
+                      (Array.isArray(plan.features) ? 
+                        plan.features : 
+                        plan.features.split(',').map(f => f.trim())
+                      ) : 
+                      getMerchantBenefits(plan)
+                    ).slice(0, 5).map((benefit, index) => (
                       <li key={index}>
                         <i className="fas fa-check"></i>
                         {benefit}
@@ -1600,6 +1720,13 @@ const MerchantDashboard = () => {
                       )}
                     </div>
                     <div className="deal-actions">
+                      <button 
+                        className="btn btn-sm btn-success" 
+                        onClick={() => handleShareDeal(deal)}
+                        title="Share deal"
+                      >
+                        <i className="fas fa-share-alt"></i> Share
+                      </button>
                       {featureAccess.dealAnalyticsButton && (
                         <button 
                           className="btn btn-sm btn-accent" 
@@ -1778,7 +1905,8 @@ const MerchantDashboard = () => {
                             <button 
                               className="btn btn-success btn-sm"
                               onClick={() => handleApproveRequest(request.id)}
-                              disabled={processingRequest === request.id}
+                              disabled={processingRequest === request.id || !planAccess.canAccess('general')}
+                              title={!planAccess.canAccess('general') ? planAccess.getBlockingMessage('general') : ''}
                             >
                               <i className="fas fa-check"></i>
                               {processingRequest === request.id ? 'Approving...' : 'Approve'}
@@ -1786,7 +1914,8 @@ const MerchantDashboard = () => {
                             <button 
                               className="btn btn-danger btn-sm"
                               onClick={() => handleRejectRequest(request.id)}
-                              disabled={processingRequest === request.id}
+                              disabled={processingRequest === request.id || !planAccess.canAccess('general')}
+                              title={!planAccess.canAccess('general') ? planAccess.getBlockingMessage('general') : ''}
                             >
                               <i className="fas fa-times"></i>
                               {processingRequest === request.id ? 'Rejecting...' : 'Reject'}

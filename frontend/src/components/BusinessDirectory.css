@@ -247,7 +247,6 @@
 }
 
 .business-category {
-  font-size: 0.97rem;
   color: #520A0A;
   font-weight: 600;
   margin-bottom: 7px;
@@ -302,6 +301,7 @@
 .business-actions {
   margin-top: auto;
   display: flex;
+  flex-direction: row;
   flex-wrap: wrap;
   gap: 10px;
   align-items: center;

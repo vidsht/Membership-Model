@@ -247,7 +247,83 @@ const Dashboard = () => {
       <div className="dashboard-grid">
         {/* Membership Card/Certificate Section */}
         <div className="dashboard-section">
-          {user.userType === 'merchant' ? <MerchantCertificate /> : <MembershipCard />}
+          {user.userType === 'merchant' ? (
+            <>
+              <MerchantCertificate />
+
+              {/* Static Merchant Benefits - shown for merchants below certificate */}
+              <section className="merchant-benefits static-section">
+                <div className="section-header">
+                  <h2>Grow Your Business with Indians in Ghana</h2>
+                  <p>Merchant benefits and opportunities</p>
+                </div>
+
+                <div className="features-grid">
+                  <div className="feature-card">
+                    <div className="feature-icon"><i className="fas fa-bullhorn"></i></div>
+                    <h3>Promote Deals &amp; Offers</h3>
+                    <p>Showcase exclusive discounts each month to capture new customers and keep loyal ones coming back.</p>
+                  </div>
+
+                  <div className="feature-card">
+                    <div className="feature-icon"><i className="fas fa-network-wired"></i></div>
+                    <h3>Expand Community Reach</h3>
+                    <p>Get featured in our trusted business directory and gain visibility across a wider local network.</p>
+                  </div>
+
+                  <div className="feature-card">
+                    <div className="feature-icon"><i className="fas fa-users"></i></div>
+                    <h3>Engage Your Customers</h3>
+                    <p>Build stronger connections with your audience through our interactive platform that fosters loyalty.</p>
+                  </div>
+
+                  <div className="feature-card">
+                    <div className="feature-icon"><i className="fas fa-headset"></i></div>
+                    <h3>Reliable Support Team</h3>
+                    <p>Count on our dedicated support specialists to assist you in maximizing your business profile anytime.</p>
+                  </div>
+                </div>
+              </section>
+            </>
+          ) : (
+            <>
+              <MembershipCard />
+
+              {/* Static User Benefits - shown for regular users below membership card */}
+              <section className="user-benefits static-section">
+                <div className="section-header">
+                  <h2>Member Benefits</h2>
+                  <p>What you get as a valued member</p>
+                </div>
+
+                <div className="features-grid">
+                  <div className="feature-card">
+                    <div className="feature-icon"><i className="fas fa-id-card"></i></div>
+                    <h3>Digital Membership Card</h3>
+                    <p>Unlock instant access to your digital card — your passport to exclusive discounts, deals, and partner rewards anytime, anywhere.</p>
+                  </div>
+
+                  <div className="feature-card">
+                    <div className="feature-icon"><i className="fas fa-tags"></i></div>
+                    <h3>Exclusive Partner Discounts</h3>
+                    <p>Enjoy special offers and savings from our network of trusted partner businesses, designed to give you more value every day.</p>
+                  </div>
+
+                  <div className="feature-card">
+                    <div className="feature-icon"><i className="fas fa-users"></i></div>
+                    <h3>Community Perks &amp; Events</h3>
+                    <p>Get insider access to community-driven promotions, seasonal deals, and special invitations to local events and activities.</p>
+                  </div>
+
+                  <div className="feature-card">
+                    <div className="feature-icon"><i className="fas fa-envelope"></i></div>
+                    <h3>Personalized Updates &amp; Newsletter</h3>
+                    <p>Stay ahead with curated updates on new offers, featured partners, and member-only promotions delivered straight to your inbox.</p>
+                  </div>
+                </div>
+              </section>
+            </>
+          )}
         </div>
 
         {/* Benefits Section - Hidden for merchants */}
@@ -327,8 +403,8 @@ const Dashboard = () => {
           </div>
         )}
 
-        {/* Upgrade Recommendations Section */}
-        {upgradeRecommendations.length > 0 && (
+        {/* Upgrade Recommendations Section (hidden for merchants) */}
+        {user.userType !== 'merchant' && upgradeRecommendations.length > 0 && (
           <div className="upgrade-section">
             <div className="upgrade-header">
               <h2>

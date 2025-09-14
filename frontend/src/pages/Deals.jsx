@@ -66,6 +66,57 @@ function getPlanNameByPriority(priority, plans) {
   return plan ? plan.name : 'Unknown Plan';
 }
 
+/**
+ * Check if user has reached their redemption limit for the month
+ * @param {Object} user - The user object
+ * @returns {Object} - {canRedeem: boolean, message: string}
+ */
+function checkRedemptionLimit(user) {
+  if (!user) {
+    return { canRedeem: false, message: 'Please log in to redeem deals.' };
+  }
+
+  // Check if user has redemption limit data from backend
+  const monthlyRedemptionsRemaining = user.monthlyRedemptionsRemaining;
+  const monthlyRedemptionLimit = user.monthlyRedemptionLimit || user.customRedemptionLimit;
+  const monthlyRedemptionCount = user.monthlyRedemptionCount || 0;
+  const pendingRequestsCount = user.pendingRequestsCount || 0;
+
+  // If backend provides remaining count, use it
+  if (monthlyRedemptionsRemaining !== undefined && monthlyRedemptionsRemaining !== null) {
+    if (monthlyRedemptionsRemaining === -1) {
+      return { canRedeem: true, message: '' };
+    }
+    if (monthlyRedemptionsRemaining <= 0) {
+      return { 
+        canRedeem: false, 
+        message: 'You have reached your monthly redemption limit. Upgrade your plan for more redemptions.' 
+      };
+    }
+    return { canRedeem: true, message: '' };
+  }
+
+  // Fallback to calculating from limit and count (including pending requests)
+  if (monthlyRedemptionLimit !== undefined && monthlyRedemptionLimit !== null) {
+    if (monthlyRedemptionLimit === -1) {
+      return { canRedeem: true, message: '' };
+    }
+    
+    // Check total requests (completed + pending) against limit
+    const totalRequests = monthlyRedemptionCount + pendingRequestsCount;
+    if (totalRequests >= monthlyRedemptionLimit) {
+      return { 
+        canRedeem: false, 
+        message: `You have reached your monthly redemption limit of ${monthlyRedemptionLimit}. ${pendingRequestsCount > 0 ? `You have ${pendingRequestsCount} pending request(s). ` : ''}Upgrade your plan for more redemptions.` 
+      };
+    }
+    return { canRedeem: true, message: '' };
+  }
+
+  // Default behavior if no limit data is available
+  return { canRedeem: true, message: '' };
+}
+
 const Deals = () => {
   const { user } = useAuth();
   const location = useLocation();
@@ -209,6 +260,13 @@ const Deals = () => {
       return;
     }
 
+    // Check redemption limit FIRST
+    const redemptionCheck = checkRedemptionLimit(user);
+    if (!redemptionCheck.canRedeem) {
+      setRedeemStatus({ ...redeemStatus, [dealId]: redemptionCheck.message });
+      return;
+    }
+
     // Check if plan is expired
     if (!planAccess.canAccess('redeem')) {
       setRedeemStatus({ 
@@ -234,6 +292,15 @@ const Deals = () => {
   const confirmRedemption = async () => {
     if (!selectedDeal) return;
     
+    // Double-check redemption limit before confirming
+    const redemptionCheck = checkRedemptionLimit(user);
+    if (!redemptionCheck.canRedeem) {
+      setRedeemStatus({ ...redeemStatus, [selectedDeal.id]: redemptionCheck.message });
+      setShowRedemptionModal(false);
+      setSelectedDeal(null);
+      return;
+    }
+    
     setIsRedeeming(true);
     try {
       const response = await redeemDeal(selectedDeal.id);
@@ -245,7 +312,7 @@ const Deals = () => {
           [selectedDeal.id]: '🎉 Request submitted! Merchant will review and contact you.' 
         });
       } else {
-        setRedeemStatus({ ...redeemStatus, [selectedDeal.id]: 'Redeemed!' });
+        setRedeemStatus({ ...redeemStatus, [selectedDeal.id]: 'Request submitted!' });
       }
       
       setShowRedemptionModal(false);
@@ -529,42 +596,14 @@ Join Indians in Ghana Community for exclusive deals!`;
                      <i className="fas fa-share-alt"></i>
                      Share
                    </button>
-
-                   
-                   {/* Remove upgrade prompt buttons 
-                   {user && !canRedeem(user, deal.minPlanPriority, plans) && (
-                     <div className="upgrade-prompt">
-                       {(() => {
-                         const requiredPlan = plans.find(p => p.priority === (deal.minPlanPriority || deal.requiredPlanPriority));
-                         if (requiredPlan) {
-                           return (
-                             <button className="btn-upgrade">
-                               <i className="fas fa-arrow-up"></i>
-                               Upgrade to {requiredPlan.name}
-                               {requiredPlan.price && requiredPlan.currency && 
-                                 ` (${requiredPlan.currency} ${requiredPlan.price})`
-                               }
-                             </button>
-                           );
-                         }
-                         return (
-                           <button className="btn-upgrade">
-                             <i className="fas fa-lock"></i>
-                             Upgrade Required
-                           </button>
-                         );
-                       })()}
-                     </div>
-                   )}
-                   */}
                    
                    {redeemStatus[deal.id] && (
                      <div className={`redeem-status ${
                        redeemStatus[deal.id].includes('Upgrade') ? 'upgrade-required' : 
-                       redeemStatus[deal.id] === 'Redeemed!' ? 'success' : 'error'
+                       redeemStatus[deal.id].includes('Request submitted!') ? 'success' : 'error'
                      }`}>
                        <i className={`fas ${
-                         redeemStatus[deal.id] === 'Redeemed!' ? 'fa-check-circle' : 
+                         redeemStatus[deal.id].includes('Request submitted!') ? 'fa-check-circle' : 
                          redeemStatus[deal.id].includes('Upgrade') ? 'fa-exclamation-triangle' : 'fa-times-circle'
                        }`}></i>
                        {redeemStatus[deal.id]}

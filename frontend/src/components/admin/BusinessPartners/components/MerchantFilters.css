@@ -96,8 +96,8 @@
 .filter-group input:focus,
 .filter-group select:focus {
   outline: none;
-  border-color: #007bff;
-  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+  border-color: #ae5b5b;
+  box-shadow: 0 0 0 2px rgba(174, 91, 91, 0.25);
 }
 
 .filter-group input:disabled,
@@ -139,12 +139,12 @@
 }
 
 .btn-apply {
-  background: #007bff;
+  background: #8B1515;
   color: white;
 }
 
 .btn-apply:hover:not(:disabled) {
-  background: #0056b3;
+  background: #ae5b5b;
 }
 
 .btn-reset:disabled,

@@ -1,6 +1,5 @@
 import React from 'react';
-import '../styles/FormValidation.css';
-
+import '../../styles/FormValidation.css';
 /**
  * FormErrorSummary Component - Displays all form errors in a summary box
  * @param {Object} props - Component props

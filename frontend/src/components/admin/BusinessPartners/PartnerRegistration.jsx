@@ -120,6 +120,16 @@ const PartnerRegistration = () => {
     planType: 'basic_business', // Default to basic business plan
     bloodGroup: ''
   });
+  // Local form errors (used by the JSX). Keep in sync with validation hook errors and allow server-side errors.
+  const [formErrors, setFormErrors] = useState({});
+
+  useEffect(() => {
+    // Prefer validation hook errors, but keep a shallow copy so server errors can be set via setFormErrors
+    if (errors && Object.keys(errors).length) {
+      setFormErrors({ ...errors });
+    }
+  }, [errors]);
+
   const [isEditMode, setIsEditMode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [step, setStep] = useState(1);
@@ -738,10 +748,19 @@ const PartnerRegistration = () => {
   return (
     <div className="partner-registration">
       <div className="registration-header">
-        <h2>
-          <i className="fas fa-store"></i>
-          {isEditMode ? 'Edit Business Partner' : 'Business Partner Registration'}
-        </h2>
+        <div className="header-content">
+          <h2>
+            <i className="fas fa-store"></i>
+            {isEditMode ? 'Edit Business Partner' : 'Business Partner Registration'}
+          </h2>
+          <button
+            type="button"
+            className="button button-outline back-to-dashboard"
+            onClick={() => navigate('/admin')}
+          >
+            <i className="fas fa-arrow-left"></i> Back to Dashboard
+          </button>
+        </div>
       </div>
       {renderStepIndicator()}
       <form onSubmit={handleSubmit} encType="multipart/form-data">

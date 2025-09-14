@@ -76,12 +76,62 @@ const PlanExpiryBanner = ({ showOnlyIfExpired = false }) => {
   };
 
   const handleContactAdmin = () => {
-    showNotification('Please contact admin at cards@indiansinghana.com  to renew your plan.', 'info');
+    // Open email client with prewritten text for plan renewal
+    const subject = encodeURIComponent('Plan Renewal Request - Indians in Ghana Membership');
+    const body = encodeURIComponent(`Dear Admin,
+
+I hope this email finds you well.
+
+I am writing to request the renewal of my ${planStatus.planName} plan for my Indians in Ghana membership account.
+
+Current Plan Details:
+- Plan Type: ${planStatus.planName}
+- Expiry Date: ${planStatus.expiryDate ? planStatus.expiryDate.toLocaleDateString('en-GB', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    }) : 'N/A'}
+- Account Email: ${user.email || 'N/A'}
+
+Please let me know the renewal process and payment details so I can continue enjoying the benefits of my membership.
+
+Thank you for your time and assistance.
+
+Best regards,
+${user.fullName || user.name || 'Member'}`);
+    
+    const mailtoLink = `mailto:cards@indiansinghana.com?subject=${subject}&body=${body}`;
+    window.open(mailtoLink, '_blank');
   };
 
   const handleUpgradePlan = () => {
-    // You can implement navigation to plan upgrade page here
-    showNotification('Plan upgrade functionality coming soon. Please contact admin for now.', 'info');
+    // Open email client with prewritten text for plan upgrade
+    const currentPlan = planStatus?.planName || user?.membershipType || 'basic';
+    const subject = encodeURIComponent('Plan Upgrade Request - Indians in Ghana Membership');
+    const body = encodeURIComponent(`Dear Admin,
+
+I hope this email finds you well.
+
+I would like to upgrade my current plan for my Indians in Ghana membership account.
+
+Current Plan Details:
+- Current Plan: ${currentPlan}
+- Account Email: ${user?.email || 'N/A'}
+- User Name: ${user?.fullName || user?.name || 'N/A'}
+
+I am interested in upgrading to a higher tier plan to access additional features and benefits. Please provide me with:
+1. Available upgrade options
+2. Pricing details for each plan
+3. Payment process
+4. Timeline for plan activation
+
+Thank you for your time and assistance.
+
+Best regards,
+${user?.fullName || user?.name || 'Member'}`);
+    
+    const mailtoLink = `mailto:cards@indiansinghana.com?subject=${subject}&body=${body}`;
+    window.open(mailtoLink, '_blank');
   };
 
   // Check if banner was dismissed in this session

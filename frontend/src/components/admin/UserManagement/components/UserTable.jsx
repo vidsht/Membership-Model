@@ -3,6 +3,13 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useImageUrl, SmartImage, DefaultAvatar } from '../../../../hooks/useImageUrl.jsx';
 
+// Utility function to format membership number with gaps after 4 digits
+const formatMembershipNumber = (number) => {
+  if (!number) return '';
+  const numStr = number.toString();
+  return numStr.replace(/(.{4})/g, '$1 ').trim();
+};
+
 const UserTable = ({
   users,
   selectedUsers,
@@ -242,34 +249,21 @@ const UserTable = ({
                     </td>
                     <td className="user-cell" data-label="User & Type">
                       <div className="user-info-compact">
-                        <div className="user-avatar">
-                          {user.profilePhoto ? (
-                            <SmartImage 
-                              src={getProfileImageUrl(user)} 
-                              alt={user.fullName}
-                              className="avatar-image user-avatar-image"
-                              fallback={<DefaultAvatar size={32} name={user.fullName} />}
-                            />
-                          ) : (
-                            <DefaultAvatar size={32} name={user.fullName} />
-                          )}
-                        </div>
                         <div className="user-details-compact">
-                          <span className="user-name">{user.fullName || 'Unknown'}</span>
-                          {user.membershipNumber && (
-                            <span className="membership-number">#{user.membershipNumber}</span>
-                          )}
-                          <span className="user-type">
-                            {user.userType ? user.userType.charAt(0).toUpperCase() + user.userType.slice(1) : 'User'}
+                          <span className="user-name">
+                            ({user.userType ? user.userType.charAt(0).toUpperCase() + user.userType.slice(1) : 'User'}) {user.fullName || 'Unknown'}
                           </span>
-                          <span className="registered-date">{formatDate(user.createdAt)}</span>
+                          {user.membershipNumber && (
+                            <span className="membership-number">#{formatMembershipNumber(user.membershipNumber)}</span>
+                          )}
+                          <span className="registered-date">join : {formatDate(user.createdAt)}</span>
                         </div>
                       </div>
                     </td>
                     <td className="contact-cell" data-label="Contact Info">
                       <div className="contact-info-stacked">
                         <span className="email">{user.email || 'N/A'}</span>
-                        {user.phone && <span className="phone">{user.phone}</span>}
+                        {user.phone && <span className="phone">mob : {user.phone}</span>}
                       </div>
                     </td>
                     <td className="plan-cell" data-label="Plan & Status">

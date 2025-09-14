@@ -118,11 +118,12 @@ const AdminDashboard = () => {
     const fetchAdminStats = async () => {
       try {
         setIsLoading(true);
-        // Fetch user and merchant statistics in parallel
-        const [userStatsRes, merchantStatsRes, planStatsResponse] = await Promise.all([
+        // Fetch user and merchant statistics in parallel (also include overall deals stats)
+        const [userStatsRes, merchantStatsRes, planStatsResponse, dealsStatsRes] = await Promise.all([
           api.get('/admin/users/statistics'),
           api.get('/admin/partners/statistics'),
-          api.get('/admin/plans/statistics').catch(() => ({ data: { success: false } }))
+          api.get('/admin/plans/statistics').catch(() => ({ data: { success: false } })),
+          api.get('/admin/stats').catch(() => ({ data: { success: false } }))
         ]);
         let baseStats = {};
         if (userStatsRes.data.success && merchantStatsRes.data.success) {
@@ -139,6 +140,14 @@ const AdminDashboard = () => {
           baseStats.totalPlans = planStats.summary.userPlans.total + planStats.summary.merchantPlans.total;
           baseStats.planSubscribers = planStats.summary.userPlans.totalSubscribers + planStats.summary.merchantPlans.totalSubscribers;
         }
+
+        // Ensure we have a totalDeals value (safe fallback to 0)
+        if (dealsStatsRes && dealsStatsRes.data && dealsStatsRes.data.stats) {
+          baseStats.totalDeals = typeof dealsStatsRes.data.stats.totalDeals !== 'undefined' ? dealsStatsRes.data.stats.totalDeals : 0;
+        } else {
+          baseStats.totalDeals = 0;
+        }
+
         setStats(baseStats);
         
         // Fetch recent activities with fallback

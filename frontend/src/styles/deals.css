@@ -2680,6 +2680,7 @@
   gap: 0.75rem;
   flex-wrap: wrap;
   align-items: center;
+  flex-direction: column-reverse;
 }
 
 /* Responsive adjustments */

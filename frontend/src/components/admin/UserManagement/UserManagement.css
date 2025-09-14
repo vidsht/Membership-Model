@@ -841,7 +841,7 @@
   background: rgba(16, 185, 129, 0.1);
   padding: 0.25rem 0.75rem;
   border-radius: 12px;
-  font-size: 0.875rem;
+  font-size: 0.55rem;
   border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
@@ -906,38 +906,6 @@
 /* ===================================
    AVATAR ENHANCEMENTS
    =================================== */
-
-.user-avatar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  overflow: hidden;
-  flex-shrink: 0;
-  border: 3px solid #e2e8f0;
-  background: #f8fafc;
-  transition: all 0.3s ease;
-}
-
-.user-avatar:hover {
-  border-color: #3b82f6;
-  transform: scale(1.05);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-}
-
-.user-avatar .avatar-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: 50%;
-}
-
-.user-avatar .default-avatar {
-  width: 100%;
-  height: 100%;
-}
 
 .user-cell {
   display: flex;

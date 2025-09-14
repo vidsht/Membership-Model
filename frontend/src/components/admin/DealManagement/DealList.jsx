@@ -5,6 +5,7 @@ import api from '../../../services/api';
 import DealFilters from './DealFilters';
 import Modal from '../../shared/Modal';
 import { useModal } from '../../../hooks/useModal';
+import useFilterPersistence from '../../../hooks/useFilterPersistence';
 import './DealList.css';
 
 const DealList = ({ onTabChange }) => {
@@ -34,7 +35,7 @@ const DealList = ({ onTabChange }) => {
     total: 0,
     totalPages: 0
   });
-  const [filters, setFilters] = useState({
+  const [filters, setFilters, resetFilters] = useFilterPersistence('admin-deal-filters', {
     status: 'all',
     category: 'all',
     businessId: 'all',

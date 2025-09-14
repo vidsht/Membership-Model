@@ -26,7 +26,7 @@
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, #007bff, #0056b3, #17a2b8);
+  background: linear-gradient(90deg, #8B1515, #ae5b5b, #8B1515);
 }
 
 .filters-container:hover {
@@ -77,11 +77,11 @@
 }
 
 .toggle-filters:hover {
-  background: linear-gradient(135deg, #007bff, #0056b3);
+  background: linear-gradient(135deg, #8B1515, #ae5b5b);
   color: white;
-  border-color: #007bff;
+  border-color: #8B1515;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+  box-shadow: 0 4px 12px rgba(139, 21, 21, 0.3);
 }
 
 .toggle-filters i {
@@ -156,14 +156,14 @@
 .filter-group select:focus,
 .filter-group input:focus {
   outline: none;
-  border-color: #007bff;
-  box-shadow: 0 0 0 4px rgba(0, 123, 255, 0.1);
+  border-color: #ae5b5b;
+  box-shadow: 0 0 0 4px rgba(174, 91, 91, 0.1);
   transform: translateY(-2px);
 }
 
 .filter-group select:hover,
 .filter-group input:hover {
-  border-color: #007bff;
+  border-color: #ae5b5b;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
@@ -195,14 +195,14 @@
 }
 
 .search-container input:focus {
-  border-color: #007bff;
-  box-shadow: 0 0 0 4px rgba(0, 123, 255, 0.1);
+  border-color: #ae5b5b;
+  box-shadow: 0 0 0 4px rgba(174, 91, 91, 0.1);
   transform: translateY(-2px);
 }
 
 .search-container input:focus + i,
 .search-container:hover i {
-  color: #007bff;
+  color: #ae5b5b;
   transform: translateY(-50%) scale(1.1);
 }
 
@@ -327,7 +327,7 @@
 
 .filter-tag span {
   font-weight: 600;
-  color: #007bff;
+  color: #8B1515;
 }
 
 .filter-tag button {
@@ -373,7 +373,7 @@
   right: -50px;
   width: 100px;
   height: 100px;
-  background: linear-gradient(135deg, rgba(0, 123, 255, 0.1), rgba(23, 162, 184, 0.1));
+  background: linear-gradient(135deg, rgba(139, 21, 21, 0.1), rgba(174, 91, 91, 0.1));
   border-radius: 50%;
   pointer-events: none;
 }
