@@ -185,6 +185,19 @@
   background-color: #f9fafc;
 }
 
+/* S.No Column Styling */
+.deals-table th:nth-child(1),
+.deals-table td:nth-child(1) {
+  width: 60px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.sno-cell {
+  color: #666;
+  font-size: 0.9rem;
+}
+
 /* Status Badge */
 .status-badge {
   padding: 4px 10px;

@@ -165,6 +165,7 @@
 }
 
 .plan-info h3 {
+  color: white;
   font-size: 1.8rem;
   font-weight: 700;
   margin: 0 0 0.5rem 0;
@@ -281,8 +282,8 @@
 }
 
 .benefit-card p {
-  color: #666;
-  font-size: 0.95rem;
+  color: black;
+  font-size: 1rem;
   line-height: 1.6;
   margin: 0;
 }
@@ -391,6 +392,35 @@
   .basic-features {
     grid-template-columns: repeat(2, 1fr);
     gap: 0.75rem;
+  }
+}
+
+/* Tablet Responsive Design for Benefits Section */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .benefits-section {
+    padding: 1.8rem;
+    margin-top: 1.8rem;
+  }
+  
+  .benefits-header h2 {
+    font-size: 1.8rem;
+  }
+  
+  .benefits-header p {
+    font-size: 1.05rem;
+  }
+
+  .plan-details-card {
+    padding: 1.8rem;
+  }
+
+  .plan-details-stats {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+
+  .benefit-card {
+    padding: 1.6rem;
   }
 }
 
@@ -1202,185 +1232,6 @@ background: white;
 .status-badge.error {
   background: #f8d7da;
   color: #721c24;
-}
-
-/* Enhanced Static sections for merchant/user benefits */
-.static-section {
-  margin-top: 2rem;
-  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-  border-radius: 16px;
-  padding: 2rem;
-  box-shadow: 0 12px 40px rgba(77, 8, 8, 0.08);
-  border: 2px solid #f0e6e6;
-  position: relative;
-  overflow: hidden;
-}
-
-.static-section::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, #4D0808 0%, #8B1515 50%, #4D0808 100%);
-}
-
-.static-section .section-header {
-  text-align: center;
-  margin-bottom: 2rem;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-}
-
-.static-section .section-header h2 {
-  color: #4D0808;
-  font-size: 2rem;
-  font-weight: 700;
-  margin: 0 0 -0.5rem 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-}
-
-.static-section .section-header p {
-  color: #666;
-  font-size: 1.1rem;
-  max-width: 600px;
-  margin: 0 auto;
-}
-
-.static-section .features-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.5rem;
-  margin-top: 2rem;
-}
-
-.static-section .feature-card {
-  background: linear-gradient(135deg, #ffffff 0%, #fcfcfc 100%);
-  border: 2px solid #f0e6e6;
-  border-radius: 16px;
-  padding: 1.5rem;
-  text-align: center;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  overflow: hidden;
-}
-
-.static-section .feature-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(45deg, #4D0808 0%, #8B1515 100%);
-  transform: scaleX(0);
-  transition: transform 0.3s ease;
-}
-
-.static-section .feature-card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 20px 40px rgba(77, 8, 8, 0.15);
-  border-color: #4D0808;
-}
-
-.static-section .feature-card:hover::before {
-  transform: scaleX(1);
-}
-
-.static-section .feature-card .feature-icon {
-  width: 64px;
-  height: 64px;
-  border-radius: 16px;
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto 1rem;
-  font-size: 1.4rem;
-  box-shadow: 0 8px 20px rgba(77, 8, 8, 0.3);
-  transition: all 0.3s ease;
-}
-
-.static-section .feature-card:hover .feature-icon {
-  transform: scale(1.1) rotate(5deg);
-  box-shadow: 0 12px 30px rgba(77, 8, 8, 0.4);
-}
-
-.static-section .feature-card h3 {
-  margin: 0 0 0.75rem 0;
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: #2c3e50;
-  line-height: 1.4;
-}
-
-.static-section .feature-card p {
-  margin: 0;
-  color: #666;
-  font-size: 0.95rem;
-  line-height: 1.6;
-}
-
-/* Responsive enhancements for static sections */
-@media (max-width: 768px) {
-  .static-section {
-    margin-top: 1.5rem;
-    padding: 1.5rem;
-  }
-  
-  .static-section .section-header h2 {
-    font-size: 1.5rem;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-  .static-section .features-grid {
-    grid-template-columns: 1fr;
-    gap: 1.25rem;
-  }
-  
-  .static-section .feature-card {
-    padding: 1.25rem;
-  }
-  
-  .static-section .feature-card .feature-icon {
-    width: 56px;
-    height: 56px;
-    font-size: 1.2rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .static-section {
-    padding: 1rem;
-    margin-top: 1rem;
-  }
-  
-  .static-section .section-header h2 {
-    font-size: 1.3rem;
-  }
-  
-  .static-section .section-header p {
-    font-size: 1rem;
-  }
-  
-  .static-section .feature-card {
-    padding: 1rem;
-  }
-  
-  .static-section .feature-card h3 {
-    font-size: 1.1rem;
-  }
-  
-  .static-section .feature-card .feature-icon {
-    width: 48px;
-    height: 48px;
-    font-size: 1.1rem;
-  }
 }
 
 /* Plan Information */
@@ -4187,6 +4038,8 @@ background: white;
 .current-plan-features .section-header {
   text-align: center;
   margin-bottom: 2.5rem;
+  display: flex;
+  flex-direction: column;
   position: relative;
 }
 
@@ -4215,15 +4068,7 @@ background: white;
 }
 
 .benefits-container {
-  max-width: 1200px;
   margin: 0 auto;
-}
-
-.benefits-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.8rem;
-  margin-top: 2rem;
 }
 
 .benefit-card {
@@ -4301,6 +4146,33 @@ background: white;
 
 .member-benefits {
   border-left: 4px solid #4D0808;
+}
+
+/* Tablet Responsive Design */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .current-plan-features {
+    margin: 1.8rem 0;
+    padding: 1.8rem;
+  }
+
+  .current-plan-features .section-header h2 {
+    font-size: 2rem;
+  }
+
+  .benefits-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.8rem;
+  }
+
+  .benefit-card {
+    padding: 1.8rem;
+  }
+
+  .benefit-icon {
+    width: 65px;
+    height: 65px;
+    font-size: 1.5rem;
+  }
 }
 
 /* Mobile Responsive Design */

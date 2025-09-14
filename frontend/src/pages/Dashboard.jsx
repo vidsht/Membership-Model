@@ -66,47 +66,63 @@ const Dashboard = () => {
     );
   }
 
+  // Determine the best display name: for merchants prefer their business name from multiple possible fields
+  const displayName = user?.userType === 'merchant'
+    ? (user.businessName || user.business?.name || user.business?.businessName || user.business?.companyName || user.profile?.businessName || user.fullName)
+    : user.fullName;
+
   const getMembershipBenefits = (planData, userType) => {
     console.log('Dashboard: getMembershipBenefits called with:', { planData, userType });
-    
-    // Benefits to exclude from display
-    const excludedBenefitTypes = [
-      'community updates', 'cashback offers', 'curated deals', 'flash deals'
-    ];
-    
-    const filterBenefits = (benefits) => {
-      return benefits.filter(benefit => {
-        const benefitLower = benefit.toLowerCase();
-        // Exclude benefits that contain any of the excluded types
-        return !excludedBenefitTypes.some(excluded => 
-          benefitLower.includes(excluded) || benefitLower.startsWith('access to')
-        );
-      });
-    };
-    
-    // First priority: Use features from API if available
-    if (planData?.features && Array.isArray(planData.features) && planData.features.length > 0) {
-      console.log('Dashboard: Using API features array:', planData.features);
-      const filteredFeatures = filterBenefits(planData.features.filter(feature => feature && feature.trim()));
-      return filteredFeatures;
-    }
 
-    // Second priority: Use benefits array if available
-    if (planData?.benefits && Array.isArray(planData.benefits)) {
-      console.log('Dashboard: Using benefits array:', planData.benefits);
-      return filterBenefits(planData.benefits);
-    }
+    // Collect dynamic fields that may contain benefit/feature points
+    const candidateKeys = Object.keys(planData || {}).filter(k => /feature|benefit|points|perks/i.test(k));
 
-    // Third priority: Parse features as string if it's a comma-separated string
-    if (planData?.features && typeof planData.features === 'string') {
-      const featuresArray = planData.features.split(',').map(f => f.trim()).filter(f => f);
-      if (featuresArray.length > 0) {
-        console.log('Dashboard: Using parsed features string:', featuresArray);
-        return filterBenefits(featuresArray);
+    const collectFromValue = (val) => {
+      if (!val && val !== 0) return [];
+      if (Array.isArray(val)) return val.map(v => (typeof v === 'string' ? v.trim() : String(v))).filter(Boolean);
+      if (typeof val === 'string') {
+        // split by commas or newlines
+        return val.split(/[,\n]/).map(s => s.trim()).filter(Boolean);
       }
+      // fallback: stringify
+      return [String(val)];
+    };
+
+    // Aggregate all discovered feature/benefit-like fields to ensure nothing is missed
+    let aggregated = [];
+    candidateKeys.forEach(key => {
+      aggregated = aggregated.concat(collectFromValue(planData[key]));
+    });
+
+    // Also check common top-level names explicitly
+    if ((planData?.features && !candidateKeys.includes('features'))) {
+      aggregated = aggregated.concat(collectFromValue(planData.features));
+    }
+    if ((planData?.benefits && !candidateKeys.includes('benefits'))) {
+      aggregated = aggregated.concat(collectFromValue(planData.benefits));
+    }
+
+    // Deduplicate while preserving order
+    const seen = new Set();
+    const unique = aggregated.map(s => s.trim()).filter(Boolean).filter(item => {
+      const lower = item.toLowerCase();
+      if (seen.has(lower)) return false;
+      seen.add(lower);
+      return true;
+    });
+
+    if (unique.length > 0) {
+      console.log('Dashboard: Aggregated dynamic benefits/features:', unique);
+      return unique;
     }
 
     console.log('Dashboard: Falling back to hardcoded benefits');
+    // Lightweight filter used for hardcoded fallbacks: trim, remove empty, dedupe
+    const filterBenefits = (benefits) => {
+      if (!Array.isArray(benefits)) return [];
+      const cleaned = benefits.map(b => (typeof b === 'string' ? b.trim() : String(b))).filter(Boolean);
+      return cleaned.filter((v, i) => cleaned.findIndex(x => x.toLowerCase() === v.toLowerCase()) === i);
+    };
     // Fallback to hardcoded benefits based on plan name/type
     const planName = planData?.name?.toLowerCase() || planData?.type?.toLowerCase() || 'basic';
     
@@ -373,7 +389,7 @@ const Dashboard = () => {
       )}
       
       <div className="dashboard-header">
-        <h1>Welcome back, {user.userType === 'merchant' && user.businessName ? user.businessName : user.fullName}!</h1>
+        <h1>Welcome back, {displayName}!</h1>
         <p>Manage your membership and explore community benefits</p>
       </div>
 
@@ -472,59 +488,48 @@ const Dashboard = () => {
 
                 <div className="benefits-container">
                   <div className="benefits-grid">
-                    {currentPlan ? (
-                      getMembershipBenefits(currentPlan, 'user').map((benefit, index) => (
-                        <div key={index} className="benefit-card">
-                          <div className="benefit-icon">
-                            <i className={getBenefitIcon(benefit, index)}></i>
-                          </div>
-                          <div className="benefit-content">
-                            <h4>{getBenefitTitle(benefit)}</h4>
-                            <p>{getBenefitDescription(benefit)}</p>
-                          </div>
+                    {/* Static member benefits as requested (preserve styling/classes) */}
+                    <>
+                      <div className="benefit-card">
+                        <div className="benefit-icon">
+                          <i className="fas fa-id-card"></i>
                         </div>
-                      ))
-                    ) : (
-                      // Fallback benefits when no plan data is available
-                      <>
-                        <div className="benefit-card">
-                          <div className="benefit-icon">
-                            <i className="fas fa-id-card"></i>
-                          </div>
-                          <div className="benefit-content">
-                            <h4>Digital Membership Card</h4>
-                            <p>Unlock instant access to your digital card — your passport to exclusive discounts, deals, and partner rewards anytime, anywhere.</p>
-                          </div>
+                        <div className="benefit-content">
+                          <h4>Digital Membership Card</h4>
+                          <p>Unlock instant access to your digital card — your passport to exclusive discounts, deals, and partner rewards anytime, anywhere.</p>
                         </div>
-                        <div className="benefit-card">
-                          <div className="benefit-icon">
-                            <i className="fas fa-percentage"></i>
-                          </div>
-                          <div className="benefit-content">
-                            <h4>Exclusive Partner Discounts</h4>
-                            <p>Enjoy special offers and savings from our network of trusted partner businesses, designed to give you more value every day.</p>
-                          </div>
+                      </div>
+
+                      <div className="benefit-card">
+                        <div className="benefit-icon">
+                          <i className="fas fa-percentage"></i>
                         </div>
-                        <div className="benefit-card">
-                          <div className="benefit-icon">
-                            <i className="fas fa-calendar-star"></i>
-                          </div>
-                          <div className="benefit-content">
-                            <h4>Community Perks & Events</h4>
-                            <p>Get insider access to community-driven promotions, seasonal deals, and special invitations to local events and activities.</p>
-                          </div>
+                        <div className="benefit-content">
+                          <h4>Exclusive Partner Discounts</h4>
+                          <p>Enjoy special offers and savings from our network of trusted partner businesses, designed to give you more value every day.</p>
                         </div>
-                        <div className="benefit-card">
-                          <div className="benefit-icon">
-                            <i className="fas fa-envelope"></i>
-                          </div>
-                          <div className="benefit-content">
-                            <h4>Personalized Updates & Newsletter</h4>
-                            <p>Stay ahead with curated updates on new offers, featured partners, and member-only promotions delivered straight to your inbox.</p>
-                          </div>
+                      </div>
+
+                      <div className="benefit-card">
+                        <div className="benefit-icon">
+                          <i className="fas fa-users"></i>
                         </div>
-                      </>
-                    )}
+                        <div className="benefit-content">
+                          <h4>Community Perks & Events</h4>
+                          <p>Get insider access to community-driven promotions, seasonal deals, and special invitations to local events and activities.</p>
+                        </div>
+                      </div>
+
+                      <div className="benefit-card">
+                        <div className="benefit-icon">
+                          <i className="fas fa-envelope"></i>
+                        </div>
+                        <div className="benefit-content">
+                          <h4>Personalized Updates & Newsletter</h4>
+                          <p>Stay ahead with curated updates on new offers, featured partners, and member-only promotions delivered straight to your inbox.</p>
+                        </div>
+                      </div>
+                    </>
                   </div>
                 </div>
               </section>
@@ -600,7 +605,6 @@ const Dashboard = () => {
                       'fa-check-circle'
                     }`}></i>
                   </div>
-                  <h3>{benefit.split(' ').slice(0, 3).join(' ')}</h3>
                   <p>{benefit}</p>
                 </div>
               ))}

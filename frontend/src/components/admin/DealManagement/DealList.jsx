@@ -570,6 +570,7 @@ const DealList = ({ onTabChange }) => {
         <div className="deals-table-container">
           <table className="deals-table">            <thead>
               <tr>
+                <th>S.No</th>
                 <th>Deal Title</th>
                 <th>Business</th>
                 <th>Category</th>
@@ -582,9 +583,12 @@ const DealList = ({ onTabChange }) => {
               </tr>
             </thead>
             <tbody>
-              {deals.map(deal => {
+              {deals.map((deal, index) => {
                 const isExpired = new Date(deal.validUntil) < new Date();
                 return (                  <tr key={deal.id}>
+                    <td data-label="S.No" className="sno-cell">
+                      {index + 1}
+                    </td>
                     <td data-label="Deal Title">
                       <Link to={`/admin/deals/${deal.id}`} className="deal-title-link">
                         {deal.title}
