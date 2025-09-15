@@ -64,8 +64,9 @@ const Header = () => {
     // iPad Pro/Air portrait (834px - 1024px wide)
     if (width >= 834 && width <= 1024 && height > width) return true;
     
-    // iPad Pro landscape (1024px - 1366px wide)
-    if (width >= 1024 && width <= 1366 && height < width) return true;
+    // NOTE: removed the 1024-1366 landscape condition to avoid treating
+    // larger laptop screens (e.g. 1280x800) as "mobile" which caused the
+    // header to swap to the smaller logo. Those sizes should use desktop nav.
     
     return false;
   };

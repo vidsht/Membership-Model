@@ -488,22 +488,6 @@ color: white;
   }
 }
 
-@media only screen and (min-width: 1024px) and (max-width: 1366px) and (orientation: landscape),
-       only screen and (min-width: 834px) and (max-width: 1024px) and (orientation: portrait) {
-  header .header-content {
-    padding: 1.5rem 3rem;
-    gap: 2rem;
-  }
-  header .logo img {
-    width: 100px;
-    height: 100px;
-    object-fit: contain;
-  }
-  header nav ul {
-    gap: 2.5rem;
-  }
-}
-
 /* Make icons slightly smaller on very small screens */
 @media (max-width: 480px) {
   .footer-social-icons a { width: 38px; height: 38px; }
@@ -604,8 +588,8 @@ color: white;
   }
 
 .logo img {
-    height: 65px;
-    width: 65px;
+    height: 50px;
+    width: 50px;
 } 
 
   .auth-buttons {

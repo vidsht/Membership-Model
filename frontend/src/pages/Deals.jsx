@@ -262,6 +262,15 @@ const Deals = () => {
       return;
     }
 
+    // Check if user is a merchant - merchants cannot redeem deals
+    if (user.userType === 'merchant') {
+      setRedeemStatus({ 
+        ...redeemStatus, 
+        [dealId]: '❌ Merchants cannot redeem deals. Please create a user account to access deals.' 
+      });
+      return;
+    }
+
     // Check redemption limit FIRST
     const redemptionCheck = checkRedemptionLimit(user);
     if (!redemptionCheck.canRedeem) {
@@ -752,6 +761,14 @@ Join Indians in Ghana Community for exclusive deals!`;
               >
                 <i className="fas fa-times"></i>
               </button>
+            </div>
+            
+            {/* Login/Register Requirement Notice */}
+            <div className="modal-notice">
+              <div className="notice-content">
+                <i className="fas fa-info-circle"></i>
+                <span>To redeem this deal, users must login or register first</span>
+              </div>
             </div>
             
             <div className="modal-body-compact">

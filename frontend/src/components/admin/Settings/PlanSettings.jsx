@@ -25,6 +25,7 @@ const PlanSettings = () => {
   const [planSubscriptionStats, setPlanSubscriptionStats] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSeedingPlans, setIsSeedingPlans] = useState(false);
+  const [showSeedConfirmation, setShowSeedConfirmation] = useState(false);
   const [activeTab, setActiveTab] = useState('user');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -165,8 +166,13 @@ const PlanSettings = () => {
     }
   };
   const handleSeedPlans = async () => {
+    setShowSeedConfirmation(true);
+  };
+
+  const confirmSeedPlans = async () => {
     try {
       setIsSeedingPlans(true);
+      setShowSeedConfirmation(false);
       const isSessionValid = await validateSession();
       if (!isSessionValid) {
         showNotification('Your session has expired. Please log in again.', 'error');
@@ -186,7 +192,7 @@ const PlanSettings = () => {
       }
     } catch (error) {
       // This catch is for session validation or other unexpected errors
-      console.error('Error in handleSeedPlans:', error);
+      console.error('Error in confirmSeedPlans:', error);
       showNotification('Error creating default plans. Please try again.', 'error');
     } finally {
       setIsSeedingPlans(false);
@@ -444,7 +450,7 @@ const PlanSettings = () => {
                       <span>{plan.maxRedemptions === -1 ? 'Unlimited' : plan.maxRedemptions}</span>
                     </div>
                   )}
-                  {plan.dealAccess && (
+                  {plan.type === 'user' && plan.dealAccess && (
                     <div className="meta-item">
                       <label>Deal Access:</label>
                       <span className="deal-access">{plan.dealAccess}</span>
@@ -553,6 +559,53 @@ const PlanSettings = () => {
           </div>        </div>
       )}
       <Modal modal={modal} onClose={hideModal} />
+
+      {/* Seed Plans Confirmation Modal */}
+      {showSeedConfirmation && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h3>
+                <i className="fas fa-exclamation-triangle text-warning"></i>
+                Confirm Seed Default Plans
+              </h3>
+              <button 
+                className="modal-close" 
+                onClick={() => setShowSeedConfirmation(false)}
+              >
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="warning-message">
+                <p><strong>⚠️ This action will replace all existing plans with default plans.</strong></p>
+                <p>All current plans will be overwritten and this action cannot be undone.</p>
+                <ul>
+                  <li>All existing user and business plans will be replaced</li>
+                  <li>Current plan subscribers will not be affected</li>
+                  <li>Plan statistics and relationships will be preserved</li>
+                </ul>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button 
+                className="button secondary" 
+                onClick={() => setShowSeedConfirmation(false)}
+              >
+                Cancel
+              </button>
+              <button 
+                className="button danger" 
+                onClick={confirmSeedPlans}
+                disabled={isSeedingPlans}
+              >
+                <i className={`fas ${isSeedingPlans ? 'fa-spinner fa-spin' : 'fa-seedling'}`}></i>
+                {isSeedingPlans ? 'Seeding Plans...' : 'Yes, Seed Default Plans'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

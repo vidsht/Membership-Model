@@ -46,11 +46,10 @@
 }
 
 .tab-button:hover {
-  color: var(--primary);
+  color: #CEAA81;
 }
 
 .tab-button.active {
-  color: var(--primary);
   border-bottom-color: var(--primary);
 }
 
@@ -111,8 +110,7 @@
 }
 
 .serial-number {
-  background: var(--primary);
-  color: white;
+  color: #CEAA81;
   padding: 0.25rem 0.75rem;
   border-radius: 1rem;
   font-size: 0.8rem;

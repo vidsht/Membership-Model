@@ -1447,6 +1447,7 @@ router.get('/verify-member/:membershipNumber', checkMerchantAccess, async (req, 
         u.membershipType,
         u.status,
         u.created_at,
+        u.validationDate,
         p.name as planName,
         p.priority as planPriority
       FROM users u
@@ -1486,8 +1487,12 @@ router.get('/verify-member/:membershipNumber', checkMerchantAccess, async (req, 
       membershipType: member.membershipType,
       status: member.status,
       registrationDate: member.created_at,
+      validationDate: member.validationDate,
       planName: member.planName,
-      planPriority: member.planPriority
+      planPriority: member.planPriority,
+      // Calculate plan status
+      isExpired: member.validationDate ? new Date(member.validationDate) < new Date() : false,
+      daysUntilExpiry: member.validationDate ? Math.ceil((new Date(member.validationDate) - new Date()) / (1000 * 60 * 60 * 24)) : null
     };
 
     res.json({

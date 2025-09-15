@@ -672,18 +672,29 @@ router.get('/users/export', auth, admin, async (req, res) => {
 // Get user statistics - for UserManagement component (MUST be before parameterized routes)
 router.get('/users/statistics', auth, admin, async (req, res) => {
   try {
-    const [totalUsersResult, pendingApprovalsResult, activeUsersResult, suspendedUsersResult] = await Promise.all([
+    const [
+      totalUsersResult, 
+      pendingApprovalsResult, 
+      activeUsersResult, 
+      suspendedUsersResult,
+      expiredUsersResult,
+      expiringSoonUsersResult
+    ] = await Promise.all([
       queryAsync('SELECT COUNT(*) as count FROM users WHERE userType != "merchant"'),
       queryAsync('SELECT COUNT(*) as count FROM users WHERE userType != "merchant" AND status = "pending"'),
       queryAsync('SELECT COUNT(*) as count FROM users WHERE userType != "merchant" AND status = "approved"'),
-      queryAsync('SELECT COUNT(*) as count FROM users WHERE userType != "merchant" AND status = "suspended"')
+      queryAsync('SELECT COUNT(*) as count FROM users WHERE userType != "merchant" AND status = "suspended"'),
+      queryAsync('SELECT COUNT(*) as count FROM users WHERE userType != "merchant" AND validationDate IS NOT NULL AND validationDate < NOW()'),
+      queryAsync('SELECT COUNT(*) as count FROM users WHERE userType != "merchant" AND validationDate IS NOT NULL AND validationDate > NOW() AND validationDate <= DATE_ADD(NOW(), INTERVAL 30 DAY)')
     ]);
 
     const statistics = {
       totalUsers: totalUsersResult[0]?.count || 0,
       pendingApprovals: pendingApprovalsResult[0]?.count || 0,
       activeUsers: activeUsersResult[0]?.count || 0,
-      suspendedUsers: suspendedUsersResult[0]?.count || 0
+      suspendedUsers: suspendedUsersResult[0]?.count || 0,
+      expiredUsers: expiredUsersResult[0]?.count || 0,
+      expiringSoonUsers: expiringSoonUsersResult[0]?.count || 0
     };
 
     res.json({
@@ -1896,12 +1907,22 @@ router.get('/partners', auth, admin, async (req, res) => {
 // Get merchant/partner statistics - for MerchantManagement component (MUST be before parameterized routes)
 router.get('/partners/statistics', auth, admin, async (req, res) => {
   try {
-    const [totalMerchantsResult, pendingApprovalsResult, activeMerchantsResult, suspendedMerchantsResult, rejectedMerchantsResult] = await Promise.all([
+    const [
+      totalMerchantsResult, 
+      pendingApprovalsResult, 
+      activeMerchantsResult, 
+      suspendedMerchantsResult, 
+      rejectedMerchantsResult,
+      expiredMerchantsResult,
+      expiringSoonMerchantsResult
+    ] = await Promise.all([
       queryAsync('SELECT COUNT(*) as count FROM users WHERE userType = "merchant"'),
       queryAsync('SELECT COUNT(*) as count FROM users WHERE userType = "merchant" AND status = "pending"'),
       queryAsync('SELECT COUNT(*) as count FROM users WHERE userType = "merchant" AND status = "approved"'),
       queryAsync('SELECT COUNT(*) as count FROM users WHERE userType = "merchant" AND status = "suspended"'),
-      queryAsync('SELECT COUNT(*) as count FROM users WHERE userType = "merchant" AND status = "rejected"')
+      queryAsync('SELECT COUNT(*) as count FROM users WHERE userType = "merchant" AND status = "rejected"'),
+      queryAsync('SELECT COUNT(*) as count FROM users WHERE userType = "merchant" AND validationDate IS NOT NULL AND validationDate < NOW()'),
+      queryAsync('SELECT COUNT(*) as count FROM users WHERE userType = "merchant" AND validationDate IS NOT NULL AND validationDate > NOW() AND validationDate <= DATE_ADD(NOW(), INTERVAL 30 DAY)')
     ]);
 
     const statistics = {
@@ -1909,7 +1930,9 @@ router.get('/partners/statistics', auth, admin, async (req, res) => {
       pendingApprovals: pendingApprovalsResult[0]?.count || 0,
       activeMerchants: activeMerchantsResult[0]?.count || 0,
       suspendedMerchants: suspendedMerchantsResult[0]?.count || 0,
-      rejectedMerchants: rejectedMerchantsResult[0]?.count || 0
+      rejectedMerchants: rejectedMerchantsResult[0]?.count || 0,
+      expiredMerchants: expiredMerchantsResult[0]?.count || 0,
+      expiringSoonMerchants: expiringSoonMerchantsResult[0]?.count || 0
     };
 
     res.json({

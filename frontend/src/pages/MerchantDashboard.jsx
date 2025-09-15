@@ -540,8 +540,10 @@ const MerchantDashboard = () => {
 
     setVerificationLoading(true);
     try {
+      // Remove spaces before sending to backend
+      const cleanMembershipNumber = membershipNumber.replace(/\s/g, '');
       // Use merchantApi abstraction for correct path
-      const response = await merchantApi.verifyMember(membershipNumber);
+      const response = await merchantApi.verifyMember(cleanMembershipNumber);
       if (response.success) {
         setMemberVerificationResult(response.member);
       } else {
@@ -565,6 +567,20 @@ const MerchantDashboard = () => {
 
     return () => clearTimeout(timeoutId);
   }, [membershipSearch]);
+
+  // Format membership number as XXXX XXXX XXXX XXXX
+  const formatMembershipNumber = (value) => {
+    // Remove all non-alphanumeric characters
+    const cleaned = value.replace(/[^A-Za-z0-9]/g, '');
+    // Add spaces every 4 characters
+    const formatted = cleaned.replace(/(.{4})/g, '$1 ').trim();
+    return formatted;
+  };
+
+  const handleMembershipInputChange = (e) => {
+    const formatted = formatMembershipNumber(e.target.value);
+    setMembershipSearch(formatted);
+  };
 
   const fetchDashboardData = async () => {
     try {
@@ -1115,10 +1131,10 @@ ${userInfo?.fullName || userInfo?.name || user?.fullName || user?.name || 'Merch
             <div className="plan-info-left">
               <h3>
                 <i className={`fas ${getPlanIcon(userInfo?.membershipType)}`}></i>
-                {getPlanDisplayName(userInfo?.membershipType)} Plan
+                {planInfo.name || getPlanDisplayName(userInfo?.membershipType)} Plan
               </h3>
               <p>
-                {getPlanDescription(userInfo?.membershipType)}
+                {planInfo.description || getPlanDescription(userInfo?.membershipType)}
               </p>
               <div className="plan-details">
                 <span className="plan-price">
@@ -2701,6 +2717,7 @@ ${userInfo?.fullName || userInfo?.name || user?.fullName || user?.name || 'Merch
               <div className="info-message">
                 <p><strong>🔍 Verify Member Authentication</strong></p>
                 <p>Enter a membership number to verify the member's details and status in real-time.</p>
+                <p><small><strong>Format:</strong> Enter membership number in XXXX XXXX XXXX XXXX format</small></p>
               </div>
               
               <div className="form-group">
@@ -2710,10 +2727,11 @@ ${userInfo?.fullName || userInfo?.name || user?.fullName || user?.name || 'Merch
                     id="membershipSearch"
                     type="text"
                     className="form-control"
-                    placeholder="Enter membership number (e.g., USR-000123)"
+                    placeholder="Enter membership number (e.g., USR0 0012 3456 789A)"
                     value={membershipSearch}
-                    onChange={(e) => setMembershipSearch(e.target.value)}
+                    onChange={handleMembershipInputChange}
                     autoComplete="off"
+                    maxLength="19"
                   />
                   {verificationLoading && (
                     <div className="search-loading">
@@ -2751,6 +2769,27 @@ ${userInfo?.fullName || userInfo?.name || user?.fullName || user?.name || 'Merch
                           <div className="info-item">
                             <strong><i className="fas fa-id-card"></i> Membership Number:</strong>
                             <span>{memberVerificationResult.membershipNumber}</span>
+                          </div>
+                          <div className="info-item">
+                            <strong><i className="fas fa-crown"></i> Plan:</strong>
+                            <span>{memberVerificationResult.planName || memberVerificationResult.membershipType || 'N/A'}</span>
+                          </div>
+                          {memberVerificationResult.validationDate && (
+                            <div className="info-item">
+                              <strong><i className="fas fa-calendar"></i> Plan Expiry:</strong>
+                              <span className={memberVerificationResult.isExpired ? 'text-danger' : memberVerificationResult.daysUntilExpiry <= 7 ? 'text-warning' : 'text-success'}>
+                                {new Date(memberVerificationResult.validationDate).toLocaleDateString('en-GB')}
+                                {memberVerificationResult.isExpired ? ' (Expired)' : 
+                                  memberVerificationResult.daysUntilExpiry <= 7 ? ` (${memberVerificationResult.daysUntilExpiry} days left)` : 
+                                  ` (${memberVerificationResult.daysUntilExpiry} days left)`}
+                              </span>
+                            </div>
+                          )}
+                          <div className="info-item">
+                            <strong><i className="fas fa-info-circle"></i> Plan Status:</strong>
+                            <span className={`plan-status ${memberVerificationResult.isExpired ? 'expired' : 'active'}`}>
+                              {memberVerificationResult.isExpired ? 'Expired' : 'Active'}
+                            </span>
                           </div>
                         </div>
 

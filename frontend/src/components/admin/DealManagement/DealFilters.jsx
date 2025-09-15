@@ -38,10 +38,7 @@ const DealFilters = ({ filters, onFilterChange, onSearch, businesses = [] }) => 
       status: 'all',
       category: 'all',
       businessId: 'all',
-      discountType: 'all',
       search: '',
-      validFrom: '',
-      validTo: '',
       minDiscount: '',
       maxDiscount: '',
       hasRedemptions: 'all',
@@ -149,72 +146,7 @@ const DealFilters = ({ filters, onFilterChange, onSearch, businesses = [] }) => 
             </div>
 
             {/* Discount Type Filter */}
-            <div className="filter-group">
-              <label>Discount Type</label>
-              <select
-                name="discountType"
-                value={filters.discountType || 'all'}
-                onChange={handleInputChange}
-                className="filter-select"
-              >
-                <option value="all">All Types</option>
-                <option value="percentage">Percentage</option>
-                <option value="fixed">Fixed Amount</option>
-                <option value="bogo">Buy One Get One</option>
-                <option value="free">Free Item</option>
-              </select>
-            </div>
-
-            {/* Discount Range */}
-            <div className="filter-group">
-              <label>Discount Range</label>
-              <div className="range-inputs">
-                <input
-                  type="number"
-                  name="minDiscount"
-                  placeholder="Min %"
-                  value={filters.minDiscount || ''}
-                  onChange={handleInputChange}
-                  className="range-input"
-                  min="0"
-                  max="100"
-                />
-                <span>to</span>
-                <input
-                  type="number"
-                  name="maxDiscount"
-                  placeholder="Max %"
-                  value={filters.maxDiscount || ''}
-                  onChange={handleInputChange}
-                  className="range-input"
-                  min="0"
-                  max="100"
-                />
-              </div>
-            </div>
-
-            {/* Valid Date Range */}
-            <div className="filter-group">
-              <label>Valid From</label>
-              <input
-                type="date"
-                name="validFrom"
-                value={filters.validFrom || ''}
-                onChange={handleInputChange}
-                className="filter-input"
-              />
-            </div>
-
-            <div className="filter-group">
-              <label>Valid To</label>
-              <input
-                type="date"
-                name="validTo"
-                value={filters.validTo || ''}
-                onChange={handleInputChange}
-                className="filter-input"
-              />
-            </div>
+            {/* Discount and date range filters removed per admin request */}
 
             {/* Has Redemptions Filter */}
             <div className="filter-group">
@@ -250,18 +182,7 @@ const DealFilters = ({ filters, onFilterChange, onSearch, businesses = [] }) => 
               </select>
             </div>
 
-            <div className="filter-group">
-              <label>Sort Order</label>
-              <select
-                name="sortOrder"
-                value={filters.sortOrder || 'desc'}
-                onChange={handleInputChange}
-                className="filter-select"
-              >
-                <option value="desc">Descending</option>
-                <option value="asc">Ascending</option>
-              </select>
-            </div>
+            {/* Sort Order control removed from UI (defaults preserved in logic) */}
           </div>
         )}
 

@@ -25,7 +25,9 @@ const MerchantManagementEnhanced = () => {
     pendingApprovals: 0,
     activeMerchants: 0,
     suspendedMerchants: 0,
-    rejectedMerchants: 0
+    rejectedMerchants: 0,
+    expiredMerchants: 0,
+    expiringSoonMerchants: 0
   });
   const [selectedMerchant, setSelectedMerchant] = useState(null);
   const [showAddMerchant, setShowAddMerchant] = useState(false);
@@ -102,7 +104,9 @@ const MerchantManagementEnhanced = () => {
           pendingApprovals: 0,
           activeMerchants: 0,
           suspendedMerchants: 0,
-          rejectedMerchants: 0
+          rejectedMerchants: 0,
+          expiredMerchants: 0,
+          expiringSoonMerchants: 0
         });
       }
     } catch (err) {
@@ -958,6 +962,14 @@ const MerchantManagementEnhanced = () => {
         <div className="merchant-stat">
           <div className="stat-label">Rejected</div>
           <div className="stat-value">{stats.rejectedMerchants}</div>
+        </div>
+        <div className="merchant-stat expired">
+          <div className="stat-label">Expired Partners</div>
+          <div className="stat-value">{stats.expiredMerchants}</div>
+        </div>
+        <div className="merchant-stat expiring-soon">
+          <div className="stat-label">Expiring Soon</div>
+          <div className="stat-value">{stats.expiringSoonMerchants}</div>
         </div>
       </div>
 

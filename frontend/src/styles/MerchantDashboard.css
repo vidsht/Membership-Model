@@ -2472,7 +2472,7 @@ background: white;
 
 .info-item {
   display: flex;
-  flex-direction: column;
+  /* flex-direction: column; */
   gap: 0.3rem;
 }
 
@@ -2957,7 +2957,6 @@ background: white;
 }
 
 .deals-table th, .redemptions-table th {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   padding: 1rem;
   text-align: left;
