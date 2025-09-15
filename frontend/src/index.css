@@ -60,8 +60,9 @@ body {
 }
 
 .logo img {
-    height: 70px;
-    width: 210px;
+    height: 60px;
+    /* width: 210px; */
+    width: 172px;
 } 
 
 nav ul {

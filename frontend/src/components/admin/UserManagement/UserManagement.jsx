@@ -124,7 +124,9 @@ const UserManagement = () => {
     totalUsers: 0,
     pendingApprovals: 0,
     activeUsers: 0,
-    suspendedUsers: 0
+    suspendedUsers: 0,
+    expiredUsers: 0,
+    expiringSoonUsers: 0
   });
 
   // Utility functions (useCallback)
@@ -162,7 +164,9 @@ const UserManagement = () => {
           totalUsers: 0,
           pendingApprovals: 0,
           activeUsers: 0,
-          suspendedUsers: 0
+          suspendedUsers: 0,
+          expiredUsers: 0,
+          expiringSoonUsers: 0
         });
       }
     } catch (err) {
@@ -832,6 +836,14 @@ const UserManagement = () => {
         <div className="user-stat">
           <div className="stat-label">Suspended Users</div>
           <div className="stat-value">{stats.suspendedUsers}</div>
+        </div>
+        <div className="user-stat expired">
+          <div className="stat-label">Expired Users</div>
+          <div className="stat-value">{stats.expiredUsers}</div>
+        </div>
+        <div className="user-stat expiring-soon">
+          <div className="stat-label">Expiring Soon</div>
+          <div className="stat-value">{stats.expiringSoonUsers}</div>
         </div>
       </div>
 
