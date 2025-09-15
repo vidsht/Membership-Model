@@ -29,6 +29,10 @@ const MerchantManagementEnhanced = () => {
     expiredMerchants: 0,
     expiringSoonMerchants: 0
   });
+
+  // Merchant plans state for filter dropdown
+  const [merchantPlans, setMerchantPlans] = useState([]);
+  const [plansLoading, setPlansLoading] = useState(true);
   const [selectedMerchant, setSelectedMerchant] = useState(null);
   const [showAddMerchant, setShowAddMerchant] = useState(false);
   const [showMerchantDetails, setShowMerchantDetails] = useState(false);
@@ -85,15 +89,16 @@ const MerchantManagementEnhanced = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   // Removed confirmDialog state (delete functionality)
 
-  // Fetch stats only once on mount
+  // Fetch stats and plans only once on mount
   useEffect(() => {
     fetchMerchantStats();
-  }, []);
+    fetchMerchantPlans();
+  }, [fetchMerchantStats, fetchMerchantPlans]);
 
   // Fetch merchants when filters, page, or limit change
   useEffect(() => {
     fetchMerchants();
-  }, [filters, pagination.page, pagination.limit]);
+  }, [fetchMerchants, filters, pagination.page, pagination.limit]);
 
   const fetchMerchantStats = useCallback(async () => {
     try {
@@ -112,6 +117,21 @@ const MerchantManagementEnhanced = () => {
     } catch (err) {
       console.error('Failed to fetch merchant statistics:', err);
       // Keep existing stats on error
+    }
+  }, []);
+
+  const fetchMerchantPlans = useCallback(async () => {
+    try {
+      setPlansLoading(true);
+      const response = await api.get('/admin/plans?userType=merchant');
+      if (response.data.success) {
+        setMerchantPlans(response.data.plans || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch merchant plans:', err);
+      // Keep empty array on error
+    } finally {
+      setPlansLoading(false);
     }
   }, []);
 
@@ -1105,9 +1125,9 @@ const MerchantManagementEnhanced = () => {
             onFilterChange={handleFilterChange}
             onClearFilters={handleClearFilters}
             onExport={handleExportMerchants}
-            loading={loading}
+            loading={loading || plansLoading}
             referenceData={{
-              plans: [] // TODO: pass actual merchant plans if available, else fallback to []
+              plans: merchantPlans // Pass actual merchant plans from state
             }}
           />
 

@@ -59,23 +59,46 @@ const Activities = () => {
   const getActivityIcon = (type) => {
     switch (type) {
       case 'user_registered':
+      case 'merchant_registered':
         return 'fas fa-user-plus';
       case 'user_approved':
+      case 'user_accepted':
         return 'fas fa-check-circle';
       case 'user_rejected':
         return 'fas fa-times-circle';
       case 'user_suspended':
         return 'fas fa-ban';
+      case 'user_pending':
+        return 'fas fa-clock';
       case 'business_registered':
         return 'fas fa-store';
       case 'business_approved':
         return 'fas fa-handshake';
       case 'deal_created':
+      case 'deal_active':
         return 'fas fa-tag';
       case 'deal_updated':
         return 'fas fa-edit';
+      case 'deal_approved':
+        return 'fas fa-check-circle';
+      case 'deal_rejected':
+        return 'fas fa-times-circle';
+      case 'deal_expired':
+        return 'fas fa-calendar-times';
+      case 'deal_expiring':
+        return 'fas fa-exclamation-triangle';
       case 'plan_assigned':
         return 'fas fa-crown';
+      case 'plan_expired':
+        return 'fas fa-calendar-times';
+      case 'plan_expiring':
+        return 'fas fa-exclamation-triangle';
+      case 'redemption_requested':
+        return 'fas fa-shopping-cart';
+      case 'redemption_approved':
+        return 'fas fa-check';
+      case 'redemption_rejected':
+        return 'fas fa-times';
       case 'role_assigned':
         return 'fas fa-user-shield';
       case 'login':
@@ -90,17 +113,31 @@ const Activities = () => {
   const getActivityColor = (type) => {
     switch (type) {
       case 'user_approved':
+      case 'user_accepted':
       case 'business_approved':
+      case 'deal_approved':
+      case 'deal_active':
+      case 'redemption_approved':
         return 'success';
       case 'user_rejected':
       case 'user_suspended':
+      case 'deal_rejected':
+      case 'redemption_rejected':
         return 'danger';
       case 'user_registered':
+      case 'merchant_registered':
       case 'business_registered':
+      case 'user_pending':
+      case 'redemption_requested':
         return 'info';
       case 'deal_created':
       case 'deal_updated':
+      case 'deal_expiring':
+      case 'plan_expiring':
         return 'warning';
+      case 'deal_expired':
+      case 'plan_expired':
+        return 'danger';
       case 'plan_assigned':
       case 'role_assigned':
         return 'primary';
