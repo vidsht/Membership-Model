@@ -28,7 +28,8 @@ const AdminDashboard = () => {
     totalRevenue: 0,
     totalDeals: 0,
     totalPlans: 0,
-    planSubscribers: 0
+    planSubscribers: 0,
+    totalRedemptions: 0
   });
   
   const [recentActivities, setRecentActivities] = useState([]);
@@ -59,15 +60,49 @@ const AdminDashboard = () => {
   // Helper function to get activity icon
   const getActivityIcon = (type) => {
     switch (type) {
-      case 'user_registered': return 'fas fa-user-plus';
-      case 'user_approved': return 'fas fa-check-circle';
-      case 'user_rejected': return 'fas fa-times-circle';
-      case 'business_registered': return 'fas fa-store';
-      case 'business_approved': return 'fas fa-handshake';
-      case 'deal_created': return 'fas fa-tag';
-      case 'plan_assigned': return 'fas fa-crown';
-      case 'role_assigned': return 'fas fa-user-shield';
-      default: return 'fas fa-info-circle';
+      case 'user_registered':
+      case 'merchant_registered':
+        return 'fas fa-user-plus';
+      case 'user_approved':
+      case 'user_accepted':
+        return 'fas fa-check-circle';
+      case 'user_rejected':
+        return 'fas fa-times-circle';
+      case 'user_suspended':
+        return 'fas fa-ban';
+      case 'user_pending':
+        return 'fas fa-clock';
+      case 'business_registered':
+        return 'fas fa-store';
+      case 'business_approved':
+        return 'fas fa-handshake';
+      case 'deal_created':
+      case 'deal_active':
+        return 'fas fa-tag';
+      case 'deal_approved':
+        return 'fas fa-check-circle';
+      case 'deal_rejected':
+        return 'fas fa-times-circle';
+      case 'deal_expired':
+        return 'fas fa-calendar-times';
+      case 'deal_expiring':
+        return 'fas fa-exclamation-triangle';
+      case 'plan_assigned':
+        return 'fas fa-crown';
+      case 'plan_expired':
+        return 'fas fa-calendar-times';
+      case 'plan_expiring':
+        return 'fas fa-exclamation-triangle';
+      case 'redemption_requested':
+        return 'fas fa-shopping-cart';
+      case 'redemption_approved':
+        return 'fas fa-check';
+      case 'redemption_rejected':
+        return 'fas fa-times';
+      case 'role_assigned':
+        return 'fas fa-user-shield';
+      default:
+        return 'fas fa-info-circle';
     }
   };
 
@@ -144,8 +179,10 @@ const AdminDashboard = () => {
         // Ensure we have a totalDeals value (safe fallback to 0)
         if (dealsStatsRes && dealsStatsRes.data && dealsStatsRes.data.stats) {
           baseStats.totalDeals = typeof dealsStatsRes.data.stats.totalDeals !== 'undefined' ? dealsStatsRes.data.stats.totalDeals : 0;
+          baseStats.totalRedemptions = typeof dealsStatsRes.data.stats.totalRedemptions !== 'undefined' ? dealsStatsRes.data.stats.totalRedemptions : 0;
         } else {
           baseStats.totalDeals = 0;
+          baseStats.totalRedemptions = 0;
         }
 
         setStats(baseStats);
@@ -268,6 +305,16 @@ const AdminDashboard = () => {
           <div className="stat-info">
             <h3>{stats.planSubscribers}</h3>
             <p>Plan Subscribers</p>
+          </div>
+        </div>
+        
+        <div className="stat-card">
+          <div className="stat-icon redemptions">
+            <i className="fas fa-check-circle"></i>
+          </div>
+          <div className="stat-info">
+            <h3>{stats.totalRedemptions}</h3>
+            <p>Total Redemptions</p>
           </div>
         </div>      </div>
 

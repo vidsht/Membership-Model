@@ -26,6 +26,7 @@ const PlanSettings = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSeedingPlans, setIsSeedingPlans] = useState(false);
   const [showSeedConfirmation, setShowSeedConfirmation] = useState(false);
+  const [showSeedSuccess, setShowSeedSuccess] = useState(false);
   const [activeTab, setActiveTab] = useState('user');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -183,6 +184,7 @@ const PlanSettings = () => {
       try {
         await api.post('/admin/plans/seed', { force: true });
         showNotification('Default plans created successfully. All existing plans have been replaced.', 'success');
+        setShowSeedSuccess(true);
         fetchPlans();
         fetchPlanStats();
         fetchPlanSubscriptionStats();
@@ -601,6 +603,46 @@ const PlanSettings = () => {
               >
                 <i className={`fas ${isSeedingPlans ? 'fa-spinner fa-spin' : 'fa-seedling'}`}></i>
                 {isSeedingPlans ? 'Seeding Plans...' : 'Yes, Seed Default Plans'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Seed Plans Success Confirmation Modal */}
+      {showSeedSuccess && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h3>
+                <i className="fas fa-check-circle text-success"></i>
+                Plans Seeded Successfully
+              </h3>
+              <button 
+                className="modal-close" 
+                onClick={() => setShowSeedSuccess(false)}
+              >
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="success-message">
+                <p><strong>✅ Default plans have been successfully created!</strong></p>
+                <p>All existing plans have been replaced with the default plan structure.</p>
+                <ul>
+                  <li>User plans and business plans are now available</li>
+                  <li>Existing subscribers maintain their current plan assignments</li>
+                  <li>Plan statistics have been updated</li>
+                </ul>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button 
+                className="button primary" 
+                onClick={() => setShowSeedSuccess(false)}
+              >
+                <i className="fas fa-check"></i>
+                Continue
               </button>
             </div>
           </div>
