@@ -118,31 +118,33 @@ Click to view full details: ${businessUrl}
 
 Discover quality services and support our community businesses! 🇮🇳🇬🇭`;
     
-    // Check if Web Share API is available (mobile devices)
+    // Check if Web Share API is available and use it consistently
     if (navigator.share) {
       try {
-        await navigator.share({
+        const shareData = {
           title: `${businessName} - Indians in Ghana Business Directory`,
           text: shareText,
           url: businessUrl
-        });
+        };
+        
+        await navigator.share(shareData);
+        return;
       } catch (error) {
-        console.log('Error sharing:', error);
-        // Fallback to copying formatted text with URL
-        copyBusinessToClipboard(shareText, businessName);
+        console.log('Error sharing via Web Share API:', error);
+        // Fall through to clipboard method
       }
-    } else {
-      // Desktop fallback - copy formatted text with URL
-      copyBusinessToClipboard(shareText, businessName);
     }
+    
+    // Fallback: Always copy the full formatted text with URL
+    copyBusinessToClipboard(shareText, businessName);
   };
 
   // Copy business link to clipboard
   const copyBusinessToClipboard = async (text, businessName) => {
     try {
       await navigator.clipboard.writeText(text);
-      // Show temporary success feedback (you could add a toast notification here)
-      console.log(`Business directory link copied for ${businessName}`);
+      // Show visual feedback to user
+      alert(`📋 Business information copied to clipboard!\n\nYou can now paste this in any messaging app to share "${businessName}" with the full details and link.`);
     } catch (error) {
       console.error('Failed to copy to clipboard:', error);
       // Fallback for older browsers
@@ -152,7 +154,7 @@ Discover quality services and support our community businesses! 🇮🇳🇬🇭
       textArea.select();
       document.execCommand('copy');
       document.body.removeChild(textArea);
-      console.log(`Business directory link copied for ${businessName}`);
+      alert(`📋 Business information copied to clipboard!\n\nYou can now paste this in any messaging app to share "${businessName}" with the full details and link.`);
     }
   };
 

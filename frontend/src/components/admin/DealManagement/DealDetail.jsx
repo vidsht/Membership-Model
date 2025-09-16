@@ -81,11 +81,13 @@ const DealDetail = () => {
         
         // Calculate unique users (approved redemptions only)
         const approvedRedemptions = redemptionsData.filter(r => r.status === 'approved');
+        const pendingRedemptions = redemptionsData.filter(r => r.status === 'pending');
         const uniqueUsers = new Set(approvedRedemptions.map(r => r.userId || r.user_id)).size;
         
         const stats = {
           total: redemptionsData.length,
           uniqueUsers: uniqueUsers,
+          pending: pendingRedemptions.length,
           today: redemptionsData.filter(r => new Date(r.redeemedAt) >= today).length,
           thisWeek: redemptionsData.filter(r => new Date(r.redeemedAt) >= thisWeek).length,
           thisMonth: redemptionsData.filter(r => new Date(r.redeemedAt) >= thisMonth).length
@@ -458,6 +460,10 @@ const DealDetail = () => {
                   <div style={{background: '#f3e5f5', padding: '15px', borderRadius: '6px', border: '1px solid #ce93d8', textAlign: 'center'}}>
                     <div style={{fontSize: '24px', fontWeight: 'bold', color: '#7b1fa2', marginBottom: '5px'}}>{redemptionStats.uniqueUsers || 0}</div>
                     <div style={{color: '#424242', fontSize: '14px'}}>Unique Users</div>
+                  </div>
+                  <div style={{background: '#fff8e1', padding: '15px', borderRadius: '6px', border: '1px solid #ffcc02', textAlign: 'center'}}>
+                    <div style={{fontSize: '24px', fontWeight: 'bold', color: '#ff8f00', marginBottom: '5px'}}>{redemptionStats.pending || 0}</div>
+                    <div style={{color: '#424242', fontSize: '14px'}}>Pending</div>
                   </div>
                   {deal.member_limit && (
                     <div style={{background: deal.member_limit <= (redemptionStats.uniqueUsers || 0) ? '#ffebee' : '#e8f5e8', padding: '15px', borderRadius: '6px', border: `1px solid ${deal.member_limit <= (redemptionStats.uniqueUsers || 0) ? '#ef5350' : '#81c784'}`, textAlign: 'center'}}>

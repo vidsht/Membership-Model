@@ -376,23 +376,25 @@ Click to view details: ${dealUrl}
 
 Join Indians in Ghana Community for exclusive deals!`;
     
-    // Check if Web Share API is available (mobile devices)
+    // Check if Web Share API is available (primarily on mobile devices)
     if (navigator.share) {
       try {
-        await navigator.share({
+        const shareData = {
           title: `${deal.title} - ${deal.businessName}`,
           text: shareText,
           url: dealUrl
-        });
+        };
+        
+        await navigator.share(shareData);
+        return; // Successfully shared via Web Share API
       } catch (error) {
-        console.log('Error sharing:', error);
-        // Fallback to copying URL with text
-        copyToClipboard(shareText, deal.title);
+        console.log('Error sharing via Web Share API:', error);
+        // User cancelled or sharing failed, fall through to clipboard method
       }
-    } else {
-      // Desktop fallback - copy formatted text with URL
-      copyToClipboard(shareText, deal.title);
     }
+    
+    // Fallback for desktop or when Web Share API fails: copy full formatted text
+    copyToClipboard(shareText, deal.title);
   };
 
   // Copy to clipboard function
@@ -402,7 +404,7 @@ Join Indians in Ghana Community for exclusive deals!`;
       // Show a temporary success message
       setRedeemStatus({ 
         ...redeemStatus, 
-        [dealTitle]: '📋 Deal link copied to clipboard!' 
+        [dealTitle]: '📋 Deal information copied to clipboard! You can now paste this in any messaging app to share the full deal details and link.' 
       });
       // Clear the message after 3 seconds
       setTimeout(() => {
@@ -424,7 +426,7 @@ Join Indians in Ghana Community for exclusive deals!`;
       
       setRedeemStatus({ 
         ...redeemStatus, 
-        [dealTitle]: '📋 Deal link copied!' 
+        [dealTitle]: '📋 Deal information copied to clipboard! You can now paste this in any messaging app to share the full deal details and link.' 
       });
       setTimeout(() => {
         setRedeemStatus(prev => {

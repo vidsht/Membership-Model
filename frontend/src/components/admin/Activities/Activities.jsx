@@ -63,12 +63,16 @@ const Activities = () => {
         return 'fas fa-user-plus';
       case 'user_approved':
       case 'user_accepted':
+      case 'merchant_approved':
         return 'fas fa-check-circle';
       case 'user_rejected':
+      case 'merchant_rejected':
         return 'fas fa-times-circle';
       case 'user_suspended':
+      case 'merchant_suspended':
         return 'fas fa-ban';
       case 'user_pending':
+      case 'merchant_pending':
         return 'fas fa-clock';
       case 'business_registered':
         return 'fas fa-store';
@@ -76,6 +80,7 @@ const Activities = () => {
         return 'fas fa-handshake';
       case 'deal_created':
       case 'deal_active':
+      case 'new_deal_posted':
         return 'fas fa-tag';
       case 'deal_updated':
         return 'fas fa-edit';
@@ -83,22 +88,38 @@ const Activities = () => {
         return 'fas fa-check-circle';
       case 'deal_rejected':
         return 'fas fa-times-circle';
+      case 'deal_inactive':
+        return 'fas fa-pause-circle';
       case 'deal_expired':
         return 'fas fa-calendar-times';
       case 'deal_expiring':
         return 'fas fa-exclamation-triangle';
       case 'plan_assigned':
+      case 'new_plan_assigned':
         return 'fas fa-crown';
       case 'plan_expired':
+      case 'user_plan_expired':
+      case 'merchant_plan_expired':
         return 'fas fa-calendar-times';
       case 'plan_expiring':
+      case 'user_plan_expiring':
+      case 'merchant_plan_expiring':
         return 'fas fa-exclamation-triangle';
       case 'redemption_requested':
+      case 'pending_deal_redemption_by':
         return 'fas fa-shopping-cart';
       case 'redemption_approved':
+      case 'accepting_deal_redemption_by':
         return 'fas fa-check';
       case 'redemption_rejected':
+      case 'rejected_deal_redemption_by':
         return 'fas fa-times';
+      case 'assigned_custom_deal_redemption':
+        return 'fas fa-gift';
+      case 'assigned_custom_deal_limit':
+        return 'fas fa-limit';
+      case 'password_changed':
+        return 'fas fa-key';
       case 'role_assigned':
         return 'fas fa-user-shield';
       case 'login':
@@ -114,33 +135,51 @@ const Activities = () => {
     switch (type) {
       case 'user_approved':
       case 'user_accepted':
+      case 'merchant_approved':
       case 'business_approved':
       case 'deal_approved':
       case 'deal_active':
       case 'redemption_approved':
+      case 'accepting_deal_redemption_by':
         return 'success';
       case 'user_rejected':
       case 'user_suspended':
+      case 'merchant_rejected':
+      case 'merchant_suspended':
       case 'deal_rejected':
+      case 'deal_inactive':
       case 'redemption_rejected':
+      case 'rejected_deal_redemption_by':
         return 'danger';
       case 'user_registered':
       case 'merchant_registered':
       case 'business_registered':
       case 'user_pending':
+      case 'merchant_pending':
       case 'redemption_requested':
+      case 'pending_deal_redemption_by':
         return 'info';
       case 'deal_created':
       case 'deal_updated':
       case 'deal_expiring':
       case 'plan_expiring':
+      case 'user_plan_expiring':
+      case 'merchant_plan_expiring':
+      case 'new_deal_posted':
         return 'warning';
       case 'deal_expired':
       case 'plan_expired':
+      case 'user_plan_expired':
+      case 'merchant_plan_expired':
         return 'danger';
       case 'plan_assigned':
+      case 'new_plan_assigned':
       case 'role_assigned':
+      case 'assigned_custom_deal_redemption':
+      case 'assigned_custom_deal_limit':
         return 'primary';
+      case 'password_changed':
+        return 'warning';
       default:
         return 'secondary';
     }

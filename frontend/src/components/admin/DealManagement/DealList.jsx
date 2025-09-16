@@ -25,7 +25,8 @@ const DealList = ({ onTabChange }) => {
     totalDeals: 0,
     totalRedemptions: 0,
     expiredDeals: 0,
-    pendingDeals: 0
+    pendingDeals: 0,
+    pendingRedemptions: 0
   };
   const [stats, setStats] = useState(emptyDealStats);
   const [isLoading, setIsLoading] = useState(true);
@@ -69,7 +70,8 @@ const DealList = ({ onTabChange }) => {
             totalDeals: s.totalDeals ?? 0,
           totalRedemptions: s.totalRedemptions ?? 0,
           expiredDeals: s.expiredDeals ?? 0,
-          pendingDeals: s.pendingDeals ?? 0
+          pendingDeals: s.pendingDeals ?? 0,
+          pendingRedemptions: s.pendingRedemptions ?? 0
         });
       }
     } catch (error) {
@@ -127,12 +129,13 @@ const DealList = ({ onTabChange }) => {
       const response = await api.get('/admin/deals', { params });
       const dealsData = response.data.deals || [];
       const paginationData = response.data;
+      const total = paginationData.total || paginationData.totalCount || 0;
       
       setDeals(dealsData);
       setPagination(prev => ({
         ...prev,
-        total: paginationData.total || 0,
-        totalPages: Math.ceil((paginationData.total || 0) / pagination.limit)
+        total: total,
+        totalPages: Math.max(1, Math.ceil(total / prev.limit))
       }));
       // Stats are now fetched separately, don't calculate from paginated data
     } catch (error) {
@@ -554,11 +557,16 @@ const DealList = ({ onTabChange }) => {
           <span className="stat-label">Pending Deals</span>
           <span className="stat-value">{stats.pendingDeals}</span>
         </div>
+        <div className="deal-stat">
+          <span className="stat-label">Pending Redemptions</span>
+          <span className="stat-value">{stats.pendingRedemptions}</span>
+        </div>
       </div>      {/* Deal Filters */}
       <DealFilters
         filters={filters}
         onFilterChange={handleFilterChange}
         onSearch={handleSearch}
+        onResetFilters={resetFilters}
         businesses={businesses}
       />
       
@@ -587,7 +595,7 @@ const DealList = ({ onTabChange }) => {
                 const isExpired = new Date(deal.validUntil) < new Date();
                 return (                  <tr key={deal.id}>
                     <td data-label="S.No" className="sno-cell">
-                      {index + 1}
+                      {((pagination.page - 1) * pagination.limit) + index + 1}
                     </td>
                     <td data-label="Deal Title">
                       <Link to={`/admin/deals/${deal.id}`} className="deal-title-link">
@@ -760,12 +768,11 @@ const DealList = ({ onTabChange }) => {
       )}
       
       {/* Pagination */}
-      {pagination && (
+      {pagination && pagination.total > 0 && (
         (() => {
-          const total = (typeof pagination.total === 'number' ? pagination.total : (deals && deals.length) || 0);
-          const limit = pagination.limit || 20;
-          let totalPages = pagination.totalPages || Math.max(1, Math.ceil(total / limit));
-          if (totalPages < 1) totalPages = 1;
+          const total = pagination.total;
+          const limit = pagination.limit || 10;
+          const totalPages = Math.max(1, Math.ceil(total / limit));
           const currentPage = Math.min(Math.max(1, pagination.page || 1), totalPages);
           const startPage = Math.max(1, currentPage - 2);
           const endPage = Math.min(totalPages, currentPage + 2);
@@ -773,7 +780,7 @@ const DealList = ({ onTabChange }) => {
           const pageButtons = [];
           if (startPage > 1) {
             pageButtons.push(
-              <button key={1} onClick={() => handlePageChange(1)} className="pagination-btn btn btn-sm btn-secondary" disabled={total === 0}>1</button>
+              <button key={1} onClick={() => handlePageChange(1)} className="pagination-btn btn btn-sm btn-secondary">1</button>
             );
             if (startPage > 2) pageButtons.push(<span key="dots1" className="pagination-dots">...</span>);
           }
@@ -783,7 +790,6 @@ const DealList = ({ onTabChange }) => {
                 key={i}
                 onClick={() => handlePageChange(i)}
                 className={`pagination-btn btn btn-sm ${i === currentPage ? 'btn-primary active' : 'btn-secondary'}`}
-                disabled={total === 0}
               >
                 {i}
               </button>
@@ -792,21 +798,19 @@ const DealList = ({ onTabChange }) => {
           if (endPage < totalPages) {
             if (endPage < totalPages - 1) pageButtons.push(<span key="dots2" className="pagination-dots">...</span>);
             pageButtons.push(
-              <button key={totalPages} onClick={() => handlePageChange(totalPages)} className="pagination-btn btn btn-sm btn-secondary" disabled={total === 0}>{totalPages}</button>
+              <button key={totalPages} onClick={() => handlePageChange(totalPages)} className="pagination-btn btn btn-sm btn-secondary">{totalPages}</button>
             );
           }
   
-          return (
+          return totalPages > 1 ? (
             <div className="table-pagination pagination-container">
               <div className="pagination-info">
-                {total === 0
-                  ? 'No deals to display.'
-                  : `Showing ${((currentPage - 1) * limit) + 1} to ${Math.min(currentPage * limit, total)} of ${total} deals`}
+                Showing {((currentPage - 1) * limit) + 1} to {Math.min(currentPage * limit, total)} of {total} deals
               </div>
               <div className="pagination-controls">
                 <button
                   onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
-                  disabled={currentPage <= 1 || total === 0}
+                  disabled={currentPage <= 1}
                   className="pagination-btn btn btn-sm btn-secondary"
                 >
                   <i className="fas fa-chevron-left"></i>
@@ -816,7 +820,7 @@ const DealList = ({ onTabChange }) => {
   
                 <button
                   onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
-                  disabled={currentPage >= totalPages || total === 0}
+                  disabled={currentPage >= totalPages}
                   className="pagination-btn btn btn-sm btn-secondary"
                 >
                   <i className="fas fa-chevron-right"></i>
@@ -826,7 +830,6 @@ const DealList = ({ onTabChange }) => {
                 <select
                   value={limit}
                   onChange={(e) => handlePageSizeChange(parseInt(e.target.value))}
-                  disabled={total === 0}
                 >
                   <option value={10}>10 per page</option>
                   <option value={20}>20 per page</option>
@@ -835,7 +838,7 @@ const DealList = ({ onTabChange }) => {
                 </select>
               </div>
             </div>
-          );
+          ) : null;
         })()
       )}
       
