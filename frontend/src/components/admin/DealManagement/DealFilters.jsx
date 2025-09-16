@@ -10,7 +10,7 @@ import './DealFilters.css';
  * @param {Function} props.onSearch - Callback for search
  * @param {Array} props.businesses - List of businesses for business filter
  */
-const DealFilters = ({ filters, onFilterChange, onSearch, businesses = [] }) => {
+const DealFilters = ({ filters, onFilterChange, onSearch, onResetFilters, businesses = [] }) => {
   const { getDealCategoryOptions } = useDynamicFields();
   const [showFilters, setShowFilters] = useState(true);
 
@@ -34,17 +34,22 @@ const DealFilters = ({ filters, onFilterChange, onSearch, businesses = [] }) => 
    * Clears all filters to default values
    */
   const clearFilters = () => {
-    onFilterChange({
-      status: 'all',
-      category: 'all',
-      businessId: 'all',
-      search: '',
-      minDiscount: '',
-      maxDiscount: '',
-      hasRedemptions: 'all',
-      sortBy: 'created_at',
-      sortOrder: 'desc'
-    });
+    if (onResetFilters) {
+      onResetFilters();
+    } else {
+      // Fallback if onResetFilters is not provided
+      onFilterChange({
+        status: 'all',
+        category: 'all',
+        businessId: 'all',
+        search: '',
+        minDiscount: '',
+        maxDiscount: '',
+        hasRedemptions: 'all',
+        sortBy: 'created_at',
+        sortOrder: 'desc'
+      });
+    }
   };
 
   /**
@@ -69,10 +74,6 @@ const DealFilters = ({ filters, onFilterChange, onSearch, businesses = [] }) => 
             className="search-input"
           />
         </div>
-        <button type="submit" className="btn btn-primary search-btn">
-          <i className="fas fa-search"></i>
-          Search
-        </button>
       </form>
 
       {/* Filters Section */}
@@ -190,7 +191,7 @@ const DealFilters = ({ filters, onFilterChange, onSearch, businesses = [] }) => 
         <div className="filter-actions">
           <button 
             type="button" 
-            className="btn btn-secondary clear-btn"
+            className="clear-btn"
             onClick={clearFilters}
           >
             <i className="fas fa-times"></i>
@@ -198,7 +199,7 @@ const DealFilters = ({ filters, onFilterChange, onSearch, businesses = [] }) => 
           </button>
           <button 
             type="button" 
-            className="btn btn-primary apply-btn"
+            className="apply-btn"
             onClick={applyFilters}
           >
             <i className="fas fa-check"></i>

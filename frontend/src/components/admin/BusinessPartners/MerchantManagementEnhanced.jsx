@@ -90,15 +90,19 @@ const MerchantManagementEnhanced = () => {
   // Removed confirmDialog state (delete functionality)
 
   // Fetch stats and plans only once on mount
+  // Note: avoid listing fetch functions in deps to prevent "cannot access before initialization" TDZ errors
   useEffect(() => {
     fetchMerchantStats();
     fetchMerchantPlans();
-  }, [fetchMerchantStats, fetchMerchantPlans]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Fetch merchants when filters, page, or limit change
+  // Remove function reference from deps to avoid TDZ; include explicit deps that trigger refetch
   useEffect(() => {
     fetchMerchants();
-  }, [fetchMerchants, filters, pagination.page, pagination.limit]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters, pagination.page, pagination.limit]);
 
   const fetchMerchantStats = useCallback(async () => {
     try {

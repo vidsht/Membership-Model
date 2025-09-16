@@ -192,11 +192,12 @@ router.get('/activities', auth, admin, async (req, res) => {
           userName,
           userEmail,
           userType,
-          metadata,
           timestamp,
-          icon
+          icon,
+          color
         FROM activities
         ${whereClause}
+        AND title IS NOT NULL
         ORDER BY timestamp DESC
         LIMIT ? OFFSET ?
       `;
@@ -211,7 +212,8 @@ router.get('/activities', auth, admin, async (req, res) => {
         description: act.description,
         timestamp: act.timestamp,
         icon: act.icon,
-        metadata: act.metadata ? JSON.parse(act.metadata) : null,
+        color: act.color,
+        metadata: null, // No metadata column in current table structure
         user: act.userId ? {
           id: act.userId,
           fullName: act.userName,
@@ -221,7 +223,8 @@ router.get('/activities', auth, admin, async (req, res) => {
       }));
 
       // Get total count for pagination
-      const countResult = await queryAsync(`SELECT COUNT(*) as total FROM activities ${whereClause}`, params.slice(0, -2));
+      const countWhereClause = whereClause + ' AND title IS NOT NULL';
+      const countResult = await queryAsync(`SELECT COUNT(*) as total FROM activities ${countWhereClause}`, params.slice(0, -2));
       const total = countResult[0]?.total || 0;
 
       return res.json({ 
@@ -3153,12 +3156,13 @@ router.get('/deals/statistics', auth, admin, async (req, res) => {
       : 'SELECT COUNT(*) as count FROM deals WHERE status = "expired"';
     const pendingQuery = 'SELECT COUNT(*) as count FROM deals WHERE status IN ("pending", "pending_approval")';
 
-    const [totalDealsResult, activeDealsResult, expiredDealsResult, pendingDealsResult, redemptionsResult] = await Promise.all([
+    const [totalDealsResult, activeDealsResult, expiredDealsResult, pendingDealsResult, redemptionsResult, pendingRedemptionsResult] = await Promise.all([
       queryAsync(totalQuery),
       queryAsync(activeQuery),
       queryAsync(expiredQuery),
       queryAsync(pendingQuery),
-      redemptionsColumn ? queryAsync(`SELECT COALESCE(SUM(${redemptionsColumn}),0) as total FROM deals`) : Promise.resolve([{ total: 0 }])
+      redemptionsColumn ? queryAsync(`SELECT COALESCE(SUM(${redemptionsColumn}),0) as total FROM deals`) : Promise.resolve([{ total: 0 }]),
+      redemptionsTableExists ? queryAsync('SELECT COUNT(*) as count FROM deal_redemptions WHERE status = "pending"') : Promise.resolve([{ count: 0 }])
     ]);
 
     const statistics = {
@@ -3166,7 +3170,8 @@ router.get('/deals/statistics', auth, admin, async (req, res) => {
       activeDeals: activeDealsResult[0]?.count || 0,
       expiredDeals: expiredDealsResult[0]?.count || 0,
       pendingDeals: pendingDealsResult[0]?.count || 0,
-      totalRedemptions: redemptionsResult[0]?.total || 0
+      totalRedemptions: redemptionsResult[0]?.total || 0,
+      pendingRedemptions: pendingRedemptionsResult[0]?.count || 0
     };
 
     res.json({
@@ -3281,14 +3286,26 @@ router.get('/deals', auth, admin, async (req, res) => {
           whereClause += ' AND EXISTS (SELECT 1 FROM deal_redemptions dr WHERE dr.dealId = d.id)';
         } else if (hasRedemptions === 'no') {
           whereClause += ' AND NOT EXISTS (SELECT 1 FROM deal_redemptions dr WHERE dr.dealId = d.id)';
+        } else if (hasRedemptions === 'high') {
+          whereClause += ' AND (SELECT COUNT(*) FROM deal_redemptions dr WHERE dr.dealId = d.id) >= 10';
         }
       }
     }
 
     // Validate sortBy to prevent SQL injection
-    const allowedSortColumns = ['created_at', 'title', 'status', 'category', 'validUntil'];
+    const allowedSortColumns = ['created_at', 'title', 'status', 'category', 'validUntil', 'discount', 'redemptions'];
     const validSortBy = allowedSortColumns.includes(sortBy) ? sortBy : 'created_at';
     const validSortOrder = sortOrder.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
+
+    // Build the ORDER BY clause based on sort column
+    let orderByClause;
+    if (sortBy === 'discount') {
+      orderByClause = `d.discountValue ${validSortOrder}`;
+    } else if (sortBy === 'redemptions') {
+      orderByClause = `(SELECT COUNT(*) FROM deal_redemptions dr WHERE dr.dealId = d.id) ${validSortOrder}`;
+    } else {
+      orderByClause = `d.${validSortBy} ${validSortOrder}`;
+    }
 
     const businessTableExists = await tableExists('businesses');
     
@@ -3299,12 +3316,13 @@ router.get('/deals', auth, admin, async (req, res) => {
           d.*, 
           b.businessName,
           u.fullName as merchantName,
-          u.email as merchantEmail
+          u.email as merchantEmail,
+          (SELECT COUNT(*) FROM deal_redemptions dr WHERE dr.dealId = d.id) as redemptionCount
         FROM deals d
         LEFT JOIN businesses b ON d.businessId = b.businessId
         LEFT JOIN users u ON d.businessId = u.id
         ${whereClause}
-        ORDER BY d.${validSortBy} ${validSortOrder}
+        ORDER BY ${orderByClause}
         LIMIT ? OFFSET ?
       `;
     } else {
@@ -3313,10 +3331,11 @@ router.get('/deals', auth, admin, async (req, res) => {
           d.*,
           NULL as merchantName,
           NULL as merchantEmail,
-          NULL as businessName
+          NULL as businessName,
+          (SELECT COUNT(*) FROM deal_redemptions dr WHERE dr.dealId = d.id) as redemptionCount
         FROM deals d
         ${whereClause}
-        ORDER BY d.${validSortBy} ${validSortOrder}
+        ORDER BY ${orderByClause}
         LIMIT ? OFFSET ?
       `;
     }

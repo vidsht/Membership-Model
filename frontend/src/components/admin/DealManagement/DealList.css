@@ -137,44 +137,38 @@
 /* Deals Table */
 .deals-table-container {
   overflow-x: auto;
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  background: white;
+  border: 1px solid #ddd;
 }
 
 .deals-table {
   width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
+  border-collapse: collapse;
 }
 
 .deals-table th {
-  background-color: #f5f7fa;
-  padding: 12px 15px;
+  background: #f8f9fa;
+  padding: 6px 8px;
   text-align: left;
-  font-weight: 600;
+  font-weight: 500;
+  font-size: 0.8rem;
   color: #333;
-  border-bottom: 1px solid #e0e0e0;
-  position: sticky;
-  top: 0;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  white-space: nowrap;
+  border-bottom: 1px solid #ddd;
 }
 
 .deals-table th:hover {
-  background-color: #ebeef2;
+  background: #e9ecef;
 }
 
 .deals-table th i {
-  margin-left: 5px;
-  font-size: 12px;
+  margin-left: 3px;
+  font-size: 10px;
 }
 
 .deals-table td {
-  padding: 12px 15px;
+  padding: 6px 8px;
   border-bottom: 1px solid #eee;
-  vertical-align: middle;
+  font-size: 0.75rem;
 }
 
 .deals-table tr:last-child td {
@@ -182,27 +176,27 @@
 }
 
 .deals-table tr:hover {
-  background-color: #f9fafc;
+  background: #f8f9fa;
 }
 
 /* S.No Column Styling */
 .deals-table th:nth-child(1),
 .deals-table td:nth-child(1) {
-  width: 60px;
+  width: 40px;
   text-align: center;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .sno-cell {
   color: #666;
-  font-size: 0.9rem;
+  font-size: 0.7rem;
 }
 
 /* Status Badge */
 .status-badge {
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.7rem;
   font-weight: 500;
   text-transform: capitalize;
   display: inline-block;
@@ -445,5 +439,95 @@
 
   .page-header h1 {
     font-size: 20px;
+  }
+}
+
+/* Pagination Styles */
+.table-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 20px;
+  padding: 16px 0;
+  border-top: 1px solid #e9ecef;
+}
+
+.pagination-info {
+  font-size: 0.875rem;
+  color: #6c757d;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pagination-btn {
+  padding: 6px 12px;
+  font-size: 0.875rem;
+  border: 1px solid #dee2e6;
+  background: white;
+  color: #495057;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: #f8f9fa;
+  border-color: #adb5bd;
+}
+
+.pagination-btn.active {
+  background: #007bff;
+  border-color: #007bff;
+  color: white;
+}
+
+.pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination-dots {
+  padding: 6px 8px;
+  color: #6c757d;
+  font-size: 0.875rem;
+}
+
+.page-size-selector {
+  display: flex;
+  align-items: center;
+  font-size: 0.875rem;
+  color: #6c757d;
+}
+
+.page-size-selector select {
+  margin-left: 8px;
+  padding: 4px 8px;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  background: white;
+  font-size: 0.875rem;
+}
+
+@media (max-width: 768px) {
+  .table-pagination {
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+  }
+  
+  .pagination-controls {
+    order: 1;
+  }
+  
+  .pagination-info {
+    order: 2;
+  }
+  
+  .page-size-selector {
+    order: 3;
   }
 }

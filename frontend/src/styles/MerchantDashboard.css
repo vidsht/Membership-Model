@@ -945,6 +945,10 @@
   margin-bottom: 3rem;
 }
 
+.stats-heading{
+  color: #821515;
+}
+
 .stat-card {
   background: white;
   padding: 15px;
@@ -1248,7 +1252,7 @@ background: white;
 }
 
 .plan-key {
-  color: white;
+    color: #4C0707;
   padding: 0.25rem 0.75rem;
   border-radius: 20px;
   font-size: 0.8rem;
@@ -1527,7 +1531,7 @@ background: white;
 }
 
 .btn-accent {
-  background: linear-gradient(45deg, #43e97b 0%, #38f9d7 100%);
+  background: linear-gradient(45deg, #5B0E0E 0%, #8D1515 100%);
   color: white;
 }
 
@@ -1932,7 +1936,7 @@ background: white;
 
 .trend-item i {
   font-size: 2rem;
-  color: #667eea;
+  color: #8D1616;
 }
 
 .trend-number {
@@ -2148,7 +2152,7 @@ background: white;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: #2c3e50;
+  color: #BF9D77;
   font-size: 1.5rem;
 }
 
@@ -2197,7 +2201,7 @@ background: white;
   width: 50px;
   height: 50px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #3498db, #2980b9);
+  background: linear-gradient(135deg, #510909, #8D1616);
   color: white;
   margin-bottom: 1rem;
   font-size: 1.5rem;
@@ -2874,7 +2878,7 @@ background: white;
 }
 
 .analytics-modal .modal-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #520A0A 0%, #5B0E0E 100%);
   color: white;
   border-radius: 12px 12px 0 0;
 }
@@ -2907,7 +2911,7 @@ background: white;
 .analytics-icon {
   width: 60px;
   height: 60px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #510909 0%, #8D1616 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -2957,7 +2961,7 @@ background: white;
 }
 
 .deals-table th, .redemptions-table th {
-  color: white;
+  color: #DAB489;
   padding: 1rem;
   text-align: left;
   font-weight: 600;

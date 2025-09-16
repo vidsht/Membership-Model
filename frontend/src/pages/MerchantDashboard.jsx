@@ -1147,21 +1147,21 @@ ${userInfo?.fullName || userInfo?.name || user?.fullName || user?.name || 'Merch
             </div>
             <div className="plan-features-preview">
               <div className="feature-items">
-                <span className={`feature-item ${isStatisticsDisabled(userInfo?.membershipType) ? 'disabled' : 'enabled'}`}>
-                  <i className={`fas ${isStatisticsDisabled(userInfo?.membershipType) ? 'fa-ban' : 'fa-chart-bar'}`}></i>
-                  Statistics {isStatisticsDisabled(userInfo?.membershipType) ? '✗' : '✓'}
-                </span>
                 <span className={`feature-item ${isAnalyticsDisabled(userInfo?.membershipType) ? 'disabled' : 'enabled'}`}>
                   <i className={`fas ${isAnalyticsDisabled(userInfo?.membershipType) ? 'fa-ban' : 'fa-chart-line'}`}></i>
                   Analytics {isAnalyticsDisabled(userInfo?.membershipType) ? '✗' : '✓'}
                 </span>
-                <span className={`feature-item ${featureAccess.dealPosting !== 'none' ? 'enabled' : 'disabled'}`}>
-                  <i className={`fas ${featureAccess.dealPosting !== 'none' ? 'fa-tags' : 'fa-ban'}`}></i>
-                  Deal Posting {featureAccess.dealPosting !== 'none' ? '✓' : '✗'}
+                <span className={`feature-item ${isStatisticsDisabled(userInfo?.membershipType) ? 'disabled' : 'enabled'}`}>
+                  <i className={`fas ${isStatisticsDisabled(userInfo?.membershipType) ? 'fa-ban' : 'fa-chart-bar'}`}></i>
+                  Statistics {isStatisticsDisabled(userInfo?.membershipType) ? '✗' : '✓'}
                 </span>
                 <span className={`feature-item ${isFeaturesDisabled(userInfo?.membershipType) ? 'disabled' : 'enabled'}`}>
                   <i className={`fas ${isFeaturesDisabled(userInfo?.membershipType) ? 'fa-ban' : 'fa-crown'}`}></i>
                   Featured {isFeaturesDisabled(userInfo?.membershipType) ? '✗' : '✓'}
+                </span>
+                <span className={`feature-item ${featureAccess.dealPosting !== 'none' ? 'enabled' : 'disabled'}`}>
+                  <i className={`fas ${featureAccess.dealPosting !== 'none' ? 'fa-tags' : 'fa-ban'}`}></i>
+                  Deal Posting {featureAccess.dealPosting !== 'none' ? '✓' : '✗'}
                 </span>
               </div>
               {isBasicPlan(userInfo?.membershipType) && (
@@ -1177,7 +1177,9 @@ ${userInfo?.fullName || userInfo?.name || user?.fullName || user?.name || 'Merch
       {/* Enhanced Stats Cards - Conditional based on plan and approval status */}
       {(userInfo?.status === 'approved' || (!userInfo?.status && businessInfo?.status !== 'pending')) ? (
         featureAccess.statisticsPanel ? (
-          <div className="stats-grid">
+          <>
+            <h3 className="stats-heading">Deals and Redemption statistics</h3>
+            <div className="stats-grid">
             <div className="stat-card primary">
               <div className="stat-icon">
                 <i className="fas fa-tags"></i>
@@ -1244,6 +1246,7 @@ ${userInfo?.fullName || userInfo?.name || user?.fullName || user?.name || 'Merch
               </div>
             </div>
           </div>
+          </>
         ) : (
           <div className="basic-stats-message">
             <div className="upgrade-prompt">
@@ -2727,7 +2730,7 @@ ${userInfo?.fullName || userInfo?.name || user?.fullName || user?.name || 'Merch
                     id="membershipSearch"
                     type="text"
                     className="form-control"
-                    placeholder="Enter membership number (e.g., USR0 0012 3456 789A)"
+                    placeholder="Enter membership number (e.g., 2025 0012 3456 7895)"
                     value={membershipSearch}
                     onChange={handleMembershipInputChange}
                     autoComplete="off"
