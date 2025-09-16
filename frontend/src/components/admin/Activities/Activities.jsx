@@ -30,9 +30,12 @@ const Activities = () => {
     try {
       setIsLoading(true);
       
-      // No filters applied — request only pagination params
+      // Calculate offset from page number
+      const offset = (pagination.currentPage - 1) * pagination.pageSize;
+      
+      // Request with offset and limit parameters as expected by backend
       const queryParams = new URLSearchParams({
-        page: pagination.currentPage,
+        offset: offset,
         limit: pagination.pageSize
       });
 
@@ -41,8 +44,8 @@ const Activities = () => {
       setActivities(response.data.activities || []);
       setPagination(prev => ({
         ...prev,
-        totalPages: Math.ceil((response.data.totalActivities || 0) / pagination.pageSize),
-        totalActivities: response.data.totalActivities || 0
+        totalPages: Math.ceil((response.data.total || 0) / pagination.pageSize),
+        totalActivities: response.data.total || 0
       }));
     } catch (error) {
       console.error('Error fetching activities:', error);
@@ -260,6 +263,7 @@ const Activities = () => {
           <table className="user-table">
             <thead>
               <tr>
+                <th>#</th>
                 <th>Activity</th>
                 <th>Type</th>
                 <th>User</th>
@@ -269,8 +273,25 @@ const Activities = () => {
               </tr>
             </thead>
             <tbody>
-              {activities.map((activity) => (
+              {activities.map((activity, index) => (
                 <tr key={activity.id}>
+                  <td data-label="#">
+                    <div style={{
+                      background: '#007bff',
+                      color: 'white',
+                      borderRadius: '50%',
+                      width: '32px',
+                      height: '32px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '14px',
+                      fontWeight: 'bold',
+                      margin: '0 auto'
+                    }}>
+                      {(pagination.currentPage - 1) * pagination.pageSize + index + 1}
+                    </div>
+                  </td>
                   <td data-label="Activity">
                     <div className="user-name-cell">
                       <div className="user-avatar">

@@ -197,7 +197,6 @@ router.get('/activities', auth, admin, async (req, res) => {
           color
         FROM activities
         ${whereClause}
-        AND title IS NOT NULL
         ORDER BY timestamp DESC
         LIMIT ? OFFSET ?
       `;
@@ -205,26 +204,61 @@ router.get('/activities', auth, admin, async (req, res) => {
       params.push(limit, offset);
       const activities = await queryAsync(activitiesQuery, params);
 
-      const formatted = activities.map(act => ({
-        id: act.id,
-        type: act.type,
-        title: act.title,
-        description: act.description,
-        timestamp: act.timestamp,
-        icon: act.icon,
-        color: act.color,
-        metadata: null, // No metadata column in current table structure
-        user: act.userId ? {
-          id: act.userId,
-          fullName: act.userName,
-          email: act.userEmail,
-          userType: act.userType
-        } : null
-      }));
+      const formatted = activities.map(act => {
+        // Provide default titles for activities that don't have them
+        let title = act.title;
+        if (!title) {
+          switch (act.type) {
+            case 'user_approved':
+              title = 'User Approved';
+              break;
+            case 'user_suspended':
+              title = 'User Suspended';
+              break;
+            case 'user_rejected':
+              title = 'User Rejected';
+              break;
+            case 'password_changed_by_admin':
+              title = 'Password Changed by Admin';
+              break;
+            case 'bulk_approve':
+              title = 'Bulk User Approval';
+              break;
+            case 'bulk_reject':
+              title = 'Bulk User Rejection';
+              break;
+            case 'bulk_activate':
+              title = 'Bulk User Activation';
+              break;
+            case 'bulk_suspend':
+              title = 'Bulk User Suspension';
+              break;
+            default:
+              // Convert snake_case to Title Case
+              title = act.type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+          }
+        }
+
+        return {
+          id: act.id,
+          type: act.type,
+          title: title,
+          description: act.description,
+          timestamp: act.timestamp,
+          icon: act.icon,
+          color: act.color,
+          metadata: null, // No metadata column in current table structure
+          user: act.userId ? {
+            id: act.userId,
+            fullName: act.userName,
+            email: act.userEmail,
+            userType: act.userType
+          } : null
+        };
+      });
 
       // Get total count for pagination
-      const countWhereClause = whereClause + ' AND title IS NOT NULL';
-      const countResult = await queryAsync(`SELECT COUNT(*) as total FROM activities ${countWhereClause}`, params.slice(0, -2));
+      const countResult = await queryAsync(`SELECT COUNT(*) as total FROM activities ${whereClause}`, params.slice(0, -2));
       const total = countResult[0]?.total || 0;
 
       return res.json({ 
@@ -3155,6 +3189,9 @@ router.get('/deals/statistics', auth, admin, async (req, res) => {
       ? 'SELECT COUNT(*) as count FROM deals WHERE status = "expired" OR (validUntil IS NOT NULL AND validUntil < CURDATE())'
       : 'SELECT COUNT(*) as count FROM deals WHERE status = "expired"';
     const pendingQuery = 'SELECT COUNT(*) as count FROM deals WHERE status IN ("pending", "pending_approval")';
+
+    // Check if deal_redemptions table exists
+    const redemptionsTableExists = await tableExists('deal_redemptions');
 
     const [totalDealsResult, activeDealsResult, expiredDealsResult, pendingDealsResult, redemptionsResult, pendingRedemptionsResult] = await Promise.all([
       queryAsync(totalQuery),

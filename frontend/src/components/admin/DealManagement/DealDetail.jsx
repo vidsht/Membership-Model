@@ -502,11 +502,25 @@ const DealDetail = () => {
                           padding: '15px',
                           borderBottom: index < getPaginatedRedemptions().length - 1 ? '1px solid #f1f3f4' : 'none',
                           display: 'grid',
-                          gridTemplateColumns: '1fr 1fr 1fr 1fr',
+                          gridTemplateColumns: '40px 1fr 1fr 1fr 1fr',
                           gap: '15px',
                           alignItems: 'center',
                           hover: {background: '#f8f9fa'}
                         }}>
+                          <div style={{
+                            background: '#007bff',
+                            color: 'white',
+                            borderRadius: '50%',
+                            width: '32px',
+                            height: '32px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '14px',
+                            fontWeight: 'bold'
+                          }}>
+                            {(redemptionPage - 1) * redemptionPageSize + index + 1}
+                          </div>
                           <div>
                             <div style={{fontWeight: 'bold', color: '#333', marginBottom: '4px'}}>
                               {redemption.userName || redemption.user_name || redemption.name || `User ${redemption.userId || redemption.user_id}`}
