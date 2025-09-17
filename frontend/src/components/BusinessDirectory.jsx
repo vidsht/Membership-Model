@@ -101,6 +101,28 @@ const BusinessDirectory = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // Utility function to detect if device is mobile
+  const isMobileDevice = () => {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+           (navigator.maxTouchPoints && navigator.maxTouchPoints > 1) ||
+           window.screen.width <= 768;
+  };
+
+  // Utility function to check if Web Share API can share text content properly
+  const canShareRichContent = () => {
+    if (!navigator.share) return false;
+    
+    // Web Share API is more reliable on mobile devices
+    if (isMobileDevice()) return true;
+    
+    // On desktop, many browsers support navigator.share but with limited functionality
+    // Safari on macOS generally works well, but Chrome/Edge on Windows may only share URLs
+    const isDesktopSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent) && !isMobileDevice();
+    
+    // For now, only trust mobile devices and desktop Safari for rich content sharing
+    return isDesktopSafari;
+  };
+
   // Share business function
   const handleShareBusiness = async (business) => {
     const businessUrl = `${window.location.origin}/business-directory?id=${business.businessId || business.id}`;
@@ -118,8 +140,8 @@ Click to view full details: ${businessUrl}
 
 Discover quality services and support our community businesses! 🇮🇳🇬🇭`;
     
-    // Check if Web Share API is available and use it consistently
-    if (navigator.share) {
+    // Use Web Share API only if it can reliably share rich content
+    if (canShareRichContent()) {
       try {
         const shareData = {
           title: `${businessName} - Indians in Ghana Business Directory`,

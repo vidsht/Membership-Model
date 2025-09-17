@@ -636,7 +636,7 @@ router.post('/deals', checkMerchantAccess, checkDealPostingLimit, [
     // Log deal creation activity
     try {
       logActivity('NEW_DEAL_POSTED', {
-        userId: req.user.id,
+        userId: req.merchant.id,
         description: `New deal posted: "${title}" by ${merchant.businessName || 'merchant'}`,
         relatedId: result.insertId,
         relatedType: 'deal',
@@ -1342,7 +1342,7 @@ router.patch('/redemption-requests/:requestId/approve', checkMerchantAccess, asy
     // Log redemption approval activity
     try {
       await logActivity('ACCEPTING_DEAL_REDEMPTION_BY', {
-        userId: req.user.id, // Merchant who approved
+        userId: req.merchant.id, // Merchant who approved
         description: `Accepting deal redemption by ${merchant.businessName || 'merchant'} for customer ${redemptionData.fullName}`,
         relatedId: dealId,
         relatedType: 'deal',
@@ -1352,7 +1352,7 @@ router.patch('/redemption-requests/:requestId/approve', checkMerchantAccess, asy
           dealTitle: redemptionData.title,
           customerId: redemptionData.user_id,
           customerName: redemptionData.fullName,
-          merchantId: req.user.id,
+          merchantId: req.merchant.id,
           businessName: merchant.businessName
         }
       });
@@ -1430,7 +1430,7 @@ router.patch('/redemption-requests/:requestId/reject', checkMerchantAccess, asyn
     try {
       const redemptionData = checkResults[0];
       await logActivity('REJECTED_DEAL_REDEMPTION_BY', {
-        userId: req.user.id, // Merchant who rejected
+        userId: req.merchant.id, // Merchant who rejected
         description: `Rejected deal redemption by ${merchant.businessName || 'merchant'} - Invalid membership`,
         relatedId: redemptionData.deal_id,
         relatedType: 'deal',
@@ -1440,7 +1440,7 @@ router.patch('/redemption-requests/:requestId/reject', checkMerchantAccess, asyn
           dealTitle: redemptionData.title,
           customerId: redemptionData.user_id,
           customerName: redemptionData.fullName,
-          merchantId: req.user.id,
+          merchantId: req.merchant.id,
           businessName: merchant.businessName,
           rejectionReason: reason?.trim() || 'No reason provided'
         }

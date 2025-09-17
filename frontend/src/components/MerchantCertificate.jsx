@@ -194,6 +194,28 @@ const MerchantCertificate = () => {
     }
   };
 
+  // Utility function to detect if device is mobile
+  const isMobileDevice = () => {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+           (navigator.maxTouchPoints && navigator.maxTouchPoints > 1) ||
+           window.screen.width <= 768;
+  };
+
+  // Utility function to check if Web Share API can share text content properly
+  const canShareRichContent = () => {
+    if (!navigator.share) return false;
+    
+    // Web Share API is more reliable on mobile devices
+    if (isMobileDevice()) return true;
+    
+    // On desktop, many browsers support navigator.share but with limited functionality
+    // Safari on macOS generally works well, but Chrome/Edge on Windows may only share URLs
+    const isDesktopSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent) && !isMobileDevice();
+    
+    // For now, only trust mobile devices and desktop Safari for rich content sharing
+    return isDesktopSafari;
+  };
+
   const shareCertificate = async () => {
     if (!cardSettings.allow_share) {
       showNotification('Certificate sharing is not enabled', 'error');
@@ -204,8 +226,8 @@ const MerchantCertificate = () => {
     const shareUrl = `${window.location.origin}/merchant-certificate`;
 
     try {
-      // Check if Web Share API is available (primarily on mobile devices)
-      if (navigator.share) {
+      // Use Web Share API only if it can reliably share rich content
+      if (canShareRichContent()) {
         try {
           // First try to share with image if supported
           const html2canvas = await import('html2canvas');
