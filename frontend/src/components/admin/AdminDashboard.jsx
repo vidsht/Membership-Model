@@ -408,10 +408,6 @@ const AdminDashboard = () => {
             ))}
           </ul>
         </nav>
-        
-        <div className="sidebar-footer">
-c
-        </div>
       </div>  
       {/* Main Content */}
       <div className="admin-main">

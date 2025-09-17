@@ -74,7 +74,7 @@ const UserManagement = () => {
 
   const [pagination, setPagination] = useState({
     page: 1,
-    limit: 10,
+    limit: 20, // Increase default limit from 10 to 20
     total: 0,
     totalPages: 0
   });
@@ -364,6 +364,7 @@ const UserManagement = () => {
         setPagination(prev => ({
           ...prev,
           total,
+          limit, // Add limit to the pagination state update
           totalPages: totalPages < 1 ? 1 : totalPages
         }));
 

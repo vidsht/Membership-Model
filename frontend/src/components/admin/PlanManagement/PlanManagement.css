@@ -216,7 +216,6 @@
 
 .plan-pricing {
   display: flex;
-  flex-direction: column;
   align-items: flex-end;
   margin: 0 1rem;
 }
@@ -230,7 +229,6 @@
 
 .plan-pricing .billing-cycle {
   font-size: 0.75rem;
-  color: #6c757d;
   margin-top: 0.25rem;
 }
 
