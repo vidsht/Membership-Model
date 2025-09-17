@@ -634,6 +634,15 @@ router.get('/users', auth, admin, async (req, res) => {
     const pageSize = Math.min(parseInt(limit) || 20, 100);
     const offset = (currentPage - 1) * pageSize;
 
+    console.log('🔍 Admin Users API Debug:', {
+      whereClause,
+      params,
+      currentPage,
+      pageSize,
+      offset,
+      queryParams: req.query
+    });
+
     const countResult = await queryAsync(`
       SELECT COUNT(*) as total
       FROM users u
@@ -642,6 +651,8 @@ router.get('/users', auth, admin, async (req, res) => {
     
     const total = countResult[0]?.total || 0;
     const totalPages = Math.ceil(total / pageSize);
+    
+    console.log('📊 Count Result:', { total, totalPages, pageSize });
 
     // FIXED: Updated query with correct column names from your schema
     let mainQuery = `
@@ -688,6 +699,14 @@ router.get('/users', auth, admin, async (req, res) => {
     mainQuery += ` ${whereClause} ORDER BY u.createdAt DESC LIMIT ? OFFSET ?`;
 
     const users = await queryAsync(mainQuery, [...params, pageSize, offset]);
+
+    console.log('📋 Main Query Results:', {
+      usersReturned: users.length,
+      expectedMax: pageSize,
+      actualTotal: total,
+      firstUserId: users[0]?.id,
+      lastUserId: users[users.length - 1]?.id
+    });
 
     const processedUsers = users.map(user => {
       let processedUser = { ...user };
