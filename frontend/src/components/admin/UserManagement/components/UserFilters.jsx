@@ -9,7 +9,8 @@ const UserFilters = ({
   onClearFilters, 
   onExport, 
   referenceData, 
-  loading 
+  loading,
+  headerActions
 }) => {
   const { getCommunityOptions, isLoading: fieldsLoading } = useDynamicFields();
   const [isExpanded, setIsExpanded] = useState(true);
@@ -137,27 +138,6 @@ const UserFilters = ({
               </select>
             </div>
 
-            {/* Registration Date Range */}
-            <div className="filter-group">
-              <label htmlFor="dateFrom">Registered From</label>
-              <input
-                id="dateFrom"
-                type="date"
-                value={filters.dateFrom || ''}
-                onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
-              />
-            </div>
-
-            <div className="filter-group">
-              <label htmlFor="dateTo">Registered To</label>
-              <input
-                id="dateTo"
-                type="date"
-                value={filters.dateTo || ''}
-                onChange={(e) => handleFilterChange('dateTo', e.target.value)}
-              />
-            </div>
-
             {/* Plan Expiry Status */}
             <div className="filter-group">
               <label htmlFor="planStatus">Plan Status</label>
@@ -174,31 +154,36 @@ const UserFilters = ({
               </select>
             </div>
 
-
-
           </div>
         )}
 
         {/* Filter Actions */}
         <div className="filters-actions">
-          <button 
-            type="button" 
-            className="btn-reset"
-            onClick={handleClearFilters}
-            disabled={loading}
-          >
-            <i className="fas fa-times"></i>
-            Clear Filters
-          </button>
-          <button 
-            type="button" 
-            className="btn-apply"
-            onClick={onExport}
-            disabled={loading}
-          >
-            <i className="fas fa-download"></i>
-            Export Users
-          </button>
+          {headerActions && (
+            <div className="header-actions-section">
+              {headerActions}
+            </div>
+          )}
+          <div>
+            <button 
+              type="button" 
+              className="btn-reset"
+              onClick={handleClearFilters}
+              disabled={loading}
+            >
+              <i className="fas fa-times"></i>
+              Clear Filters
+            </button>
+            <button 
+              type="button" 
+              className="btn-apply"
+              onClick={onExport}
+              disabled={loading}
+            >
+              <i className="fas fa-download"></i>
+              Export Users
+            </button>
+          </div>
         </div>
       </div>
     </div>

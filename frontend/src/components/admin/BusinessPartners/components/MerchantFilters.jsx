@@ -10,7 +10,8 @@ const MerchantFilters = ({
   onClearFilters, 
   onExport, 
   loading, 
-  referenceData = {} 
+  referenceData = {},
+  headerActions
 }) => {
   const { getBusinessCategoryOptions, isLoading: fieldsLoading } = useDynamicFields();
   const [isExpanded, setIsExpanded] = useState(true);
@@ -179,24 +180,31 @@ const MerchantFilters = ({
 
         {/* Filter Actions */}
         <div className="filters-actions">
-          <button 
-            type="button" 
-            className="btn-reset"
-            onClick={handleClearFilters}
-            disabled={loading}
-          >
-            <i className="fas fa-times"></i>
-            Clear Filters
-          </button>
-          <button 
-            type="button" 
-            className="btn-apply"
-            onClick={onExport}
-            disabled={loading}
-          >
-            <i className="fas fa-download"></i>
-            Export Merchants
-          </button>
+          {headerActions && (
+            <div className="header-actions-section">
+              {headerActions}
+            </div>
+          )}
+          <div>
+            <button 
+              type="button" 
+              className="btn-reset"
+              onClick={handleClearFilters}
+              disabled={loading}
+            >
+              <i className="fas fa-times"></i>
+              Clear Filters
+            </button>
+            <button 
+              type="button" 
+              className="btn-apply"
+              onClick={onExport}
+              disabled={loading}
+            >
+              <i className="fas fa-download"></i>
+              Export Merchants
+            </button>
+          </div>
         </div>
       </div>
     </div>

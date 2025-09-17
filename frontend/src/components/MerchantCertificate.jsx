@@ -200,53 +200,62 @@ const MerchantCertificate = () => {
       return;
     }
 
-    try {
-      // Try to share with image if possible
-      if (navigator.share) {
-        const html2canvas = await import('html2canvas');
-        const canvas = await html2canvas.default(certificateRef.current, {
-          scale: 2,
-          backgroundColor: '#ffffff',
-          useCORS: true,
-          allowTaint: true,
-          width: 700,
-          height: 990
-        });
+    const shareText = `I'm a certified merchant with Indians in Ghana! 🇮🇳🇬🇭\nBusiness ID: ${businessInfo?.businessId}\n\nConnect with our community: ${window.location.origin}`;
+    const shareUrl = `${window.location.origin}/merchant-certificate`;
 
-        canvas.toBlob(async (blob) => {
-          if (blob && navigator.canShare && navigator.canShare({ files: [new File([blob], 'merchant-certificate.png', { type: 'image/png' })] })) {
-            const file = new File([blob], 'merchant-certificate.png', { type: 'image/png' });
-            await navigator.share({
-              title: 'Indians in Ghana Merchant Certificate',
-              text: `I'm a certified merchant with Indians in Ghana! 🇮🇳🇬🇭\nBusiness ID: ${businessInfo?.businessId}\n\nConnect with our community: ${window.location.origin}`,
-              files: [file]
-            });
-          } else {
-            // Fallback to text sharing
-            await navigator.share({
-              title: 'Indians in Ghana Merchant Certificate',
-              text: `I'm a certified merchant with Indians in Ghana! 🇮🇳🇬🇭\nBusiness ID: ${businessInfo?.businessId}\n\nConnect with our community: ${window.location.origin}`,
-            });
-          }
-          showNotification('Certificate shared successfully!', 'success');
-        }, 'image/png');
-      } else {
-        // Fallback for browsers that don't support Web Share API
-        const shareText = `I'm a certified merchant with Indians in Ghana! 🇮🇳🇬🇭\nBusiness ID: ${businessInfo?.businessId}\n\nConnect with our community: ${window.location.origin}`;
-        
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          await navigator.clipboard.writeText(shareText);
-          showNotification('Share text copied to clipboard!', 'success');
-        } else {
-          // Even older browser fallback
-          const textArea = document.createElement('textarea');
-          textArea.value = shareText;
-          document.body.appendChild(textArea);
-          textArea.select();
-          document.execCommand('copy');
-          document.body.removeChild(textArea);
-          showNotification('Share text copied to clipboard!', 'success');
+    try {
+      // Check if Web Share API is available (primarily on mobile devices)
+      if (navigator.share) {
+        try {
+          // First try to share with image if supported
+          const html2canvas = await import('html2canvas');
+          const canvas = await html2canvas.default(certificateRef.current, {
+            scale: 2,
+            backgroundColor: '#ffffff',
+            useCORS: true,
+            allowTaint: true,
+            width: 700,
+            height: 990
+          });
+
+          canvas.toBlob(async (blob) => {
+            if (blob && navigator.canShare && navigator.canShare({ files: [new File([blob], 'merchant-certificate.png', { type: 'image/png' })] })) {
+              const file = new File([blob], 'merchant-certificate.png', { type: 'image/png' });
+              await navigator.share({
+                title: 'Indians in Ghana Merchant Certificate',
+                text: shareText,
+                files: [file]
+              });
+            } else {
+              // Fallback to consistent text+url sharing format
+              await navigator.share({
+                title: 'Indians in Ghana Merchant Certificate',
+                text: shareText,
+                url: shareUrl
+              });
+            }
+            showNotification('Certificate shared successfully!', 'success');
+          }, 'image/png');
+          return;
+        } catch (shareError) {
+          console.log('Error sharing via Web Share API:', shareError);
+          // Continue to fallback
         }
+      }
+      
+      // Fallback for desktop or when Web Share API fails: copy full formatted text with URL
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(shareText);
+        showNotification('Share text copied to clipboard!', 'success');
+      } else {
+        // Even older browser fallback
+        const textArea = document.createElement('textarea');
+        textArea.value = shareText;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        showNotification('Share text copied to clipboard!', 'success');
       }
     } catch (error) {
       console.error('Error sharing certificate:', error);

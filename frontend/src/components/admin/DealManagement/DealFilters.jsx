@@ -10,7 +10,7 @@ import './DealFilters.css';
  * @param {Function} props.onSearch - Callback for search
  * @param {Array} props.businesses - List of businesses for business filter
  */
-const DealFilters = ({ filters, onFilterChange, onSearch, onResetFilters, businesses = [] }) => {
+const DealFilters = ({ filters, onFilterChange, onSearch, onResetFilters, businesses = [], headerActions }) => {
   const { getDealCategoryOptions } = useDynamicFields();
   const [showFilters, setShowFilters] = useState(true);
 
@@ -45,7 +45,6 @@ const DealFilters = ({ filters, onFilterChange, onSearch, onResetFilters, busine
         search: '',
         minDiscount: '',
         maxDiscount: '',
-        hasRedemptions: 'all',
         sortBy: 'created_at',
         sortOrder: 'desc'
       });
@@ -149,22 +148,6 @@ const DealFilters = ({ filters, onFilterChange, onSearch, onResetFilters, busine
             {/* Discount Type Filter */}
             {/* Discount and date range filters removed per admin request */}
 
-            {/* Has Redemptions Filter */}
-            <div className="filter-group">
-              <label>Redemption Status</label>
-              <select
-                name="hasRedemptions"
-                value={filters.hasRedemptions || 'all'}
-                onChange={handleInputChange}
-                className="filter-select"
-              >
-                <option value="all">All Deals</option>
-                <option value="yes">Has Redemptions</option>
-                <option value="no">No Redemptions</option>
-                <option value="high">High Redemptions (10+)</option>
-              </select>
-            </div>
-
             {/* Sort Options */}
             <div className="filter-group">
               <label>Sort By</label>
@@ -189,22 +172,29 @@ const DealFilters = ({ filters, onFilterChange, onSearch, onResetFilters, busine
 
         {/* Filter Actions */}
         <div className="filter-actions">
-          <button 
-            type="button" 
-            className="clear-btn"
-            onClick={clearFilters}
-          >
-            <i className="fas fa-times"></i>
-            Clear Filters
-          </button>
-          <button 
-            type="button" 
-            className="apply-btn"
-            onClick={applyFilters}
-          >
-            <i className="fas fa-check"></i>
-            Apply Filters
-          </button>
+          {headerActions && (
+            <div className="header-actions-section">
+              {headerActions}
+            </div>
+          )}
+          <div>
+            <button 
+              type="button" 
+              className="clear-btn"
+              onClick={clearFilters}
+            >
+              <i className="fas fa-times"></i>
+              Clear Filters
+            </button>
+            <button 
+              type="button" 
+              className="apply-btn"
+              onClick={applyFilters}
+            >
+              <i className="fas fa-check"></i>
+              Apply Filters
+            </button>
+          </div>
         </div>
       </div>
     </div>

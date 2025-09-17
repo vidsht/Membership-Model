@@ -276,57 +276,66 @@ const MembershipCard = () => {
       return;
     }
 
+    const shareText = `I'm a proud member of Indians in Ghana! 🇮🇳🇬🇭\nMember #${user.membershipNumber}\n\nJoin our community: ${window.location.origin}`;
+    const shareUrl = `${window.location.origin}/membership`;
+
     try {
-      // Try to share with image if possible
+      // Check if Web Share API is available (primarily on mobile devices)  
       if (navigator.share) {
-        // Add capture-mode class to remove overlay effects
-        cardRef.current.classList.add('capture-mode', 'download-mode');
-        
-        const html2canvas = await import('html2canvas');
-        const canvas = await html2canvas.default(cardRef.current, {
-          scale: 2,
-          backgroundColor: '#ffffff',
-          useCORS: true,
-          allowTaint: true
-        });
+        try {
+          // First try to share with image if supported
+          cardRef.current.classList.add('capture-mode', 'download-mode');
+          
+          const html2canvas = await import('html2canvas');
+          const canvas = await html2canvas.default(cardRef.current, {
+            scale: 2,
+            backgroundColor: '#ffffff',
+            useCORS: true,
+            allowTaint: true
+          });
 
-        // Remove the classes after capture
-        cardRef.current.classList.remove('capture-mode', 'download-mode');
+          // Remove the classes after capture
+          cardRef.current.classList.remove('capture-mode', 'download-mode');
 
-        canvas.toBlob(async (blob) => {
-          if (blob && navigator.canShare && navigator.canShare({ files: [new File([blob], 'membership-card.png', { type: 'image/png' })] })) {
-            const file = new File([blob], 'membership-card.png', { type: 'image/png' });
-            await navigator.share({
-              title: 'My Indians in Ghana Membership Card',
-              text: `I'm a proud member of Indians in Ghana! 🇮🇳🇬🇭\nMember #${user.membershipNumber}`,
-              files: [file]
-            });
-          } else {
-            // Fallback to text sharing
-            await navigator.share({
-              title: 'My Indians in Ghana Membership Card',
-              text: `I'm a proud member of Indians in Ghana! 🇮🇳🇬🇭\nMember #${user.membershipNumber}\n\nJoin our community: ${window.location.origin}`,
-            });
-          }
-          showNotification('Card shared successfully!', 'success');
-        }, 'image/png');
-      } else {
-        // Fallback for browsers that don't support Web Share API
-        const shareText = `I'm a proud member of Indians in Ghana! 🇮🇳🇬🇭\nMember #${user.membershipNumber}\n\nJoin our community: ${window.location.origin}`;
-        
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          await navigator.clipboard.writeText(shareText);
-          showNotification('Share text copied to clipboard!', 'success');
-        } else {
-          // Even older browser fallback
-          const textArea = document.createElement('textarea');
-          textArea.value = shareText;
-          document.body.appendChild(textArea);
-          textArea.select();
-          document.execCommand('copy');
-          document.body.removeChild(textArea);
-          showNotification('Share text copied to clipboard!', 'success');
+          // Convert to blob and try sharing with image
+          canvas.toBlob(async (blob) => {
+            if (blob && navigator.canShare && navigator.canShare({ files: [new File([blob], 'membership-card.png', { type: 'image/png' })] })) {
+              const file = new File([blob], 'membership-card.png', { type: 'image/png' });
+              await navigator.share({
+                title: 'My Indians in Ghana Membership Card',
+                text: shareText,
+                files: [file]
+              });
+            } else {
+              // Fallback to consistent text+url sharing format
+              await navigator.share({
+                title: 'My Indians in Ghana Membership Card',
+                text: shareText,
+                url: shareUrl
+              });
+            }
+            showNotification('Card shared successfully!', 'success');
+          }, 'image/png');
+          return;
+        } catch (shareError) {
+          console.log('Error sharing via Web Share API:', shareError);
+          // Continue to fallback
         }
+      }
+      
+      // Fallback for desktop or when Web Share API fails: copy full formatted text with URL
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(shareText);
+        showNotification('Share text copied to clipboard!', 'success');
+      } else {
+        // Even older browser fallback
+        const textArea = document.createElement('textarea');
+        textArea.value = shareText;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        showNotification('Share text copied to clipboard!', 'success');
       }
     } catch (error) {
       console.error('Error sharing card:', error);

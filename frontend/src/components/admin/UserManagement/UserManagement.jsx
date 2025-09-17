@@ -69,8 +69,6 @@ const UserManagement = () => {
     community: 'all',
     membershipType: 'all',
     bloodGroup: 'all',
-    dateFrom: '',
-    dateTo: '',
     planStatus: 'all'
   });
 
@@ -847,21 +845,6 @@ const UserManagement = () => {
         </div>
       </div>
 
-      {/* Page Header */}
-      <div className="pages-header">
-        <div className="headers-content">
-          <div className="header-actions">
-            <button
-              onClick={() => navigate('/admin/users/create')}
-              className="btn btn-primary"
-            >
-              <i className="fas fa-plus"></i>
-              Add User
-            </button>
-          </div>
-        </div>
-      </div>
-
       {/* Filters */}
       <UserFilters
         filters={filters}
@@ -870,6 +853,15 @@ const UserManagement = () => {
         onExport={handleExportUsers}
         referenceData={referenceData}
         loading={loading}
+        headerActions={
+          <button
+            onClick={() => navigate('/admin/users/create')}
+            className="btn btn-primary"
+          >
+            <i className="fas fa-plus"></i>
+            Add User
+          </button>
+        }
       />
 
       {/* Bulk Actions */}

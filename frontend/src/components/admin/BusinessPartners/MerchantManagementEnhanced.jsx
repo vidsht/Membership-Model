@@ -948,23 +948,6 @@ const MerchantManagementEnhanced = () => {
 
   return (
     <div className="merchant-management-enhanced">
-      <div className="merchant-management-header">
-        <h2>Business Partner Management</h2>
-        <div className="header-actions">
-          <button className="btn btn-primary" onClick={handleAddMerchant}>
-            <i className="fas fa-plus"></i> Add Partner
-          </button>
-          <button className="btn btn-secondary" onClick={handleExportMerchants}>
-            <i className="fas fa-download"></i> Export CSV
-          </button>
-          {selectedMerchants.length > 0 && (
-            <button className="btn btn-secondary" onClick={() => setShowBulkActions(!showBulkActions)}>
-              <i className="fas fa-tasks"></i> Bulk Actions ({selectedMerchants.length})
-            </button>
-          )}
-        </div>
-      </div>
-
       {/* Merchant Statistics Bar - Matching User Management Style */}
       <div className="merchant-stats-bar">
         <div className="merchant-stat">
@@ -1133,30 +1116,54 @@ const MerchantManagementEnhanced = () => {
             referenceData={{
               plans: merchantPlans // Pass actual merchant plans from state
             }}
+            headerActions={
+              <>
+                <button className="btn btn-primary" onClick={handleAddMerchant}>
+                  <i className="fas fa-plus"></i> Add Partner
+                </button>
+                {selectedMerchants.length > 0 && (
+                  <button className="btn btn-secondary" onClick={() => setShowBulkActions(!showBulkActions)}>
+                    <i className="fas fa-tasks"></i> Bulk Actions ({selectedMerchants.length})
+                  </button>
+                )}
+              </>
+            }
           />
 
-      {/* Bulk Actions */}
+      {/* Minimal Bulk Actions */}
       {showBulkActions && selectedMerchants.length > 0 && (
-        <div className="bulk-actions-panel">
-          <h4>Bulk Actions for {selectedMerchants.length} merchants:</h4>
-          <div className="bulk-actions-buttons">
+        <div className="bulk-actions-minimal">
+          <div className="bulk-info">
+            <span>{selectedMerchants.length} selected</span>
+          </div>
+          <div className="bulk-controls">
             <button 
-              className="btn btn-success"
+              className="bulk-btn approve"
               onClick={() => handleBulkAction('approve')}
+              title="Approve selected"
             >
-              <i className="fas fa-check"></i> Approve
+              <i className="fas fa-check"></i>
             </button>
             <button 
-              className="btn btn-warning"
+              className="bulk-btn reject"
               onClick={() => handleBulkAction('reject')}
+              title="Reject selected"
             >
-              <i className="fas fa-times"></i> Reject
+              <i className="fas fa-times"></i>
             </button>
             <button 
-              className="btn btn-secondary"
+              className="bulk-btn suspend"
               onClick={() => handleBulkAction('suspend')}
+              title="Suspend selected"
             >
-              <i className="fas fa-pause"></i> Suspend
+              <i className="fas fa-pause"></i>
+            </button>
+            <button 
+              onClick={() => setSelectedMerchants([])}
+              className="bulk-btn clear"
+              title="Clear selection"
+            >
+              <i className="fas fa-times-circle"></i>
             </button>
           </div>
         </div>

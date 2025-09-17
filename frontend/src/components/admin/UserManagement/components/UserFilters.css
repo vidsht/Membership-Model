@@ -119,11 +119,44 @@
 /* Filter Actions - Compact */
 .filters-actions {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   align-items: center;
   margin-top: 0.75rem;
   padding-top: 0.5rem;
   border-top: 1px solid #f0f0f0;
+  gap: 0.5rem;
+}
+
+.header-actions-section {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.filters-actions .btn-primary {
+  background: #007bff;
+  border-color: #007bff;
+  color: white;
+  padding: 0.375rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  border: 1px solid;
+  text-decoration: none;
+}
+
+.filters-actions .btn-primary:hover {
+  background: #0056b3;
+  border-color: #0056b3;
+}
+
+.filters-actions > div:last-child {
+  display: flex;
   gap: 0.5rem;
 }
 
