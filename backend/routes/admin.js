@@ -3864,7 +3864,8 @@ router.get('/deals/:id/redemptions', auth, admin, async (req, res) => {
       SELECT 
         dr.*,
         u.fullName as userName,
-        u.email as userEmail
+        u.email as userEmail,
+        u.phone as userPhone
       FROM deal_redemptions dr
       LEFT JOIN users u ON dr.user_id = u.id
       WHERE dr.deal_id = ?
@@ -3884,6 +3885,7 @@ router.get('/deals/:id/redemptions', auth, admin, async (req, res) => {
       rejectionReason: r.rejection_reason || r.rejectionReason || null,
       userName: r.userName || r.user_name || null,
       userEmail: r.userEmail || r.user_email || null,
+      userPhone: r.userPhone || r.user_phone || null,
       dealTitle: r.deal_title || r.dealTitle || null,
       businessName: r.business_name || r.businessName || null,
       businessAddress: r.business_address || r.businessAddress || null,

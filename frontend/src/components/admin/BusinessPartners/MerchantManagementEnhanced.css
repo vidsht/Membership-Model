@@ -5,6 +5,90 @@
   min-height: 100vh;
 }
 
+/* Minimal Bulk Actions Component */
+.bulk-actions-minimal {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+}
+
+.bulk-info {
+  color: #495057;
+  font-weight: 500;
+}
+
+.bulk-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.bulk-btn {
+  background: none;
+  border: 1px solid transparent;
+  color: #6c757d;
+  width: 28px;
+  height: 28px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.75rem;
+}
+
+.bulk-btn:hover {
+  background: #e9ecef;
+}
+
+.bulk-btn.approve {
+  color: #28a745;
+}
+
+.bulk-btn.approve:hover {
+  background: #d4edda;
+  border-color: #28a745;
+}
+
+.bulk-btn.reject {
+  color: #dc3545;
+}
+
+.bulk-btn.reject:hover {
+  background: #f8d7da;
+  border-color: #dc3545;
+}
+
+.bulk-btn.suspend {
+  color: #ffc107;
+}
+
+.bulk-btn.suspend:hover {
+  background: #fff3cd;
+  border-color: #ffc107;
+}
+
+.bulk-btn.clear {
+  color: #6c757d;
+}
+
+.bulk-btn.clear:hover {
+  background: #e9ecef;
+  border-color: #6c757d;
+}
+
+.bulk-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* Merchant Statistics Bar */
 .merchant-stats-bar {
   display: flex;

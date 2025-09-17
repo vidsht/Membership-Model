@@ -1,4 +1,4 @@
-// BulkActions.jsx - Complete Bulk Actions Component
+// BulkActions.jsx - Minimal Bulk Actions Component
 import React, { useState } from 'react';
 import './BulkActions.css';
 
@@ -19,88 +19,44 @@ const BulkActions = ({ selectedCount, onBulkAction, onClearSelection }) => {
     }
   };
 
-  const bulkActions = [
-    {
-      key: 'approve',
-      label: 'Approve Selected',
-      icon: 'fa-check',
-      className: 'btn-success',
-      description: 'Approve all selected users'
-    },
-    {
-      key: 'reject',
-      label: 'Reject Selected',
-      icon: 'fa-times',
-      className: 'btn-danger',
-      description: 'Reject all selected users'
-    },
-    {
-      key: 'suspend',
-      label: 'Suspend Selected',
-      icon: 'fa-ban',
-      className: 'btn-warning',
-      description: 'Suspend all selected users'
-    }
-  ];
-
   return (
-    <div className="bulk-actions">
-      <div className="bulk-actions-header">
-        <div className="selection-info">
-          <i className="fas fa-check-circle"></i>
-          <span>{selectedCount} user{selectedCount !== 1 ? 's' : ''} selected</span>
-        </div>
-        
-        <div className="bulk-actions-controls">
-          <div className="left-group">
-            <button
-              className="bulk-action-btn primary"
-              onClick={() => handleBulkAction('approve')}
-              disabled={loading || selectedCount === 0}
-              title="Approve selected users"
-            >
-              <i className="fas fa-check"></i>
-              Approve
-            </button>
+    <div className="bulk-actions-minimal">
+      <div className="bulk-info">
+        <span>{selectedCount} selected</span>
+      </div>
+      
+      <div className="bulk-controls">
+        <button
+          className="bulk-btn approve"
+          onClick={() => handleBulkAction('approve')}
+          disabled={loading || selectedCount === 0}
+          title="Approve selected"
+        >
+          <i className="fas fa-check"></i>
+        </button>
 
-            <button
-              className="bulk-action-btn warning"
-              onClick={() => handleBulkAction('suspend')}
-              disabled={loading || selectedCount === 0}
-              title="Suspend selected users"
-            >
-              <i className="fas fa-ban"></i>
-              Suspend
-            </button>
+        <button
+          className="bulk-btn reject"
+          onClick={() => handleBulkAction('reject')}
+          disabled={loading || selectedCount === 0}
+          title="Reject selected"
+        >
+          <i className="fas fa-times"></i>
+        </button>
 
-            <button
-              className="bulk-action-btn danger"
-              onClick={() => handleBulkAction('reject')}
-              disabled={loading || selectedCount === 0}
-              title="Reject selected users"
-            >
-              <i className="fas fa-times"></i>
-              Reject
-            </button>
-          </div>
-
-          <div className="right-group">
-            <button
-              onClick={() => onClearSelection && onClearSelection()}
-              className="bulk-btn"
-              disabled={loading}
-            >
-              <i className="fas fa-times"></i>
-              Clear Selection
-            </button>
-          </div>
-        </div>
+        <button
+          onClick={() => onClearSelection && onClearSelection()}
+          className="bulk-btn clear"
+          disabled={loading}
+          title="Clear selection"
+        >
+          <i className="fas fa-times-circle"></i>
+        </button>
       </div>
       
       {loading && (
-        <div className="bulk-actions-loading">
-          <div className="loading-spinner"></div>
-          <span>Processing bulk action...</span>
+        <div className="bulk-loading">
+          <i className="fas fa-spinner fa-spin"></i>
         </div>
       )}
     </div>

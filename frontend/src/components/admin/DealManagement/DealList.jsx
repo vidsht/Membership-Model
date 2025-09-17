@@ -46,7 +46,6 @@ const DealList = ({ onTabChange }) => {
     validTo: '',
     minDiscount: '',
     maxDiscount: '',
-    hasRedemptions: 'all',
     sortBy: 'created_at',
     sortOrder: 'desc'
   });
@@ -121,7 +120,6 @@ const DealList = ({ onTabChange }) => {
       if (filters.discountType !== 'all') params.discountType = filters.discountType;
       if (filters.minDiscount) params.minDiscount = filters.minDiscount;
       if (filters.maxDiscount) params.maxDiscount = filters.maxDiscount;
-      if (filters.hasRedemptions !== 'all') params.hasRedemptions = filters.hasRedemptions;
       
       params.sortBy = filters.sortBy;
       params.sortOrder = filters.sortOrder;
@@ -510,31 +508,6 @@ const DealList = ({ onTabChange }) => {
   };
   return (
     <div className="admin-deal-management">
-      {!isInDashboard && (
-        <div className="page-header">
-          <h1>Deal Management</h1>
-          <button 
-            className="btn-primary" 
-            onClick={() => navigate('/admin/deals/create')}
-          >
-            <i className="fas fa-plus"></i> Create New Deal
-          </button>
-        </div>
-      )}
-
-      {isInDashboard && (
-        <div className="page-header">
-          <div className="header-actions">
-            <button 
-              className="btn-primary" 
-              onClick={() => navigate('/admin/deals/create')}
-            >
-              <i className="fas fa-plus"></i> Create New Deal
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Deal statistics */}
       <div className="deal-stats-bar">
         <div className="deal-stat">
@@ -568,6 +541,14 @@ const DealList = ({ onTabChange }) => {
         onSearch={handleSearch}
         onResetFilters={resetFilters}
         businesses={businesses}
+        headerActions={
+          <button 
+            className="btn-primary" 
+            onClick={() => navigate('/admin/deals/create')}
+          >
+            <i className="fas fa-plus"></i> Create New Deal
+          </button>
+        }
       />
       
       {isLoading ? (

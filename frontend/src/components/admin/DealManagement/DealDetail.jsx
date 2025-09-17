@@ -432,10 +432,6 @@ const DealDetail = () => {
                     <span style={{color: '#333'}}>{deal.businessId || 'N/A'}</span>
                   </div>
                   <div style={{background: '#f8f9fa', padding: '15px', borderRadius: '6px', border: '1px solid #dee2e6'}}>
-                    <label style={{display: 'block', fontWeight: 'bold', marginBottom: '5px', color: '#666'}}>Access Level</label>
-                    <span style={{color: '#333'}}>{deal.accessLevel || 'N/A'}</span>
-                  </div>
-                  <div style={{background: '#f8f9fa', padding: '15px', borderRadius: '6px', border: '1px solid #dee2e6'}}>
                     <label style={{display: 'block', fontWeight: 'bold', marginBottom: '5px', color: '#666'}}>Owner Name</label>
                     <span style={{color: '#333'}}>{deal.merchantName || 'N/A'}</span>
                   </div>

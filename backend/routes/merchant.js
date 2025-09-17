@@ -316,7 +316,7 @@ router.get('/dashboard', checkMerchantAccess, async (req, res) => {
       canPostDeals: merchant.canPostDeals
     };    // Get recent redemptions with user details - only show APPROVED redemptions
     const recentRedemptionsQuery = `
-      SELECT dr.*, u.fullName, u.membershipNumber, d.title as dealTitle
+      SELECT dr.*, u.fullName, u.phone, u.membershipNumber, d.title as dealTitle
       FROM deal_redemptions dr
       JOIN users u ON dr.user_id = u.id
       JOIN deals d ON dr.deal_id = d.id
@@ -635,9 +635,9 @@ router.post('/deals', checkMerchantAccess, checkDealPostingLimit, [
 
     // Log deal creation activity
     try {
-      logActivity('DEAL_CREATED', {
+      logActivity('NEW_DEAL_POSTED', {
         userId: req.user.id,
-        description: `New deal created: "${title}" by ${merchant.businessName || 'merchant'}`,
+        description: `New deal posted: "${title}" by ${merchant.businessName || 'merchant'}`,
         relatedId: result.insertId,
         relatedType: 'deal',
         metadata: {
@@ -1341,9 +1341,9 @@ router.patch('/redemption-requests/:requestId/approve', checkMerchantAccess, asy
     
     // Log redemption approval activity
     try {
-      await logActivity('REDEMPTION_APPROVED', {
+      await logActivity('ACCEPTING_DEAL_REDEMPTION_BY', {
         userId: req.user.id, // Merchant who approved
-        description: `Redemption approved for deal "${redemptionData.title}" by ${merchant.businessName || 'merchant'}`,
+        description: `Accepting deal redemption by ${merchant.businessName || 'merchant'} for customer ${redemptionData.fullName}`,
         relatedId: dealId,
         relatedType: 'deal',
         metadata: {
@@ -1429,9 +1429,9 @@ router.patch('/redemption-requests/:requestId/reject', checkMerchantAccess, asyn
     // Log redemption rejection activity
     try {
       const redemptionData = checkResults[0];
-      await logActivity('REDEMPTION_REJECTED', {
+      await logActivity('REJECTED_DEAL_REDEMPTION_BY', {
         userId: req.user.id, // Merchant who rejected
-        description: `Redemption rejected for deal "${redemptionData.title}" by ${merchant.businessName || 'merchant'}${reason ? ` - Reason: ${reason}` : ''}`,
+        description: `Rejected deal redemption by ${merchant.businessName || 'merchant'} - Invalid membership`,
         relatedId: redemptionData.deal_id,
         relatedType: 'deal',
         metadata: {

@@ -361,7 +361,7 @@ router.get('/:id/redemptions', auth, (req, res) => {
 
     // Get redemption details
     const redemptionsQuery = `
-      SELECT dr.*, u.fullName, u.membershipNumber, u.email
+      SELECT dr.*, u.fullName, u.phone, u.membershipNumber, u.email
       FROM deal_redemptions dr
       JOIN users u ON dr.userId = u.id
       WHERE dr.dealId = ?

@@ -379,6 +379,7 @@ Join Indians in Ghana Community for exclusive deals!`;
     // Check if Web Share API is available (primarily on mobile devices)
     if (navigator.share) {
       try {
+        // Always use consistent text+url format for rich content sharing
         const shareData = {
           title: `${deal.title} - ${deal.businessName}`,
           text: shareText,
@@ -393,7 +394,7 @@ Join Indians in Ghana Community for exclusive deals!`;
       }
     }
     
-    // Fallback for desktop or when Web Share API fails: copy full formatted text
+    // Fallback for desktop or when Web Share API fails: copy full formatted text with URL
     copyToClipboard(shareText, deal.title);
   };
 
