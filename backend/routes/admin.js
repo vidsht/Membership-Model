@@ -2631,8 +2631,22 @@ router.put('/partners/:id', auth, admin, async (req, res) => {
       }
       businessDbFields.forEach(field => {
         if (businessInfo[field] !== undefined) {
+          let value = businessInfo[field];
+          
+          // Special handling for customDealLimit to prevent empty string
+          if (field === 'customDealLimit') {
+            if (value === '' || value === null || value === undefined) {
+              value = null;
+            } else {
+              value = Number(value);
+              if (isNaN(value) || value < 0) {
+                value = null;
+              }
+            }
+          }
+          
           businessUpdates.push(`${field} = ?`);
-          businessValues.push(businessInfo[field]);
+          businessValues.push(value);
         }
       });
       if (businessUpdates.length > 0) {
