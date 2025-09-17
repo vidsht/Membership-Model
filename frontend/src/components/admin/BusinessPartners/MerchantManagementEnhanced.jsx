@@ -75,7 +75,6 @@ const MerchantManagementEnhanced = () => {
     state: 'all',
     membershipType: 'all',
     dateFrom: '',
-    dateTo: '',
     planStatus: 'all',
     dealLimit: 'all'
   });
@@ -826,7 +825,6 @@ const MerchantManagementEnhanced = () => {
       state: 'all',
       membershipType: 'all',
       dateFrom: '',
-      dateTo: '',
       planStatus: 'all',
       dealLimit: 'all'
     });
@@ -1090,8 +1088,8 @@ const MerchantManagementEnhanced = () => {
                   type="number" 
                   min="0" 
                   max="100"
-                  value={formData.businessInfo.customDealLimit} 
-                  onChange={e => setFormData(f => ({ ...f, businessInfo: { ...f.businessInfo, customDealLimit: e.target.value } }))} 
+                  value={formData.businessInfo.customDealLimit || ''} 
+                  onChange={e => setFormData(f => ({ ...f, businessInfo: { ...f.businessInfo, customDealLimit: e.target.value ? parseInt(e.target.value) : null } }))} 
                   placeholder="Leave empty to use plan default"
                 />
                 <small className="field-hint">Override the default monthly deal limit for this business. Leave empty to use their plan's default limit.</small>

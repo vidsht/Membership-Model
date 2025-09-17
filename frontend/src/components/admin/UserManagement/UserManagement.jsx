@@ -69,7 +69,9 @@ const UserManagement = () => {
     community: 'all',
     membershipType: 'all',
     bloodGroup: 'all',
-    planStatus: 'all'
+    planStatus: 'all',
+    dateFrom: '', // Add date filters to initial state
+    dateTo: ''    // Add date filters to initial state
   });
 
   const [pagination, setPagination] = useState({
@@ -326,6 +328,7 @@ const UserManagement = () => {
     try {
       setLoading(true);
       setError(null);
+      
       const queryParams = new URLSearchParams({
         page: pagination.page.toString(),
         limit: pagination.limit.toString()
@@ -339,14 +342,6 @@ const UserManagement = () => {
 
       const response = await api.get(`/admin/users?${queryParams}`);
 
-      console.log('🔍 UserManagement API Response:', {
-        success: response.data.success,
-        usersCount: response.data.users?.length || 0,
-        pagination: response.data.pagination,
-        firstUser: response.data.users?.[0],
-        lastUser: response.data.users?.[response.data.users?.length - 1]
-      });
-
       if (response.data.success) {
         const fetchedUsers = response.data.users || [];
         const paginationData = response.data.pagination || {};
@@ -359,12 +354,6 @@ const UserManagement = () => {
             planValidTill: calculatePlanValidity(user, planDetails),
             isPlanExpired: user.validationDate ? new Date(user.validationDate) < new Date() : false
           };
-        });
-
-        console.log('🔍 UserManagement Processed Users:', {
-          processedUsersCount: processedUsers.length,
-          processedUsers: processedUsers.slice(0, 5), // First 5 users
-          finalPagination: paginationData
         });
 
         setUsers(processedUsers);
@@ -785,7 +774,12 @@ const UserManagement = () => {
       search: '',
       status: 'all',
       userType: 'all',
-      community: 'all'
+      community: 'all',
+      membershipType: 'all',
+      bloodGroup: 'all',
+      planStatus: 'all',
+      dateFrom: '', // Clear date filters
+      dateTo: ''    // Clear date filters
     });
     setPagination(prev => ({ ...prev, page: 1 }));
   }, []);

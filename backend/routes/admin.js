@@ -634,15 +634,6 @@ router.get('/users', auth, admin, async (req, res) => {
     const pageSize = Math.min(parseInt(limit) || 20, 100);
     const offset = (currentPage - 1) * pageSize;
 
-    console.log('🔍 Admin Users API Debug:', {
-      whereClause,
-      params,
-      currentPage,
-      pageSize,
-      offset,
-      queryParams: req.query
-    });
-
     const countResult = await queryAsync(`
       SELECT COUNT(*) as total
       FROM users u
@@ -651,8 +642,6 @@ router.get('/users', auth, admin, async (req, res) => {
     
     const total = countResult[0]?.total || 0;
     const totalPages = Math.ceil(total / pageSize);
-    
-    console.log('📊 Count Result:', { total, totalPages, pageSize });
 
     // FIXED: Updated query with correct column names from your schema
     let mainQuery = `
@@ -699,14 +688,6 @@ router.get('/users', auth, admin, async (req, res) => {
     mainQuery += ` ${whereClause} ORDER BY u.createdAt DESC LIMIT ? OFFSET ?`;
 
     const users = await queryAsync(mainQuery, [...params, pageSize, offset]);
-
-    console.log('📋 Main Query Results:', {
-      usersReturned: users.length,
-      expectedMax: pageSize,
-      actualTotal: total,
-      firstUserId: users[0]?.id,
-      lastUserId: users[users.length - 1]?.id
-    });
 
     const processedUsers = users.map(user => {
       let processedUser = { ...user };
@@ -2665,18 +2646,31 @@ router.put('/partners/:id', auth, admin, async (req, res) => {
     // If admin provided a customDealLimit in the update, notify the merchant about the change
     if (businessInfo.customDealLimit !== undefined) {
       try {
-        const newLimit = Number(businessInfo.customDealLimit);
+        // Handle empty string or null values properly - don't convert empty string to 0
+        let newLimit = businessInfo.customDealLimit;
+        if (newLimit === '' || newLimit === null || newLimit === undefined) {
+          newLimit = null;
+        } else {
+          newLimit = Number(newLimit);
+          // Validate that it's a valid number
+          if (isNaN(newLimit) || newLimit < 0) {
+            newLimit = null;
+          }
+        }
+        
         const assignedBy = getAdminUserId(req);
         const adminMessage = req.body.adminMessage || null;
 
-        // Log custom deal limit assignment activity
-        try {
-          const merchantResult = await queryAsync('SELECT fullName, email FROM users WHERE id = ?', [merchantId]);
-          const merchant = merchantResult[0];
-          
-          await logActivity('ASSIGNED_CUSTOM_DEAL_LIMIT', {
-            userId: assignedBy,
-            description: `Custom deal limit (${newLimit}) assigned to merchant ${merchant?.fullName}`,
+        // Only log and notify if we're setting a valid custom limit (not clearing it)
+        if (newLimit !== null) {
+          // Log custom deal limit assignment activity
+          try {
+            const merchantResult = await queryAsync('SELECT fullName, email FROM users WHERE id = ?', [merchantId]);
+            const merchant = merchantResult[0];
+            
+            await logActivity('ASSIGNED_CUSTOM_DEAL_LIMIT', {
+              userId: assignedBy,
+              description: `Custom deal limit (${newLimit}) assigned to merchant ${merchant?.fullName}`,
             relatedId: merchantId,
             relatedType: 'user',
             metadata: {
@@ -2688,22 +2682,21 @@ router.put('/partners/:id', auth, admin, async (req, res) => {
               adminMessage: adminMessage
             }
           });
-        } catch (logError) {
-          console.warn('Failed to log custom deal limit assignment activity:', logError);
-        }
+          } catch (logError) {
+            console.warn('Failed to log custom deal limit assignment activity:', logError);
+          }
 
-        NotificationHooks.onCustomDealLimitAssigned(merchantId, newLimit, { assignedBy, adminMessage })
-          .then(result => {
-            console.log('📧 Custom deal limit assignment notification result:', result);
-          }).catch(err => {
-            console.error('📧 Failed to send custom deal limit assignment notification:', err);
-          });
+          NotificationHooks.onCustomDealLimitAssigned(merchantId, newLimit, { assignedBy, adminMessage })
+            .then(result => {
+              console.log('📧 Custom deal limit assignment notification result:', result);
+            }).catch(err => {
+              console.error('📧 Failed to send custom deal limit assignment notification:', err);
+            });
+        }
       } catch (notifyError) {
         console.error('Error while attempting to notify custom deal limit assignment:', notifyError);
       }
-    }
-
-    // Send plan assignment notification (mirrors custom deal limit notification logic)
+    }    // Send plan assignment notification (mirrors custom deal limit notification logic)
     try {
       const planAssignmentData = {
         planId: planDetails?.id,
