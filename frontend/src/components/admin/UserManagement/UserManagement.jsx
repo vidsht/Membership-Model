@@ -339,6 +339,14 @@ const UserManagement = () => {
 
       const response = await api.get(`/admin/users?${queryParams}`);
 
+      console.log('🔍 UserManagement API Response:', {
+        success: response.data.success,
+        usersCount: response.data.users?.length || 0,
+        pagination: response.data.pagination,
+        firstUser: response.data.users?.[0],
+        lastUser: response.data.users?.[response.data.users?.length - 1]
+      });
+
       if (response.data.success) {
         const fetchedUsers = response.data.users || [];
         const paginationData = response.data.pagination || {};
@@ -351,6 +359,12 @@ const UserManagement = () => {
             planValidTill: calculatePlanValidity(user, planDetails),
             isPlanExpired: user.validationDate ? new Date(user.validationDate) < new Date() : false
           };
+        });
+
+        console.log('🔍 UserManagement Processed Users:', {
+          processedUsersCount: processedUsers.length,
+          processedUsers: processedUsers.slice(0, 5), // First 5 users
+          finalPagination: paginationData
         });
 
         setUsers(processedUsers);
