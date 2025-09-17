@@ -43,6 +43,12 @@ const ACTIVITY_TYPES = {
     icon: 'fas fa-tags',
     color: 'primary'
   },
+  NEW_DEAL_POSTED: {
+    type: 'new_deal_posted',
+    title: 'New Deal Posted',
+    icon: 'fas fa-tag',
+    color: 'primary'
+  },
   DEAL_APPROVED: {
     type: 'deal_approved',
     title: 'Deal Approved',
@@ -73,6 +79,12 @@ const ACTIVITY_TYPES = {
     icon: 'fas fa-pause-circle',
     color: 'warning'
   },
+  DEAL_INACTIVE: {
+    type: 'deal_inactive',
+    title: 'Deal Inactive',
+    icon: 'fas fa-pause-circle',
+    color: 'warning'
+  },
   DEAL_VIEWED: {
     type: 'deal_viewed',
     title: 'Deal Viewed',
@@ -87,16 +99,34 @@ const ACTIVITY_TYPES = {
     icon: 'fas fa-shopping-cart',
     color: 'info'
   },
+  PENDING_DEAL_REDEMPTION_BY: {
+    type: 'pending_deal_redemption_by',
+    title: 'Pending Deal Redemption',
+    icon: 'fas fa-clock',
+    color: 'warning'
+  },
   REDEMPTION_APPROVED: {
     type: 'redemption_approved',
     title: 'Redemption Approved',
     icon: 'fas fa-check',
     color: 'success'
   },
+  ACCEPTING_DEAL_REDEMPTION_BY: {
+    type: 'accepting_deal_redemption_by',
+    title: 'Accepting Deal Redemption',
+    icon: 'fas fa-check-circle',
+    color: 'success'
+  },
   REDEMPTION_REJECTED: {
     type: 'redemption_rejected',
     title: 'Redemption Rejected',
     icon: 'fas fa-times',
+    color: 'danger'
+  },
+  REJECTED_DEAL_REDEMPTION_BY: {
+    type: 'rejected_deal_redemption_by',
+    title: 'Rejected Deal Redemption',
+    icon: 'fas fa-times-circle',
     color: 'danger'
   },
   
@@ -113,11 +143,61 @@ const ACTIVITY_TYPES = {
     icon: 'fas fa-calendar-times',
     color: 'danger'
   },
+  USER_PLAN_EXPIRED: {
+    type: 'user_plan_expired',
+    title: 'User Plan Expired',
+    icon: 'fas fa-calendar-times',
+    color: 'danger'
+  },
+  MERCHANT_PLAN_EXPIRED: {
+    type: 'merchant_plan_expired',
+    title: 'Merchant Plan Expired',
+    icon: 'fas fa-calendar-times',
+    color: 'danger'
+  },
   PLAN_UPGRADED: {
     type: 'plan_upgraded',
     title: 'Plan Upgraded',
     icon: 'fas fa-arrow-up',
     color: 'success'
+  },
+  PLAN_ASSIGNED: {
+    type: 'plan_assigned',
+    title: 'Plan Assigned',
+    icon: 'fas fa-crown',
+    color: 'primary'
+  },
+  NEW_PLAN_ASSIGNED: {
+    type: 'new_plan_assigned',
+    title: 'New Plan Assigned',
+    icon: 'fas fa-crown',
+    color: 'primary'
+  },
+  
+  // Custom limit activities
+  ASSIGNED_CUSTOM_DEAL_REDEMPTION: {
+    type: 'assigned_custom_deal_redemption',
+    title: 'Custom Redemption Limit Assigned',
+    icon: 'fas fa-gift',
+    color: 'info'
+  },
+  ASSIGNED_CUSTOM_DEAL_LIMIT: {
+    type: 'assigned_custom_deal_limit',
+    title: 'Custom Deal Limit Assigned',
+    icon: 'fas fa-tags',
+    color: 'info'
+  },
+  CUSTOM_REDEMPTION_LIMIT: {
+    type: 'custom_redemption_limit',
+    title: 'Custom Redemption Limit Set',
+    icon: 'fas fa-shopping-cart',
+    color: 'info'
+  },
+  CUSTOM_DEAL_LIMIT: {
+    type: 'custom_deal_limit',
+    title: 'Custom Deal Limit Set',
+    icon: 'fas fa-tags',
+    color: 'info'
   },
   
   // Admin activities
@@ -207,8 +287,8 @@ const logActivity = async (activityType, options = {}) => {
     const query = `
       INSERT INTO activities (
         type, title, description, userId, userName, userEmail, userType,
-        icon, color, metadata, relatedId, relatedType, timestamp
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+        icon, color, timestamp
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
     `;
 
     const params = [
@@ -220,10 +300,7 @@ const logActivity = async (activityType, options = {}) => {
       activityData.userEmail,
       activityData.userType,
       activityData.icon,
-      activityData.color,
-      activityData.metadata,
-      activityData.relatedId,
-      activityData.relatedType
+      activityData.color
     ];
 
     await queryAsync(query, params);

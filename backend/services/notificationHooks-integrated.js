@@ -4,6 +4,7 @@
  */
 
 const notificationService = require('./notificationService-integrated');
+const { logActivity, logPlanExpiry, ACTIVITY_TYPES } = require('../utils/activityLogger');
 
 class NotificationHooks {
   // User Registration Hook
@@ -399,6 +400,23 @@ class NotificationHooks {
                   firstName: user.fullName.split(' ')[0],
                   renewalUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/plans`
                 });
+                
+                // Log plan expiry activity
+                if (days <= 0) {
+                  await logActivity('USER_PLAN_EXPIRED', {
+                    userId: user.id,
+                    description: `User plan expired: ${user.fullName}'s ${user.currentPlan} plan has expired`,
+                    relatedId: user.id,
+                    relatedType: 'user',
+                    metadata: {
+                      planName: user.currentPlan,
+                      expiryDate: expiryDate.toISOString(),
+                      userType: 'user'
+                    }
+                  });
+                } else {
+                  await logPlanExpiry(user.id, user.currentPlan, expiryDate, days);
+                }
               } else if (user.userType === 'merchant') {
                 // Send merchant plan expiry warning  
                 await notificationService.sendMerchantPlanExpiryWarning(user.id, {
@@ -408,6 +426,23 @@ class NotificationHooks {
                   businessName: user.fullName,
                   renewalUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/merchant/plans`
                 });
+                
+                // Log merchant plan expiry activity
+                if (days <= 0) {
+                  await logActivity('MERCHANT_PLAN_EXPIRED', {
+                    userId: user.id,
+                    description: `Merchant plan expired: ${user.fullName}'s ${user.currentPlan} plan has expired`,
+                    relatedId: user.id,
+                    relatedType: 'user',
+                    metadata: {
+                      planName: user.currentPlan,
+                      expiryDate: expiryDate.toISOString(),
+                      userType: 'merchant'
+                    }
+                  });
+                } else {
+                  await logPlanExpiry(user.id, user.currentPlan, expiryDate, days);
+                }
               }
               
               console.log(`✅ Sent expiry warning to ${user.userType} ${user.fullName} (${user.email})`);

@@ -6,7 +6,7 @@ import api from '../../../services/api';
 import './Activities.css';
 
 /**
- * Activities component for displaying system activities and audit logs
+ * Activities component for displaying system activities and audit logs in separate sections
  * @returns {React.ReactElement} The activities component
  */
 const Activities = () => {
@@ -14,17 +14,58 @@ const Activities = () => {
   const { validateSession, handleSessionExpired } = useAuth();
   const [activities, setActivities] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeSection, setActiveSection] = useState('all');
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
     pageSize: 20,
     totalActivities: 0
   });
+
+  // Activity type configurations for separate sections
+  const activitySections = {
+    'plan_management': {
+      title: 'Plan Management',
+      icon: 'fas fa-crown',
+      types: ['plan_expired', 'user_plan_expired', 'merchant_plan_expired', 'plan_expiring', 'plan_upgraded', 'plan_assigned', 'new_plan_assigned', 'custom_redemption_limit', 'custom_deal_limit', 'assigned_custom_deal_redemption', 'assigned_custom_deal_limit'],
+      color: 'primary'
+    },
+    'deal_management': {
+      title: 'Deal Management', 
+      icon: 'fas fa-tags',
+      types: ['deal_created', 'new_deal_posted', 'deal_approved', 'deal_rejected', 'deal_activated', 'deal_deactivated', 'deal_expired', 'deal_inactive'],
+      color: 'success'
+    },
+    'redemption_activities': {
+      title: 'Deal Redemptions',
+      icon: 'fas fa-shopping-cart', 
+      types: ['redemption_requested', 'pending_deal_redemption_by', 'redemption_approved', 'accepting_deal_redemption_by', 'redemption_rejected', 'rejected_deal_redemption_by'],
+      color: 'info'
+    },
+    'user_activities': {
+      title: 'User Management',
+      icon: 'fas fa-users',
+      types: ['user_registered', 'merchant_registered', 'user_status_changed', 'password_changed', 'password_changed_by_admin'],
+      color: 'warning'
+    },
+    'merchant_management': {
+      title: 'Merchant Management',
+      icon: 'fas fa-store',
+      types: ['merchant_registered', 'merchant_approved', 'merchant_rejected', 'merchant_status_changed', 'business_created', 'business_approved'],
+      color: 'info'
+    },
+    'plan_user_management': {
+      title: 'Plan & User Management',
+      icon: 'fas fa-user-cog',
+      types: ['plan_assigned', 'new_plan_assigned', 'plan_expired', 'user_plan_expired', 'merchant_plan_expired', 'plan_upgraded', 'user_status_changed', 'assigned_custom_deal_redemption', 'assigned_custom_deal_limit'],
+      color: 'secondary'
+    }
+  };
   
-  // Fetch activities when page or page size changes
+  // Fetch activities when page, page size, or section changes
   useEffect(() => {
     fetchActivities();
-  }, [pagination.currentPage, pagination.pageSize]);
+  }, [pagination.currentPage, pagination.pageSize, activeSection]);
 
   const fetchActivities = async () => {
     try {
@@ -38,6 +79,11 @@ const Activities = () => {
         offset: offset,
         limit: pagination.pageSize
       });
+
+      // Add type filter if specific section is selected
+      if (activeSection !== 'all' && activitySections[activeSection]) {
+        queryParams.append('types', activitySections[activeSection].types.join(','));
+      }
 
       const response = await api.get(`/admin/activities?${queryParams}`);
       
@@ -222,12 +268,54 @@ const Activities = () => {
     }
   };
 
+  const handleSectionChange = (section) => {
+    setActiveSection(section);
+    setPagination(prev => ({ ...prev, currentPage: 1 })); // Reset to first page when changing sections
+  };
+
+  const getFilteredActivities = () => {
+    if (activeSection === 'all') {
+      return activities;
+    }
+    
+    if (activitySections[activeSection]) {
+      return activities.filter(activity => 
+        activitySections[activeSection].types.includes(activity.type)
+      );
+    }
+    
+    return activities;
+  };
+
   return (
     <div className="user-management">
       <div className="section-header">
         <div className="header-content">
           <h2>System Activities</h2>
-          <p>Monitor and track all system activities and user actions</p>
+          <p>Monitor and track all system activities and user actions by category</p>
+        </div>
+      </div>
+
+      {/* Activity Section Navigation */}
+      <div className="activity-sections">
+        <div className="section-tabs">
+          <button
+            className={`section-tab ${activeSection === 'all' ? 'active' : ''}`}
+            onClick={() => handleSectionChange('all')}
+          >
+            <i className="fas fa-list"></i>
+            All Activities
+          </button>
+          {Object.entries(activitySections).map(([key, section]) => (
+            <button
+              key={key}
+              className={`section-tab ${activeSection === key ? 'active' : ''}`}
+              onClick={() => handleSectionChange(key)}
+            >
+              <i className={section.icon}></i>
+              {section.title}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -253,13 +341,29 @@ const Activities = () => {
       ) : activities.length === 0 ? (
         <div className="empty-state">
           <i className="fas fa-calendar-times"></i>
-          <p>No recent activities.</p>
+          <p>No recent activities in {activeSection === 'all' ? 'any category' : activitySections[activeSection]?.title || 'this section'}.</p>
           <button className="btn-outline" onClick={fetchActivities}>
             Reload
           </button>
         </div>
       ) : (
         <>
+          {/* Section Context Header */}
+          <div className="section-context">
+            <div className="context-info">
+              <i className={activeSection === 'all' ? 'fas fa-list' : activitySections[activeSection]?.icon || 'fas fa-info-circle'}></i>
+              <span>
+                Showing {activeSection === 'all' ? 'All Activities' : activitySections[activeSection]?.title || 'Activities'}
+                {pagination.totalActivities > 0 && ` (${pagination.totalActivities} total)`}
+              </span>
+              {activeSection !== 'all' && (
+                <div className="filter-indicator">
+                  <small>Filtered by: {activitySections[activeSection]?.types.join(', ')}</small>
+                </div>
+              )}
+            </div>
+          </div>
+
           <table className="user-table">
             <thead>
               <tr>

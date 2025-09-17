@@ -29,6 +29,27 @@ const PlanManagement = () => {
   const [merchants, setMerchants] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
+  
+  // Add merchant pagination state
+  const [merchantPagination, setMerchantPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    pageSize: 10,
+    totalMerchants: 0
+  });
+  
+  // Add user pagination state
+  const [userPagination, setUserPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    pageSize: 10,
+    totalUsers: 0
+  });
+  
+  // Add search states
+  const [userSearchTerm, setUserSearchTerm] = useState('');
+  const [merchantSearchTerm, setMerchantSearchTerm] = useState('');
+  
   const [stats, setStats] = useState({
     totalUsers: 0,
     communityUsers: 0,
@@ -68,9 +89,26 @@ const PlanManagement = () => {
         // Fetch users
         const usersResponse = await api.get('/admin/users?userType=user');
         setUsers(usersResponse.data.users || []);
+        
+        // Set initial pagination data for users
+        const totalUsers = usersResponse.data.users?.length || 0;
+        setUserPagination(prev => ({
+          ...prev,
+          totalUsers: totalUsers,
+          totalPages: Math.ceil(totalUsers / prev.pageSize)
+        }));
+        
         // Fetch merchants using the partners endpoint which includes business info
         const merchantsResponse = await api.get('/admin/partners');
         setMerchants(merchantsResponse.data.merchants || []);
+        
+        // Set initial pagination data for merchants
+        const totalMerchants = merchantsResponse.data.merchants?.length || 0;
+        setMerchantPagination(prev => ({
+          ...prev,
+          totalMerchants: totalMerchants,
+          totalPages: Math.ceil(totalMerchants / prev.pageSize)
+        }));
         // Fetch analytics data
         try {
           const analyticsResponse = await api.get('/admin/plan-analytics');
@@ -151,6 +189,94 @@ const PlanManagement = () => {
       console.error('Error during navigation:', error);
       showNotification('Error navigating to plan assignment page', 'error');
     }
+  };
+
+  // Merchant pagination functions
+  const handleMerchantPageChange = (page) => {
+    setMerchantPagination(prev => ({ ...prev, currentPage: page }));
+  };
+
+  const getPaginatedMerchants = () => {
+    const filteredMerchants = getFilteredMerchants();
+    const startIndex = (merchantPagination.currentPage - 1) * merchantPagination.pageSize;
+    const endIndex = startIndex + merchantPagination.pageSize;
+    return filteredMerchants.slice(startIndex, endIndex);
+  };
+
+  // User pagination functions
+  const handleUserPageChange = (page) => {
+    setUserPagination(prev => ({ ...prev, currentPage: page }));
+  };
+
+  const getFilteredUsers = () => {
+    if (!userSearchTerm.trim()) {
+      return users;
+    }
+    return users.filter(user => 
+      user.fullName?.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
+      user.email?.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
+      user.membershipType?.toLowerCase().includes(userSearchTerm.toLowerCase())
+    );
+  };
+
+  const getPaginatedUsers = () => {
+    const filteredUsers = getFilteredUsers();
+    const startIndex = (userPagination.currentPage - 1) * userPagination.pageSize;
+    const endIndex = startIndex + userPagination.pageSize;
+    return filteredUsers.slice(startIndex, endIndex);
+  };
+
+  // Merchant search and filter functions
+  const getFilteredMerchants = () => {
+    if (!merchantSearchTerm.trim()) {
+      return merchants;
+    }
+    return merchants.filter(merchant => 
+      merchant.fullName?.toLowerCase().includes(merchantSearchTerm.toLowerCase()) ||
+      merchant.email?.toLowerCase().includes(merchantSearchTerm.toLowerCase()) ||
+      merchant.businessName?.toLowerCase().includes(merchantSearchTerm.toLowerCase()) ||
+      merchant.businessCategory?.toLowerCase().includes(merchantSearchTerm.toLowerCase()) ||
+      merchant.membershipType?.toLowerCase().includes(merchantSearchTerm.toLowerCase())
+    );
+  };
+
+  // Search handlers
+  const handleUserSearch = (searchTerm) => {
+    setUserSearchTerm(searchTerm);
+    // Calculate filtered users count
+    const filteredCount = searchTerm.trim() ? 
+      users.filter(user => 
+        user.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.membershipType?.toLowerCase().includes(searchTerm.toLowerCase())
+      ).length : users.length;
+    
+    setUserPagination(prev => ({ 
+      ...prev, 
+      currentPage: 1,
+      totalUsers: filteredCount,
+      totalPages: Math.ceil(filteredCount / prev.pageSize)
+    }));
+  };
+
+  const handleMerchantSearch = (searchTerm) => {
+    setMerchantSearchTerm(searchTerm);
+    // Calculate filtered merchants count
+    const filteredCount = searchTerm.trim() ? 
+      merchants.filter(merchant => 
+        merchant.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        merchant.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        merchant.businessName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        merchant.businessCategory?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        merchant.membershipType?.toLowerCase().includes(searchTerm.toLowerCase())
+      ).length : merchants.length;
+    
+    setMerchantPagination(prev => ({ 
+      ...prev, 
+      currentPage: 1,
+      totalMerchants: filteredCount,
+      totalPages: Math.ceil(filteredCount / prev.pageSize)
+    }));
   };  // Delete plan handler
   const handleDeletePlan = async (planId, planName) => {
     if (!planId) return;
@@ -393,6 +519,29 @@ const PlanManagement = () => {
       <div className="user-management-header">
         <h3>User Plan Management</h3>
         <p>Manage individual user plan assignments</p>
+      </div>
+
+      {/* Compact User Search Bar */}
+      <div className="search-bar-container">
+        <div className="compact-search-bar">
+          <i className="fas fa-search search-icon"></i>
+          <input
+            type="text"
+            placeholder="Search users by name, email, or plan..."
+            value={userSearchTerm}
+            onChange={(e) => handleUserSearch(e.target.value)}
+            className="search-input"
+          />
+          {userSearchTerm && (
+            <button
+              onClick={() => handleUserSearch('')}
+              className="clear-search"
+              title="Clear search"
+            >
+              <i className="fas fa-times"></i>
+            </button>
+          )}
+        </div>
       </div>      <div className="plan-stats-bar">
         {userPlans.map(plan => (
           <span key={plan.id} className={`plan-badge ${plan.key}`}>
@@ -412,9 +561,9 @@ const PlanManagement = () => {
               <th>Actions</th>
             </tr>
           </thead>
-          <tbody>            {users.slice(0, 10).map((user, index) => (
+          <tbody>            {getPaginatedUsers().map((user, index) => (
               <tr key={user.id}>
-                <td>{index + 1}</td>
+                <td>{(userPagination.currentPage - 1) * userPagination.pageSize + index + 1}</td>
                 <td>
                   <div className="user-info">
                     <div>
@@ -446,11 +595,58 @@ const PlanManagement = () => {
             ))}
           </tbody>
         </table>
-        {users.length > 10 && (
-          <div className="table-footer">
-            <Link to="/admin/users" className="btn btn-secondary">
-              View All Users
-            </Link>
+        
+        {/* User Pagination */}
+        {getFilteredUsers().length > 0 && (
+          <div className="user-pagination">
+            <div className="pagination-info">
+              <span>
+                Showing {((userPagination.currentPage - 1) * userPagination.pageSize) + 1} to {Math.min(userPagination.currentPage * userPagination.pageSize, getFilteredUsers().length)} of {getFilteredUsers().length} users
+                {userSearchTerm && <span className="search-indicator"> (filtered)</span>}
+              </span>
+            </div>
+            <div className="pagination-controls">
+              <button
+                className="btn-page"
+                onClick={() => handleUserPageChange(userPagination.currentPage - 1)}
+                disabled={userPagination.currentPage === 1}
+              >
+                <i className="fas fa-chevron-left"></i>
+              </button>
+              
+              {[...Array(userPagination.totalPages)].map((_, index) => {
+                const pageNumber = index + 1;
+                if (
+                  pageNumber === 1 ||
+                  pageNumber === userPagination.totalPages ||
+                  (pageNumber >= userPagination.currentPage - 1 && pageNumber <= userPagination.currentPage + 1)
+                ) {
+                  return (
+                    <button
+                      key={pageNumber}
+                      className={`btn-page ${pageNumber === userPagination.currentPage ? 'active' : ''}`}
+                      onClick={() => handleUserPageChange(pageNumber)}
+                    >
+                      {pageNumber}
+                    </button>
+                  );
+                } else if (
+                  pageNumber === userPagination.currentPage - 2 ||
+                  pageNumber === userPagination.currentPage + 2
+                ) {
+                  return <span key={pageNumber} className="pagination-ellipsis">...</span>;
+                }
+                return null;
+              })}
+              
+              <button
+                className="btn-page"
+                onClick={() => handleUserPageChange(userPagination.currentPage + 1)}
+                disabled={userPagination.currentPage === userPagination.totalPages}
+              >
+                <i className="fas fa-chevron-right"></i>
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -463,6 +659,29 @@ const PlanManagement = () => {
       <div className="merchant-management-header">
         <h3>Merchant Plan Management</h3>
         <p>Manage individual merchant plan assignments</p>
+      </div>
+
+      {/* Compact Merchant Search Bar */}
+      <div className="search-bar-container">
+        <div className="compact-search-bar">
+          <i className="fas fa-search search-icon"></i>
+          <input
+            type="text"
+            placeholder="Search merchants by name, business, email, or plan..."
+            value={merchantSearchTerm}
+            onChange={(e) => handleMerchantSearch(e.target.value)}
+            className="search-input"
+          />
+          {merchantSearchTerm && (
+            <button
+              onClick={() => handleMerchantSearch('')}
+              className="clear-search"
+              title="Clear search"
+            >
+              <i className="fas fa-times"></i>
+            </button>
+          )}
+        </div>
       </div>      <div className="plan-stats-bar">
         {merchantPlans.map(plan => (
           <span key={plan.id} className={`plan-badge ${plan.key}`}>
@@ -483,9 +702,9 @@ const PlanManagement = () => {
               <th>Actions</th>
             </tr>
           </thead>
-          <tbody>            {merchants.slice(0, 10).map((merchant, index) => (
+          <tbody>            {getPaginatedMerchants().map((merchant, index) => (
               <tr key={merchant.id}>
-                <td>{index + 1}</td>
+                <td>{(merchantPagination.currentPage - 1) * merchantPagination.pageSize + index + 1}</td>
                 <td>
                   <div className="merchant-info">
                     <div className="merchant-avatar">
@@ -528,11 +747,58 @@ const PlanManagement = () => {
             ))}
           </tbody>
         </table>
-        {merchants.length > 10 && (
-          <div className="table-footer">
-            <Link to="/admin/users?userType=merchant" className="btn btn-secondary">
-              View All Merchants
-            </Link>
+        
+        {/* Merchant Pagination */}
+        {getFilteredMerchants().length > 0 && (
+          <div className="merchant-pagination">
+            <div className="pagination-info">
+              <span>
+                Showing {((merchantPagination.currentPage - 1) * merchantPagination.pageSize) + 1} to {Math.min(merchantPagination.currentPage * merchantPagination.pageSize, getFilteredMerchants().length)} of {getFilteredMerchants().length} merchants
+                {merchantSearchTerm && <span className="search-indicator"> (filtered)</span>}
+              </span>
+            </div>
+            <div className="pagination-controls">
+              <button
+                className="btn-page"
+                onClick={() => handleMerchantPageChange(merchantPagination.currentPage - 1)}
+                disabled={merchantPagination.currentPage === 1}
+              >
+                <i className="fas fa-chevron-left"></i>
+              </button>
+              
+              {[...Array(merchantPagination.totalPages)].map((_, index) => {
+                const pageNumber = index + 1;
+                if (
+                  pageNumber === 1 ||
+                  pageNumber === merchantPagination.totalPages ||
+                  (pageNumber >= merchantPagination.currentPage - 1 && pageNumber <= merchantPagination.currentPage + 1)
+                ) {
+                  return (
+                    <button
+                      key={pageNumber}
+                      className={`btn-page ${pageNumber === merchantPagination.currentPage ? 'active' : ''}`}
+                      onClick={() => handleMerchantPageChange(pageNumber)}
+                    >
+                      {pageNumber}
+                    </button>
+                  );
+                } else if (
+                  pageNumber === merchantPagination.currentPage - 2 ||
+                  pageNumber === merchantPagination.currentPage + 2
+                ) {
+                  return <span key={pageNumber} className="pagination-ellipsis">...</span>;
+                }
+                return null;
+              })}
+              
+              <button
+                className="btn-page"
+                onClick={() => handleMerchantPageChange(merchantPagination.currentPage + 1)}
+                disabled={merchantPagination.currentPage === merchantPagination.totalPages}
+              >
+                <i className="fas fa-chevron-right"></i>
+              </button>
+            </div>
           </div>
         )}
       </div>
@@ -644,12 +910,6 @@ const PlanManagement = () => {
               <div className="alert-content">
                 <h5>User Plans Expiring</h5>
                 <p>{analytics.upcomingExpiries?.users || 0} users in next 7 days</p>
-                {(analytics.upcomingExpiries?.users || 0) > 0 && (
-                  <button className="btn btn-warning btn-sm">
-                    <i className="fas fa-envelope"></i>
-                    Send Renewal Notices
-                  </button>
-                )}
               </div>
             </div>
             <div className="alert-card merchants">
@@ -659,12 +919,6 @@ const PlanManagement = () => {
               <div className="alert-content">
                 <h5>Merchant Plans Expiring</h5>
                 <p>{analytics.upcomingExpiries?.merchants || 0} merchants in next 7 days</p>
-                {(analytics.upcomingExpiries?.merchants || 0) > 0 && (
-                  <button className="btn btn-warning btn-sm">
-                    <i className="fas fa-envelope"></i>
-                    Send Renewal Notices
-                  </button>
-                )}
               </div>
             </div>
           </div>        </div>
