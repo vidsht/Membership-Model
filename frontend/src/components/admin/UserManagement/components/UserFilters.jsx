@@ -154,6 +154,18 @@ const UserFilters = ({
               </select>
             </div>
 
+            {/* Registered From Date Filter */}
+            <div className="filter-group">
+              <label htmlFor="dateFrom">Registered From</label>
+              <input
+                id="dateFrom"
+                type="date"
+                value={filters.dateFrom || ''}
+                onChange={(e) => handleFilterChange('dateFrom', e.target.value)}
+                max={new Date().toISOString().split('T')[0]} // Prevent future dates
+              />
+            </div>
+
           </div>
         )}
 

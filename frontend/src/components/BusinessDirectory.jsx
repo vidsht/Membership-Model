@@ -112,15 +112,15 @@ const BusinessDirectory = () => {
   const canShareRichContent = () => {
     if (!navigator.share) return false;
     
-    // Web Share API is more reliable on mobile devices
+    // Web Share API is supported on mobile devices
     if (isMobileDevice()) return true;
     
-    // On desktop, many browsers support navigator.share but with limited functionality
-    // Safari on macOS generally works well, but Chrome/Edge on Windows may only share URLs
-    const isDesktopSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent) && !isMobileDevice();
+    // On desktop, modern browsers also support navigator.share
+    // Let's be less restrictive and try Web Share API on most modern browsers
+    const isModernBrowser = navigator.share && typeof navigator.share === 'function';
     
-    // For now, only trust mobile devices and desktop Safari for rich content sharing
-    return isDesktopSafari;
+    // Allow Web Share API on all browsers that support it, not just Safari
+    return isModernBrowser;
   };
 
   // Share business function
