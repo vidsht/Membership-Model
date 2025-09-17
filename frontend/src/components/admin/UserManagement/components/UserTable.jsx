@@ -1,4 +1,3 @@
-// UserTable.jsx - Matching Old Version + Merchant Styling (Edit/Delete/Plan Buttons Removed)
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useImageUrl, SmartImage, DefaultAvatar } from '../../../../hooks/useImageUrl.jsx';

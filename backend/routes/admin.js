@@ -170,7 +170,8 @@ router.get('/activities', auth, admin, async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 50;
     const offset = parseInt(req.query.offset) || 0;
-    const type = req.query.type; // Filter by activity type
+    const type = req.query.type; // Filter by single activity type
+    const types = req.query.types; // Filter by multiple activity types (comma-separated)
 
     let whereClause = 'WHERE 1=1';
     const params = [];
@@ -178,6 +179,14 @@ router.get('/activities', auth, admin, async (req, res) => {
     if (type && type !== 'all') {
       whereClause += ' AND type = ?';
       params.push(type);
+    } else if (types) {
+      // Handle multiple types filter
+      const typeArray = types.split(',').map(t => t.trim()).filter(t => t);
+      if (typeArray.length > 0) {
+        const placeholders = typeArray.map(() => '?').join(',');
+        whereClause += ` AND type IN (${placeholders})`;
+        params.push(...typeArray);
+      }
     }
 
     try {
@@ -1177,6 +1186,31 @@ router.put('/users/:id', auth, admin, async (req, res) => {
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    // Log custom limit assignment activities
+    try {
+      if (updateData.customRedemptionLimit !== undefined && customRedemptionColumnExists.length > 0) {
+        const userResult = await queryAsync('SELECT fullName, email, userType FROM users WHERE id = ?', [userId]);
+        const user = userResult[0];
+        
+        await logActivity('ASSIGNED_CUSTOM_DEAL_REDEMPTION', {
+          userId: req.user?.id,
+          description: `Custom redemption limit (${updateData.customRedemptionLimit}) assigned to ${user?.userType === 'merchant' ? 'merchant' : 'user'} ${user?.fullName}`,
+          relatedId: userId,
+          relatedType: 'user',
+          metadata: {
+            targetUserId: userId,
+            targetUserName: user?.fullName,
+            targetUserEmail: user?.email,
+            targetUserType: user?.userType,
+            customRedemptionLimit: updateData.customRedemptionLimit,
+            assignedBy: req.user?.id
+          }
+        });
+      }
+    } catch (logError) {
+      console.warn('Failed to log custom limit assignment activity:', logError);
     }
 
     let query = 'SELECT u.*';
@@ -2616,6 +2650,29 @@ router.put('/partners/:id', auth, admin, async (req, res) => {
         const assignedBy = getAdminUserId(req);
         const adminMessage = req.body.adminMessage || null;
 
+        // Log custom deal limit assignment activity
+        try {
+          const merchantResult = await queryAsync('SELECT fullName, email FROM users WHERE id = ?', [merchantId]);
+          const merchant = merchantResult[0];
+          
+          await logActivity('ASSIGNED_CUSTOM_DEAL_LIMIT', {
+            userId: assignedBy,
+            description: `Custom deal limit (${newLimit}) assigned to merchant ${merchant?.fullName}`,
+            relatedId: merchantId,
+            relatedType: 'user',
+            metadata: {
+              targetMerchantId: merchantId,
+              targetMerchantName: merchant?.fullName,
+              targetMerchantEmail: merchant?.email,
+              customDealLimit: newLimit,
+              assignedBy: assignedBy,
+              adminMessage: adminMessage
+            }
+          });
+        } catch (logError) {
+          console.warn('Failed to log custom deal limit assignment activity:', logError);
+        }
+
         NotificationHooks.onCustomDealLimitAssigned(merchantId, newLimit, { assignedBy, adminMessage })
           .then(result => {
             console.log('📧 Custom deal limit assignment notification result:', result);
@@ -3575,6 +3632,26 @@ router.post('/deals', auth, admin, [
 
     const result = await queryAsync(query, params);
 
+    // Log deal creation activity
+    try {
+      await logActivity('DEAL_CREATED', {
+        userId: req.user?.id,
+        description: `New deal created by admin: "${title}"`,
+        relatedId: result.insertId,
+        relatedType: 'deal',
+        metadata: {
+          dealId: result.insertId,
+          dealTitle: title,
+          businessId: businessId,
+          discount: discount,
+          discountType: discountType,
+          createdBy: 'admin'
+        }
+      });
+    } catch (logError) {
+      console.warn('Failed to log deal creation activity:', logError);
+    }
+
     res.status(201).json({
       success: true,
       message: 'Deal created successfully',
@@ -3951,7 +4028,7 @@ router.patch('/deals/:id/approve', auth, admin, async (req, res) => {
     // Log deal approval activity
     try {
       const dealTitle = existingDeal[0]?.title || `Deal #${dealId}`;
-      await logDealStatusChange(dealId, dealTitle, 'active', req.user?.id, 'Deal approved by admin');
+      await logDealStatusChange(dealId, dealTitle, 'approved', req.user?.id, 'Deal approved by admin');
     } catch (logError) {
       console.warn('Failed to log deal approval activity:', logError);
     }

@@ -6,6 +6,7 @@ const fs = require('fs');
 const { auth, merchant } = require('../middleware/auth');
 const db = require('../db');
 const NotificationHooks = require('../services/notificationHooks-integrated');
+const { logActivity, logDealStatusChange, ACTIVITY_TYPES } = require('../utils/activityLogger');
 
 const router = express.Router();
 
@@ -631,6 +632,26 @@ router.post('/deals', checkMerchantAccess, checkDealPostingLimit, [
     db.query('UPDATE businesses SET dealsUsedThisMonth = dealsUsedThisMonth + 1 WHERE businessId = ?', [merchant.businessId], (updateErr) => {
       if (updateErr) console.error('Failed to update deals count:', updateErr);
     });
+
+    // Log deal creation activity
+    try {
+      logActivity('DEAL_CREATED', {
+        userId: req.user.id,
+        description: `New deal created: "${title}" by ${merchant.businessName || 'merchant'}`,
+        relatedId: result.insertId,
+        relatedType: 'deal',
+        metadata: {
+          dealId: result.insertId,
+          dealTitle: title,
+          businessId: merchant.businessId,
+          businessName: merchant.businessName,
+          discount: discount,
+          discountType: discountType
+        }
+      });
+    } catch (logError) {
+      console.warn('Failed to log deal creation activity:', logError);
+    }
 
     // TODO: Send notification to admin about new deal pending approval
 
@@ -1317,6 +1338,28 @@ router.patch('/redemption-requests/:requestId/approve', checkMerchantAccess, asy
 
     // Send redemption approval notification
     const redemptionData = checkResults[0];
+    
+    // Log redemption approval activity
+    try {
+      await logActivity('REDEMPTION_APPROVED', {
+        userId: req.user.id, // Merchant who approved
+        description: `Redemption approved for deal "${redemptionData.title}" by ${merchant.businessName || 'merchant'}`,
+        relatedId: dealId,
+        relatedType: 'deal',
+        metadata: {
+          redemptionId: requestId,
+          dealId: dealId,
+          dealTitle: redemptionData.title,
+          customerId: redemptionData.user_id,
+          customerName: redemptionData.fullName,
+          merchantId: req.user.id,
+          businessName: merchant.businessName
+        }
+      });
+    } catch (logError) {
+      console.warn('Failed to log redemption approval activity:', logError);
+    }
+    
     NotificationHooks.onRedemptionResponse(requestId, 'approved', {
       userId: redemptionData.user_id,
       dealTitle: redemptionData.title,
@@ -1382,6 +1425,29 @@ router.patch('/redemption-requests/:requestId/reject', checkMerchantAccess, asyn
     }
 
     await queryAsync(updateQuery, params);
+
+    // Log redemption rejection activity
+    try {
+      const redemptionData = checkResults[0];
+      await logActivity('REDEMPTION_REJECTED', {
+        userId: req.user.id, // Merchant who rejected
+        description: `Redemption rejected for deal "${redemptionData.title}" by ${merchant.businessName || 'merchant'}${reason ? ` - Reason: ${reason}` : ''}`,
+        relatedId: redemptionData.deal_id,
+        relatedType: 'deal',
+        metadata: {
+          redemptionId: requestId,
+          dealId: redemptionData.deal_id,
+          dealTitle: redemptionData.title,
+          customerId: redemptionData.user_id,
+          customerName: redemptionData.fullName,
+          merchantId: req.user.id,
+          businessName: merchant.businessName,
+          rejectionReason: reason?.trim() || 'No reason provided'
+        }
+      });
+    } catch (logError) {
+      console.warn('Failed to log redemption rejection activity:', logError);
+    }
 
     // Send redemption rejection notification
     const redemptionData = checkResults[0];

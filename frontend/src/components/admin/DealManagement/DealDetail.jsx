@@ -519,7 +519,7 @@ const DealDetail = () => {
                             fontSize: '14px',
                             fontWeight: 'bold'
                           }}>
-                            {(redemptionPage - 1) * redemptionPageSize + index + 1}
+                            {(currentPage - 1) * itemsPerPage + index + 1}
                           </div>
                           <div>
                             <div style={{fontWeight: 'bold', color: '#333', marginBottom: '4px'}}>
