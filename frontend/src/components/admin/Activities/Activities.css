@@ -314,9 +314,9 @@
 }
 
 .pagination button:hover:not(:disabled) {
-  background: #0c905d;
+  background: #520A0A;
   color: white;
-  border-color: #0c905d;
+  border-color: #520A0A;
   transform: translateY(-1px);
 }
 
@@ -327,9 +327,9 @@
 
 .pagination button.active,
 .pagination .active {
-  background: #0c905d;
+  background: #520A0A;
   color: white;
-  border-color: #0c905d;
+  border-color: #520A0A;
 }
 
 /* Responsive Design */

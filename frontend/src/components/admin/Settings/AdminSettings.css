@@ -446,6 +446,7 @@ input:checked + .toggle-slider:before {
   cursor: pointer;
   font-weight: 500;
   color: #2c3e50;
+  position: relative;
 }
 
 .toggle-label input[type="checkbox"] {
@@ -457,6 +458,7 @@ input:checked + .toggle-slider:before {
   background-color: #ccc;
   transition: background-color 0.3s ease;
   cursor: pointer;
+  flex-shrink: 0;
 }
 
 .toggle-label input[type="checkbox"]:checked {
@@ -465,18 +467,20 @@ input:checked + .toggle-slider:before {
 
 .toggle-slider {
   position: absolute;
+  left: 2px;
+  top: 50%;
+  transform: translateY(-50%);
   width: 20px;
   height: 20px;
   border-radius: 50%;
   background-color: white;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   transition: transform 0.3s ease;
-  transform: translateX(2px);
   pointer-events: none;
 }
 
 .toggle-label input[type="checkbox"]:checked + .toggle-slider {
-  transform: translateX(26px);
+  transform: translate(26px, -50%);
 }
 
 .toggle-text {

@@ -145,7 +145,7 @@ router.get('/stats', auth, admin, async (req, res) => {
 
     let totalRedemptions = [{ count: 0 }];
     try {
-      totalRedemptions = await queryAsync('SELECT COUNT(*) as count FROM deal_redemptions WHERE status = "approved"');
+      totalRedemptions = await queryAsync('SELECT COUNT(*) as count FROM deal_redemptions');
     } catch (redemptionsError) {
       console.warn('Deal redemptions table not found');
     }
@@ -4294,7 +4294,12 @@ router.get('/settings/public', async (req, res) => {
         // ensure legacy community-specific key exists by default
         show_community_statistics: true,
         business_directory: true,
-        showMembershipPlans: true
+        showMembershipPlans: true,
+        // Individual statistics card defaults
+        show_community_members: true,
+        show_active_businesses: true,
+        show_exclusive_deals: true,
+        show_total_redemptions: true
       },
       content: {
         terms_conditions: 'By using this service, you agree to abide by all rules and regulations set forth by the Indians in Ghana community. Membership benefits are subject to change without prior notice.'
@@ -4377,6 +4382,23 @@ router.get('/settings/public', async (req, res) => {
               case 'showMembershipPlans':
               case 'show_membership_plans':
                 settings.features.showMembershipPlans = isOn;
+                break;
+
+              // Individual statistics card toggles
+              case 'show_community_members':
+                settings.features.show_community_members = isOn;
+                break;
+
+              case 'show_active_businesses':
+                settings.features.show_active_businesses = isOn;
+                break;
+
+              case 'show_exclusive_deals':
+                settings.features.show_exclusive_deals = isOn;
+                break;
+
+              case 'show_total_redemptions':
+                settings.features.show_total_redemptions = isOn;
                 break;
 
               default:
