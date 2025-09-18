@@ -234,7 +234,7 @@ const Activities = () => {
     }
   };
 
-  const formatTimeAgo = (dateString) => {
+  const formatDateTime = (dateString) => {
     if (!dateString) return 'Unknown';
     
     const date = new Date(dateString);
@@ -244,27 +244,18 @@ const Activities = () => {
       return 'Invalid Date';
     }
     
-    const now = new Date();
-    const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
-    
-    if (diffInHours < 1) {
-      return 'Just now';
-    } else if (diffInHours < 24) {
-      return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
-    } else if (diffInHours < 168) {
-      const days = Math.floor(diffInHours / 24);
-      return `${days} day${days > 1 ? 's' : ''} ago`;
-    } else {
-      // Use a more reliable date formatting
-      try {
-        return date.toLocaleDateString('en-GB', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit'
-        });
-      } catch (error) {
-        return 'Invalid Date';
-      }
+    // Format as actual date and time
+    try {
+      return date.toLocaleString('en-GB', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false // Use 24-hour format
+      });
+    } catch (error) {
+      return 'Invalid Date';
     }
   };
 
@@ -428,7 +419,7 @@ const Activities = () => {
                   </td>
                   <td data-label="Date">
                     <div style={{ fontSize: '0.875rem' }}>
-                      {formatTimeAgo(activity.timestamp || activity.createdAt)}
+                      {formatDateTime(activity.timestamp || activity.createdAt)}
                     </div>
                   </td>
                   <td data-label="Status">

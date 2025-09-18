@@ -57,6 +57,19 @@ const UserSettings = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8; // Show 8 redemption cards per page
 
+  // Helper function to handle page change with scroll to top
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage);
+    
+    // Scroll to the top of redemption history container
+    setTimeout(() => {
+      const container = document.querySelector('.redemption-history-container');
+      if (container) {
+        container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 100); // Small delay to allow page change to render
+  };
+
   // Edit modal state
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editFormData, setEditFormData] = useState({
@@ -907,7 +920,7 @@ const RedemptionHistoryTab = () => {
       {/* Total Redemption Stats Card */}
       <div className="plan-info-card total-stats-card">
         <div className="card-header">
-          <h2><i className="fas fa-chart-bar"></i> Total Redemption Stats</h2>
+          <h2><i className="fas fa-chart-bar"></i> Total Redemption Statistics</h2>
         </div>
         <div className="stats-grid">
           <div className="stat-item">
@@ -1067,7 +1080,7 @@ const RedemptionHistoryTab = () => {
               <div className="pagination-controls">
                 <button 
                   className="pagination-btn prev-btn"
-                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  onClick={() => handlePageChange(Math.max(currentPage - 1, 1))}
                   disabled={currentPage === 1}
                 >
                   <i className="fas fa-chevron-left"></i>
@@ -1091,7 +1104,7 @@ const RedemptionHistoryTab = () => {
                         )}
                         <button
                           className={`pagination-btn page-number ${currentPage === page ? 'active' : ''}`}
-                          onClick={() => setCurrentPage(page)}
+                          onClick={() => handlePageChange(page)}
                         >
                           {page}
                         </button>
@@ -1102,7 +1115,7 @@ const RedemptionHistoryTab = () => {
                 
                 <button 
                   className="pagination-btn next-btn"
-                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(userRedemptions.length / itemsPerPage)))}
+                  onClick={() => handlePageChange(Math.min(currentPage + 1, Math.ceil(userRedemptions.length / itemsPerPage)))}
                   disabled={currentPage === Math.ceil(userRedemptions.length / itemsPerPage)}
                 >
                   Next

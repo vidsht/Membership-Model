@@ -273,6 +273,12 @@ const MerchantDashboard = () => {
     return membershipType === 'basic' || !membershipType;
   };
 
+  // Helper function to check if current user is on basic or silver plan (for hiding plan fields in verify member)
+  const isBasicOrSilverUser = (membershipType) => {
+    const basicOrSilverPlans = ['basic', 'silver', 'silver_merchant', 'silver_business'];
+    return basicOrSilverPlans.includes(membershipType) || !membershipType;
+  };
+
   // Helper functions for plan level restrictions (Task 3)
   const isStatisticsDisabled = (membershipType) => {
     // Statistics disabled for basic, silver, gold plans (enabled only for platinum+)
@@ -393,10 +399,24 @@ const MerchantDashboard = () => {
   };
 
   // Pagination helper component
-  const PaginationComponent = ({ currentPage, totalItems, itemsPerPage, onPageChange, sectionName }) => {
+  const PaginationComponent = ({ currentPage, totalItems, itemsPerPage, onPageChange, sectionName, scrollTarget }) => {
     const totalPages = Math.ceil(totalItems / itemsPerPage);
     
     if (totalPages <= 1) return null;
+
+    const handlePageChange = (newPage) => {
+      onPageChange(newPage);
+      
+      // Scroll to the target container if specified
+      if (scrollTarget) {
+        setTimeout(() => {
+          const targetElement = document.querySelector(scrollTarget);
+          if (targetElement) {
+            targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }, 100); // Small delay to allow page change to render
+      }
+    };
     
     return (
       <div className="pagination-wrapper">
@@ -406,7 +426,7 @@ const MerchantDashboard = () => {
         <div className="pagination-controls">
           <button 
             className="btn btn-sm btn-outline"
-            onClick={() => onPageChange(currentPage - 1)}
+            onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage === 1}
           >
             <i className="fas fa-chevron-left"></i> Previous
@@ -416,7 +436,7 @@ const MerchantDashboard = () => {
           </span>
           <button 
             className="btn btn-sm btn-outline"
-            onClick={() => onPageChange(currentPage + 1)}
+            onClick={() => handlePageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
           >
             Next <i className="fas fa-chevron-right"></i>
@@ -1080,7 +1100,7 @@ ${userInfo?.fullName || userInfo?.name || user?.fullName || user?.name || 'Merch
       {/* Plan Expiry Banner */}
       <PlanExpiryBanner />
 
-      {/* Notifications Section */}
+      {/* Notifications Section which is inactive */}
       {notifications.length > 0 && (
         <div className="notifications-section">
           <div className="card-header">
@@ -1144,6 +1164,9 @@ ${userInfo?.fullName || userInfo?.name || user?.fullName || user?.name || 'Merch
                 <i className={`fas ${getPlanIcon(userInfo?.membershipType)}`}></i>
                 {planInfo.name || getPlanDisplayName(userInfo?.membershipType)} Plan
               </h3>
+              {planInfo.description && (
+                <p className="plan-description">{planInfo.description}</p>
+              )}
               <div className="plan-details">
                 <span className="plan-price">
                   {planInfo.price ? `${planInfo.currency || 'GHS'} ${planInfo.price}/${planInfo.billingCycle || 'year'}` : 'Free'}
@@ -1687,6 +1710,7 @@ ${userInfo?.fullName || userInfo?.name || user?.fullName || user?.name || 'Merch
             itemsPerPage={itemsPerPage}
             onPageChange={setRecentRedemptionsPage}
             sectionName="Recent Redemptions"
+            scrollTarget=".recent-redemptions-section"
           />
         </div>
       )}
@@ -2129,6 +2153,7 @@ ${userInfo?.fullName || userInfo?.name || user?.fullName || user?.name || 'Merch
                   itemsPerPage={itemsPerPage}
                   onPageChange={setRedemptionRequestsPage}
                   sectionName="Redemption Requests"
+                  scrollTarget=".requests-container"
                 />
               )}
             </div>
@@ -2777,11 +2802,15 @@ ${userInfo?.fullName || userInfo?.name || user?.fullName || user?.name || 'Merch
                             <strong><i className="fas fa-id-card"></i> Membership Number:</strong>
                             <span>{memberVerificationResult.membershipNumber}</span>
                           </div>
-                          <div className="info-item">
-                            <strong><i className="fas fa-crown"></i> Plan:</strong>
-                            <span>{memberVerificationResult.planName || memberVerificationResult.membershipType || 'N/A'}</span>
-                          </div>
-                          {memberVerificationResult.validationDate && (
+                          {/* Only show plan name for gold+ users */}
+                          {!isBasicOrSilverUser(userInfo?.membershipType) && (
+                            <div className="info-item">
+                              <strong><i className="fas fa-crown"></i> Plan:</strong>
+                              <span>{memberVerificationResult.planName || memberVerificationResult.membershipType || 'N/A'}</span>
+                            </div>
+                          )}
+                          {/* Only show plan expiry for gold+ users */}
+                          {!isBasicOrSilverUser(userInfo?.membershipType) && memberVerificationResult.validationDate && (
                             <div className="info-item">
                               <strong><i className="fas fa-calendar"></i> Plan Expiry:</strong>
                               <span className={memberVerificationResult.isExpired ? 'text-danger' : memberVerificationResult.daysUntilExpiry <= 7 ? 'text-warning' : 'text-success'}>

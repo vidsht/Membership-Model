@@ -253,7 +253,7 @@
 }
 
 .plan-description {
-  color: var(--neutral-medium);
+  color: white;
   line-height: 1.5;
   margin: 0;
 }
