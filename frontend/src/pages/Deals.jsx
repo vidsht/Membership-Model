@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { getAllDeals, redeemDeal, getAllPlans, trackDealView } from '../services/api';
+import { getAllDeals, getExpiredDeals, getUpcomingDeals, redeemDeal, getAllPlans, trackDealView } from '../services/api';
 import DealFilters from '../components/deals/DealFilters';
 import PlanExpiryBanner from '../components/PlanExpiryBanner';
 import usePlanAccess from '../hooks/usePlanAccess.jsx';
@@ -125,6 +125,8 @@ const Deals = () => {
   const planAccess = usePlanAccess();
   const { getDealBannerUrl, getMerchantLogoUrl } = useImageUrl();
   const [deals, setDeals] = useState([]);
+  const [expiredDeals, setExpiredDeals] = useState([]);
+  const [upcomingDeals, setUpcomingDeals] = useState([]);
   const [plans, setPlans] = useState([]);
   const [filteredDeals, setFilteredDeals] = useState([]);
   const [filters, setFilters] = useState({
@@ -150,7 +152,18 @@ const Deals = () => {
   useEffect(() => {
     fetchDeals();
     fetchPlans();
+    fetchExpiredDeals(); // Always fetch expired deals for the bottom section
+    fetchUpcomingDeals(); // Always fetch upcoming deals
   }, []);
+
+  // Fetch specific deals when filters change
+  useEffect(() => {
+    if (filters.status === 'expired') {
+      fetchExpiredDeals();
+    } else if (filters.status === 'upcoming') {
+      fetchUpcomingDeals();
+    }
+  }, [filters.status]);
 
   // Handle shared URLs - auto-open deal modal if ID is in URL
   useEffect(() => {
@@ -164,6 +177,7 @@ const Deals = () => {
       }
     }
   }, [location.search, deals]);
+  
   const fetchPlans = async () => {
     try {
       const plansResponse = await getAllPlans('user', true);
@@ -172,34 +186,55 @@ const Deals = () => {
       console.error('Failed to fetch plans:', error);
       setPlans([]);
     }
-  };useEffect(() => {
-    let result = deals;
+  };
+
+  const fetchExpiredDeals = async () => {
+    try {
+      const expiredData = await getExpiredDeals();
+      setExpiredDeals(expiredData);
+    } catch (error) {
+      console.error('Failed to fetch expired deals:', error);
+      setExpiredDeals([]);
+    }
+  };
+
+  const fetchUpcomingDeals = async () => {
+    try {
+      const upcomingData = await getUpcomingDeals();
+      setUpcomingDeals(upcomingData);
+    } catch (error) {
+      console.error('Failed to fetch upcoming deals:', error);
+      setUpcomingDeals([]);
+    }
+  };
+
+  useEffect(() => {
+    let result = [];
     
-    // Filter out expired deals first
-    result = result.filter(deal => {
-      const expirationDate = deal.expirationDate || deal.validUntil || deal.expiration_date;
-      if (expirationDate) {
-        return new Date(expirationDate) >= new Date();
-      }
-      return true; // Include deals without expiration dates
-    });
-    
-    // Status filter
-    if (filters.status !== 'all') {
-      result = result.filter(deal => {
-        const expirationDate = deal.expirationDate || deal.validUntil || deal.expiration_date;
-        if (filters.status === 'active') {
-          return expirationDate ? new Date(expirationDate) > new Date() : true;
-        }
-        if (filters.status === 'expired') {
-          return expirationDate ? new Date(expirationDate) < new Date() : false;
-        }
-        if (filters.status === 'upcoming') {
+    // Select the appropriate deals based on status filter
+    if (filters.status === 'expired') {
+      result = [...expiredDeals];
+    } else if (filters.status === 'upcoming') {
+      result = [...upcomingDeals];
+    } else {
+      result = [...deals];
+      
+      // Filter based on status for non-expired/non-upcoming deals
+      if (filters.status !== 'all') {
+        result = result.filter(deal => {
+          const expirationDate = deal.expirationDate || deal.validUntil || deal.expiration_date;
           const startDate = deal.validFrom || deal.start_date;
-          return startDate && new Date(startDate) > new Date();
-        }
-        return true;
-      });
+          const now = new Date();
+          
+          if (filters.status === 'active') {
+            // Active deals: started and not expired
+            const hasStarted = !startDate || new Date(startDate) <= now;
+            const notExpired = !expirationDate || new Date(expirationDate) >= now;
+            return hasStarted && notExpired;
+          }
+          return true;
+        });
+      }
     }
     
     // Category filter (case-insensitive, supports string or array categories)
@@ -228,7 +263,7 @@ const Deals = () => {
     
     setFilteredDeals(result);
     setCurrentPage(1); // Reset to first page when filters change
-  }, [filters, deals, plans]);
+  }, [filters, deals, expiredDeals, upcomingDeals, plans]);
 
   // Calculate pagination values
   const totalPages = Math.ceil(filteredDeals.length / dealsPerPage);
@@ -519,7 +554,11 @@ Join Indians in Ghana Community for exclusive deals!`;
                return (
                <div className="deal-card" key={deal.id}>
                  {/* Deal Banner with Category Overlay */}
-                 <div className="deal-banner">
+                 <div 
+                   className="deal-banner clickable-banner" 
+                   onClick={() => handleViewDetails(deal)}
+                   title="Click to view deal details"
+                 >
                    <div className="deal-category-overlay">
                      <i className="fas fa-tag"></i>
                      {deal.category || 'General'}
@@ -686,6 +725,79 @@ Join Indians in Ghana Community for exclusive deals!`;
           )}
         </div>
       )}
+
+      {/* Expired Deals Section - Show only when not filtering for expired deals specifically */}
+      {filters.status !== 'expired' && expiredDeals.length > 0 && (
+        <div className="expired-deals-section">
+          <div className="expired-deals-header">
+            <h3>Recently Expired Deals</h3>
+            <p>Check out these deals that recently ended - similar offers might return!</p>
+          </div>
+          <div className="expired-deals-grid">
+            {expiredDeals.slice(0, 6).map(deal => (
+              <div key={deal.id} className="deal-card expired-deal-card" onClick={() => handleViewDetails(deal)}>
+                <div className="expired-badge">
+                  <i className="fas fa-clock"></i>
+                  Expired
+                </div>
+                <div className="deal-image-container">
+                  <SmartImage
+                    src={getDealBannerUrl(deal)}
+                    alt={deal.title}
+                    className="deal-image"
+                    style={{
+                      width: '100%',
+                      height: '180px',
+                      objectFit: 'cover'
+                    }}
+                  />
+                </div>
+                <div className="deal-content">
+                  <div className="deal-header">
+                    <h3 className="deal-title">{deal.title}</h3>
+                    <div className="business-info">
+                      <span className="business-name">{deal.businessName}</span>
+                    </div>
+                  </div>
+                  <p className="deal-description">
+                    {deal.description && deal.description.length > 100
+                      ? `${deal.description.substring(0, 100)}...`
+                      : deal.description}
+                  </p>
+                  <div className="deal-footer">
+                    <div className="deal-pricing">
+                      {deal.originalPrice && deal.discountedPrice ? (
+                        <>
+                          <span className="original-price">GHS {parseFloat(deal.originalPrice).toFixed(2)}</span>
+                          <span className="discounted-price">GHS {parseFloat(deal.discountedPrice).toFixed(2)}</span>
+                        </>
+                      ) : deal.discount ? (
+                        <span className="discount-badge">
+                          {deal.discount}{deal.discountType === 'percentage' ? '%' : ' GHS'} OFF
+                        </span>
+                      ) : null}
+                    </div>
+                    <span className="expired-date">
+                      Expired: {new Date(deal.expirationDate || deal.validUntil || deal.expiration_date).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          {expiredDeals.length > 6 && (
+            <div className="expired-deals-footer">
+              <button 
+                className="btn btn-outline"
+                onClick={() => setFilters({...filters, status: 'expired'})}
+              >
+                View All Expired Deals ({expiredDeals.length})
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       {showRedemptionModal && selectedDeal && (
         <div className="modal-overlay">
           <div className="modal-content redemption-modal">
@@ -788,14 +900,6 @@ Join Indians in Ghana Community for exclusive deals!`;
               </button>
             </div>
             
-            {/* Login/Register Requirement Notice */}
-            <div className="modal-notice">
-              <div className="notice-content">
-                <i className="fas fa-info-circle"></i>
-                <span>To redeem this deal, users must login or register first</span>
-              </div>
-            </div>
-            
             <div className="modal-body-compact">
               <div className="modal-content-grid">
                 {/* Left Side - Description and Deal Information */}
@@ -882,6 +986,12 @@ Join Indians in Ghana Community for exclusive deals!`;
                       <p className="terms-text">{selectedDeal.termsConditions}</p>
                     </div>
                   )}
+
+                  {/* Login/Register Requirement Notice - Compact */}
+                  <div className="modal-notice-compact">
+                    <i className="fas fa-info-circle"></i>
+                    <span>Login required to redeem</span>
+                  </div>
 
                   {/* Membership Requirements */}
                   {((selectedDeal.minPlanPriority || selectedDeal.requiredPlanPriority) !== null && (selectedDeal.minPlanPriority || selectedDeal.requiredPlanPriority) !== undefined) && (

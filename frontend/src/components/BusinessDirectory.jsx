@@ -13,6 +13,7 @@ const BusinessDirectory = () => {
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [sortBy, setSortBy] = useState('name');
   const [showBusinessModal, setShowBusinessModal] = useState(false);
   const [selectedBusiness, setSelectedBusiness] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -70,31 +71,100 @@ const BusinessDirectory = () => {
     }
   }, [location.search, businesses]);
 
+  // Helper function to get plan priority for sorting
+  const getPlanPriority = (business) => {
+    const membershipType = (business.membershipLevel || business.membershipType || business.membership || '').toLowerCase();
+    
+    // Higher priority values appear first in sort
+    if (membershipType.includes('platinum')) return 5;
+    if (membershipType.includes('gold')) return 4;
+    if (membershipType.includes('silver')) return 3;
+    if (membershipType.includes('premium')) return 2;
+    return 1; // basic/free
+  };
 
-  // Filter businesses based on search and category (match Home page fields)
-  const filteredBusinesses = businesses.filter(business => {
-    const name = business.businessName || business.name || '';
-    const desc = business.businessDescription || business.description || '';
-    const address = business.businessAddress || business.address || '';
-    const category = business.businessCategory || business.category || business.sector || '';
-    const matchesSearch = filter === '' || 
-      name.toLowerCase().includes(filter.toLowerCase()) ||
-      desc.toLowerCase().includes(filter.toLowerCase()) ||
-      address.toLowerCase().includes(filter.toLowerCase());
-    const matchesCategory = selectedCategory === '' || category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  // Helper function to get plan badge info
+  const getPlanBadge = (business) => {
+    const membershipType = (business.membershipLevel || business.membershipType || business.membership || '').toLowerCase();
+    
+    if (membershipType.includes('platinum')) {
+      return { label: 'Platinum', color: '#E5E7EB', textColor: '#374151' }; // Platinum silver-gray
+    }
+    if (membershipType.includes('gold')) {
+      return { label: 'Gold', color: '#F59E0B', textColor: '#FFFFFF' }; // Gold
+    }
+    if (membershipType.includes('silver')) {
+      return { label: 'Silver', color: '#6B7280', textColor: '#FFFFFF' }; // Silver gray
+    }
+    if (membershipType.includes('premium')) {
+      return { label: 'Premium', color: '#8B5CF6', textColor: '#FFFFFF' }; // Purple
+    }
+    return { label: 'Basic', color: '#10B981', textColor: '#FFFFFF' }; // Green for basic/free
+  };
+
+  // Filter and sort businesses based on search, category, and sort option
+  const filteredAndSortedBusinesses = businesses
+    .filter(business => {
+      const name = business.businessName || business.name || '';
+      const desc = business.businessDescription || business.description || '';
+      const address = business.businessAddress || business.address || '';
+      const category = business.businessCategory || business.category || business.sector || '';
+      const matchesSearch = filter === '' || 
+        name.toLowerCase().includes(filter.toLowerCase()) ||
+        desc.toLowerCase().includes(filter.toLowerCase()) ||
+        address.toLowerCase().includes(filter.toLowerCase());
+      const matchesCategory = selectedCategory === '' || category === selectedCategory;
+      return matchesSearch && matchesCategory;
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case 'name':
+          const nameA = (a.businessName || a.name || '').toLowerCase();
+          const nameB = (b.businessName || b.name || '').toLowerCase();
+          return nameA.localeCompare(nameB);
+        
+        case 'plan':
+          const priorityA = getPlanPriority(a);
+          const priorityB = getPlanPriority(b);
+          if (priorityA !== priorityB) {
+            return priorityB - priorityA; // Higher priority first
+          }
+          // If same priority, sort by name
+          const fallbackNameA = (a.businessName || a.name || '').toLowerCase();
+          const fallbackNameB = (b.businessName || b.name || '').toLowerCase();
+          return fallbackNameA.localeCompare(fallbackNameB);
+        
+        case 'category':
+          const categoryA = (a.businessCategory || a.category || a.sector || '').toLowerCase();
+          const categoryB = (b.businessCategory || b.category || b.sector || '').toLowerCase();
+          if (categoryA !== categoryB) {
+            return categoryA.localeCompare(categoryB);
+          }
+          // If same category, sort by name
+          const fallbackNameA2 = (a.businessName || a.name || '').toLowerCase();
+          const fallbackNameB2 = (b.businessName || b.name || '').toLowerCase();
+          return fallbackNameA2.localeCompare(fallbackNameB2);
+        
+        case 'recent':
+          const dateA = new Date(a.created_at || a.joinedDate || 0);
+          const dateB = new Date(b.created_at || b.joinedDate || 0);
+          return dateB - dateA; // Most recent first
+        
+        default:
+          return 0;
+      }
+    });
 
   // Pagination logic
-  const totalPages = Math.ceil(filteredBusinesses.length / businessesPerPage);
+  const totalPages = Math.ceil(filteredAndSortedBusinesses.length / businessesPerPage);
   const startIndex = (currentPage - 1) * businessesPerPage;
   const endIndex = startIndex + businessesPerPage;
-  const currentBusinesses = filteredBusinesses.slice(startIndex, endIndex);
+  const currentBusinesses = filteredAndSortedBusinesses.slice(startIndex, endIndex);
 
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [filter, selectedCategory]);
+  }, [filter, selectedCategory, sortBy]);
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
@@ -190,7 +260,7 @@ Discover quality services and support our community businesses! 🇮🇳🇬🇭
           <p>Discover Indian businesses in Ghana. Connect with our community partners and find the services you need.</p>
           {/* <div className="directory-stats">
             <div className="stat">
-              <span className="stat-number">{filteredBusinesses.length}</span>
+              <span className="stat-number">{filteredAndSortedBusinesses.length}</span>
               <span className="stat-label">Listed Businesses</span>
             </div>
             <div className="stat">
@@ -225,6 +295,20 @@ Discover quality services and support our community businesses! 🇮🇳🇬🇭
               {categories.map((cat, idx) => (
                 <option key={cat + idx} value={cat}>{cat}</option>
               ))}
+            </select>
+          </div>
+          
+          {/* Sort By Filter Dropdown */}
+          <div className="sort-filter-bar">
+            <select
+              value={sortBy}
+              onChange={e => setSortBy(e.target.value)}
+              className="sort-filter-select"
+            >
+              <option value="name">Sort by Name</option>
+              <option value="plan">Sort by Plan</option>
+              <option value="category">Sort by Category</option>
+              <option value="recent">Sort by Recent</option>
             </select>
           </div>
         </div>
@@ -262,6 +346,22 @@ Discover quality services and support our community businesses! 🇮🇳🇬🇭
               // Show badge for all for now (or use business.isVerified if available)
               return (
               <div key={id} className="business-card-directory" onClick={() => { setSelectedBusiness(business); setShowBusinessModal(true); }} style={{cursor: 'pointer'}}>
+                {/* Plan Badge */}
+                {(() => {
+                  const badge = getPlanBadge(business);
+                  return (
+                    <div 
+                      className="plan-badge"
+                      style={{
+                        backgroundColor: badge.color,
+                        color: badge.textColor
+                      }}
+                    >
+                      {badge.label}
+                    </div>
+                  );
+                })()}
+                
                 <div className="business-card-header">
                   <div className="business-logo-container">
                     <SmartImage

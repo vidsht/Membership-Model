@@ -185,6 +185,68 @@ const AdminSettings = () => {
             </div>
           </div>
         );
+      case 'statistics':
+        return (
+          <div className="settings-section">
+            <div className="settings-section-header">
+              <h3>Community Statistics</h3>
+              <p>Configure which statistics cards are displayed on the home page</p>
+            </div>
+            <div className="form-group">
+              <label>Enabled Community Statistics</label>
+              <div className="statistics-settings">
+                <div className="stat-setting">
+                  <label className="toggle-label">
+                    <input
+                      type="checkbox"
+                      checked={settings.features?.show_community_members !== false}
+                      onChange={(e) => handleSettingChange('features', 'show_community_members', e.target.checked)}
+                    />
+                    <span className="toggle-slider"></span>
+                    <span className="toggle-text">Community Members</span>
+                  </label>
+                  <p className="setting-description">Show total registered members count</p>
+                </div>
+                <div className="stat-setting">
+                  <label className="toggle-label">
+                    <input
+                      type="checkbox"
+                      checked={settings.features?.show_active_businesses !== false}
+                      onChange={(e) => handleSettingChange('features', 'show_active_businesses', e.target.checked)}
+                    />
+                    <span className="toggle-slider"></span>
+                    <span className="toggle-text">Active Businesses</span>
+                  </label>
+                  <p className="setting-description">Show verified business partners count</p>
+                </div>
+                <div className="stat-setting">
+                  <label className="toggle-label">
+                    <input
+                      type="checkbox"
+                      checked={settings.features?.show_exclusive_deals !== false}
+                      onChange={(e) => handleSettingChange('features', 'show_exclusive_deals', e.target.checked)}
+                    />
+                    <span className="toggle-slider"></span>
+                    <span className="toggle-text">Exclusive Deals</span>
+                  </label>
+                  <p className="setting-description">Show member-only offers count</p>
+                </div>
+                <div className="stat-setting">
+                  <label className="toggle-label">
+                    <input
+                      type="checkbox"
+                      checked={settings.features?.show_total_redemptions !== false}
+                      onChange={(e) => handleSettingChange('features', 'show_total_redemptions', e.target.checked)}
+                    />
+                    <span className="toggle-slider"></span>
+                    <span className="toggle-text">Total Deal Redemptions</span>
+                  </label>
+                  <p className="setting-description">Show all-time redemption requests count</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
       default:
         return <div>Select a tab to view settings</div>;
     }  };
@@ -255,6 +317,13 @@ const AdminSettings = () => {
             >
               <i className="fas fa-file-contract"></i>
               <span>Terms & Policies</span>
+            </li>
+            <li 
+              className={activeTab === 'statistics' ? 'active' : ''}
+              onClick={() => setActiveTab('statistics')}
+            >
+              <i className="fas fa-chart-bar"></i>
+              <span>Community Statistics</span>
             </li>
           </ul>
         </div>

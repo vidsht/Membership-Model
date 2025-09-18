@@ -213,6 +213,7 @@ const Home = () => {
             // Use activeBusinesses if available, otherwise fallback to totalBusinesses
             activeBusinesses: publicStats.data.stats.activeBusinesses ?? publicStats.data.stats.totalBusinesses ?? 0,
             exclusiveDeals: publicStats.data.stats.totalDeals || 0,
+            totalRedemptions: publicStats.data.stats.totalRedemptions || 0,
             pendingApprovals: 0
           });
         }
@@ -223,6 +224,7 @@ const Home = () => {
           totalMembers: 0,
           activeBusinesses: 0,
           exclusiveDeals: 0,
+          totalRedemptions: 0,
           pendingApprovals: 0
         });
       }
@@ -1001,30 +1003,46 @@ const Home = () => {
               <p>Real-time insights into our growing community</p>
             </div>
             <div className="stats-grid">
-              <div className="stat-card">
-                <div className="stat-icon">
-                  <i className="fas fa-users"></i>
+              {(adminSettings.features?.show_community_members !== false) && (
+                <div className="stat-card">
+                  <div className="stat-icon">
+                    <i className="fas fa-users"></i>
+                  </div>
+                  <div className="stat-number">{stats.totalMembers || 0}</div>
+                  <div className="stat-label">Community Members</div>
+                  <div className="stat-description">Active registered members</div>
                 </div>
-                <div className="stat-number">{stats.totalMembers || 0}</div>
-                <div className="stat-label">Community Members</div>
-                <div className="stat-description">Active registered members</div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-icon">
-                  <i className="fas fa-store"></i>
+              )}
+              {(adminSettings.features?.show_active_businesses !== false) && (
+                <div className="stat-card">
+                  <div className="stat-icon">
+                    <i className="fas fa-store"></i>
+                  </div>
+                  <div className="stat-number">{stats.activeBusinesses || 0}</div>
+                  <div className="stat-label">Active Businesses</div>
+                  <div className="stat-description">Verified business partners</div>
                 </div>
-                <div className="stat-number">{stats.activeBusinesses || 0}</div>
-                <div className="stat-label">Active Businesses</div>
-                <div className="stat-description">Verified business partners</div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-icon">
-                  <i className="fas fa-tags"></i>
+              )}
+              {(adminSettings.features?.show_exclusive_deals !== false) && (
+                <div className="stat-card">
+                  <div className="stat-icon">
+                    <i className="fas fa-tags"></i>
+                  </div>
+                  <div className="stat-number">{stats.exclusiveDeals || 0}</div>
+                  <div className="stat-label">Exclusive Deals</div>
+                  <div className="stat-description">Member-only offers</div>
                 </div>
-                <div className="stat-number">{stats.exclusiveDeals || 0}</div>
-                <div className="stat-label">Exclusive Deals</div>
-                <div className="stat-description">Member-only offers</div>
-              </div>
+              )}
+              {(adminSettings.features?.show_total_redemptions !== false) && (
+                <div className="stat-card">
+                  <div className="stat-icon">
+                    <i className="fas fa-receipt"></i>
+                  </div>
+                  <div className="stat-number">{stats.totalRedemptions || 0}</div>
+                  <div className="stat-label">Total Deal Redemptions</div>
+                  <div className="stat-description">All-time redemption requests</div>
+                </div>
+              )}
              </div>
            </div>
          </section>

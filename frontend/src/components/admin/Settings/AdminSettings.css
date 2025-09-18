@@ -422,6 +422,75 @@ input:checked + .toggle-slider:before {
   }
 }
 
+/* Statistics Settings Styles */
+.statistics-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.stat-setting {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  border: 1px solid #e1e1e1;
+  border-radius: 6px;
+  background: #f8f9fa;
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.toggle-label input[type="checkbox"] {
+  position: relative;
+  appearance: none;
+  width: 48px;
+  height: 24px;
+  border-radius: 12px;
+  background-color: #ccc;
+  transition: background-color 0.3s ease;
+  cursor: pointer;
+}
+
+.toggle-label input[type="checkbox"]:checked {
+  background-color: #3498db;
+}
+
+.toggle-slider {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s ease;
+  transform: translateX(2px);
+  pointer-events: none;
+}
+
+.toggle-label input[type="checkbox"]:checked + .toggle-slider {
+  transform: translateX(26px);
+}
+
+.toggle-text {
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.setting-description {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #6c757d;
+  padding-left: 3.25rem;
+}
+
 @media (max-width: 768px) {
   .settings-header {
     flex-direction: column;
@@ -437,5 +506,13 @@ input:checked + .toggle-slider:before {
   .form-row {
     flex-direction: column;
     gap: 0;
+  }
+  
+  .stat-setting {
+    padding: 0.75rem;
+  }
+  
+  .setting-description {
+    padding-left: 2.5rem;
   }
 }
