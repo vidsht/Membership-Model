@@ -119,6 +119,18 @@ export const getAllDeals = async () => {
   return response.data.deals || [];
 };
 
+// Get deals filtered by validity window (useful for expired/archived lists)
+export const getExpiredDeals = async (validFrom, validTo, limit = 20, page = 1) => {
+  const params = {};
+  if (validFrom) params.validFrom = validFrom;
+  if (validTo) params.validTo = validTo;
+  if (limit) params.limit = limit;
+  if (page) params.page = page;
+
+  const response = await api.get('/deals', { params });
+  return response.data.deals || [];
+};
+
 // Redeem a deal
 export const redeemDeal = async (dealId) => {
   const response = await api.post(`/deals/${dealId}/redeem`);

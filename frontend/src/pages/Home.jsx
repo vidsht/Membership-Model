@@ -70,6 +70,18 @@ const Home = () => {
     
     return null;
   };
+
+  // Normalize website URLs to ensure external links open correctly
+  const normalizeWebsiteUrl = (url) => {
+    if (!url) return '';
+    let s = String(url).trim();
+    // If already has protocol, return as-is
+    if (/^https?:\/\//i.test(s)) return s;
+    // Strip leading slashes so values like '/example.com' or '//example.com' become 'example.com'
+    s = s.replace(/^\/+/, '');
+    // Prepend https:// to open as an external link
+    return 'https://' + s;
+  };
   
   useEffect(() => {
     // Check if user was redirected from a protected route
@@ -252,6 +264,7 @@ const Home = () => {
       <section className="hero">
         <div className="hero-content">
           <h1>Welcome to Indians in Ghana</h1>
+          <h2 className="home-hero-subheading">Membership Program</h2>
           <p>Connecting the Indian community in Ghana through membership, business opportunities, and exclusive benefits.</p>
           {!isAuthenticated && (
             <div className="hero-actions">
@@ -467,7 +480,7 @@ const Home = () => {
                             </a>
                           )}
                           {business.website && (
-                            <a href={business.website} target="_blank" rel="noopener noreferrer" className="carousel-contact-link">
+                            <a href={normalizeWebsiteUrl(business.website)} target="_blank" rel="noopener noreferrer" className="carousel-contact-link">
                               <i className="fas fa-globe"></i>
                             </a>
                           )}

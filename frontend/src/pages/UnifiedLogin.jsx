@@ -140,6 +140,7 @@ const UnifiedLogin = () => {
                 <img className="logo-img-login" src="/logo.jpeg" alt="logo" />
               </div>
               <h1 className="hero-title">Indians in Ghana</h1>
+              <h2 className="hero-subheading">Membership Program</h2>
               <p className="hero-subtitle">
                 Join our vibrant community and unlock exclusive benefits, deals, and connections.
               </p>

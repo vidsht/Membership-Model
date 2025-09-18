@@ -105,9 +105,7 @@ const DealFilters = ({ filters, onFilterChange, onSearch, onResetFilters, busine
                 <option value="inactive">Inactive</option>
                 <option value="pending_approval">Pending Approval</option>
                 <option value="rejected">Rejected</option>
-                <option value="pending">Pending</option>
                 <option value="expired">Expired</option>
-                <option value="suspended">Suspended</option>
               </select>
             </div>
 

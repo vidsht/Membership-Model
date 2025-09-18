@@ -324,6 +324,17 @@ const MerchantDashboard = () => {
     return text.substring(0, Math.max(1, Math.floor(text.length / 3))) + '*'.repeat(blurLength) + text.substring(text.length - 1);
   };
 
+  // Helper to format date as dd/mm/yyyy
+  const formatDateDDMMYYYY = (date) => {
+    if (!date) return '';
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return '';
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  };
+
   // Get merchant benefits based on plan data
   const getMerchantBenefits = (planData) => {
     // If we have plan data from the API, use its benefits
@@ -1133,9 +1144,6 @@ ${userInfo?.fullName || userInfo?.name || user?.fullName || user?.name || 'Merch
                 <i className={`fas ${getPlanIcon(userInfo?.membershipType)}`}></i>
                 {planInfo.name || getPlanDisplayName(userInfo?.membershipType)} Plan
               </h3>
-              <p>
-                {planInfo.description || getPlanDescription(userInfo?.membershipType)}
-              </p>
               <div className="plan-details">
                 <span className="plan-price">
                   {planInfo.price ? `${planInfo.currency || 'GHS'} ${planInfo.price}/${planInfo.billingCycle || 'year'}` : 'Free'}
@@ -1358,10 +1366,6 @@ ${userInfo?.fullName || userInfo?.name || user?.fullName || user?.name || 'Merch
                   month: '2-digit',
                   day: '2-digit'
                 }) : 'Not available'}</span>
-              </div>
-              <div className="detail-item">
-                <strong><i className="fas fa-user-shield"></i> Verified:</strong>
-                <span>{businessInfo.isVerified ? 'Yes' : 'No'}</span>
               </div>
             </div>
             <div className="detail-row">
@@ -2800,7 +2804,7 @@ ${userInfo?.fullName || userInfo?.name || user?.fullName || user?.name || 'Merch
                         <div className="verification-timestamp">
                           <small>
                             <i className="fas fa-clock"></i>
-                            Verified at: {new Date().toLocaleString()}
+                            Verified at: {formatDateDDMMYYYY(new Date())}
                           </small>
                         </div>
                       </div>
