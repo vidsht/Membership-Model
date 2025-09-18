@@ -137,7 +137,7 @@ const checkMerchantAccess = async (req, res, next) => {
              b.socialMediaFollowed as businessSocial,
              b.customDealLimit, b.planExpiryDate, b.dealsUsedThisMonth,
              b.created_at as businessCreatedAt, b.maxDealsPerMonth,
-             p.name as planName, p.max_deals_per_month as dealPostingLimit, p.priority as planPriority, p.price as planPrice,
+             p.name as planName, p.description as planDescription, p.max_deals_per_month as dealPostingLimit, p.priority as planPriority, p.price as planPrice,
              p.features as planFeatures, p.billingCycle
       FROM users u
       LEFT JOIN businesses b ON u.id = b.userId
@@ -379,6 +379,7 @@ router.get('/dashboard', checkMerchantAccess, async (req, res) => {
         plan: {
           key: merchant.membershipType || 'basic', // Use membershipType from users table
           name: merchant.planName || 'Basic Business',
+          description: merchant.planDescription || 'Basic business plan with standard features',
           dealPostingLimit: merchant.dealLimit,
           priority: merchant.planPriority || 1,
           price: merchant.planPrice || 0,

@@ -106,8 +106,8 @@ const AdminDashboard = () => {
     }
   };
 
-  // Helper function to format time ago
-  const formatTimeAgo = (dateString) => {
+  // Helper function to format date and time (instead of relative time)
+  const formatDateTime = (dateString) => {
     if (!dateString) return 'Unknown';
     
     const date = new Date(dateString);
@@ -117,21 +117,15 @@ const AdminDashboard = () => {
       return 'Invalid Date';
     }
     
-    const now = new Date();
-    const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
-    
-    if (diffInHours < 1) return 'Just now';
-    if (diffInHours < 24) return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
-    if (diffInHours < 168) {
-      const days = Math.floor(diffInHours / 24);
-      return `${days} day${days > 1 ? 's' : ''} ago`;
-    }
-    // Use a more reliable date formatting
+    // Format as actual date and time
     try {
-      return date.toLocaleDateString('en-US', {
+      return date.toLocaleString('en-GB', {
         year: 'numeric',
-        month: 'short',
-        day: 'numeric'
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false // Use 24-hour format
       });
     } catch (error) {
       return 'Invalid Date';
@@ -263,8 +257,8 @@ const AdminDashboard = () => {
             <i className="fas fa-store"></i>
           </div>
           <div className="stat-info">
-            <h3>{stats.totalMerchants}</h3>
-            <p>Merchants</p>
+            <h3>{stats.activeBusinesses}</h3>
+            <p>Active Merchants</p>
           </div>
         </div>
         
@@ -330,7 +324,7 @@ const AdminDashboard = () => {
                 </div>
                 <div className="activity-details">
                   <p className="activity-description">{activity.description}</p>
-                  <span className="activity-time">{formatTimeAgo(activity.timestamp)}</span>
+                  <span className="activity-time">{formatDateTime(activity.timestamp)}</span>
                 </div>
               </div>
             ))

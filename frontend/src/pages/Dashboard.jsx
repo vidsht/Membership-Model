@@ -13,6 +13,23 @@ const Dashboard = () => {
   const [currentPlan, setCurrentPlan] = useState(null);
   const [upgradeRecommendations, setUpgradeRecommendations] = useState([]);
 
+  // Helper function to calculate remaining days
+  const calculateRemainingDays = (validationDate) => {
+    if (!validationDate) return null;
+    
+    const today = new Date();
+    const expiryDate = new Date(validationDate);
+    
+    // Reset time to midnight for accurate day calculation
+    today.setHours(0, 0, 0, 0);
+    expiryDate.setHours(0, 0, 0, 0);
+    
+    const timeDiff = expiryDate.getTime() - today.getTime();
+    const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+    
+    return daysDiff;
+  };
+
   useEffect(() => {
     const fetchPlans = async () => {
       try {
@@ -389,8 +406,37 @@ const Dashboard = () => {
       )}
       
       <div className="dashboard-header">
-        <h1>Welcome back, {displayName}!</h1>
-        <p>Manage your membership and explore community benefits</p>
+        {user?.userType === 'merchant' && (user.business || user.businessName) ? (
+          <div className="merchant-header-info">
+            <div className="business-branding">
+              {(user.business?.logo || user.logo) && (
+                <div className="business-logo">
+                  <img 
+                    src={user.business?.logo || user.logo} 
+                    alt={`${user.business?.businessName || user.businessName || user.fullName} logo`}
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                    }}
+                  />
+                </div>
+              )}
+              <div className="business-details">
+                <h1>{user.business?.businessName || user.businessName || user.fullName}</h1>
+                <p className="business-tagline">
+                  {user.business?.businessDescription || user.businessDescription || 'Manage your business and explore merchant benefits'}
+                </p>
+              </div>
+            </div>
+            <div className="welcome-message">
+              <span>Welcome back!</span>
+            </div>
+          </div>
+        ) : (
+          <>
+            <h1>Welcome back, {displayName}!</h1>
+            <p>Manage your membership and explore community benefits</p>
+          </>
+        )}
       </div>
 
       {/* Plan Expiry Banner */}
@@ -553,7 +599,34 @@ const Dashboard = () => {
               <div className="plan-details-card">
                 <div className="plan-details-header">
                   <div className="plan-info">
-                    <h3>{currentPlan.name}</h3>
+                    <h3>
+                      {(() => {
+                        const remainingDays = calculateRemainingDays(user.validationDate);
+                        const isExpired = remainingDays !== null && remainingDays < 0;
+                        return (
+                          <>
+                            {isExpired && (
+                              <span className="expired-badge" style={{
+                                background: '#ff4444',
+                                color: 'white',
+                                padding: '2px 8px',
+                                borderRadius: '4px',
+                                fontSize: '12px',
+                                fontWeight: 'bold',
+                                marginRight: '8px',
+                                textTransform: 'uppercase'
+                              }}>
+                                EXPIRED
+                              </span>
+                            )}
+                            {currentPlan.name}
+                          </>
+                        );
+                      })()}
+                    </h3>
+                    {currentPlan.description && (
+                      <p className="plan-description">{currentPlan.description}</p>
+                    )}
                   </div>
                   <div className="plan-pricing">
                     <span className="price-amount">{currentPlan.currency} {currentPlan.price}</span>
@@ -574,16 +647,31 @@ const Dashboard = () => {
                       <span>Up to {currentPlan.dealPostingLimit} deals/month</span>
                     </div>
                   )}
-                  {currentPlan.priority && (
+                  {user?.created_at && (
                     <div className="plan-stat">
-                      <i className="fas fa-star"></i>
-                      <span>Priority Level {currentPlan.priority}</span>
+                      <i className="fas fa-calendar-plus"></i>
+                      <span>Joined {new Date(user.created_at).toLocaleDateString()}</span>
                     </div>
                   )}
                   {user.validationDate && (
                     <div className="plan-stat">
                       <i className="fas fa-calendar-check"></i>
-                      <span>Valid until {new Date(user.validationDate).toLocaleDateString()}</span>
+                      <span>
+                        Valid until {new Date(user.validationDate).toLocaleDateString()}
+                        {(() => {
+                          const remainingDays = calculateRemainingDays(user.validationDate);
+                          if (remainingDays !== null) {
+                            if (remainingDays > 0) {
+                              return ` (${remainingDays} day${remainingDays === 1 ? '' : 's'} left)`;
+                            } else if (remainingDays === 0) {
+                              return ' (Expires today)';
+                            } else {
+                              return ` (Expired ${Math.abs(remainingDays)} day${Math.abs(remainingDays) === 1 ? '' : 's'} ago)`;
+                            }
+                          }
+                          return '';
+                        })()}
+                      </span>
                     </div>
                   )}
                 </div>
