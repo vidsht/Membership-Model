@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { getAllDeals, getExpiredDeals, redeemDeal, getAllPlans, trackDealView } from '../services/api';
+import { getAllDeals, redeemDeal, getAllPlans, trackDealView } from '../services/api';
 import DealFilters from '../components/deals/DealFilters';
 import PlanExpiryBanner from '../components/PlanExpiryBanner';
 import usePlanAccess from '../hooks/usePlanAccess.jsx';
@@ -138,7 +138,6 @@ const Deals = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const dealsPerPage = 6; // Show 6 deals per page
   const [redeemStatus, setRedeemStatus] = useState({});
-  const [expiredDeals, setExpiredDeals] = useState([]);
 
   // Redemption confirmation modal state
   const [showRedemptionModal, setShowRedemptionModal] = useState(false);
@@ -151,7 +150,6 @@ const Deals = () => {
   useEffect(() => {
     fetchDeals();
     fetchPlans();
-    fetchExpiredDeals();
   }, []);
 
   // Handle shared URLs - auto-open deal modal if ID is in URL
@@ -299,30 +297,6 @@ const Deals = () => {
     if (deal) {
       setSelectedDeal(deal);
       setShowRedemptionModal(true);
-    }
-  };
-
-  // Fetch deals expired within the last 3 months (backend-driven)
-  const fetchExpiredDeals = async () => {
-    try {
-      const now = new Date();
-      const threeMonthsAgo = new Date();
-      threeMonthsAgo.setMonth(now.getMonth() - 3);
-
-      // Format dates as YYYY-MM-DD for backend date filtering
-      const format = (d) => d.toISOString().slice(0,10);
-  const expired = await getExpiredDeals(format(threeMonthsAgo), format(now), 12, 1);
-      // Filter on frontend just in case backend returned a wider set - keep only those expired within last 3 months
-      const filtered = expired.filter(deal => {
-        const expirationDate = deal.expirationDate || deal.validUntil || deal.expiration_date;
-        if (!expirationDate) return false;
-        const exp = new Date(expirationDate);
-        return exp <= now && exp >= threeMonthsAgo;
-      });
-      setExpiredDeals(filtered.slice(0, 12));
-    } catch (err) {
-      console.error('Failed to fetch expired deals:', err);
-      setExpiredDeals([]);
     }
   };
 
@@ -710,26 +684,6 @@ Join Indians in Ghana Community for exclusive deals!`;
               </div>
             </div>
           )}
-        </div>
-      )}
-      {/* Recently expired deals - last 3 months */}
-      {expiredDeals.length > 0 && (
-        <div className="expired-deals-section">
-          <h3>Recently expired deals (last 3 months)</h3>
-          <div className="expired-deals-grid">
-            {expiredDeals.map(deal => (
-              <div className="expired-deal-card" key={`expired-${deal.id}`}>
-                <div className="expired-deal-info">
-                  <div className="expired-deal-title">{deal.title}</div>
-                  <div className="expired-deal-business">{deal.businessName}</div>
-                  <div className="expired-deal-expiry">Expired: {new Date(deal.expiration_date || deal.expirationDate || deal.validUntil).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
-                </div>
-                <div className="expired-deal-actions">
-                  <button className="btn-view-details" onClick={() => handleViewDetails(deal)}>View</button>
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
       )}
       {showRedemptionModal && selectedDeal && (
