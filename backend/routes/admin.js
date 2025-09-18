@@ -4437,6 +4437,13 @@ router.get('/settings', auth, admin, async (req, res) => {
         showSocialMediaHome: true,
         showMembershipPlans: true
       },
+      features: {
+        show_community_members: true,
+        show_active_businesses: true,
+        show_exclusive_deals: true,
+        show_total_redemptions: true,
+        show_community_statistics: true
+      },
       content: {
         terms_conditions: ''
       }

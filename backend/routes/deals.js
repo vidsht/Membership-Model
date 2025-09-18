@@ -295,6 +295,105 @@ router.get('/public', async (req, res) => {
     });  }
 });
 
+// Get upcoming deals
+router.get('/upcoming', async (req, res) => {
+  try {
+    const upcomingDealsQuery = `
+      SELECT d.*, b.businessName, b.businessCategory, b.businessAddress,
+             b.businessPhone, b.businessEmail, b.website, 
+             u.profilePhoto as businessLogo, u.profilePicture as businessLogoUrl,
+             u.fullName as businessOwnerName
+      FROM deals d
+      LEFT JOIN businesses b ON d.businessId = b.businessId
+      LEFT JOIN users u ON b.userId = u.id
+      WHERE d.status = 'active'
+        AND d.validFrom IS NOT NULL 
+        AND d.validFrom > CURDATE()
+      ORDER BY d.validFrom ASC
+      LIMIT 50
+    `;
+
+    const upcomingDeals = await queryAsync(upcomingDealsQuery);
+
+    // Format the deals data
+    const formattedDeals = upcomingDeals.map(deal => ({
+      ...deal,
+      // Ensure we have a valid expiration date
+      expirationDate: deal.validUntil || deal.expiration_date,
+      // Calculate savings if we have both prices
+      savings: deal.originalPrice && deal.discountedPrice ? 
+               (deal.originalPrice - deal.discountedPrice).toFixed(2) : null,
+      // Calculate percentage discount
+      discountPercentage: deal.originalPrice && deal.discountedPrice ?
+                         Math.round(((deal.originalPrice - deal.discountedPrice) / deal.originalPrice) * 100) : null
+    }));
+
+    res.json({
+      success: true,
+      deals: formattedDeals,
+      total: formattedDeals.length
+    });
+  } catch (error) {
+    console.error('Get upcoming deals error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error fetching upcoming deals',
+      deals: []
+    });
+  }
+});
+
+// Get expired deals for last 3 months
+router.get('/expired', async (req, res) => {
+  try {
+    // Calculate date 3 months ago
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+    
+    const expiredDealsQuery = `
+      SELECT d.*, b.businessName, b.businessCategory, b.businessAddress,
+             b.businessPhone, b.businessEmail, b.website, 
+             u.profilePhoto as businessLogo, u.profilePicture as businessLogoUrl,
+             u.fullName as businessOwnerName
+      FROM deals d
+      LEFT JOIN businesses b ON d.businessId = b.businessId
+      LEFT JOIN users u ON b.userId = u.id
+      WHERE (d.validUntil IS NOT NULL AND d.validUntil < CURDATE() AND d.validUntil >= ?)
+         OR (d.expiration_date IS NOT NULL AND d.expiration_date < CURDATE() AND d.expiration_date >= ?)
+      ORDER BY COALESCE(d.validUntil, d.expiration_date) DESC
+      LIMIT 50
+    `;
+
+    const expiredDeals = await queryAsync(expiredDealsQuery, [threeMonthsAgo, threeMonthsAgo]);
+
+    // Format the deals data
+    const formattedDeals = expiredDeals.map(deal => ({
+      ...deal,
+      // Ensure we have a valid expiration date
+      expirationDate: deal.validUntil || deal.expiration_date,
+      // Calculate savings if we have both prices
+      savings: deal.originalPrice && deal.discountedPrice ? 
+               (deal.originalPrice - deal.discountedPrice).toFixed(2) : null,
+      // Calculate percentage discount
+      discountPercentage: deal.originalPrice && deal.discountedPrice ?
+                         Math.round(((deal.originalPrice - deal.discountedPrice) / deal.originalPrice) * 100) : null
+    }));
+
+    res.json({
+      success: true,
+      deals: formattedDeals,
+      total: formattedDeals.length
+    });
+  } catch (error) {
+    console.error('Get expired deals error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error fetching expired deals',
+      deals: []
+    });
+  }
+});
+
 // Get home page statistics (public endpoint) - MUST be before /:id route
 router.get('/home-stats', async (req, res) => {
   try {

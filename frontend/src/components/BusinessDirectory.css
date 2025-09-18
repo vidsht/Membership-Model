@@ -159,6 +159,39 @@
   box-shadow: var(--shadow-md);
 }
 
+/* Category and Sort Filter Bar Styles */
+.category-filter-bar,
+.sort-filter-bar {
+  display: flex;
+  align-items: center;
+}
+
+.category-filter-select,
+.sort-filter-select {
+  min-width: 200px;
+  padding: var(--space-md);
+  border-radius: var(--border-radius-md);
+  border: 1px solid var(--neutral-light);
+  background-color: white;
+  box-shadow: var(--shadow-sm);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+  padding-right: 40px;
+  appearance: none;
+}
+
+.category-filter-select:focus,
+.sort-filter-select:focus {
+  outline: none;
+  border-color: var(--primary-light);
+  box-shadow: var(--shadow-md);
+}
+
 .businesses-grid {
   margin: 5rem;
   display: grid;
@@ -183,6 +216,22 @@
 .business-card-directory:hover {
   transform: translateY(-7px) scale(1.03);
   box-shadow: 0 14px 42px rgba(60,80,120,0.17), 0 2.5px 3px rgba(60,80,120,0.07);
+}
+
+/* Plan Badge Styles */
+.plan-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 4px 12px;
+  border-radius: 50px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  z-index: 10;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .business-card-header {

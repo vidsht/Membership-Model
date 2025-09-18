@@ -119,6 +119,28 @@ export const getAllDeals = async () => {
   return response.data.deals || [];
 };
 
+// Get upcoming deals
+export const getUpcomingDeals = async () => {
+  try {
+    const response = await api.get('/deals/upcoming');
+    return response.data.deals || [];
+  } catch (error) {
+    console.error('Error fetching upcoming deals:', error);
+    return [];
+  }
+};
+
+// Get expired deals for last 3 months
+export const getExpiredDeals = async () => {
+  try {
+    const response = await api.get('/deals/expired');
+    return response.data.deals || [];
+  } catch (error) {
+    console.error('Error fetching expired deals:', error);
+    return [];
+  }
+};
+
 // Redeem a deal
 export const redeemDeal = async (dealId) => {
   const response = await api.post(`/deals/${dealId}/redeem`);
