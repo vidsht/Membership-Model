@@ -69,16 +69,6 @@ const SocialMediaSettings = ({ settings, onSettingChange }) => {
     }
   };
 
-  const handleCommunityStatsToggle = (enabled) => {
-    // Align with membership plan toggle: write the canonical featureToggles key only
-    onSettingChange('featureToggles', 'showStatistics', enabled);
-
-    if (!enabled) {
-      showNotification('Community statistics section disabled on home page.', 'info');
-    } else {
-      showNotification('Community statistics section enabled on home page', 'success');
-    }
-  };
   return (
     <div className="social-media-settings">
       {/* Social Media Feature Toggle */}
@@ -98,31 +88,6 @@ const SocialMediaSettings = ({ settings, onSettingChange }) => {
           </label>
           <span className="toggle-label">
             {settings?.features?.show_social_media_home ? 'Enabled' : 'Disabled'}
-          </span>
-        </div>
-      </div>
-
-      {/* Community Statistics Feature Toggle */}
-      <div className="setting-group">
-        <div className="setting-header">
-          <h3><i className="fas fa-chart-bar"></i> Community Statistics Section</h3>
-          <p>Control the community statistics section display on the home page</p>
-        </div>
-        <div className="toggle-setting">
-          <label className="toggle-switch">
-            <input
-              type="checkbox"
-              checked={
-                // Prefer canonical featureToggles.showStatistics when present,
-                // default true
-                (settings?.featureToggles?.showStatistics) ?? true
-              }
-              onChange={(e) => handleCommunityStatsToggle(e.target.checked)}
-            />
-            <span className="toggle-slider"></span>
-          </label>
-          <span className="toggle-label">
-            {(settings?.featureToggles?.showStatistics ?? true) ? 'Enabled' : 'Disabled'}
           </span>
         </div>
       </div>

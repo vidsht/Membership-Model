@@ -327,7 +327,7 @@ Discover quality services and support our community businesses! 🇮🇳🇬🇭
         </div>
       ) : (
         <div className="businesses-grid">
-          {filteredBusinesses.length === 0 ? (
+          {filteredAndSortedBusinesses.length === 0 ? (
             <div className="no-results">
               <i className="fas fa-search"></i>
               <p>No businesses found matching your criteria.</p>
@@ -446,7 +446,7 @@ Discover quality services and support our community businesses! 🇮🇳🇬🇭
       )}
 
       {/* Pagination Controls */}
-      {filteredBusinesses.length > businessesPerPage && (
+  {filteredAndSortedBusinesses.length > businessesPerPage && (
         <div className="pagination-container">
           <div className="pagination">
             <button 
@@ -476,7 +476,7 @@ Discover quality services and support our community businesses! 🇮🇳🇬🇭
             </button>
           </div>
           <div className="pagination-info">
-            Showing {startIndex + 1}-{Math.min(endIndex, filteredBusinesses.length)} of {filteredBusinesses.length} businesses
+            Showing {startIndex + 1}-{Math.min(endIndex, filteredAndSortedBusinesses.length)} of {filteredAndSortedBusinesses.length} businesses
           </div>
         </div>
       )}

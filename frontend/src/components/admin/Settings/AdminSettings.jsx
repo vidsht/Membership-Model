@@ -192,9 +192,29 @@ const AdminSettings = () => {
               <h3>Community Statistics</h3>
               <p>Configure which statistics cards are displayed on the home page</p>
             </div>
+            
+            {/* Master toggle for entire Community Statistics section */}
             <div className="form-group">
-              <label>Enabled Community Statistics</label>
-              <div className="statistics-settings">
+              <label>Community Statistics Section</label>
+              <div className="stat-setting">
+                <label className="toggle-label">
+                  <input
+                    type="checkbox"
+                    checked={settings.features?.show_community_statistics !== false}
+                    onChange={(e) => handleSettingChange('features', 'show_community_statistics', e.target.checked)}
+                  />
+                  <span className="toggle-slider"></span>
+                  <span className="toggle-text">Enable Community Statistics Section</span>
+                </label>
+                <p className="setting-description">Show or hide the entire statistics section on the home page</p>
+              </div>
+            </div>
+
+            {/* Individual statistics controls - only show when section is enabled */}
+            {settings.features?.show_community_statistics !== false && (
+              <div className="form-group">
+                <label>Individual Statistics Cards</label>
+                <div className="statistics-settings">
                 <div className="stat-setting">
                   <label className="toggle-label">
                     <input
@@ -245,6 +265,7 @@ const AdminSettings = () => {
                 </div>
               </div>
             </div>
+            )}
           </div>
         );
       default:

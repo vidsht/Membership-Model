@@ -196,6 +196,7 @@ const Home = () => {
                 totalMembers: adminStats.data.stats.totalUsers || 0,
                 activeBusinesses: adminStats.data.stats.activeBusinesses || 0, // Only approved merchants
                 exclusiveDeals: adminStats.data.stats.totalDeals || 0,
+                totalRedemptions: adminStats.data.stats.totalRedemptions || 0,
                 pendingApprovals: adminStats.data.stats.pendingApprovals || 0
               });
               return;

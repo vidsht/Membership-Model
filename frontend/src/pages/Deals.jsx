@@ -145,6 +145,10 @@ const Deals = () => {
   const [showRedemptionModal, setShowRedemptionModal] = useState(false);
   const [selectedDeal, setSelectedDeal] = useState(null);
   const [isRedeeming, setIsRedeeming] = useState(false);
+  
+  // Banner image viewer state
+  const [showBannerViewer, setShowBannerViewer] = useState(false);
+  const [bannerImageUrl, setBannerImageUrl] = useState('');
 
   // Deal detail modal state
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -327,8 +331,22 @@ const Deals = () => {
       return;
     }
     
-    // Find the deal and show confirmation modal
+    // Find the deal and check if it's upcoming
     const deal = filteredDeals.find(d => d.id === dealId);
+    
+    // Check if deal is upcoming (validFrom date is in the future)
+    if (deal && deal.validFrom) {
+      const validFromDate = new Date(deal.validFrom);
+      const now = new Date();
+      if (validFromDate > now) {
+        const validFromFormatted = validFromDate.toLocaleDateString();
+        setRedeemStatus({ 
+          ...redeemStatus, 
+          [dealId]: `❌ This deal is not yet available. Valid from: ${validFromFormatted}` 
+        });
+        return;
+      }
+    }
     if (deal) {
       setSelectedDeal(deal);
       setShowRedemptionModal(true);
@@ -515,6 +533,16 @@ Join Indians in Ghana Community for exclusive deals!`;
     setShowDetailModal(true);
   };
 
+  // Handle banner image click - opens image viewer
+  const handleBannerClick = (deal, event) => {
+    event.stopPropagation(); // Prevent the card click from triggering
+    const bannerUrl = getDealBannerUrl(deal);
+    if (bannerUrl) {
+      setBannerImageUrl(bannerUrl);
+      setShowBannerViewer(true);
+    }
+  };
+
   return (
     <div className="deals-page">
       {/* Hero Section */}
@@ -556,8 +584,8 @@ Join Indians in Ghana Community for exclusive deals!`;
                  {/* Deal Banner with Category Overlay */}
                  <div 
                    className="deal-banner clickable-banner" 
-                   onClick={() => handleViewDetails(deal)}
-                   title="Click to view deal details"
+                   onClick={(e) => handleBannerClick(deal, e)}
+                   title="Click to view banner image"
                  >
                    <div className="deal-category-overlay">
                      <i className="fas fa-tag"></i>
@@ -568,6 +596,13 @@ Join Indians in Ghana Community for exclusive deals!`;
                      <div className="deal-limited-badge">
                        <i className="fas fa-users"></i>
                        Limited
+                     </div>
+                   )}
+                   {/* Upcoming Badge - Show when deal is upcoming */}
+                   {deal.validFrom && new Date(deal.validFrom) > new Date() && (
+                     <div className="deal-upcoming-badge">
+                       <i className="fas fa-calendar-alt"></i>
+                       Upcoming
                      </div>
                    )}
                    {getDealBannerUrl(deal) ? (
@@ -1036,6 +1071,39 @@ Join Indians in Ghana Community for exclusive deals!`;
                     </button>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Banner Image Viewer Modal */}
+      {showBannerViewer && (
+        <div className="modal-overlay" onClick={() => setShowBannerViewer(false)}>
+          <div className="modal-content banner-image-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="banner-modal-header">
+              <h3>Deal Banner Image</h3>
+              <button
+                className="modal-close-btn"
+                onClick={() => setShowBannerViewer(false)}
+                title="Close"
+              >
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            <div className="banner-modal-body">
+              <img 
+                src={bannerImageUrl} 
+                alt="Deal Banner" 
+                className="banner-viewer-image"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  e.target.nextSibling.style.display = 'flex';
+                }}
+              />
+              <div className="banner-error-placeholder" style={{display: 'none'}}>
+                <i className="fas fa-image"></i>
+                <p>Unable to load banner image</p>
               </div>
             </div>
           </div>
