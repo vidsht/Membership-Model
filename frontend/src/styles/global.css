@@ -92,6 +92,16 @@ h1 { font-size: var(--h1-size); }
 h2 { font-size: var(--h2-size); }
 h3 { font-size: var(--h3-size); }
 
+/* Small subtitle under hero titles used across pages */
+.home-hero-subheading {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #4C0707;
+  margin-top: 2px;
+  margin-bottom: 20px;
+  opacity: 0.95;
+}
+
 p {
   margin-bottom: var(--space-md);
 }
