@@ -161,9 +161,9 @@ const BirthdaySection = () => {
                     </div>
                   </div>
 
-                  {user.phoneNumber && (
+                  {user.phone && (
                     <div className="contact-info">
-                      <a href={`tel:${user.phoneNumber}`} className="contact-btn">
+                      <a href={`tel:${user.phone}`} className="contact-btn">
                         <i className="fas fa-phone"></i>
                         Call
                       </a>

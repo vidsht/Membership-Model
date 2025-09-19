@@ -638,13 +638,23 @@ const Dashboard = () => {
                   {currentPlan.maxRedemptions && (
                     <div className="plan-stat">
                       <i className="fas fa-tags"></i>
-                      <span>Up to {currentPlan.maxRedemptions} redemptions</span>
+                      <span>
+                        {currentPlan.maxRedemptions === -1 
+                          ? 'Unlimited redemptions' 
+                          : `Up to ${currentPlan.maxRedemptions} redemptions`
+                        }
+                      </span>
                     </div>
                   )}
                   {currentPlan.dealPostingLimit && (
                     <div className="plan-stat">
                       <i className="fas fa-bullhorn"></i>
-                      <span>Up to {currentPlan.dealPostingLimit} deals/month</span>
+                      <span>
+                        {currentPlan.dealPostingLimit === -1 
+                          ? 'Unlimited deals/month' 
+                          : `Up to ${currentPlan.dealPostingLimit} deals/month`
+                        }
+                      </span>
                     </div>
                   )}
                   {user?.created_at && (
