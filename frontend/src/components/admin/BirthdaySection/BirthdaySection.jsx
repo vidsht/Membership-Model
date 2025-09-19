@@ -60,9 +60,9 @@ const BirthdaySection = () => {
     }
   };
 
-  const calculateAge = (birthDate) => {
+  const calculateAge = (dobString) => {
     const today = new Date();
-    const birth = new Date(birthDate);
+    const birth = new Date(dobString);
     const age = today.getFullYear() - birth.getFullYear();
     const monthDiff = today.getMonth() - birth.getMonth();
     
@@ -145,7 +145,7 @@ const BirthdaySection = () => {
                     <div className="birthday-date">
                       <i className="fas fa-calendar-alt"></i>
                       <span>
-                        {new Date(user.birthDate).toLocaleDateString('en-US', {
+                        {new Date(user.dob).toLocaleDateString('en-US', {
                           month: 'long',
                           day: 'numeric'
                         })}
@@ -153,11 +153,11 @@ const BirthdaySection = () => {
                     </div>
                     <div className="birthday-countdown">
                       <i className="fas fa-clock"></i>
-                      <span>{formatDate(user.birthDate)}</span>
+                      <span>{formatDate(user.dob)}</span>
                     </div>
                     <div className="birthday-age">
                       <i className="fas fa-gift"></i>
-                      <span>Turning {calculateAge(user.birthDate) + 1}</span>
+                      <span>Turning {calculateAge(user.dob) + 1}</span>
                     </div>
                   </div>
 
