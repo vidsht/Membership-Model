@@ -13,7 +13,7 @@ import '../styles/MerchantDashboard.css';
 const MerchantDashboard = () => {
   const { user } = useAuth();
   const { showNotification } = useNotification();
-  const { getDealBannerUrl } = useImageUrl(); 
+  const { getDealBannerUrl, getMerchantLogoUrl } = useImageUrl(); 
   const { getBusinessCategoryOptions } = useDynamicFields();
   const planAccess = usePlanAccess();
   const [deals, setDeals] = useState([]);
@@ -1095,20 +1095,27 @@ ${userInfo?.fullName || userInfo?.name || user?.fullName || user?.name || 'Merch
 
       <div className="dashboard-header">
         <div className="dashboard-header-content">
-          {user?.profilePhoto && (
+          {(getMerchantLogoUrl(user) || user?.profilePhoto) && (
             <div className="business-logo">
               <SmartImage
-                src={user.profilePhoto}
-                alt={user.businessName || 'Business Logo'}
+                src={getMerchantLogoUrl(user) || user?.profilePhoto}
+                alt={user?.businessName || user?.business?.name || 'Business Logo'}
                 className="business-logo-img"
                 fallback="/api/placeholder/60/60"
+                placeholder={
+                  <div className="logo-placeholder">
+                    <i className="fas fa-store"></i>
+                  </div>
+                }
               />
             </div>
           )}
           <div className="dashboard-title-section">
             <h1>
-              {user?.businessName && (
-                <span className="business-name">{user.businessName}</span>
+              {(user?.businessName || user?.business?.name) && (
+                <span className="business-name">
+                  {user.businessName || user.business?.name}
+                </span>
               )}
               <span className="dashboard-label">Merchant Dashboard</span>
             </h1>
