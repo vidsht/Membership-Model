@@ -9,6 +9,7 @@ import DealList from './DealManagement/DealList';
 import PlanManagement from './PlanManagement/PlanManagement';
 import AdminSettings from './Settings/AdminSettings';
 import Activities from './Activities/Activities';
+import BirthdaySection from './BirthdaySection/BirthdaySection';
 import api from '../../services/api';
 import './AdminDashboard.css';
 
@@ -22,6 +23,7 @@ const AdminDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
     const [stats, setStats] = useState({
     totalUsers: 0,
+    activeUsers: 0,
     totalMerchants: 0,
     pendingApprovals: 0,
     activeBusinesses: 0,
@@ -52,6 +54,7 @@ const AdminDashboard = () => {
     { id: 'merchants', label: 'Business Partners', icon: 'fas fa-handshake' },
     { id: 'deals', label: 'Deal Management', icon: 'fas fa-tags' },
     { id: 'plans', label: 'Plan Management', icon: 'fas fa-crown' },
+    { id: 'birthdays', label: 'Birthdays', icon: 'fas fa-birthday-cake' },
     { id: 'approvals', label: 'Approvals', icon: 'fas fa-check-circle' },
     { id: 'activities', label: 'Activities', icon: 'fas fa-history' },
     { id: 'settings', label: 'Settings', icon: 'fas fa-cog' }
@@ -159,6 +162,7 @@ const AdminDashboard = () => {
           const userStats = userStatsRes.data.statistics;
           const merchantStats = merchantStatsRes.data.statistics;
           baseStats.totalUsers = userStats.totalUsers;
+          baseStats.activeUsers = userStats.activeUsers;
           baseStats.totalMerchants = merchantStats.totalMerchants;
           baseStats.pendingApprovals = (userStats.pendingApprovals || 0) + (merchantStats.pendingApprovals || 0);
           baseStats.activeBusinesses = merchantStats.activeMerchants;
@@ -216,6 +220,8 @@ const AdminDashboard = () => {
           return <DealList />;
         case 'plans':
           return <PlanManagement />;
+        case 'birthdays':
+          return <BirthdaySection />;
         case 'approvals':
           return <ApprovalQueue />;
         case 'activities':
@@ -249,6 +255,16 @@ const AdminDashboard = () => {
           <div className="stat-info">
             <h3>{stats.totalUsers}</h3>
             <p>Total Users</p>
+          </div>
+        </div>
+        
+        <div className="stat-card">
+          <div className="stat-icon active-users">
+            <i className="fas fa-user-check"></i>
+          </div>
+          <div className="stat-info">
+            <h3>{stats.activeUsers}</h3>
+            <p>Active Users</p>
           </div>
         </div>
         

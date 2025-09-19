@@ -354,30 +354,59 @@ router.get('/expired', async (req, res) => {
       SELECT d.*, b.businessName, b.businessCategory, b.businessAddress,
              b.businessPhone, b.businessEmail, b.website, 
              u.profilePhoto as businessLogo, u.profilePicture as businessLogoUrl,
-             u.fullName as businessOwnerName
+             u.fullName as businessOwnerName,
+             (SELECT COUNT(*) FROM deal_redemptions dr WHERE dr.dealId = d.id) as currentRedemptions
       FROM deals d
       LEFT JOIN businesses b ON d.businessId = b.businessId
       LEFT JOIN users u ON b.userId = u.id
-      WHERE (d.validUntil IS NOT NULL AND d.validUntil < CURDATE() AND d.validUntil >= ?)
-         OR (d.expiration_date IS NOT NULL AND d.expiration_date < CURDATE() AND d.expiration_date >= ?)
-      ORDER BY COALESCE(d.validUntil, d.expiration_date) DESC
+      WHERE (
+        -- Date-based expiration
+        (d.validUntil IS NOT NULL AND d.validUntil < CURDATE() AND d.validUntil >= ?)
+        OR (d.expiration_date IS NOT NULL AND d.expiration_date < CURDATE() AND d.expiration_date >= ?)
+        -- Status-based expiration (manually expired)
+        OR (d.status = 'expired' AND d.created_at >= ?)
+        -- Member limit reached (assuming deals have memberLimit field)
+        OR (d.memberLimit IS NOT NULL AND d.memberLimit > 0 
+            AND (SELECT COUNT(*) FROM deal_redemptions dr WHERE dr.dealId = d.id) >= d.memberLimit
+            AND d.created_at >= ?)
+      )
+      ORDER BY COALESCE(d.validUntil, d.expiration_date, d.updated_at) DESC
       LIMIT 50
     `;
 
-    const expiredDeals = await queryAsync(expiredDealsQuery, [threeMonthsAgo, threeMonthsAgo]);
+    const expiredDeals = await queryAsync(expiredDealsQuery, [threeMonthsAgo, threeMonthsAgo, threeMonthsAgo, threeMonthsAgo]);
 
     // Format the deals data
-    const formattedDeals = expiredDeals.map(deal => ({
-      ...deal,
-      // Ensure we have a valid expiration date
-      expirationDate: deal.validUntil || deal.expiration_date,
-      // Calculate savings if we have both prices
-      savings: deal.originalPrice && deal.discountedPrice ? 
-               (deal.originalPrice - deal.discountedPrice).toFixed(2) : null,
-      // Calculate percentage discount
-      discountPercentage: deal.originalPrice && deal.discountedPrice ?
-                         Math.round(((deal.originalPrice - deal.discountedPrice) / deal.originalPrice) * 100) : null
-    }));
+    const formattedDeals = expiredDeals.map(deal => {
+      const currentDate = new Date();
+      const validUntil = deal.validUntil ? new Date(deal.validUntil) : null;
+      const expirationDate = deal.expiration_date ? new Date(deal.expiration_date) : null;
+      const isDateExpired = (validUntil && validUntil < currentDate) || (expirationDate && expirationDate < currentDate);
+      const isLimitReached = deal.memberLimit && deal.memberLimit > 0 && deal.currentRedemptions >= deal.memberLimit;
+      
+      let expirationReason = 'Unknown';
+      if (deal.status === 'expired') {
+        expirationReason = 'Manually expired';
+      } else if (isLimitReached) {
+        expirationReason = 'Member limit reached';
+      } else if (isDateExpired) {
+        expirationReason = 'Date expired';
+      }
+      
+      return {
+        ...deal,
+        // Ensure we have a valid expiration date
+        expirationDate: deal.validUntil || deal.expiration_date,
+        // Why the deal expired
+        expirationReason,
+        // Calculate savings if we have both prices
+        savings: deal.originalPrice && deal.discountedPrice ? 
+                 (deal.originalPrice - deal.discountedPrice).toFixed(2) : null,
+        // Calculate percentage discount
+        discountPercentage: deal.originalPrice && deal.discountedPrice ?
+                           Math.round(((deal.originalPrice - deal.discountedPrice) / deal.originalPrice) * 100) : null
+      };
+    });
 
     res.json({
       success: true,

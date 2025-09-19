@@ -134,6 +134,17 @@ const MerchantFilters = ({
               />
             </div>
 
+            {/* Registration Date To */}
+            <div className="filter-group">
+              <label htmlFor="dateTo">Registered To</label>
+              <input
+                id="dateTo"
+                type="date"
+                value={filters.dateTo || ''}
+                onChange={(e) => handleFilterChange('dateTo', e.target.value)}
+              />
+            </div>
+
             {/* Plan Status */}
             <div className="filter-group">
               <label htmlFor="planStatus">Plan Status</label>

@@ -1238,11 +1238,13 @@ const MerchantManagementEnhanced = () => {
                   <div className="deal-limit-info-compact">
                     {merchant.customDealLimit ? (
                       <span className="custom-limit" title="Custom limit set by admin">
-                        <i className="fas fa-star"></i> {merchant.customDealLimit}/m
+                        <i className="fas fa-star"></i> {merchant.customDealLimit === -1 ? 'Unlimited' : `${merchant.customDealLimit}/m`}
                       </span>
                     ) : (
                       <span className="plan-limit" title="Using plan default">
-                        {merchant.planMaxDeals ? `${merchant.planMaxDeals}/m` : 'Unlimited'}
+                        {merchant.planMaxDeals ? 
+                          (merchant.planMaxDeals === -1 ? 'Unlimited' : `${merchant.planMaxDeals}/m`) 
+                          : 'Unlimited'}
                       </span>
                     )}
                   </div>

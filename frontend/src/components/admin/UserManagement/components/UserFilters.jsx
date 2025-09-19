@@ -166,6 +166,18 @@ const UserFilters = ({
               />
             </div>
 
+            {/* Registered To Date Filter */}
+            <div className="filter-group">
+              <label htmlFor="dateTo">Registered To</label>
+              <input
+                id="dateTo"
+                type="date"
+                value={filters.dateTo || ''}
+                onChange={(e) => handleFilterChange('dateTo', e.target.value)}
+                max={new Date().toISOString().split('T')[0]} // Prevent future dates
+              />
+            </div>
+
           </div>
         )}
 

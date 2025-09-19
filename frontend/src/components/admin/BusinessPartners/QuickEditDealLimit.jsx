@@ -165,7 +165,9 @@ const QuickEditDealLimit = () => {
                 <div className="info-row">
                   <span className="info-label">Plan Default Limit:</span>
                   <span className="info-value">
-                    {partner.planMaxDeals ? `${partner.planMaxDeals}/month` : 'Unlimited'}
+                    {partner.planMaxDeals ? 
+                      (partner.planMaxDeals === -1 ? 'Unlimited' : `${partner.planMaxDeals}/month`) 
+                      : 'Unlimited'}
                   </span>
                 </div>
                 
@@ -174,7 +176,7 @@ const QuickEditDealLimit = () => {
                   <span className="info-value">
                     {partner.customDealLimit ? (
                       <span className="custom-limit">
-                        <i className="fas fa-star"></i> {partner.customDealLimit}/month
+                        <i className="fas fa-star"></i> {partner.customDealLimit === -1 ? 'Unlimited' : `${partner.customDealLimit}/month`}
                       </span>
                     ) : (
                       <span className="plan-limit">Using plan default</span>
