@@ -898,6 +898,15 @@
   font-style: italic;
 }
 
+.remaining-days {
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-weight: 500;
+  margin-left: 0.5rem;
+  font-style: italic;
+  opacity: 0.8;
+}
+
 @keyframes blink {
   0%, 50% { opacity: 1; }
   51%, 100% { opacity: 0.5; }

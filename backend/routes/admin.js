@@ -287,23 +287,26 @@ router.get('/activities', auth, admin, async (req, res) => {
 
       // Recent user registrations
       const recentUsers = await queryAsync(`
-        SELECT id, fullName, email, userType, createdAt, status
-        FROM users
-        WHERE createdAt >= DATE_SUB(NOW(), INTERVAL ? DAY)
-        AND userType != 'admin'
-        ORDER BY createdAt DESC
+        SELECT u.id, u.fullName, u.email, u.userType, u.createdAt, u.status, b.businessName
+        FROM users u
+        LEFT JOIN businesses b ON u.id = b.userId AND u.userType = 'merchant'
+        WHERE u.createdAt >= DATE_SUB(NOW(), INTERVAL ? DAY)
+        AND u.userType != 'admin'
+        ORDER BY u.createdAt DESC
         LIMIT ?
       `, [dateRange, Math.min(limit, 20)]);
 
       recentUsers.forEach(user => {
+        // Use business name for merchants, owner name for regular users
+        const displayName = user.userType === 'merchant' && user.businessName ? user.businessName : user.fullName;
         activities.push({
           id: `user_${user.id}`,
           type: user.userType === 'merchant' ? 'merchant_registered' : 'user_registered',
           title: user.userType === 'merchant' ? 'New Business Registration' : 'New User Registration',
-          description: `${user.fullName} registered as a ${user.userType}`,
+          description: `${displayName} registered as a ${user.userType}`,
           user: {
             id: user.id,
-            fullName: user.fullName,
+            fullName: displayName, // Use business name for display
             email: user.email,
             userType: user.userType
           },
@@ -315,22 +318,25 @@ router.get('/activities', auth, admin, async (req, res) => {
       // Recent deal activities
       try {
         const recentDeals = await queryAsync(`
-          SELECT d.id, d.title, d.status, d.createdAt, d.updatedAt, u.fullName, u.email
+          SELECT d.id, d.title, d.status, d.createdAt, d.updatedAt, u.fullName, u.email, b.businessName
           FROM deals d
           LEFT JOIN users u ON d.merchantId = u.id
+          LEFT JOIN businesses b ON u.id = b.userId
           WHERE d.updatedAt >= DATE_SUB(NOW(), INTERVAL ? DAY)
           ORDER BY d.updatedAt DESC
           LIMIT ?
         `, [dateRange, Math.min(limit, 15)]);
 
         recentDeals.forEach(deal => {
+          // Use business name for merchants if available
+          const displayName = deal.businessName || deal.fullName;
           activities.push({
             id: `deal_${deal.id}`,
             type: `deal_${deal.status}`,
             title: `Deal ${deal.status.charAt(0).toUpperCase() + deal.status.slice(1)}`,
-            description: `Deal "${deal.title}" ${deal.status}${deal.fullName ? ` by ${deal.fullName}` : ''}`,
-            user: deal.fullName ? {
-              fullName: deal.fullName,
+            description: `Deal "${deal.title}" ${deal.status}${displayName ? ` by ${displayName}` : ''}`,
+            user: displayName ? {
+              fullName: displayName, // Use business name for display
               email: deal.email,
               userType: 'merchant'
             } : null,
@@ -346,10 +352,11 @@ router.get('/activities', auth, admin, async (req, res) => {
       try {
         const recentRedemptions = await queryAsync(`
           SELECT r.id, r.status, r.createdAt, r.updatedAt, u.fullName as userName, u.email as userEmail,
-                 m.fullName as merchantName, d.title as dealTitle
+                 m.fullName as merchantName, d.title as dealTitle, b.businessName
           FROM deal_redemptions r
           LEFT JOIN users u ON r.userId = u.id
           LEFT JOIN users m ON r.merchantId = m.id
+          LEFT JOIN businesses b ON m.id = b.userId
           LEFT JOIN deals d ON r.dealId = d.id
           WHERE r.updatedAt >= DATE_SUB(NOW(), INTERVAL ? DAY)
           ORDER BY r.updatedAt DESC
@@ -357,11 +364,13 @@ router.get('/activities', auth, admin, async (req, res) => {
         `, [dateRange, Math.min(limit, 10)]);
 
         recentRedemptions.forEach(redemption => {
+          // Use business name for merchants if available
+          const merchantDisplayName = redemption.businessName || redemption.merchantName;
           activities.push({
             id: `redemption_${redemption.id}`,
             type: `redemption_${redemption.status}`,
             title: `Redemption ${redemption.status.charAt(0).toUpperCase() + redemption.status.slice(1)}`,
-            description: `${redemption.userName} ${redemption.status} redemption for "${redemption.dealTitle}"${redemption.merchantName ? ` at ${redemption.merchantName}` : ''}`,
+            description: `${redemption.userName} ${redemption.status} redemption for "${redemption.dealTitle}"${merchantDisplayName ? ` at ${merchantDisplayName}` : ''}`,
             user: redemption.userName ? {
               fullName: redemption.userName,
               email: redemption.userEmail,
@@ -884,7 +893,8 @@ router.get('/users/statistics', auth, admin, async (req, res) => {
     ] = await Promise.all([
       queryAsync('SELECT COUNT(*) as count FROM users WHERE userType != "merchant"'),
       queryAsync('SELECT COUNT(*) as count FROM users WHERE userType != "merchant" AND status = "pending"'),
-      queryAsync('SELECT COUNT(*) as count FROM users WHERE userType != "merchant" AND status = "approved"'),
+      // Fixed: Exclude expired, rejected, and suspended users from active count
+      queryAsync('SELECT COUNT(*) as count FROM users WHERE userType != "merchant" AND status = "approved" AND (validationDate IS NULL OR validationDate >= NOW())'),
       queryAsync('SELECT COUNT(*) as count FROM users WHERE userType != "merchant" AND status = "suspended"'),
       queryAsync('SELECT COUNT(*) as count FROM users WHERE userType != "merchant" AND validationDate IS NOT NULL AND validationDate < NOW()'),
       queryAsync('SELECT COUNT(*) as count FROM users WHERE userType != "merchant" AND validationDate IS NOT NULL AND validationDate > NOW() AND validationDate <= DATE_ADD(NOW(), INTERVAL 30 DAY)')
@@ -2044,11 +2054,11 @@ router.get('/partners', auth, admin, async (req, res) => {
     // Deal Limit filter
     if (dealLimit && dealLimit !== 'all') {
       if (dealLimit === 'custom') {
-        whereClause += ' AND b.customDealLimit IS NOT NULL';
+        whereClause += ' AND b.customDealLimit IS NOT NULL AND b.customDealLimit > 0';
       } else if (dealLimit === 'default') {
-        whereClause += ' AND b.customDealLimit IS NULL';
+        whereClause += ' AND (b.customDealLimit IS NULL OR b.customDealLimit = 0)';
       } else if (dealLimit === 'unlimited') {
-        whereClause += ' AND (b.customDealLimit = 0 OR p.max_deals_per_month = 0)';
+        whereClause += ' AND (b.customDealLimit = 0 OR (p.max_deals_per_month IS NOT NULL AND p.max_deals_per_month = 0))';
       }
     }
 
@@ -2155,7 +2165,8 @@ router.get('/partners/statistics', auth, admin, async (req, res) => {
     ] = await Promise.all([
       queryAsync('SELECT COUNT(*) as count FROM users WHERE userType = "merchant"'),
       queryAsync('SELECT COUNT(*) as count FROM users WHERE userType = "merchant" AND status = "pending"'),
-      queryAsync('SELECT COUNT(*) as count FROM users WHERE userType = "merchant" AND status = "approved"'),
+      // Fixed: Exclude expired merchants from active count
+      queryAsync('SELECT COUNT(*) as count FROM users WHERE userType = "merchant" AND status = "approved" AND (validationDate IS NULL OR validationDate >= NOW())'),
       queryAsync('SELECT COUNT(*) as count FROM users WHERE userType = "merchant" AND status = "suspended"'),
       queryAsync('SELECT COUNT(*) as count FROM users WHERE userType = "merchant" AND status = "rejected"'),
       queryAsync('SELECT COUNT(*) as count FROM users WHERE userType = "merchant" AND validationDate IS NOT NULL AND validationDate < NOW()'),
@@ -2248,7 +2259,7 @@ router.get('/partners/export', auth, admin, async (req, res) => {
       } else if (dealLimit === 'default') {
         whereClause += ' AND b.customDealLimit IS NULL';
       } else if (dealLimit === 'unlimited') {
-        whereClause += ' AND (b.customDealLimit = 0 OR p.max_deals_per_month = 0)';
+        whereClause += ' AND (b.customDealLimit = 0 OR (p.max_deals_per_month IS NOT NULL AND p.max_deals_per_month = 0))';
       }
     }
 
@@ -3062,7 +3073,7 @@ router.get('/partners/export', auth, admin, async (req, res) => {
       } else if (dealLimit === 'default') {
         whereClause += ' AND b.customDealLimit IS NULL';
       } else if (dealLimit === 'unlimited') {
-        whereClause += ' AND (b.customDealLimit = 0 OR p.max_deals_per_month = 0)';
+        whereClause += ' AND (b.customDealLimit = 0 OR (p.max_deals_per_month IS NOT NULL AND p.max_deals_per_month = 0))';
       }
     }
 

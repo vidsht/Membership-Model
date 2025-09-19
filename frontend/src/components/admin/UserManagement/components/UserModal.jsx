@@ -57,6 +57,32 @@ const UserTable = ({
     if (user.planValidTill === 'Invalid date') {
       return <span className="validity-error">Invalid date</span>;
     }
+    
+    // Calculate remaining days for valid dates
+    if (user.validationDate) {
+      try {
+        const validationDate = new Date(user.validationDate);
+        const now = new Date();
+        const timeDiff = validationDate.getTime() - now.getTime();
+        const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+        
+        let remainingDaysText = '';
+        if (daysDiff > 0) {
+          remainingDaysText = ` (${daysDiff} day${daysDiff === 1 ? '' : 's'} left)`;
+        }
+        
+        return (
+          <span className="validity-active">
+            {user.planValidTill}
+            {remainingDaysText && <span className="remaining-days">{remainingDaysText}</span>}
+          </span>
+        );
+      } catch (error) {
+        // Fallback to original display if date calculation fails
+        return <span className="validity-active">{user.planValidTill}</span>;
+      }
+    }
+    
     // Otherwise, show the formatted date
     return <span className="validity-active">{user.planValidTill}</span>;
   };
