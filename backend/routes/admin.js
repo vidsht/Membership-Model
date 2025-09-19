@@ -940,36 +940,36 @@ router.get('/users/birthdays', auth, admin, async (req, res) => {
         fullName,
         email,
         phone,
-        birthDate,
+        dob,
         userType,
         profilePicture
       FROM users 
-      WHERE birthDate IS NOT NULL
+      WHERE dob IS NOT NULL
         AND (
           -- Current year birthday
           (
-            DATE_FORMAT(birthDate, '%m-%d') >= DATE_FORMAT(NOW(), '%m-%d')
-            AND DATE_FORMAT(birthDate, '%m-%d') <= DATE_FORMAT(DATE_ADD(NOW(), INTERVAL ? DAY), '%m-%d')
+            DATE_FORMAT(dob, '%m-%d') >= DATE_FORMAT(NOW(), '%m-%d')
+            AND DATE_FORMAT(dob, '%m-%d') <= DATE_FORMAT(DATE_ADD(NOW(), INTERVAL ? DAY), '%m-%d')
           )
           OR
           -- Next year birthday (for end of year scenarios)
           (
             DATE_FORMAT(NOW(), '%m-%d') > DATE_FORMAT(DATE_ADD(NOW(), INTERVAL ? DAY), '%m-%d')
             AND (
-              DATE_FORMAT(birthDate, '%m-%d') >= DATE_FORMAT(NOW(), '%m-%d')
-              OR DATE_FORMAT(birthDate, '%m-%d') <= DATE_FORMAT(DATE_ADD(NOW(), INTERVAL ? DAY), '%m-%d')
+              DATE_FORMAT(dob, '%m-%d') >= DATE_FORMAT(NOW(), '%m-%d')
+              OR DATE_FORMAT(dob, '%m-%d') <= DATE_FORMAT(DATE_ADD(NOW(), INTERVAL ? DAY), '%m-%d')
             )
           )
         )
       ORDER BY 
         CASE 
-          WHEN DATE_FORMAT(birthDate, '%m-%d') >= DATE_FORMAT(NOW(), '%m-%d')
+          WHEN DATE_FORMAT(dob, '%m-%d') >= DATE_FORMAT(NOW(), '%m-%d')
           THEN DATEDIFF(
-            STR_TO_DATE(CONCAT(YEAR(NOW()), '-', DATE_FORMAT(birthDate, '%m-%d')), '%Y-%m-%d'),
+            STR_TO_DATE(CONCAT(YEAR(NOW()), '-', DATE_FORMAT(dob, '%m-%d')), '%Y-%m-%d'),
             CURDATE()
           )
           ELSE DATEDIFF(
-            STR_TO_DATE(CONCAT(YEAR(NOW()) + 1, '-', DATE_FORMAT(birthDate, '%m-%d')), '%Y-%m-%d'),
+            STR_TO_DATE(CONCAT(YEAR(NOW()) + 1, '-', DATE_FORMAT(dob, '%m-%d')), '%Y-%m-%d'),
             CURDATE()
           )
         END
