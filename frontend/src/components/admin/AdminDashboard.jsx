@@ -253,6 +253,16 @@ const AdminDashboard = () => {
         </div>
         
         <div className="stat-card">
+          <div className="stat-icon merchants-total">
+            <i className="fas fa-building"></i>
+          </div>
+          <div className="stat-info">
+            <h3>{stats.totalMerchants}</h3>
+            <p>Total Merchants</p>
+          </div>
+        </div>
+        
+        <div className="stat-card">
           <div className="stat-icon merchants">
             <i className="fas fa-store"></i>
           </div>
