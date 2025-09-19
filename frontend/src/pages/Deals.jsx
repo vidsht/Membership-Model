@@ -132,7 +132,8 @@ const Deals = () => {
   const [filters, setFilters] = useState({
     status: 'all',
     category: 'all',
-    search: ''
+    search: '',
+    sortBy: 'newest' // newest, oldest, popular, discount
   });
   const [loading, setLoading] = useState(true);
   
@@ -263,6 +264,40 @@ const Deals = () => {
         (deal.businessName && deal.businessName.toLowerCase().includes(search)) ||
         (deal.category && deal.category.toLowerCase().includes(search))
       );
+    }
+    
+    // Apply sorting
+    if (filters.sortBy) {
+      result.sort((a, b) => {
+        switch (filters.sortBy) {
+          case 'newest':
+            return new Date(b.created_at || b.createdAt || 0) - new Date(a.created_at || a.createdAt || 0);
+          
+          case 'oldest':
+            return new Date(a.created_at || a.createdAt || 0) - new Date(b.created_at || b.createdAt || 0);
+          
+          case 'popular':
+            // Sort by views + redemptions (popularity)
+            const aPopularity = (a.views || 0) + (a.redemptions || 0) * 2; // Weight redemptions more
+            const bPopularity = (b.views || 0) + (b.redemptions || 0) * 2;
+            return bPopularity - aPopularity;
+          
+          case 'discount':
+            // Sort by discount percentage
+            const aDiscount = a.discountPercentage || 0;
+            const bDiscount = b.discountPercentage || 0;
+            return bDiscount - aDiscount;
+          
+          case 'expiring':
+            // Sort by expiration date (closest first)
+            const aExpiry = new Date(a.validUntil || a.expiration_date || '9999-12-31');
+            const bExpiry = new Date(b.validUntil || b.expiration_date || '9999-12-31');
+            return aExpiry - bExpiry;
+          
+          default:
+            return 0;
+        }
+      });
     }
     
     setFilteredDeals(result);

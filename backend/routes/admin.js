@@ -922,8 +922,10 @@ router.get('/users/statistics', auth, admin, async (req, res) => {
 // Get users with upcoming birthdays
 router.get('/users/birthdays', auth, admin, async (req, res) => {
   try {
-    const { days = 10 } = req.query;
+    const { days = 10, page = 1, limit = 20 } = req.query;
     const daysInt = parseInt(days);
+    const pageInt = parseInt(page);
+    const limitInt = parseInt(limit);
     
     if (isNaN(daysInt) || daysInt < 1 || daysInt > 365) {
       return res.status(400).json({ 
@@ -932,8 +934,46 @@ router.get('/users/birthdays', auth, admin, async (req, res) => {
       });
     }
 
-    // Query to find users with birthdays in the specified number of days
-    // We use DATE_FORMAT to compare only month and day
+    if (isNaN(pageInt) || pageInt < 1) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Page parameter must be a positive number' 
+      });
+    }
+
+    if (isNaN(limitInt) || limitInt < 1 || limitInt > 100) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Limit parameter must be between 1 and 100' 
+      });
+    }
+
+    const offset = (pageInt - 1) * limitInt;
+
+    // First get the total count
+    const countSql = `
+      SELECT COUNT(*) as total
+      FROM users 
+      WHERE dob IS NOT NULL
+        AND (
+          -- Current year birthday
+          (
+            DATE_FORMAT(dob, '%m-%d') >= DATE_FORMAT(NOW(), '%m-%d')
+            AND DATE_FORMAT(dob, '%m-%d') <= DATE_FORMAT(DATE_ADD(NOW(), INTERVAL ? DAY), '%m-%d')
+          )
+          OR
+          -- Next year birthday (for end of year scenarios)
+          (
+            DATE_FORMAT(NOW(), '%m-%d') > DATE_FORMAT(DATE_ADD(NOW(), INTERVAL ? DAY), '%m-%d')
+            AND (
+              DATE_FORMAT(dob, '%m-%d') >= DATE_FORMAT(NOW(), '%m-%d')
+              OR DATE_FORMAT(dob, '%m-%d') <= DATE_FORMAT(DATE_ADD(NOW(), INTERVAL ? DAY), '%m-%d')
+            )
+          )
+        )
+    `;
+
+    // Query to find users with birthdays in the specified number of days with pagination
     const sql = `
       SELECT 
         id,
@@ -973,13 +1013,28 @@ router.get('/users/birthdays', auth, admin, async (req, res) => {
             CURDATE()
           )
         END
+      LIMIT ? OFFSET ?
     `;
 
-    const birthdays = await queryAsync(sql, [daysInt, daysInt, daysInt]);
+    const [countResult, birthdays] = await Promise.all([
+      queryAsync(countSql, [daysInt, daysInt, daysInt]),
+      queryAsync(sql, [daysInt, daysInt, daysInt, limitInt, offset])
+    ]);
+
+    const total = countResult[0]?.total || 0;
+    const totalPages = Math.ceil(total / limitInt);
 
     res.json({
       success: true,
       birthdays,
+      pagination: {
+        page: pageInt,
+        limit: limitInt,
+        total,
+        totalPages,
+        hasNextPage: pageInt < totalPages,
+        hasPrevPage: pageInt > 1
+      },
       filter: {
         days: daysInt,
         message: `Showing birthdays in the next ${daysInt} day${daysInt > 1 ? 's' : ''}`

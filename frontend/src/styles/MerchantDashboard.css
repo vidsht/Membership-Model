@@ -113,6 +113,69 @@
   box-shadow: 0 10px 25px rgba(0,0,0,0.1);
 }
 
+.dashboard-header-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.dashboard-header .business-logo {
+  width: 70px;
+  height: 70px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f8f9fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 2px solid #e9ecef;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.dashboard-header .business-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+.dashboard-title-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.dashboard-title-section h1 {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dashboard-title-section .business-name {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #4d0808;
+  line-height: 1.2;
+  background: linear-gradient(45deg, #891f1f 0%, #4D0808 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.dashboard-title-section .dashboard-label {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: #6c757d;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
 /* Merchant Header Info */
 .merchant-header-info {
   display: flex;
@@ -388,6 +451,24 @@
   .dashboard-header {
     padding: 1.5rem;
     margin-bottom: 1.5rem;
+  }
+  
+  .dashboard-header-content {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .dashboard-header .business-logo {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .dashboard-title-section .business-name {
+    font-size: 1.5rem;
+  }
+  
+  .dashboard-title-section .dashboard-label {
+    font-size: 1.2rem;
   }
   
   .dashboard-header h1 {
@@ -1741,6 +1822,19 @@ background: white;
   
   .dashboard-header h1 {
     font-size: 2.25rem;
+  }
+  
+  .dashboard-header .business-logo {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .dashboard-title-section .business-name {
+    font-size: 1.3rem;
+  }
+  
+  .dashboard-title-section .dashboard-label {
+    font-size: 1rem;
   }
 }
 
