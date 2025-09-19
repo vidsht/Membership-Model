@@ -48,7 +48,8 @@ const DealFilters = ({ filters, plans = [], onFilterChange, onSearch }) => {
     onFilterChange({
       status: 'all',
       category: 'all',
-      search: ''
+      search: '',
+      sortBy: 'newest'
     });
   };
 
@@ -110,6 +111,23 @@ const DealFilters = ({ filters, plans = [], onFilterChange, onSearch }) => {
                 {getDealCategoryOptions().map(option => (
                   <option key={option.value} value={option.value}>{option.label}</option>
                 ))}
+              </select>
+            </div>
+
+            <div className="user-filters__sort-container">
+              <select 
+                id="sortBy" 
+                name="sortBy" 
+                value={filters.sortBy || 'newest'} 
+                onChange={handleInputChange}
+                aria-label="Sort deals by"
+                className="user-filters__sort-select"
+              >
+                <option value="newest">Newest First</option>
+                <option value="oldest">Oldest First</option>
+                <option value="popular">Most Popular</option>
+                <option value="discount">Highest Discount</option>
+                <option value="expiring">Expiring Soon</option>
               </select>
             </div>
           </div>

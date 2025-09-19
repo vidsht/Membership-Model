@@ -1294,7 +1294,8 @@
 .checkbox-column { width: 30px; }
 .serial-column { width: 50px; }
 .business-column { width: 25%; }
-.contact-column { width: 18%; }
+.user-column { width: 18%; }
+.contact-column { width: 25%; }
 .category-column { width: 10%; }
 .plan-column { width: 12%; }
 .limit-column { width: 8%; }
@@ -1431,7 +1432,8 @@
 /* Responsive adjustments for compact table */
 @media (max-width: 1200px) {
   .business-column { width: 30%; }
-  .contact-column { width: 20%; }
+  .user-column { width: 20%; }
+  .contact-column { width: 28%; }
   .actions-column { width: 18%; }
 }
 
@@ -1445,7 +1447,8 @@
   .checkbox-column { width: 25px; }
   .serial-column { width: 40px; }
   .business-column { width: 35%; }
-  .contact-column { width: 25%; }
+  .user-column { width: 20%; }
+  .contact-column { width: 30%; }
   .category-column { display: none; }
   .limit-column { width: 8%; }
   .validity-column { display: none; }
@@ -1455,7 +1458,8 @@
 @media (max-width: 480px) {
   .plan-column { display: none; }
   .business-column { width: 45%; }
-  .contact-column { width: 30%; }
+  .user-column { width: 20%; }
+  .contact-column { width: 35%; }
   .actions-column { width: 25%; }
 }
 

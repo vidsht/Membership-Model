@@ -1094,7 +1094,26 @@ ${userInfo?.fullName || userInfo?.name || user?.fullName || user?.name || 'Merch
       ) : null}
 
       <div className="dashboard-header">
-        <h1>Merchant Dashboard</h1>
+        <div className="dashboard-header-content">
+          {user?.profilePhoto && (
+            <div className="business-logo">
+              <SmartImage
+                src={user.profilePhoto}
+                alt={user.businessName || 'Business Logo'}
+                className="business-logo-img"
+                fallback="/api/placeholder/60/60"
+              />
+            </div>
+          )}
+          <div className="dashboard-title-section">
+            <h1>
+              {user?.businessName && (
+                <span className="business-name">{user.businessName}</span>
+              )}
+              <span className="dashboard-label">Merchant Dashboard</span>
+            </h1>
+          </div>
+        </div>
       </div>
 
       {/* Plan Expiry Banner */}

@@ -7,6 +7,14 @@ const BirthdaySection = () => {
   const [birthdays, setBirthdays] = useState([]);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState('10'); // Default to 10 days
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 20,
+    total: 0,
+    totalPages: 0,
+    hasNextPage: false,
+    hasPrevPage: false
+  });
   const { showNotification } = useNotification();
 
   const filterOptions = [
@@ -18,15 +26,23 @@ const BirthdaySection = () => {
   ];
 
   useEffect(() => {
-    fetchBirthdays();
+    setPagination(prev => ({ ...prev, page: 1 })); // Reset to page 1 when filter changes
+    fetchBirthdays(1);
   }, [filter]);
 
-  const fetchBirthdays = async () => {
+  useEffect(() => {
+    if (pagination.page > 1) {
+      fetchBirthdays(pagination.page);
+    }
+  }, [pagination.page]);
+
+  const fetchBirthdays = async (page = 1) => {
     setLoading(true);
     try {
-      const response = await api.get(`/admin/users/birthdays?days=${filter}`);
+      const response = await api.get(`/admin/users/birthdays?days=${filter}&page=${page}&limit=${pagination.limit}`);
       if (response.data.success) {
         setBirthdays(response.data.birthdays);
+        setPagination(response.data.pagination);
       } else {
         showNotification('Failed to fetch birthdays', 'error');
       }
@@ -35,6 +51,12 @@ const BirthdaySection = () => {
       showNotification('Error fetching birthdays', 'error');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= pagination.totalPages) {
+      setPagination(prev => ({ ...prev, page: newPage }));
     }
   };
 
@@ -98,11 +120,16 @@ const BirthdaySection = () => {
 
       <div className="birthday-stats">
         <div className="stat-card">
-          <div className="stat-number">{birthdays.length}</div>
+          <div className="stat-number">{pagination.total}</div>
           <div className="stat-label">
-            {filter === '1' ? 'Today' : `Next ${filter} days`}
+            Total {filter === '1' ? 'Today' : `Next ${filter} days`}
           </div>
         </div>
+        {pagination.total > 0 && (
+          <div className="pagination-info">
+            Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} users
+          </div>
+        )}
       </div>
 
       {loading ? (
@@ -177,6 +204,54 @@ const BirthdaySection = () => {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Pagination Controls */}
+      {pagination.totalPages > 1 && (
+        <div className="pagination-controls">
+          <button
+            onClick={() => handlePageChange(pagination.page - 1)}
+            disabled={!pagination.hasPrevPage}
+            className="pagination-btn"
+          >
+            <i className="fas fa-chevron-left"></i>
+            Previous
+          </button>
+          
+          <div className="pagination-pages">
+            {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+              let pageNum;
+              if (pagination.totalPages <= 5) {
+                pageNum = i + 1;
+              } else if (pagination.page <= 3) {
+                pageNum = i + 1;
+              } else if (pagination.page >= pagination.totalPages - 2) {
+                pageNum = pagination.totalPages - 4 + i;
+              } else {
+                pageNum = pagination.page - 2 + i;
+              }
+              
+              return (
+                <button
+                  key={pageNum}
+                  onClick={() => handlePageChange(pageNum)}
+                  className={`pagination-page ${pagination.page === pageNum ? 'active' : ''}`}
+                >
+                  {pageNum}
+                </button>
+              );
+            })}
+          </div>
+          
+          <button
+            onClick={() => handlePageChange(pagination.page + 1)}
+            disabled={!pagination.hasNextPage}
+            className="pagination-btn"
+          >
+            Next
+            <i className="fas fa-chevron-right"></i>
+          </button>
         </div>
       )}
     </div>
