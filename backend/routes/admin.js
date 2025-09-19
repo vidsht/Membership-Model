@@ -939,7 +939,7 @@ router.get('/users/birthdays', auth, admin, async (req, res) => {
         id,
         fullName,
         email,
-        phoneNumber,
+        phone,
         birthDate,
         userType,
         profilePicture

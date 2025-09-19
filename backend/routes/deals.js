@@ -15,8 +15,14 @@ const updateExpiredDeals = async () => {
       UPDATE deals 
       SET status = 'expired', updated_at = CURRENT_TIMESTAMP
       WHERE status = 'active' 
-        AND ((validUntil IS NOT NULL AND validUntil < CURDATE()) 
-             OR (expiration_date IS NOT NULL AND expiration_date < CURDATE()))
+        AND (
+          -- Date-based expiration
+          (validUntil IS NOT NULL AND validUntil < CURDATE()) 
+          OR (expiration_date IS NOT NULL AND expiration_date < CURDATE())
+          -- Member limit reached expiration
+          OR (member_limit IS NOT NULL AND member_limit > 0 
+              AND (SELECT COUNT(*) FROM deal_redemptions dr WHERE dr.dealId = deals.id) >= member_limit)
+        )
     `;
     
     const result = await queryAsync(updateQuery);
@@ -365,9 +371,9 @@ router.get('/expired', async (req, res) => {
         OR (d.expiration_date IS NOT NULL AND d.expiration_date < CURDATE() AND d.expiration_date >= ?)
         -- Status-based expiration (manually expired)
         OR (d.status = 'expired' AND d.created_at >= ?)
-        -- Member limit reached (assuming deals have memberLimit field)
-        OR (d.memberLimit IS NOT NULL AND d.memberLimit > 0 
-            AND (SELECT COUNT(*) FROM deal_redemptions dr WHERE dr.dealId = d.id) >= d.memberLimit
+        -- Member limit reached (using correct column name: member_limit)
+        OR (d.member_limit IS NOT NULL AND d.member_limit > 0 
+            AND (SELECT COUNT(*) FROM deal_redemptions dr WHERE dr.dealId = d.id) >= d.member_limit
             AND d.created_at >= ?)
       )
       ORDER BY COALESCE(d.validUntil, d.expiration_date, d.updated_at) DESC
@@ -382,7 +388,7 @@ router.get('/expired', async (req, res) => {
       const validUntil = deal.validUntil ? new Date(deal.validUntil) : null;
       const expirationDate = deal.expiration_date ? new Date(deal.expiration_date) : null;
       const isDateExpired = (validUntil && validUntil < currentDate) || (expirationDate && expirationDate < currentDate);
-      const isLimitReached = deal.memberLimit && deal.memberLimit > 0 && deal.currentRedemptions >= deal.memberLimit;
+      const isLimitReached = deal.member_limit && deal.member_limit > 0 && deal.currentRedemptions >= deal.member_limit;
       
       let expirationReason = 'Unknown';
       if (deal.status === 'expired') {
