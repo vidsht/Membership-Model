@@ -315,7 +315,9 @@ const UserTable = ({
                           </span>
                         ) : (
                           <span className="plan-limit" title="Using plan default">
-                            {user.planMaxDealRedemptions ? `${user.planMaxDealRedemptions}/m` : 'Plan Default'}
+                            {user.planMaxDealRedemptions ? 
+                              (user.planMaxDealRedemptions === -1 ? 'Unlimited' : `${user.planMaxDealRedemptions}/m`) 
+                              : 'Plan Default'}
                           </span>
                         )}
                         {onQuickEditRedemption && user.userType === 'user' && (

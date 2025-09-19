@@ -919,6 +919,78 @@ router.get('/users/statistics', auth, admin, async (req, res) => {
   }
 });
 
+// Get users with upcoming birthdays
+router.get('/users/birthdays', auth, admin, async (req, res) => {
+  try {
+    const { days = 10 } = req.query;
+    const daysInt = parseInt(days);
+    
+    if (isNaN(daysInt) || daysInt < 1 || daysInt > 365) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Days parameter must be a number between 1 and 365' 
+      });
+    }
+
+    // Query to find users with birthdays in the specified number of days
+    // We use DATE_FORMAT to compare only month and day
+    const sql = `
+      SELECT 
+        id,
+        fullName,
+        email,
+        phoneNumber,
+        birthDate,
+        userType,
+        profilePicture
+      FROM users 
+      WHERE birthDate IS NOT NULL
+        AND (
+          -- Current year birthday
+          (
+            DATE_FORMAT(birthDate, '%m-%d') >= DATE_FORMAT(NOW(), '%m-%d')
+            AND DATE_FORMAT(birthDate, '%m-%d') <= DATE_FORMAT(DATE_ADD(NOW(), INTERVAL ? DAY), '%m-%d')
+          )
+          OR
+          -- Next year birthday (for end of year scenarios)
+          (
+            DATE_FORMAT(NOW(), '%m-%d') > DATE_FORMAT(DATE_ADD(NOW(), INTERVAL ? DAY), '%m-%d')
+            AND (
+              DATE_FORMAT(birthDate, '%m-%d') >= DATE_FORMAT(NOW(), '%m-%d')
+              OR DATE_FORMAT(birthDate, '%m-%d') <= DATE_FORMAT(DATE_ADD(NOW(), INTERVAL ? DAY), '%m-%d')
+            )
+          )
+        )
+      ORDER BY 
+        CASE 
+          WHEN DATE_FORMAT(birthDate, '%m-%d') >= DATE_FORMAT(NOW(), '%m-%d')
+          THEN DATEDIFF(
+            STR_TO_DATE(CONCAT(YEAR(NOW()), '-', DATE_FORMAT(birthDate, '%m-%d')), '%Y-%m-%d'),
+            CURDATE()
+          )
+          ELSE DATEDIFF(
+            STR_TO_DATE(CONCAT(YEAR(NOW()) + 1, '-', DATE_FORMAT(birthDate, '%m-%d')), '%Y-%m-%d'),
+            CURDATE()
+          )
+        END
+    `;
+
+    const birthdays = await queryAsync(sql, [daysInt, daysInt, daysInt]);
+
+    res.json({
+      success: true,
+      birthdays,
+      filter: {
+        days: daysInt,
+        message: `Showing birthdays in the next ${daysInt} day${daysInt > 1 ? 's' : ''}`
+      }
+    });
+  } catch (err) {
+    console.error('Error fetching birthdays:', err);
+    res.status(500).json({ success: false, message: 'Failed to fetch birthdays' });
+  }
+});
+
 router.get('/users/:id', auth, admin, async (req, res) => {
   try {
     const userId = parseInt(req.params.id);
