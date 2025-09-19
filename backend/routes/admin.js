@@ -2127,6 +2127,10 @@ router.get('/partners', auth, admin, async (req, res) => {
     if (businessTableExists) {
       countQuery += ' LEFT JOIN businesses b ON u.id = b.userId';
     }
+    // Add plans JOIN if dealLimit filter needs it
+    if (dealLimit && (dealLimit === 'unlimited')) {
+      countQuery += ' LEFT JOIN plans p ON u.membershipType = p.key';
+    }
     countQuery += ` ${whereClause}`;
     
     const countParams = params.slice(0, -2); // Remove limit and offset
@@ -2255,9 +2259,9 @@ router.get('/partners/export', auth, admin, async (req, res) => {
 
     if (dealLimit && dealLimit !== 'all') {
       if (dealLimit === 'custom') {
-        whereClause += ' AND b.customDealLimit IS NOT NULL';
+        whereClause += ' AND b.customDealLimit IS NOT NULL AND b.customDealLimit > 0';
       } else if (dealLimit === 'default') {
-        whereClause += ' AND b.customDealLimit IS NULL';
+        whereClause += ' AND (b.customDealLimit IS NULL OR b.customDealLimit = 0)';
       } else if (dealLimit === 'unlimited') {
         whereClause += ' AND (b.customDealLimit = 0 OR (p.max_deals_per_month IS NOT NULL AND p.max_deals_per_month = 0))';
       }
@@ -3069,9 +3073,9 @@ router.get('/partners/export', auth, admin, async (req, res) => {
 
     if (dealLimit && dealLimit !== 'all') {
       if (dealLimit === 'custom') {
-        whereClause += ' AND b.customDealLimit IS NOT NULL';
+        whereClause += ' AND b.customDealLimit IS NOT NULL AND b.customDealLimit > 0';
       } else if (dealLimit === 'default') {
-        whereClause += ' AND b.customDealLimit IS NULL';
+        whereClause += ' AND (b.customDealLimit IS NULL OR b.customDealLimit = 0)';
       } else if (dealLimit === 'unlimited') {
         whereClause += ' AND (b.customDealLimit = 0 OR (p.max_deals_per_month IS NOT NULL AND p.max_deals_per_month = 0))';
       }
