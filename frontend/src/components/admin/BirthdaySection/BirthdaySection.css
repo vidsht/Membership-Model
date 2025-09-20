@@ -56,6 +56,36 @@
   box-shadow: 0 0 0 3px rgba(233, 30, 99, 0.1);
 }
 
+.clear-filter-btn {
+  padding: 8px 12px;
+  border: 2px solid #e91e63;
+  background: white;
+  color: #e91e63;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 500;
+}
+
+.clear-filter-btn:hover {
+  background: #e91e63;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(233, 30, 99, 0.2);
+}
+
+.clear-filter-btn:active {
+  transform: translateY(0);
+}
+
+.clear-filter-btn i {
+  font-size: 0.8rem;
+}
+
 .birthday-stats {
   margin-bottom: 25px;
   display: flex;
@@ -305,6 +335,12 @@
   
   .birthday-filters {
     justify-content: center;
+    flex-wrap: wrap;
+  }
+  
+  .clear-filter-btn {
+    padding: 6px 10px;
+    font-size: 0.8rem;
   }
   
   .birthday-cards {

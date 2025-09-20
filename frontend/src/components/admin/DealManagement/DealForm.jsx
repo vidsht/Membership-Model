@@ -36,6 +36,7 @@ const DealForm = () => {
     couponCode: '',
     featuredImage: null,
     memberLimit: '', // Optional field for limiting number of members who can access
+    applicableLocations: '', // Optional field for specifying where deal is applicable
     status: 'active'
   });
   
@@ -573,6 +574,23 @@ const DealForm = () => {
                   Leave empty for unlimited access. Once the limit is reached, the deal will automatically expire.
                 </small>
                 {formErrors.memberLimit && <span className="error-message">{formErrors.memberLimit}</span>}
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="applicableLocations">Applicable Locations (Optional)</label>
+                <input
+                  type="text"
+                  id="applicableLocations"
+                  name="applicableLocations"
+                  value={formData.applicableLocations}
+                  onChange={handleChange}
+                  placeholder="e.g., Accra, Kumasi, Tema (comma-separated)"
+                  className={formErrors.applicableLocations ? 'error' : ''}
+                />
+                <small className="field-description">
+                  Specify locations where this deal is applicable. Leave empty if the deal is available in all locations.
+                </small>
+                {formErrors.applicableLocations && <span className="error-message">{formErrors.applicableLocations}</span>}
               </div>
             </div>
           </div>

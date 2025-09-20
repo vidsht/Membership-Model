@@ -3582,7 +3582,7 @@ router.get('/deals', auth, admin, async (req, res) => {
           (SELECT COUNT(*) FROM deal_redemptions dr WHERE dr.dealId = d.id) as redemptionCount
         FROM deals d
         LEFT JOIN businesses b ON d.businessId = b.businessId
-        LEFT JOIN users u ON d.businessId = u.id
+        LEFT JOIN users u ON b.userId = u.id
         ${whereClause}
         ORDER BY ${orderByClause}
         LIMIT ? OFFSET ?
@@ -3767,7 +3767,8 @@ router.post('/deals', auth, admin, [
       termsConditions,
       couponCode,
       status = 'active',
-      bannerImage  // Add this field
+      bannerImage,  // Add this field
+      applicableLocations  // Add this field
     } = req.body;
 
     // Validate dates
@@ -3784,8 +3785,8 @@ router.post('/deals', auth, admin, [
       INSERT INTO deals (
         title, description, businessId, discount, discountType, originalPrice, 
         discountedPrice, category, validFrom, validUntil, requiredPlanPriority,
-        minPlanPriority, termsConditions, couponCode, member_limit, bannerImage, status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        minPlanPriority, termsConditions, couponCode, member_limit, bannerImage, applicableLocations, status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     // Extract memberLimit from req.body
@@ -3795,7 +3796,7 @@ router.post('/deals', auth, admin, [
       title, description, businessId, discount, discountType, originalPrice,
       discountedPrice, category, validFrom, validUntil, requiredPlanPriority,
       requiredPlanPriority, // Set minPlanPriority to same value for consistency
-      termsConditions, couponCode, memberLimit || null, bannerImage || null, status
+      termsConditions, couponCode, memberLimit || null, bannerImage || null, applicableLocations || null, status
     ];
 
     const result = await queryAsync(query, params);
@@ -3893,7 +3894,8 @@ router.put('/deals/:id', auth, admin, [
       termsConditions,
       couponCode,
       status = 'active',
-      bannerImage  // Add this field
+      bannerImage,  // Add this field
+      applicableLocations  // Add this field
     } = req.body;
 
     // Validate dates
@@ -3917,7 +3919,7 @@ router.put('/deals/:id', auth, admin, [
         title = ?, description = ?, businessId = ?, discount = ?, discountType = ?, 
         originalPrice = ?, discountedPrice = ?, category = ?, validFrom = ?, 
         validUntil = ?, requiredPlanPriority = ?, minPlanPriority = ?, termsConditions = ?, 
-        couponCode = ?, member_limit = ?, bannerImage = ?, status = ?
+        couponCode = ?, member_limit = ?, bannerImage = ?, applicableLocations = ?, status = ?
       WHERE id = ?
     `;
 
@@ -3928,7 +3930,7 @@ router.put('/deals/:id', auth, admin, [
       title, description, businessId, discount, discountType, originalPrice,
       discountedPrice, category, validFrom, validUntil, requiredPlanPriority,
       requiredPlanPriority, // Set minPlanPriority to same value for consistency
-      termsConditions, couponCode, memberLimit || null, bannerImage || null, status, dealId
+      termsConditions, couponCode, memberLimit || null, bannerImage || null, applicableLocations || null, status, dealId
     ];
 
     await queryAsync(query, params);

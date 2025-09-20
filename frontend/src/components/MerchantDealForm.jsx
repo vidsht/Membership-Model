@@ -31,7 +31,8 @@ const MerchantDealForm = ({ deal, onDealCreated, onClose, isEditing = false }) =
     termsConditions: '',
     couponCode: '',
     featuredImage: null,
-    memberLimit: '' // Optional field for limiting number of members who can access
+    memberLimit: '', // Optional field for limiting number of members who can access
+    applicableLocations: '' // Optional field for specifying where deal is applicable
   });
     const [formErrors, setFormErrors] = useState({});
   
@@ -92,7 +93,8 @@ React.useEffect(() => {
       termsConditions: deal.termsConditions || '',
       couponCode: deal.couponCode || '',
       featuredImage: null, // Don't populate image for editing
-      memberLimit: deal.memberLimit || ''
+      memberLimit: deal.memberLimit || '',
+      applicableLocations: deal.applicableLocations || ''
     });
     
     console.log('[DEBUG] Form data set to:', {
@@ -298,7 +300,8 @@ const handleBannerImageUpload = (fileOrResponse) => {
         couponCode: formData.couponCode,
         requiredPlanPriority: parseInt(formData.requiredPlanPriority),
         ...(formData.bannerImage && { bannerImage: formData.bannerImage }),
-        ...(formData.memberLimit && formData.memberLimit.trim() !== '' && { memberLimit: parseInt(formData.memberLimit) })
+        ...(formData.memberLimit && formData.memberLimit.trim() !== '' && { memberLimit: parseInt(formData.memberLimit) }),
+        ...(formData.applicableLocations && formData.applicableLocations.trim() !== '' && { applicableLocations: formData.applicableLocations.trim() })
       };
 
       let dealId;
@@ -586,6 +589,22 @@ if (!dealId) {
             />
             {formErrors.memberLimit && <span className="error-message">{formErrors.memberLimit}</span>}
             <span className="help-text">Limit the number of members who can redeem this deal. Leave blank for unlimited.</span>
+          </div>
+
+          {/* Applicable Locations Field */}
+          <div className="form-group">
+            <label htmlFor="applicableLocations">Applicable Locations (Optional)</label>
+            <input
+              type="text"
+              id="applicableLocations"
+              name="applicableLocations"
+              value={formData.applicableLocations}
+              onChange={handleChange}
+              placeholder="e.g., Accra, Kumasi, Tema (leave blank for all locations)"
+              className={formErrors.applicableLocations ? 'error' : ''}
+            />
+            {formErrors.applicableLocations && <span className="error-message">{formErrors.applicableLocations}</span>}
+            <span className="help-text">Specify locations where this deal is applicable. Use commas to separate multiple locations.</span>
           </div>
         </div>
         

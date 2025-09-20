@@ -25,6 +25,11 @@ const BirthdaySection = () => {
     { value: '30', label: 'Next 30 days' }
   ];
 
+  // Initial load when component mounts
+  useEffect(() => {
+    fetchBirthdays(1);
+  }, []);
+
   useEffect(() => {
     setPagination(prev => ({ ...prev, page: 1 })); // Reset to page 1 when filter changes
     fetchBirthdays(1);
@@ -94,6 +99,25 @@ const BirthdaySection = () => {
     return age;
   };
 
+  const clearFilter = () => {
+    // Reset filter to default
+    setFilter('10'); // Reset to default (Next 10 days)
+    
+    // Reset pagination completely
+    setPagination({
+      page: 1,
+      limit: 20,
+      total: 0,
+      totalPages: 0,
+      hasNextPage: false,
+      hasPrevPage: false
+    });
+    
+    // Clear current data and force a fresh fetch
+    setBirthdays([]);
+    fetchBirthdays(1);
+  };
+
   return (
     <div className="birthday-section">
       <div className="birthday-header">
@@ -115,6 +139,14 @@ const BirthdaySection = () => {
               </option>
             ))}
           </select>
+          <button
+            onClick={clearFilter}
+            className="clear-filter-btn"
+            title="Reset to default filter"
+          >
+            <i className="fas fa-times"></i>
+            Clear Filter
+          </button>
         </div>
       </div>
 
