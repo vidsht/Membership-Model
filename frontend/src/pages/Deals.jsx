@@ -1016,6 +1016,12 @@ Join Indians in Ghana Community for exclusive deals!`;
                           <span>Coupon Code: <strong>{selectedDeal.couponCode}</strong></span>
                         </div>
                       )}
+                      {selectedDeal.applicableLocations && (
+                        <div className="info-item">
+                          <i className="fas fa-map-marker-alt"></i>
+                          <span>Applicable Locations: {selectedDeal.applicableLocations}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

@@ -464,7 +464,7 @@ const Dashboard = () => {
                     {currentPlan ? (
                       getMembershipBenefits(currentPlan, 'merchant').map((benefit, index) => (
                         <div key={index} className="benefit-card">
-                          <div className="benefit-icon">
+                          <div className="benefit-icon-1">
                             <i className={getBenefitIcon(benefit, index)}></i>
                           </div>
                           <div className="benefit-content">
@@ -477,7 +477,7 @@ const Dashboard = () => {
                       // Fallback benefits when no plan data is available
                       <>
                         <div className="benefit-card">
-                          <div className="benefit-icon">
+                          <div className="benefit-icon-1">
                             <i className="fas fa-bullhorn"></i>
                           </div>
                           <div className="benefit-content">
@@ -486,7 +486,7 @@ const Dashboard = () => {
                           </div>
                         </div>
                         <div className="benefit-card">
-                          <div className="benefit-icon">
+                          <div className="benefit-icon-1">
                             <i className="fas fa-users"></i>
                           </div>
                           <div className="benefit-content">
@@ -495,7 +495,7 @@ const Dashboard = () => {
                           </div>
                         </div>
                         <div className="benefit-card">
-                          <div className="benefit-icon">
+                          <div className="benefit-icon-1">
                             <i className="fas fa-heart"></i>
                           </div>
                           <div className="benefit-content">
@@ -504,7 +504,7 @@ const Dashboard = () => {
                           </div>
                         </div>
                         <div className="benefit-card">
-                          <div className="benefit-icon">
+                          <div className="benefit-icon-1">
                             <i className="fas fa-headset"></i>
                           </div>
                           <div className="benefit-content">
@@ -537,7 +537,7 @@ const Dashboard = () => {
                     {/* Static member benefits as requested (preserve styling/classes) */}
                     <>
                       <div className="benefit-card">
-                        <div className="benefit-icon">
+                        <div className="benefit-icon-1">
                           <i className="fas fa-id-card"></i>
                         </div>
                         <div className="benefit-content">
@@ -547,7 +547,7 @@ const Dashboard = () => {
                       </div>
 
                       <div className="benefit-card">
-                        <div className="benefit-icon">
+                        <div className="benefit-icon-1">
                           <i className="fas fa-percentage"></i>
                         </div>
                         <div className="benefit-content">
@@ -557,7 +557,7 @@ const Dashboard = () => {
                       </div>
 
                       <div className="benefit-card">
-                        <div className="benefit-icon">
+                        <div className="benefit-icon-1">
                           <i className="fas fa-users"></i>
                         </div>
                         <div className="benefit-content">
@@ -567,7 +567,7 @@ const Dashboard = () => {
                       </div>
 
                       <div className="benefit-card">
-                        <div className="benefit-icon">
+                        <div className="benefit-icon-1">
                           <i className="fas fa-envelope"></i>
                         </div>
                         <div className="benefit-content">

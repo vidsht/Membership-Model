@@ -394,6 +394,12 @@ const DealDetail = () => {
                         <span style={{color: '#333'}}>{deal.member_limit} users max</span>
                       </div>
                     )}
+                    {deal.applicableLocations && (
+                      <div style={{background: '#f8f9fa', padding: '15px', borderRadius: '6px', border: '1px solid #dee2e6'}}>
+                        <label style={{display: 'block', fontWeight: 'bold', marginBottom: '5px', color: '#666'}}>Applicable Locations</label>
+                        <span style={{color: '#333'}}>{deal.applicableLocations}</span>
+                      </div>
+                    )}
                     <div style={{background: '#f8f9fa', padding: '15px', borderRadius: '6px', border: '1px solid #dee2e6'}}>
                       <label style={{display: 'block', fontWeight: 'bold', marginBottom: '5px', color: '#666'}}>Created Date</label>
                       <span style={{color: '#333'}}>{deal.created_at ? new Date(deal.created_at).toLocaleDateString('en-GB', {

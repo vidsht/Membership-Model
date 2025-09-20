@@ -577,7 +577,8 @@ router.post('/deals', checkMerchantAccess, checkDealPostingLimit, [
     couponCode,
     requiredPlanPriority,
     bannerImage,  // Add this field
-    memberLimit   // Add memberLimit field
+    memberLimit,   // Add memberLimit field
+    applicableLocations  // Add this field
   } = req.body;
 
   // Get plan information for accessLevel field (for display purposes)
@@ -601,8 +602,8 @@ router.post('/deals', checkMerchantAccess, checkDealPostingLimit, [
 
   const insertQuery = `
     INSERT INTO deals 
-    (businessId, title, description, category, discount, discountType, originalPrice, discountedPrice, termsConditions, validFrom, validUntil, couponCode, requiredPlanPriority, bannerImage, member_limit, status)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending_approval')
+    (businessId, title, description, category, discount, discountType, originalPrice, discountedPrice, termsConditions, validFrom, validUntil, couponCode, requiredPlanPriority, bannerImage, member_limit, applicableLocations, status)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending_approval')
   `;
 
   const values = [
@@ -620,7 +621,8 @@ router.post('/deals', checkMerchantAccess, checkDealPostingLimit, [
     couponCode || null,
     requiredPlanPriority || 1,
     bannerImage || null,  // Add bannerImage value
-    memberLimit || null   // Add memberLimit value
+    memberLimit || null,   // Add memberLimit value
+    applicableLocations || null  // Add applicableLocations value
   ];
 
   db.query(insertQuery, values, (err, result) => {
@@ -721,7 +723,8 @@ router.put('/deals/:dealId', checkMerchantAccess, [
       couponCode,
       requiredPlanPriority,
       bannerImage,  // Add this field
-      memberLimit   // Add memberLimit field
+      memberLimit,   // Add memberLimit field
+      applicableLocations  // Add this field
     } = req.body;
 
     if (!dealId || isNaN(dealId)) {
@@ -782,6 +785,7 @@ router.put('/deals/:dealId', checkMerchantAccess, [
         minPlanPriority = ?,
         bannerImage = ?,
         member_limit = ?,
+        applicableLocations = ?,
         status = ?,
         updated_at = NOW()
       WHERE id = ? AND businessId = ?
@@ -801,6 +805,7 @@ router.put('/deals/:dealId', checkMerchantAccess, [
       minPlanPriority,
       bannerImage || null,  // Add bannerImage value
       memberLimit || null,  // Add memberLimit value
+      applicableLocations || null,  // Add applicableLocations value
       newStatus,
       dealId,
       merchant.businessId
