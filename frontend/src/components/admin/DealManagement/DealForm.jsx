@@ -294,6 +294,9 @@ const DealForm = () => {
       // Ensure requiredPlanPriority is included
       submitData.requiredPlanPriority = parseInt(submitData.requiredPlanPriority);
       
+      // Ensure applicableLocations is properly handled
+      submitData.applicableLocations = formData.applicableLocations ? formData.applicableLocations.trim() : '';
+      
       // Add debug logging (remove after testing)
       console.log('Submitting deal data:', submitData);
       

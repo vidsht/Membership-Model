@@ -622,7 +622,7 @@ router.post('/deals', checkMerchantAccess, checkDealPostingLimit, [
     requiredPlanPriority || 1,
     bannerImage || null,  // Add bannerImage value
     memberLimit || null,   // Add memberLimit value
-    applicableLocations || null  // Add applicableLocations value
+    applicableLocations && applicableLocations.trim() !== '' ? applicableLocations.trim() : null  // Add applicableLocations value
   ];
 
   db.query(insertQuery, values, (err, result) => {
@@ -805,7 +805,7 @@ router.put('/deals/:dealId', checkMerchantAccess, [
       minPlanPriority,
       bannerImage || null,  // Add bannerImage value
       memberLimit || null,  // Add memberLimit value
-      applicableLocations || null,  // Add applicableLocations value
+      applicableLocations && applicableLocations.trim() !== '' ? applicableLocations.trim() : null,  // Add applicableLocations value
       newStatus,
       dealId,
       merchant.businessId

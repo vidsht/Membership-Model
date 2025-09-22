@@ -63,13 +63,19 @@ const ApprovalQueue = () => {
       }
       
       // Fetch pending users, merchants, and deals in parallel
+      console.log('🔧 DEBUG: Starting API calls...');
       const [usersResponse, merchantsResponse, dealsResponse] = await Promise.allSettled([
         api.get('/admin/users?status=pending&userType=user'),
         api.get('/admin/users?status=pending&userType=merchant'),
         api.get('/admin/deals/pending')
       ]);
+      console.log('🔧 DEBUG: API calls completed');
 
       // Handle users response
+      console.log('🔧 DEBUG: usersResponse.status:', usersResponse.status);
+      if (usersResponse.status === 'fulfilled') {
+        console.log('🔧 DEBUG: usersResponse.value.data:', usersResponse.value.data);
+      }
       const users = usersResponse.status === 'fulfilled' ? (usersResponse.value.data.users || []) : [];
       if (usersResponse.status === 'rejected') {
         console.warn('Failed to fetch pending users:', usersResponse.reason);
@@ -82,10 +88,16 @@ const ApprovalQueue = () => {
       }
 
       // Handle deals response
+      console.log('🔧 DEBUG: dealsResponse.status:', dealsResponse.status);
+      if (dealsResponse.status === 'fulfilled') {
+        console.log('🔧 DEBUG: dealsResponse.value:', dealsResponse.value);
+        console.log('🔧 DEBUG: dealsResponse.value.data:', dealsResponse.value.data);
+      }
       const deals = dealsResponse.status === 'fulfilled' ? (dealsResponse.value.data.deals || []) : [];
       if (dealsResponse.status === 'rejected') {
         console.warn('Failed to fetch pending deals:', dealsResponse.reason);
       }
+      console.log('🔧 DEBUG: Final deals array:', deals);
 
       setPendingUsers(users);
       setPendingMerchants(merchants);

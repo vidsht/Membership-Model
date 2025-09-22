@@ -300,8 +300,8 @@ const handleBannerImageUpload = (fileOrResponse) => {
         couponCode: formData.couponCode,
         requiredPlanPriority: parseInt(formData.requiredPlanPriority),
         ...(formData.bannerImage && { bannerImage: formData.bannerImage }),
-        ...(formData.memberLimit && formData.memberLimit.trim() !== '' && { memberLimit: parseInt(formData.memberLimit) }),
-        ...(formData.applicableLocations && formData.applicableLocations.trim() !== '' && { applicableLocations: formData.applicableLocations.trim() })
+        memberLimit: formData.memberLimit && formData.memberLimit.trim() !== '' ? parseInt(formData.memberLimit) : null,
+        applicableLocations: formData.applicableLocations ? formData.applicableLocations.trim() : ''
       };
 
       let dealId;

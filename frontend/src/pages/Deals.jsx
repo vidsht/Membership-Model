@@ -696,18 +696,36 @@ Join Indians in Ghana Community for exclusive deals!`;
 
                    {/* Pricing Section */}
                    <div className="deal-pricing-compact">
-                     {deal.originalPrice && (
+                     {deal.originalPrice && deal.discountedPrice ? (
                        <div className="price-row">
-                         <span className="price-label">Original:</span>
                          <span className="original-price">GHS {parseFloat(deal.originalPrice).toFixed(2)}</span>
-                       </div>
-                     )}
-                     {deal.discountedPrice && (
-                       <div className="price-row">
-                         <span className="price-label">Now:</span>
+                         <span className="price-separator">→</span>
                          <span className="discounted-price">GHS {parseFloat(deal.discountedPrice).toFixed(2)}</span>
                        </div>
+                     ) : deal.discountedPrice ? (
+                       <div className="price-row">
+                         <span className="discounted-price">GHS {parseFloat(deal.discountedPrice).toFixed(2)}</span>
+                       </div>
+                     ) : deal.originalPrice ? (
+                       <div className="price-row">
+                         <span className="original-price">GHS {parseFloat(deal.originalPrice).toFixed(2)}</span>
+                       </div>
+                     ) : null}
+                     {deal.discount && (
+                       <div className="price-row">
+                         <span className="discount-highlight">
+                           <strong>{deal.discount}% OFF</strong>
+                         </span>
+                       </div>
                      )}
+                   </div>
+
+                   {/* Deal Stats Section */}
+                   <div className="deal-stats">
+                     <div className="stat-item">
+                       <i className="fas fa-eye"></i>
+                       <span>{deal.views || 0} views</span>
+                     </div>
                    </div>
 
                    {/* Valid Until */}
