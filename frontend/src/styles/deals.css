@@ -450,10 +450,11 @@
   border-radius: 8px;
   padding: 0.5rem 0.8rem;
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   border: 1px solid #fbbf24;
   box-shadow: 0 1px 4px rgba(251, 191, 36, 0.08);
+  gap: 0.5rem;
 }
 
 .deal-pricing-compact .price-row:nth-child(2) {
@@ -477,6 +478,13 @@
   border-radius: 6px;
   padding: 0.2rem 0.5rem;
   border: 1px solid #ef4444;
+}
+
+.deal-pricing-compact .price-separator {
+  color: #64748b;
+  font-weight: 700;
+  font-size: 1.1rem;
+  margin: 0 0.2rem;
 }
 
 .deal-pricing-compact .discounted-price {
@@ -510,6 +518,50 @@
 .deal-validity i {
   color: #f59e0b;
   font-size: 0.8rem;
+}
+
+/* Deal Stats Section */
+.deal-stats {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0.5rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  margin: 0.5rem 0;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.deal-stats .stat-item {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  color: #64748b;
+  flex: 1;
+  min-width: fit-content;
+}
+
+.deal-stats .stat-item i {
+  color: #3b82f6;
+  font-size: 0.75rem;
+}
+
+.deal-stats .stat-item span {
+  font-weight: 500;
+}
+
+/* Discount Highlight */
+.discount-highlight {
+  color: #dc2626;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.discount-highlight strong {
+  color: #dc2626;
 }
 
 /* Enhanced Business Info Styles - Keep for backward compatibility */

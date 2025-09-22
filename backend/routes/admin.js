@@ -3796,7 +3796,7 @@ router.post('/deals', auth, admin, [
       title, description, businessId, discount, discountType, originalPrice,
       discountedPrice, category, validFrom, validUntil, requiredPlanPriority,
       requiredPlanPriority, // Set minPlanPriority to same value for consistency
-      termsConditions, couponCode, memberLimit || null, bannerImage || null, applicableLocations || null, status
+      termsConditions, couponCode, memberLimit || null, bannerImage || null, applicableLocations && applicableLocations.trim() !== '' ? applicableLocations.trim() : null, status
     ];
 
     const result = await queryAsync(query, params);
@@ -3930,7 +3930,7 @@ router.put('/deals/:id', auth, admin, [
       title, description, businessId, discount, discountType, originalPrice,
       discountedPrice, category, validFrom, validUntil, requiredPlanPriority,
       requiredPlanPriority, // Set minPlanPriority to same value for consistency
-      termsConditions, couponCode, memberLimit || null, bannerImage || null, applicableLocations || null, status, dealId
+      termsConditions, couponCode, memberLimit || null, bannerImage || null, applicableLocations && applicableLocations.trim() !== '' ? applicableLocations.trim() : null, status, dealId
     ];
 
     await queryAsync(query, params);
