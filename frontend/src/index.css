@@ -901,23 +901,10 @@ input:focus, select:focus, textarea:focus {
     gap: 20px;
 }
 
-/* .deal-card {
-    border: 1px solid #e0e0e0;
-    border-radius: var(--border-radius-card);
-    padding: 20px;
-    background: #fafafa;
-    transition: all 0.3s ease;
-}
-
-.deal-card:hover {
-    box-shadow: var(--box-shadow-medium);
-    transform: translateY(-2px);
-} */
-
 .deal-header {
     display: flex;
+    flex-direction: column;
     justify-content: space-between;
-    align-items: center;
     margin-bottom: 10px;
 }
 

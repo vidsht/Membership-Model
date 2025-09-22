@@ -142,6 +142,10 @@ const Deals = () => {
   const dealsPerPage = 6; // Show 6 deals per page
   const [redeemStatus, setRedeemStatus] = useState({});
 
+  // Expired deals pagination state
+  const [expiredCurrentPage, setExpiredCurrentPage] = useState(1);
+  const expiredDealsPerPage = 6; // Show 6 expired deals per page
+
   // Redemption confirmation modal state
   const [showRedemptionModal, setShowRedemptionModal] = useState(false);
   const [selectedDeal, setSelectedDeal] = useState(null);
@@ -310,9 +314,24 @@ const Deals = () => {
   const endIndex = startIndex + dealsPerPage;
   const currentDeals = filteredDeals.slice(startIndex, endIndex);
 
+  // Calculate expired deals pagination values
+  const expiredTotalPages = Math.ceil(expiredDeals.length / expiredDealsPerPage);
+  const expiredStartIndex = (expiredCurrentPage - 1) * expiredDealsPerPage;
+  const expiredEndIndex = expiredStartIndex + expiredDealsPerPage;
+  const currentExpiredDeals = expiredDeals.slice(expiredStartIndex, expiredEndIndex);
+
   const handlePageChange = (page) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleExpiredPageChange = (page) => {
+    setExpiredCurrentPage(page);
+    // Scroll to the expired deals section
+    const expiredSection = document.querySelector('.expired-deals-section');
+    if (expiredSection) {
+      expiredSection.scrollIntoView({ behavior: 'smooth' });
+    }
   };
 
   const fetchDeals = async () => {
@@ -622,10 +641,6 @@ Join Indians in Ghana Community for exclusive deals!`;
                    onClick={(e) => handleBannerClick(deal, e)}
                    title="Click to view banner image"
                  >
-                   <div className="deal-category-overlay">
-                     <i className="fas fa-tag"></i>
-                     {deal.category || 'General'}
-                   </div>
                    {/* Limited Badge - Show when member limit is set */}
                    {(deal.member_limit || deal.memberLimit) && (
                      <div className="deal-limited-badge">
@@ -657,9 +672,6 @@ Join Indians in Ghana Community for exclusive deals!`;
 
                  {/* Deal Content */}
                  <div className="deal-content">
-                   {/* Deal Title */}
-                   <h2 className="deal-title">{deal.title}</h2>
-                   
                    {/* Business Info - Logo and Name */}
                    <div className="deal-business-info">
                      <div className="business-logo-container">
@@ -694,6 +706,20 @@ Join Indians in Ghana Community for exclusive deals!`;
                      </div>
                    </div>
 
+                   {/* Deal Title with Category */}
+                   <div className="deal-title-row">
+                     <h2 className="deal-title">{deal.title}</h2>
+                     <div className="deal-category-overlay">
+                       <i className="fas fa-tag"></i>
+                       {deal.category || 'General'}
+                     </div>
+                   </div>
+                   
+                   {/* Deal Description */}
+                   {deal.description && (
+                     <p className="deal-description">{deal.description}</p>
+                   )}
+
                    {/* Pricing Section */}
                    <div className="deal-pricing-compact">
                      {deal.originalPrice && deal.discountedPrice ? (
@@ -711,38 +737,37 @@ Join Indians in Ghana Community for exclusive deals!`;
                          <span className="original-price">GHS {parseFloat(deal.originalPrice).toFixed(2)}</span>
                        </div>
                      ) : null}
-                     {deal.discount && (
-                       <div className="price-row">
+                     
+                     {/* Discount and Validity Row */}
+                     <div className="discount-validity-row">
+                       {deal.discount && (
                          <span className="discount-highlight">
                            <strong>{deal.discount}% OFF</strong>
                          </span>
-                       </div>
-                     )}
-                   </div>
-
-                   {/* Deal Stats Section */}
-                   <div className="deal-stats">
-                     <div className="stat-item">
-                       <i className="fas fa-eye"></i>
-                       <span>{deal.views || 0} views</span>
+                       )}
+                       {(deal.expiration_date || deal.expirationDate || deal.validUntil) && (
+                         <div className="validity-item">
+                           <i className="fas fa-calendar-times"></i>
+                           <span>Valid Until: {new Date(deal.expiration_date || deal.expirationDate || deal.validUntil).toLocaleDateString('en-GB', {
+                             day: '2-digit',
+                             month: 'short',
+                             year: 'numeric'
+                           })}</span>
+                         </div>
+                       )}
                      </div>
                    </div>
 
-                   {/* Valid Until */}
-                   {(deal.expiration_date || deal.expirationDate || deal.validUntil) && (
-                     <div className="deal-validity">
-                       <i className="fas fa-calendar-times"></i>
-                       <span>Valid Until: {new Date(deal.expiration_date || deal.expirationDate || deal.validUntil).toLocaleDateString('en-GB', {
-                         day: '2-digit',
-                         month: 'short',
-                         year: 'numeric'
-                       })}</span>
-                     </div>
-                   )}
+
                  </div>
 
                  {/* Action Section */}
                  <div className="deal-actions">
+                   <div className="stat-item">
+                     <i className="fas fa-eye"></i>
+                     <span>{deal.views || 0} views</span>
+                   </div>
+                   
                    <button
                      className="btn-view-details"
                      onClick={() => handleViewDetails(deal)}
@@ -822,7 +847,7 @@ Join Indians in Ghana Community for exclusive deals!`;
             <p>Check out these deals that recently ended - similar offers might return!</p>
           </div>
           <div className="expired-deals-grid">
-            {expiredDeals.slice(0, 6).map(deal => (
+            {currentExpiredDeals.map(deal => (
               <div key={deal.id} className="deal-card expired-deal-card" onClick={() => handleViewDetails(deal)}>
                 <div className="expired-badge">
                   <i className="fas fa-clock"></i>
@@ -841,11 +866,32 @@ Join Indians in Ghana Community for exclusive deals!`;
                   />
                 </div>
                 <div className="deal-content">
+                  <div className="business-info">
+                    <div className="business-logo-container">
+                      <div className="business-logo">
+                        <SmartImage
+                          src={getMerchantLogoUrl({ logo: deal.businessLogo })}
+                          alt={`${deal.businessName} Logo`}
+                          placeholder={
+                            <div className="image-fallback" style={{display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgb(243, 244, 246)', color: 'rgb(156, 163, 175)', fontSize: '12px', borderRadius: '6px', width: '100%', height: '100%'}}>
+                              <div className="logo-placeholder"><span>{deal.businessName?.charAt(0) || 'B'}</span></div>
+                            </div>
+                          }
+                          className="logo-image"
+                          maxRetries={3}
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            objectPosition: 'center'
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <span className="business-name">{deal.businessName}</span>
+                  </div>
                   <div className="deal-header">
                     <h3 className="deal-title">{deal.title}</h3>
-                    <div className="business-info">
-                      <span className="business-name">{deal.businessName}</span>
-                    </div>
                   </div>
                   <p className="deal-description">
                     {deal.description && deal.description.length > 100
@@ -873,16 +919,50 @@ Join Indians in Ghana Community for exclusive deals!`;
               </div>
             ))}
           </div>
-          {expiredDeals.length > 6 && (
-            <div className="expired-deals-footer">
-              <button 
-                className="btn btn-outline"
-                onClick={() => setFilters({...filters, status: 'expired'})}
-              >
-                View All Expired Deals ({expiredDeals.length})
-              </button>
+          
+          {/* Expired Deals Pagination */}
+          {expiredDeals.length > expiredDealsPerPage && (
+            <div className="expired-deals-pagination">
+              <div className="pagination">
+                <button
+                  className={`pagination-btn ${expiredCurrentPage === 1 ? 'disabled' : ''}`}
+                  onClick={() => handleExpiredPageChange(expiredCurrentPage - 1)}
+                  disabled={expiredCurrentPage === 1}
+                >
+                  ‹ Prev
+                </button>
+                {Array.from({ length: expiredTotalPages }, (_, i) => i + 1).map(page => (
+                  <button
+                    key={page}
+                    className={`pagination-btn ${expiredCurrentPage === page ? 'active' : ''}`}
+                    onClick={() => handleExpiredPageChange(page)}
+                  >
+                    {page}
+                  </button>
+                ))}
+                <button
+                  className={`pagination-btn ${expiredCurrentPage === expiredTotalPages ? 'disabled' : ''}`}
+                  onClick={() => handleExpiredPageChange(expiredCurrentPage + 1)}
+                  disabled={expiredCurrentPage === expiredTotalPages}
+                >
+                  Next ›
+                </button>
+              </div>
+              <div className="pagination-info">
+                Showing {expiredStartIndex + 1}-{Math.min(expiredEndIndex, expiredDeals.length)} of {expiredDeals.length} expired deals
+              </div>
             </div>
           )}
+          
+          {/* View All Expired Deals Button */}
+          <div className="expired-deals-footer">
+            <button 
+              className="btn btn-outline"
+              onClick={() => setFilters({...filters, status: 'expired'})}
+            >
+              View All Expired Deals ({expiredDeals.length})
+            </button>
+          </div>
         </div>
       )}
 
