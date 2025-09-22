@@ -298,6 +298,41 @@ Discover quality services and support our community businesses! 🇮🇳🇬🇭
             </select>
           </div>
           
+          {/* Active Filters Display - Similar to Deals Page */}
+          {(selectedCategory || filter) && (
+            <div className="active-filters-container">
+              <div className="active-filters-tags">
+                {selectedCategory && (
+                  <div className="filter-tag">
+                    <span>Category: {selectedCategory}</span>
+                    <button aria-label="Clear category filter" onClick={() => setSelectedCategory('')}>
+                      <i className="fas fa-times" aria-hidden="true"></i>
+                    </button>
+                  </div>
+                )}
+                {filter && (
+                  <div className="filter-tag">
+                    <span>Search: {filter}</span>
+                    <button aria-label="Clear search filter" onClick={() => setFilter('')}>
+                      <i className="fas fa-times" aria-hidden="true"></i>
+                    </button>
+                  </div>
+                )}
+              </div>
+              <button 
+                className="clear-all-filters-btn"
+                onClick={() => {
+                  setSelectedCategory('');
+                  setFilter('');
+                }}
+                aria-label="Clear all filters"
+              >
+                <i className="fas fa-times-circle"></i>
+                Clear All
+              </button>
+            </div>
+          )}
+          
           {/* Sort By Filter Dropdown */}
           <div className="sort-filter-bar">
             <select
