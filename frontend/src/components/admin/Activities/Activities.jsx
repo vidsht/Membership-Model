@@ -389,9 +389,6 @@ const Activities = () => {
                   </td>
                   <td data-label="Activity">
                     <div className="user-name-cell">
-                      <div className="user-avatar">
-                        <i className={getActivityIcon(activity.type)}></i>
-                      </div>
                       <div>
                         <strong>{activity.title}</strong>
                         <div style={{ fontSize: '0.875rem', color: 'var(--neutral-medium)' }}>

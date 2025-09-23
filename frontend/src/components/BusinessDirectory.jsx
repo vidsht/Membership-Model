@@ -372,7 +372,6 @@ Discover quality services and support our community businesses! 🇮🇳🇬🇭
       {/* Filters Section */}
       <div className="directory-filters-container">
         <div className="directory-filters">
-          <i className="fas fa-search"></i>
           <div className="search-bar">
             <input
               type="text"
@@ -416,17 +415,6 @@ Discover quality services and support our community businesses! 🇮🇳🇬🇭
                   </div>
                 )}
               </div>
-              <button 
-                className="clear-all-filters-btn"
-                onClick={() => {
-                  setSelectedCategory('');
-                  setFilter('');
-                }}
-                aria-label="Clear all filters"
-              >
-                <i className="fas fa-times-circle"></i>
-                Clear All
-              </button>
             </div>
           )}
           

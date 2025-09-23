@@ -317,7 +317,9 @@ const DealDetail = () => {
                     <div style={{background: '#f8f9fa', padding: '15px', borderRadius: '6px', border: '1px solid #dee2e6'}}>
                       <label style={{display: 'block', fontWeight: 'bold', marginBottom: '5px', color: '#666'}}>Discount</label>
                       <span style={{fontSize: '18px', color: '#dc3545'}}>
-                        {deal.discount || deal.percentage || 0}% OFF ({deal.discountType || 'percentage'})
+                        {deal.discountType === 'percentage' 
+                          ? `${deal.discount || deal.percentage || 0}% OFF` 
+                          : `GHS ${deal.discount || 0} OFF`} ({deal.discountType || 'percentage'})
                       </span>
                     </div>
                   </div>

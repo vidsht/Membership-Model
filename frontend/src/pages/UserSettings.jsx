@@ -897,10 +897,13 @@ const RedemptionHistoryTab = () => {
                        (user?.monthlyRedemptionLimit !== undefined && user?.monthlyRedemptionLimit !== null) ? user.monthlyRedemptionLimit :
                        (userProfile?.monthlyRedemptionLimit !== undefined && userProfile?.monthlyRedemptionLimit !== null) ? userProfile.monthlyRedemptionLimit : undefined;
 
-  const redemptionsRemaining = backendRemaining !== undefined ? (backendRemaining === -1 ? 'Unlimited' : Math.max(0, backendRemaining)) : (userRedemptionLimit === -1 ? 'Unlimited' : Math.max(0, userRedemptionLimit - redemptionsUsed));
+  const redemptionsRemaining = backendRemaining !== undefined ? (backendRemaining === -1 ? 'Infinite' : Math.max(0, backendRemaining)) : (userRedemptionLimit === -1 ? 'Infinite' : Math.max(0, userRedemptionLimit - redemptionsUsed));
 
   // canRedeem should prefer backendRemaining when available
   const canRedeem = backendRemaining !== undefined ? (backendRemaining === -1 || backendRemaining > 0) : (userRedemptionLimit === -1 || redemptionsUsed < userRedemptionLimit);
+  
+  // Check if user has infinite redemptions (either from backend or user limit)
+  const hasInfiniteRedemptions = (backendRemaining !== undefined ? backendRemaining === -1 : userRedemptionLimit === -1);
 
   // compute progress width as a string to avoid inline template parsing issues
   // Prefer server-provided used/limit if available
@@ -946,11 +949,6 @@ const RedemptionHistoryTab = () => {
       <div className="plan-info-card redemption-limit-card">
         <div className="card-header">
           <h2><i className="fas fa-ticket-alt"></i> Monthly Redemption Limits</h2>
-          {!canRedeem && (
-            <span className="limit-warning">
-              <i className="fas fa-exclamation-triangle"></i> Limit Reached
-            </span>
-          )}
         </div>
         <div className="plan-details">
           <div className="plan-name">
@@ -974,18 +972,18 @@ const RedemptionHistoryTab = () => {
                 ></div>
               </div>
               <span className="progress-text">
-                {usedForProgress} / {userRedemptionLimit === -1 ? 'Unlimited' : userRedemptionLimit}
+                {usedForProgress} / {userRedemptionLimit === -1 ? 'Infinite' : userRedemptionLimit}
               </span>
               {isCustomLimit && (
                 <small className="limit-explanation">
-                  Custom limit: {userRedemptionLimit === -1 ? 'Unlimited' : userRedemptionLimit} redemptions/month
+                  Custom limit: {userRedemptionLimit === -1 ? 'Infinite' : userRedemptionLimit} redemptions/month
                 </small>
               )}
             </div>
             <div className="limit-item">
               <strong>Remaining:</strong>
               <span className="remaining-count">
-                {redemptionsRemaining} {userRedemptionLimit === -1 ? '' : 'redemptions'}
+                {(userRedemptionLimit === -1 || backendRemaining === -1) ? 'Infinite' : `${redemptionsRemaining} redemptions`}
               </span>
             </div>
             <div className="limit-item">
@@ -1050,7 +1048,7 @@ const RedemptionHistoryTab = () => {
                         <span className="discount-badge">
                           {redemption.discountType === 'percentage' 
                             ? `${redemption.discount}% OFF` 
-                            : `$${redemption.discount} OFF`
+                            : `GHS ${redemption.discount} OFF`
                           }
                         </span>
                       ) : (

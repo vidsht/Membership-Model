@@ -214,16 +214,12 @@ const BirthdaySection = () => {
                       <i className="fas fa-clock"></i>
                       <span>{formatDate(user.dob)}</span>
                     </div>
-                    <div className="birthday-age">
-                      <i className="fas fa-gift"></i>
-                      <span>Turning {calculateAge(user.dob) + 1}</span>
-                    </div>
                   </div>
 
                   {user.phone && (
                     <div className="contact-info">
                       <a 
-                        href={`https://wa.me/${user.phone.replace(/[^0-9]/g, '')}?text=Hi ${user.fullName}! 🎉 Happy Birthday! Wishing you a wonderful year ahead filled with joy and happiness. From all of us at Indians in Ghana Community! 🎂`} 
+                        href={`https://wa.me/${user.phone.replace(/[^0-9]/g, '')}?text=Hi ${user.fullName}! 🎉 Happy Birthday! Wishing you a wonderful year ahead filled with joy and happiness. Your registered contact number with us is: ${user.phone}. From all of us at Indians in Ghana Community! 🎂`} 
                         target="_blank" 
                         rel="noopener noreferrer" 
                         className="contact-btn whatsapp-btn"

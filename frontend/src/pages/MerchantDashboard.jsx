@@ -958,6 +958,8 @@ ${userInfo?.fullName || userInfo?.name || user?.fullName || user?.name || 'Merch
   const [showDealAnalytics, setShowDealAnalytics] = useState(false);
   const [dealAnalyticsData, setDealAnalyticsData] = useState(null);
   const [loadingDealAnalytics, setLoadingDealAnalytics] = useState(false);
+  const [showDealDetails, setShowDealDetails] = useState(false);
+  const [selectedDealDetails, setSelectedDealDetails] = useState(null);
 
   const handleViewAnalytics = async (deal) => {
     setShowDealAnalytics(true);
@@ -976,13 +978,18 @@ ${userInfo?.fullName || userInfo?.name || user?.fullName || user?.name || 'Merch
   };
 
   const handleEditDeal = (deal) => {
-    // Allow editing for pending_approval, rejected, or active deals
-    if (!['pending_approval', 'rejected', 'active'].includes(deal.status)) {
-      showNotification('Can only edit deals that are pending approval, rejected, or live (active)', 'error');
+    // Allow editing for pending_approval, rejected, active, or expired deals
+    if (!['pending_approval', 'rejected', 'active', 'expired'].includes(deal.status)) {
+      showNotification('Can only edit deals that are pending approval, rejected, live (active), or expired', 'error');
       return;
     }
     setEditingDeal(deal);
     setShowDealForm(true);
+  };
+
+  const handleViewDealDetails = (deal) => {
+    setSelectedDealDetails(deal);
+    setShowDealDetails(true);
   };
 
   const handleDeleteDeal = async (dealId, dealTitle) => {
@@ -1934,10 +1941,17 @@ ${userInfo?.fullName || userInfo?.name || user?.fullName || user?.name || 'Merch
                         </button>
                       )}
                       <button 
+                        className="btn btn-sm btn-info" 
+                        onClick={() => handleViewDealDetails(deal)}
+                        title="View Deal Details"
+                      >
+                        <i className="fas fa-eye"></i> View
+                      </button>
+                      <button 
                         className="btn btn-sm btn-secondary" 
                         onClick={() => handleEditDeal(deal)}
-                        disabled={!['pending_approval', 'rejected', 'active'].includes(deal.status)}
-                        title={['pending_approval', 'rejected', 'active'].includes(deal.status) ? 'Edit deal' : 'Can only edit pending, rejected, or live (active) deals'}
+                        disabled={!['pending_approval', 'rejected', 'active', 'expired'].includes(deal.status)}
+                        title={['pending_approval', 'rejected', 'active', 'expired'].includes(deal.status) ? 'Edit deal' : 'Can only edit pending, rejected, live (active), or expired deals'}
                       >
                         <i className="fas fa-edit"></i> Edit
                       </button>
@@ -3037,6 +3051,185 @@ ${userInfo?.fullName || userInfo?.name || user?.fullName || user?.name || 'Merch
               >
                 Close
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Deal Details Modal */}
+      {showDealDetails && selectedDealDetails && (
+        <div className="modal-overlay" onClick={() => setShowDealDetails(false)}>
+          <div className="modal-content deal-details-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Deal Details</h3>
+              <button 
+                className="modal-close-btn"
+                onClick={() => setShowDealDetails(false)}
+              >
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="deal-details-content">
+                {/* Deal Title and Status */}
+                <div className="detail-section">
+                  <h4>{selectedDealDetails.title}</h4>
+                  <span className={`status-badge ${new Date(selectedDealDetails.validUntil) < new Date() ? 'expired' : selectedDealDetails.status}`}>
+                    {new Date(selectedDealDetails.validUntil) < new Date() ? 'Expired' : selectedDealDetails.status}
+                  </span>
+                </div>
+
+                {/* Deal Banner */}
+                {selectedDealDetails.bannerImage && (
+                  <div className="detail-section">
+                    <label>Deal Banner:</label>
+                    <div className="deal-banner-preview">
+                      <SmartImage 
+                        src={getDealBannerUrl(selectedDealDetails)} 
+                        alt={selectedDealDetails.title} 
+                        className="deal-detail-banner"
+                        fallbackClass="deal-banner-placeholder"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Description */}
+                <div className="detail-section">
+                  <label>Description:</label>
+                  <p>{selectedDealDetails.description}</p>
+                </div>
+
+                {/* Pricing Information */}
+                <div className="detail-section">
+                  <label>Pricing:</label>
+                  <div className="pricing-details">
+                    <div className="price-item">
+                      <span className="price-label">Original Price:</span>
+                      <span className="price-value">₵{selectedDealDetails.originalPrice}</span>
+                    </div>
+                    <div className="price-item">
+                      <span className="price-label">Deal Price:</span>
+                      <span className="price-value discounted">₵{selectedDealDetails.discountedPrice}</span>
+                    </div>
+                    <div className="price-item">
+                      <span className="price-label">Discount:</span>
+                      <span className="price-value discount">
+                        {selectedDealDetails.discountType === 'percentage' 
+                          ? `${selectedDealDetails.discount}% OFF` 
+                          : `GHS ${selectedDealDetails.discount} OFF`}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Validity Period */}
+                <div className="detail-section">
+                  <label>Validity Period:</label>
+                  <div className="validity-details">
+                    <div className="validity-item">
+                      <span className="validity-label">Valid From:</span>
+                      <span className="validity-value">
+                        {new Date(selectedDealDetails.validFrom).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </span>
+                    </div>
+                    <div className="validity-item">
+                      <span className="validity-label">Valid Until:</span>
+                      <span className="validity-value">
+                        {new Date(selectedDealDetails.validUntil).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Additional Details */}
+                <div className="detail-section">
+                  <label>Additional Information:</label>
+                  <div className="additional-details">
+                    <div className="detail-item">
+                      <span className="detail-label">Category:</span>
+                      <span className="detail-value">{selectedDealDetails.category}</span>
+                    </div>
+                    {selectedDealDetails.termsConditions && (
+                      <div className="detail-item">
+                        <span className="detail-label">Terms & Conditions:</span>
+                        <span className="detail-value">{selectedDealDetails.termsConditions}</span>
+                      </div>
+                    )}
+                    {(selectedDealDetails.member_limit || selectedDealDetails.memberLimit) && (
+                      <div className="detail-item">
+                        <span className="detail-label">Member Limit:</span>
+                        <span className="detail-value">{selectedDealDetails.member_limit || selectedDealDetails.memberLimit} users</span>
+                      </div>
+                    )}
+                    {selectedDealDetails.couponCode && (
+                      <div className="detail-item">
+                        <span className="detail-label">Coupon Code:</span>
+                        <span className="detail-value">{selectedDealDetails.couponCode}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Statistics */}
+                <div className="detail-section">
+                  <label>Performance Statistics:</label>
+                  <div className="stats-details">
+                    <div className="stat-item">
+                      <span className="stat-label">Views:</span>
+                      <span className="stat-value">{selectedDealDetails.views || 0}</span>
+                    </div>
+                    <div className="stat-item">
+                      <span className="stat-label">Redemptions:</span>
+                      <span className="stat-value">{selectedDealDetails.redemptions || 0}</span>
+                    </div>
+                    {selectedDealDetails.views > 0 && (
+                      <div className="stat-item">
+                        <span className="stat-label">Conversion Rate:</span>
+                        <span className="stat-value">{((selectedDealDetails.redemptions || 0) / selectedDealDetails.views * 100).toFixed(1)}%</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Rejection Reason if applicable */}
+                {selectedDealDetails.status === 'rejected' && selectedDealDetails.rejection_reason && (
+                  <div className="detail-section rejection-reason">
+                    <label>Rejection Reason:</label>
+                    <div className="rejection-message">
+                      <i className="fas fa-exclamation-triangle"></i>
+                      <p>{selectedDealDetails.rejection_reason}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button 
+                className="btn btn-secondary" 
+                onClick={() => setShowDealDetails(false)}
+              >
+                Close
+              </button>
+              {['pending_approval', 'rejected', 'active', 'expired'].includes(selectedDealDetails.status) && (
+                <button 
+                  className="btn btn-primary" 
+                  onClick={() => {
+                    setShowDealDetails(false);
+                    handleEditDeal(selectedDealDetails);
+                  }}
+                >
+                  Edit Deal
+                </button>
+              )}
             </div>
           </div>
         </div>

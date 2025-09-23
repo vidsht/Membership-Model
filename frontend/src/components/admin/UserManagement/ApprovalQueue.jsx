@@ -67,7 +67,7 @@ const ApprovalQueue = () => {
       const [usersResponse, merchantsResponse, dealsResponse] = await Promise.allSettled([
         api.get('/admin/users?status=pending&userType=user'),
         api.get('/admin/users?status=pending&userType=merchant'),
-        api.get('/admin/deals/pending')
+        api.get('/admin/deals?status=pending_approval&limit=100') // Use same endpoint as DealList with filter
       ]);
       console.log('🔧 DEBUG: API calls completed');
 
@@ -92,12 +92,21 @@ const ApprovalQueue = () => {
       if (dealsResponse.status === 'fulfilled') {
         console.log('🔧 DEBUG: dealsResponse.value:', dealsResponse.value);
         console.log('🔧 DEBUG: dealsResponse.value.data:', dealsResponse.value.data);
+      } else if (dealsResponse.status === 'rejected') {
+        console.error('🔧 DEBUG: dealsResponse.reason:', dealsResponse.reason);
+        console.error('🔧 DEBUG: deals API call failed:', dealsResponse.reason.response?.status, dealsResponse.reason.response?.data);
+        // If it's an authentication error, handle it
+        if (dealsResponse.reason.response?.status === 401) {
+          console.error('🔧 DEBUG: Authentication error when fetching deals');
+          showNotification('Authentication error when fetching pending deals. Please refresh and try again.', 'error');
+        }
       }
       const deals = dealsResponse.status === 'fulfilled' ? (dealsResponse.value.data.deals || []) : [];
       if (dealsResponse.status === 'rejected') {
         console.warn('Failed to fetch pending deals:', dealsResponse.reason);
       }
       console.log('🔧 DEBUG: Final deals array:', deals);
+      console.log('🔧 DEBUG: Number of pending deals found:', deals.length);
 
       setPendingUsers(users);
       setPendingMerchants(merchants);
@@ -655,9 +664,6 @@ const ApprovalQueue = () => {
                     {/* Deal Card Header */}
                     {activeTab === 'deals' ? (
                       <div className="deal-info">
-                        <div className="deal-avatar">
-                          <i className="fas fa-tags"></i>
-                        </div>
                         <div className="deal-details">
                           <h4 className="deal-title">{item.title || 'Untitled Deal'}</h4>
                           <div className="deal-meta">
@@ -665,23 +671,12 @@ const ApprovalQueue = () => {
                               <i className="fas fa-store"></i>
                               {item.businessName || item.business_name || 'Unknown Business'}
                             </span>
-                            <span className="deal-type">
-                              <i className="fas fa-tag"></i>
-                              {item.dealType || 'General'}
-                            </span>
-                            <span className="deal-category">
-                              <i className="fas fa-layer-group"></i>
-                              {item.category || 'Uncategorized'}
-                            </span>
                           </div>
                         </div>
                       </div>
                     ) : (
                       /* User/Merchant Card Header */
                       <div className="user-info">
-                        <div className="user-avatar">
-                          {item.fullName ? item.fullName.charAt(0).toUpperCase() : '?'}
-                        </div>
                         <div className="user-details">
                           <h4 className="user-name">{item.fullName || 'No Name Provided'}</h4>
                           <div className="user-meta">
@@ -730,21 +725,15 @@ const ApprovalQueue = () => {
                           <span>{item.description || 'No description provided'}</span>
                         </div>
                         <div className="info-item">
-                          <label>Discount:</label>
-                          <span className="discount-value">
-                            {item.discountType === 'percentage' ? `${item.discountValue}%` : 
-                             item.discountType === 'fixed' ? `GHS ${item.discountValue}` : 
-                             'Special Offer'}
-                          </span>
-                        </div>
-                        <div className="info-item">
                           <label>Valid Until:</label>
                           <span>{item.validUntil ? formatDate(item.validUntil) : 'No expiry date'}</span>
                         </div>
                         <div className="info-item">
                           <label>Submitted:</label>
-                          <span>{formatDate(item.createdAt)}</span>
-                          <small className="time-since">({getTimeSince(item.createdAt)})</small>
+                          <span>{item.createdAt ? formatDate(item.createdAt) : (item.created_at ? formatDate(item.created_at) : (item.submittedAt ? formatDate(item.submittedAt) : 'Date not available'))}</span>
+                          {(item.createdAt || item.created_at || item.submittedAt) && (
+                            <small className="time-since">({getTimeSince(item.createdAt || item.created_at || item.submittedAt)})</small>
+                          )}
                         </div>
                       </div>
                     ) : (
