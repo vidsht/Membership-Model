@@ -171,29 +171,7 @@ const BusinessDirectory = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Utility function to detect if device is mobile
-  const isMobileDevice = () => {
-    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-           (navigator.maxTouchPoints && navigator.maxTouchPoints > 1) ||
-           window.screen.width <= 768;
-  };
-
-  // Utility function to check if Web Share API can share text content properly
-  const canShareRichContent = () => {
-    if (!navigator.share) return false;
-    
-    // Web Share API is supported on mobile devices
-    if (isMobileDevice()) return true;
-    
-    // On desktop, modern browsers also support navigator.share
-    // Let's be less restrictive and try Web Share API on most modern browsers
-    const isModernBrowser = navigator.share && typeof navigator.share === 'function';
-    
-    // Allow Web Share API on all browsers that support it, not just Safari
-    return isModernBrowser;
-  };
-
-  // Share business function
+  // Share business function - Universal approach with modal
   const handleShareBusiness = async (business) => {
     const businessUrl = `${window.location.origin}/business-directory?id=${business.businessId || business.id}`;
     const businessName = business.businessName || business.name;
@@ -210,44 +188,163 @@ Click to view full details: ${businessUrl}
 
 Discover quality services and support our community businesses! 🇮🇳🇬🇭`;
     
-    // Use Web Share API only if it can reliably share rich content
-    if (canShareRichContent()) {
-      try {
-        const shareData = {
-          title: `${businessName} - Indians in Ghana Business Directory`,
-          text: shareText,
-          url: businessUrl
-        };
-        
-        await navigator.share(shareData);
-        return;
-      } catch (error) {
-        console.log('Error sharing via Web Share API:', error);
-        // Fall through to clipboard method
-      }
-    }
-    
-    // Fallback: Always copy the full formatted text with URL
-    copyBusinessToClipboard(shareText, businessName);
+    // Show share modal with multiple options
+    showBusinessShareModal(businessName, shareText, businessUrl, business);
   };
 
-  // Copy business link to clipboard
-  const copyBusinessToClipboard = async (text, businessName) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      // Show visual feedback to user
-      alert(`📋 Business information copied to clipboard!\n\nYou can now paste this in any messaging app to share "${businessName}" with the full details and link.`);
-    } catch (error) {
-      console.error('Failed to copy to clipboard:', error);
-      // Fallback for older browsers
-      const textArea = document.createElement('textarea');
-      textArea.value = text;
-      document.body.appendChild(textArea);
-      textArea.select();
-      document.execCommand('copy');
-      document.body.removeChild(textArea);
-      alert(`📋 Business information copied to clipboard!\n\nYou can now paste this in any messaging app to share "${businessName}" with the full details and link.`);
+  // Create share modal with multiple sharing options for businesses
+  const showBusinessShareModal = (title, text, url, business) => {
+    // Remove any existing modals
+    const existingModal = document.getElementById('business-share-modal');
+    if (existingModal) {
+      document.body.removeChild(existingModal);
     }
+
+    // Create modal overlay
+    const modalOverlay = document.createElement('div');
+    modalOverlay.id = 'business-share-modal';
+    modalOverlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+      backdrop-filter: blur(4px);
+    `;
+
+    // Create modal content
+    const modalContent = document.createElement('div');
+    modalContent.style.cssText = `
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      max-width: 500px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      position: relative;
+    `;
+
+    // WhatsApp share URL
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
+    
+    // Telegram share URL  
+    const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`;
+    
+    // Twitter share URL
+    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+    
+    // Facebook share URL
+    const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}&quote=${encodeURIComponent(text)}`;
+
+    modalContent.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h3 style="margin: 0; color: #333; font-size: 20px;">Share "${title}"</h3>
+        <button id="close-business-share-modal" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #666;">&times;</button>
+      </div>
+      
+      <div style="margin-bottom: 20px;">
+        <p style="color: #666; margin: 0 0 15px 0;">Choose how you'd like to share this business:</p>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px;">
+          <a href="${whatsappUrl}" target="_blank" rel="noopener noreferrer" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: #25d366; color: white; text-decoration: none; border-radius: 8px; transition: background 0.2s;">
+            <i class="fab fa-whatsapp" style="font-size: 20px;"></i>
+            <span>WhatsApp</span>
+          </a>
+          
+          <a href="${telegramUrl}" target="_blank" rel="noopener noreferrer" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: #0088cc; color: white; text-decoration: none; border-radius: 8px; transition: background 0.2s;">
+            <i class="fab fa-telegram" style="font-size: 20px;"></i>
+            <span>Telegram</span>
+          </a>
+          
+          <a href="${twitterUrl}" target="_blank" rel="noopener noreferrer" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: #1da1f2; color: white; text-decoration: none; border-radius: 8px; transition: background 0.2s;">
+            <i class="fab fa-twitter" style="font-size: 20px;"></i>
+            <span>Twitter</span>
+          </a>
+          
+          <a href="${facebookUrl}" target="_blank" rel="noopener noreferrer" style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: #1877f2; color: white; text-decoration: none; border-radius: 8px; transition: background 0.2s;">
+            <i class="fab fa-facebook" style="font-size: 20px;"></i>
+            <span>Facebook</span>
+          </a>
+        </div>
+        
+        <div style="border-top: 1px solid #eee; padding-top: 16px;">
+          <p style="color: #666; margin: 0 0 10px 0; font-size: 14px;">Or copy the link and message:</p>
+          <div style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px; padding: 12px; font-family: monospace; font-size: 14px; white-space: pre-wrap; word-break: break-all; max-height: 120px; overflow-y: auto;">${text}</div>
+          <button id="copy-business-share-text" style="width: 100%; margin-top: 12px; padding: 10px; background: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; transition: background 0.2s;">
+            <i class="fas fa-copy"></i> Copy Link & Message
+          </button>
+        </div>
+      </div>
+    `;
+
+    modalOverlay.appendChild(modalContent);
+    document.body.appendChild(modalOverlay);
+
+    // Add event listeners
+    document.getElementById('close-business-share-modal').onclick = () => {
+      document.body.removeChild(modalOverlay);
+    };
+
+    document.getElementById('copy-business-share-text').onclick = async () => {
+      try {
+        await navigator.clipboard.writeText(text);
+        const btn = document.getElementById('copy-business-share-text');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+        btn.style.background = '#17a2b8';
+        setTimeout(() => {
+          if (btn) {
+            btn.innerHTML = originalText;
+            btn.style.background = '#28a745';
+          }
+        }, 2000);
+      } catch (error) {
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        
+        const btn = document.getElementById('copy-business-share-text');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+        btn.style.background = '#17a2b8';
+        setTimeout(() => {
+          if (btn) {
+            btn.innerHTML = originalText;
+            btn.style.background = '#28a745';
+          }
+        }, 2000);
+      }
+    };
+
+    // Close modal when clicking outside
+    modalOverlay.onclick = (e) => {
+      if (e.target === modalOverlay) {
+        document.body.removeChild(modalOverlay);
+      }
+    };
+
+    // Close modal with Escape key
+    const handleEscape = (e) => {
+      if (e.key === 'Escape') {
+        const modal = document.getElementById('business-share-modal');
+        if (modal) {
+          document.body.removeChild(modal);
+        }
+        document.removeEventListener('keydown', handleEscape);
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
   };
 
 

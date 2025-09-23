@@ -222,9 +222,14 @@ const BirthdaySection = () => {
 
                   {user.phone && (
                     <div className="contact-info">
-                      <a href={`tel:${user.phone}`} className="contact-btn">
-                        <i className="fas fa-phone"></i>
-                        Call
+                      <a 
+                        href={`https://wa.me/${user.phone.replace(/[^0-9]/g, '')}?text=Hi ${user.fullName}! 🎉 Happy Birthday! Wishing you a wonderful year ahead filled with joy and happiness. From all of us at Indians in Ghana Community! 🎂`} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="contact-btn whatsapp-btn"
+                      >
+                        <i className="fab fa-whatsapp"></i>
+                        WhatsApp
                       </a>
                       <a href={`mailto:${user.email}`} className="contact-btn">
                         <i className="fas fa-envelope"></i>

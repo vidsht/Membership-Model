@@ -312,6 +312,15 @@
   background: #218838;
 }
 
+.contact-btn.whatsapp-btn {
+  background: #25d366;
+  color: white;
+}
+
+.contact-btn.whatsapp-btn:hover {
+  background: #1da851;
+}
+
 .contact-btn:last-child {
   background: #007bff;
   color: white;

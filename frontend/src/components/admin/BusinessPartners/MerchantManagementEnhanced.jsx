@@ -954,12 +954,16 @@ const MerchantManagementEnhanced = () => {
           <div className="stat-value">{stats.totalMerchants}</div>
         </div>
         <div className="merchant-stat">
-          <div className="stat-label">Pending Approvals</div>
-          <div className="stat-value">{stats.pendingApprovals}</div>
-        </div>
-        <div className="merchant-stat">
           <div className="stat-label">Active Merchants</div>
           <div className="stat-value">{stats.activeMerchants}</div>
+        </div>
+        <div className="merchant-stat expiring-soon">
+          <div className="stat-label">Expiring Soon</div>
+          <div className="stat-value">{stats.expiringSoonMerchants}</div>
+        </div>
+        <div className="merchant-stat expired">
+          <div className="stat-label">Expired Partners</div>
+          <div className="stat-value">{stats.expiredMerchants}</div>
         </div>
         <div className="merchant-stat">
           <div className="stat-label">Suspended</div>
@@ -969,13 +973,9 @@ const MerchantManagementEnhanced = () => {
           <div className="stat-label">Rejected</div>
           <div className="stat-value">{stats.rejectedMerchants}</div>
         </div>
-        <div className="merchant-stat expired">
-          <div className="stat-label">Expired Partners</div>
-          <div className="stat-value">{stats.expiredMerchants}</div>
-        </div>
-        <div className="merchant-stat expiring-soon">
-          <div className="stat-label">Expiring Soon</div>
-          <div className="stat-value">{stats.expiringSoonMerchants}</div>
+         <div className="merchant-stat">
+          <div className="stat-label">Pending Approvals</div>
+          <div className="stat-value">{stats.pendingApprovals}</div>
         </div>
       </div>
 

@@ -231,7 +231,6 @@ const DealDetail = () => {
         >
           ← Back to Deals
         </button>
-        <h1>Deal Details</h1>
       </div>
 
       {loading && (
@@ -291,7 +290,7 @@ const DealDetail = () => {
             
             {activeTab === 'details' && (
               <div>
-                <h2 style={{color: '#333', marginBottom: '20px'}}>Deal Details</h2>
+                <h3 style={{color: '#333', marginBottom: '20px'}}>Deal Details</h3>
                 
                 {/* Pricing Section */}
                 <div style={{marginBottom: '30px'}}>
