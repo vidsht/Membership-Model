@@ -583,14 +583,9 @@
 }
 
 .deal-pricing-compact .price-row {
-  background: linear-gradient(90deg, #fef7ed 0%, #fed7aa 100%);
-  border-radius: 6px;
-  padding: 0.4rem 0.6rem;
   display: flex;
   justify-content: center;
   align-items: center;
-  border: 1px solid #fb923c;
-  box-shadow: 0 1px 3px rgba(251, 146, 60, 0.1);
   gap: 0.4rem;
 }
 
@@ -1680,8 +1675,6 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.5rem 0;
-  border-bottom: 1px solid rgba(102, 126, 234, 0.1);
 }
 
 .price-row:last-child {

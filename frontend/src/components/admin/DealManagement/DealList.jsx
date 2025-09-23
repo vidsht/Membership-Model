@@ -511,28 +511,28 @@ const DealList = ({ onTabChange }) => {
       {/* Deal statistics */}
       <div className="deal-stats-bar">
         <div className="deal-stat">
-          <span className="stat-label">Active Deals</span>
-          <span className="stat-value">{stats.activeDeals}</span>
-        </div>
-        <div className="deal-stat">
           <span className="stat-label">Total Deals</span>
           <span className="stat-value">{stats.totalDeals}</span>
         </div>
         <div className="deal-stat">
-          <span className="stat-label">Total Redemptions</span>
-          <span className="stat-value">{stats.totalRedemptions}</span>
-        </div>
-        <div className="deal-stat">
-          <span className="stat-label">Expired Deals</span>
-          <span className="stat-value">{stats.expiredDeals}</span>
+          <span className="stat-label">Active Deals</span>
+          <span className="stat-value">{stats.activeDeals}</span>
         </div>
         <div className="deal-stat">
           <span className="stat-label">Pending Deals</span>
           <span className="stat-value">{stats.pendingDeals}</span>
         </div>
         <div className="deal-stat">
+          <span className="stat-label">Expired Deals</span>
+          <span className="stat-value">{stats.expiredDeals}</span>
+        </div>
+        <div className="deal-stat">
           <span className="stat-label">Pending Redemptions</span>
           <span className="stat-value">{stats.pendingRedemptions}</span>
+        </div>
+        <div className="deal-stat">
+          <span className="stat-label">Total Redemptions</span>
+          <span className="stat-value">{stats.totalRedemptions}</span>
         </div>
       </div>      {/* Deal Filters */}
       <DealFilters

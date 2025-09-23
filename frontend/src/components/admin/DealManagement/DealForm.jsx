@@ -706,6 +706,8 @@ const DealForm = () => {
               >
                 <option key="active" value="active">Active</option>
                 <option key="inactive" value="inactive">Inactive</option>
+                <option key="pending" value="pending">Pending</option>
+                <option key="expired" value="expired">Expired</option>
                 <option key="scheduled" value="scheduled">Scheduled</option>
               </select>
             </div>

@@ -3734,7 +3734,7 @@ router.post('/deals', auth, admin, [
     }
     return true;
   }),
-  body('status').optional().isIn(['active', 'inactive', 'pending']).withMessage('Status must be active, inactive, or pending')
+  body('status').optional().isIn(['active', 'inactive', 'pending', 'expired']).withMessage('Status must be active, inactive, pending, or expired')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -3858,7 +3858,7 @@ router.put('/deals/:id', auth, admin, [
     }
     return true;
   }),
-  body('status').optional().isIn(['active', 'inactive', 'pending']).withMessage('Status must be active, inactive, or pending')
+  body('status').optional().isIn(['active', 'inactive', 'pending', 'expired']).withMessage('Status must be active, inactive, pending, or expired')
 ], async (req, res) => {
   try {
     const dealId = parseInt(req.params.id);
@@ -3951,7 +3951,7 @@ router.put('/deals/:id', auth, admin, [
 
 // Update deal status
 router.patch('/deals/:id/status', auth, admin, [
-  body('status').isIn(['active', 'inactive', 'pending']).withMessage('Status must be active, inactive, or pending')
+  body('status').isIn(['active', 'inactive', 'pending', 'expired']).withMessage('Status must be active, inactive, pending, or expired')
 ], async (req, res) => {
   try {
     const dealId = parseInt(req.params.id);

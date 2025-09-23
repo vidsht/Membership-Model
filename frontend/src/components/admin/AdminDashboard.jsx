@@ -289,16 +289,6 @@ const AdminDashboard = () => {
         </div>
         
         <div className="stat-card">
-          <div className="stat-icon pending">
-            <i className="fas fa-clock"></i>
-          </div>
-          <div className="stat-info">
-            <h3>{stats.pendingApprovals}</h3>
-            <p>Pending Approvals</p>
-          </div>
-        </div>
-        
-        <div className="stat-card">
           <div className="stat-icon deals">
             <i className="fas fa-tags"></i>
           </div>
@@ -325,6 +315,16 @@ const AdminDashboard = () => {
           <div className="stat-info">
             <h3>{stats.planSubscribers}</h3>
             <p>Plan Subscribers</p>
+          </div>
+        </div>
+
+        <div className="stat-card">
+          <div className="stat-icon pending">
+            <i className="fas fa-clock"></i>
+          </div>
+          <div className="stat-info">
+            <h3>{stats.pendingApprovals}</h3>
+            <p>Pending Approvals</p>
           </div>
         </div>
         
