@@ -550,35 +550,14 @@ color: white;
   }
 }
 
-/* Tablet-specific responsive styles for the header */
-@media (max-width: 1024px) and (min-width: 769px) {
+/* Responsive styles for the header */
+@media (max-width: 1024px) {
   .header-content {
-    padding: var(--space-sm) var(--space-lg);
+    padding: var(--space-sm) var(--space-md);
   }
   
   .main-nav ul {
     gap: var(--space-md);
-  }
-  
-  .main-nav ul li a {
-    font-size: 16px;
-    padding: var(--space-xs) var(--space-sm);
-  }
-  
-  .logo-img {
-    height: 80px;
-  }
-  
-  .auth-btn {
-    font-size: 14px;
-    padding: var(--space-xs) var(--space-md);
-  }
-}
-
-/* General responsive styles for smaller screens */
-@media (max-width: 1024px) {
-  .header-content {
-    padding: var(--space-sm) var(--space-md);
   }
   
   .logo h1 {
@@ -590,47 +569,56 @@ color: white;
   }
 }
 
-/* Tablet Portrait (iPad Portrait and similar) */
-@media (max-width: 834px) and (min-width: 769px) and (orientation: portrait) {
-  .hamburger {
-    display: inline-flex;
+/* Tablet mode responsive header - 832px width support */
+@media (max-width: 832px) {
+  .header-content {
+    padding: var(--space-sm) var(--space-md);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  
+  .logo {
+    flex: 0 0 auto;
+  }
+  
+  .logo img {
+    height: 45px;
+    width: 45px;
+  }
+  
+  .logo h1 {
+    font-size: 1.1rem;
   }
   
   .main-nav {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background: linear-gradient(to right, #8E1616, #661212, #4b0707);
-    display: none;
-    flex-direction: column;
-    padding: var(--space-md);
-    z-index: 999;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
-  }
-
-  .main-nav.open {
+    flex: 1;
     display: flex;
+    justify-content: center;
   }
-
+  
   .main-nav ul {
-    display: flex;
-    flex-direction: column;
     gap: var(--space-sm);
-    padding: 0;
-    margin: 0;
   }
-
+  
   .main-nav ul li a {
-    padding: var(--space-sm) var(--space-md);
-    width: 100%;
-    display: block;
-    color: white;
-    background: transparent;
+    padding: var(--space-xs) var(--space-sm);
+    font-size: 0.9rem;
+  }
+  
+  .auth-buttons {
+    flex: 0 0 auto;
+    gap: var(--space-xs);
+  }
+  
+  .auth-btn {
+    padding: var(--space-xs) var(--space-sm);
+    font-size: 0.85rem;
   }
 }
 
-/* Mobile and Small Tablet responsive header */
+/* Mobile and Tablet (iPad Pro/Air) responsive header */
 @media (max-width: 768px) {  
   .main-nav ul li a .nav-icon {
     margin: 0;
