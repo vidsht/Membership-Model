@@ -76,6 +76,7 @@ const BusinessDirectory = () => {
     const membershipType = (business.membershipLevel || business.membershipType || business.membership || '').toLowerCase();
     
     // Higher priority values appear first in sort
+    if (membershipType.includes('platinum_plus') || membershipType.includes('platinum plus')) return 6; // Highest priority for Platinum Plus
     if (membershipType.includes('platinum')) return 5;
     if (membershipType.includes('gold')) return 4;
     if (membershipType.includes('silver')) return 3;
@@ -87,6 +88,15 @@ const BusinessDirectory = () => {
   const getPlanBadge = (business) => {
     const membershipType = (business.membershipLevel || business.membershipType || business.membership || '').toLowerCase();
     
+    // Check for Platinum Plus first (more specific)
+    if (membershipType.includes('platinum_plus') || membershipType.includes('platinum plus')) {
+      return { 
+        label: 'Platinum+', 
+        color: 'linear-gradient(135deg, #E5E7EB 0%, #F59E0B 100%)', 
+        textColor: '#1F2937',
+        isPremium: true
+      }; // Special gradient for Platinum Plus
+    }
     if (membershipType.includes('platinum')) {
       return { label: 'Platinum', color: '#E5E7EB', textColor: '#374151' }; // Platinum silver-gray
     }
@@ -471,12 +481,19 @@ Discover quality services and support our community businesses! 🇮🇳🇬🇭
                   const badge = getPlanBadge(business);
                   return (
                     <div 
-                      className="plan-badge"
+                      className={`plan-badge ${badge.isPremium ? 'platinum-plus-badge' : ''}`}
                       style={{
-                        backgroundColor: badge.color,
-                        color: badge.textColor
+                        background: badge.color,
+                        color: badge.textColor,
+                        ...(badge.isPremium && {
+                          border: '2px solid #F59E0B',
+                          fontWeight: 'bold',
+                          textShadow: '0 1px 2px rgba(0,0,0,0.3)',
+                          boxShadow: '0 2px 8px rgba(245, 158, 11, 0.3)'
+                        })
                       }}
                     >
+                      {badge.isPremium && <i className="fas fa-star" style={{ marginRight: '4px', fontSize: '12px' }}></i>}
                       {badge.label}
                     </div>
                   );

@@ -949,3 +949,15 @@
     min-width: auto;
   }
 }
+
+/* Owner name styling for merchant cards */
+.owner-name {
+  margin-top: 0.25rem;
+  color: #6c757d;
+  font-style: italic;
+}
+
+.owner-name small {
+  font-size: 0.8rem;
+  color: #868e96;
+}

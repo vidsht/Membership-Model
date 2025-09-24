@@ -4,6 +4,7 @@ import { useNotification } from '../contexts/NotificationContext';
 import { withPlanAccess } from '../hooks/usePlanAccess.jsx';
 import { useImageUrl, SmartImage, DefaultAvatar } from '../hooks/useImageUrl.jsx';
 import api from '../services/api';
+import downloadService from '../services/downloadService';
 import '../styles/membership-card.css';
 import '../styles/plan-access-blocked.css';
 
@@ -176,38 +177,23 @@ const MembershipCard = () => {
       return;
     }
 
-    if (!cardRef.current) {
-      showNotification('Card is not ready for download. Please wait.', 'error');
-      return;
-    }
-
     try {
-      // Add capture-mode class to remove overlay effects
-      cardRef.current.classList.add('capture-mode', 'download-mode');
+      showNotification('Preparing your card for download...', 'info');
       
-      // Import html2canvas dynamically
-      const html2canvas = await import('html2canvas');
-      const canvas = await html2canvas.default(cardRef.current, {
-        scale: 2,
-        backgroundColor: '#ffffff',
-        useCORS: true,
-        allowTaint: true
+      // Use the enhanced download service
+      const result = await downloadService.downloadMembershipCard(user, {
+        format: 'png',
+        quality: 'high',
+        size: 'card'
       });
 
-      // Remove the classes after capture
-      cardRef.current.classList.remove('capture-mode', 'download-mode');
-
-      // Create download link
-      const link = document.createElement('a');
-      link.download = `membership-card-${user.membershipNumber || 'download'}.png`;
-      link.href = canvas.toDataURL();
-      link.click();
-
-      showNotification('Card downloaded successfully!', 'success');
+      if (result.success) {
+        showNotification(result.message, 'success');
+      } else {
+        showNotification(result.message, 'error');
+      }
     } catch (error) {
       console.error('Error downloading card:', error);
-      // Make sure to remove classes even if error occurs
-      cardRef.current?.classList.remove('capture-mode', 'download-mode');
       showNotification('Failed to download card. Please try again.', 'error');
     }
   };
@@ -271,89 +257,25 @@ const MembershipCard = () => {
       return;
     }
 
-    if (!cardRef.current) {
-      showNotification('Card is not ready for sharing. Please wait.', 'error');
-      return;
-    }
-
     const shareText = `I'm a proud member of Indians in Ghana! 🇮🇳🇬🇭\nMember #${user.membershipNumber}\n\nJoin our community: ${window.location.origin}`;
-    const shareUrl = `${window.location.origin}/membership`;
-
+    
     try {
-      // Check if Web Share API is available (primarily on mobile devices)  
-      if (navigator.share) {
-        try {
-          // First try to share with image if supported
-          cardRef.current.classList.add('capture-mode', 'download-mode');
-          
-          const html2canvas = await import('html2canvas');
-          const canvas = await html2canvas.default(cardRef.current, {
-            scale: 2,
-            backgroundColor: '#ffffff',
-            useCORS: true,
-            allowTaint: true
-          });
+      const cardElement = cardRef.current;
+      const result = await downloadService.shareWithImage(
+        cardElement,
+        'My Indians in Ghana Membership Card',
+        shareText,
+        'membership-card.png'
+      );
 
-          // Remove the classes after capture
-          cardRef.current.classList.remove('capture-mode', 'download-mode');
-
-          // Convert to blob and try sharing with image
-          canvas.toBlob(async (blob) => {
-            if (blob && navigator.canShare && navigator.canShare({ files: [new File([blob], 'membership-card.png', { type: 'image/png' })] })) {
-              const file = new File([blob], 'membership-card.png', { type: 'image/png' });
-              await navigator.share({
-                title: 'My Indians in Ghana Membership Card',
-                text: shareText,
-                files: [file]
-              });
-            } else {
-              // Fallback to consistent text+url sharing format
-              await navigator.share({
-                title: 'My Indians in Ghana Membership Card',
-                text: shareText,
-                url: shareUrl
-              });
-            }
-            showNotification('Card shared successfully!', 'success');
-          }, 'image/png');
-          return;
-        } catch (shareError) {
-          console.log('Error sharing via Web Share API:', shareError);
-          // Continue to fallback
-        }
-      }
-      
-      // Fallback for desktop or when Web Share API fails: copy full formatted text with URL
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(shareText);
-        showNotification('Share text copied to clipboard!', 'success');
+      if (result.success) {
+        showNotification(result.message, 'success');
       } else {
-        // Even older browser fallback
-        const textArea = document.createElement('textarea');
-        textArea.value = shareText;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
-        showNotification('Share text copied to clipboard!', 'success');
+        showNotification(result.message, 'error');
       }
     } catch (error) {
       console.error('Error sharing card:', error);
-      // Make sure to remove classes even if error occurs
-      cardRef.current?.classList.remove('capture-mode', 'download-mode');
-      // Final fallback to text sharing
-      const shareText = `I'm a proud member of Indians in Ghana! 🇮🇳🇬🇭\nMember #${user.membershipNumber}\n\nJoin our community: ${window.location.origin}`;
-      
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        try {
-          await navigator.clipboard.writeText(shareText);
-          showNotification('Share text copied to clipboard!', 'success');
-        } catch (clipErr) {
-          showNotification('Failed to share card', 'error');
-        }
-      } else {
-        showNotification('Sharing not supported on this device', 'error');
-      }
+      showNotification('Failed to share card. Please try again.', 'error');
     }
   };
 

@@ -470,6 +470,34 @@
   z-index: 2;
 }
 
+/* Special Platinum Plus Badge */
+.platinum-plus-badge {
+  animation: shimmer 2s ease-in-out infinite alternate;
+  overflow: hidden;
+}
+
+.platinum-plus-badge::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  animation: shine 3s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.05); }
+}
+
+@keyframes shine {
+  0% { left: -100%; }
+  50% { left: 100%; }
+  100% { left: 100%; }
+}
+
 /* Business Modal Overlay Styles */
 .business-modal-overlay {
   position: fixed;
