@@ -569,52 +569,39 @@ color: white;
   }
 }
 
-/* Tablet mode responsive header - 832px width support */
-@media (max-width: 832px) {
+/* Tablet specific styles for 832.20px X 776px */
+@media (max-width: 850px) and (min-width: 769px) {
   .header-content {
-    padding: var(--space-sm) var(--space-md);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-  }
-  
-  .logo {
-    flex: 0 0 auto;
-  }
-  
-  .logo img {
-    height: 45px;
-    width: 45px;
-  }
-  
-  .logo h1 {
-    font-size: 1.1rem;
-  }
-  
-  .main-nav {
-    flex: 1;
-    display: flex;
-    justify-content: center;
-  }
-  
-  .main-nav ul {
+    padding: var(--space-sm) var(--space-lg);
     gap: var(--space-sm);
   }
   
-  .main-nav ul li a {
-    padding: var(--space-xs) var(--space-sm);
-    font-size: 0.9rem;
+  .logo-img {
+    height: 80px;
+    transition: transform var(--transition-fast);
   }
   
-  .auth-buttons {
-    flex: 0 0 auto;
-    gap: var(--space-xs);
+  .main-nav ul {
+    gap: var(--space-md);
+  }
+  
+  .main-nav ul li a {
+    font-size: 16px;
+    padding: var(--space-xs) var(--space-sm);
+  }
+  
+  .nav-icon {
+    font-size: 0.8rem;
   }
   
   .auth-btn {
-    padding: var(--space-xs) var(--space-sm);
-    font-size: 0.85rem;
+    font-size: 14px;
+    padding: var(--space-xs) var(--space-md);
+  }
+  
+  .logout-btn {
+    font-size: 14px;
+    padding: var(--space-xs) var(--space-md);
   }
 }
 

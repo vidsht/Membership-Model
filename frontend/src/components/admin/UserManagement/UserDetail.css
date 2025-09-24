@@ -136,84 +136,47 @@
 .user-details-sections {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.5rem;
 }
 
 .details-section {
-  background: linear-gradient(145deg, #ffffff, #f8f9fa);
-  border-radius: 12px;
-  padding: 1.25rem;
-  border: 1px solid #e9ecef;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  transition: all 0.2s ease;
-}
-
-.details-section:hover {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-  transform: translateY(-1px);
+  background-color: var(--neutral-lightest);
+  border-radius: 0.5rem;
+  padding: 1.5rem;
 }
 
 .details-section h4 {
   margin: 0 0 1rem;
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #2c3e50;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 2px solid #e9ecef;
-}
-
-.details-section h4:before {
-  content: '';
-  width: 4px;
-  height: 20px;
-  background: linear-gradient(135deg, #0c905d, #28a745);
-  border-radius: 2px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--primary-color);
 }
 
 .details-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 0.875rem;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
 }
 
 .detail-item {
   display: flex;
   flex-direction: column;
-  gap: 0.375rem;
-  padding: 0.75rem;
-  background: rgba(255, 255, 255, 0.7);
-  border-radius: 8px;
-  border: 1px solid #f1f3f4;
-  transition: all 0.2s ease;
-}
-
-.detail-item:hover {
-  background: rgba(255, 255, 255, 0.9);
-  border-color: #0c905d;
-  transform: translateY(-1px);
+  gap: 0.25rem;
 }
 
 .detail-label {
   font-size: 0.75rem;
-  color: #6c757d;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  color: var(--neutral-medium);
+  font-weight: 500;
 }
 
 .detail-value {
-  font-size: 0.9rem;
-  color: #2c3e50;
-  font-weight: 500;
-  word-break: break-word;
+  font-size: 0.875rem;
 }
 
 .preferences-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: 0.75rem;
 }
 
@@ -221,45 +184,31 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.875rem;
-  background: rgba(255, 255, 255, 0.8);
-  border-radius: 8px;
-  border: 1px solid #f1f3f4;
-  transition: all 0.2s ease;
-}
-
-.preference-item:hover {
-  background: rgba(255, 255, 255, 0.95);
-  border-color: #0c905d;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  padding: 0.75rem;
+  background-color: rgba(255, 255, 255, 0.6);
+  border-radius: 0.25rem;
 }
 
 .preference-name {
   font-size: 0.875rem;
-  font-weight: 600;
-  color: #2c3e50;
+  font-weight: 500;
 }
 
 .preference-status {
   font-size: 0.75rem;
-  font-weight: 600;
-  padding: 0.375rem 0.75rem;
-  border-radius: 20px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  font-weight: 500;
+  padding: 0.25rem 0.5rem;
+  border-radius: 1rem;
 }
 
 .preference-status.enabled {
-  background: linear-gradient(135deg, #28a745, #20c997);
-  color: white;
-  box-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
+  background-color: rgba(76, 175, 80, 0.1);
+  color: var(--success-color);
 }
 
 .preference-status.disabled {
-  background: linear-gradient(135deg, #6c757d, #adb5bd);
-  color: white;
-  box-shadow: 0 2px 4px rgba(108, 117, 125, 0.3);
+  background-color: rgba(158, 158, 158, 0.1);
+  color: var(--neutral-medium);
 }
 
 .modal-footer {
@@ -392,38 +341,5 @@
   
   .rejection-actions {
     flex-direction: column;
-  }
-  
-  /* Enhanced responsive styles for improved user-details-sections */
-  .details-section {
-    padding: 1rem;
-  }
-  
-  .details-section h4 {
-    font-size: 1rem;
-  }
-  
-  .detail-item {
-    padding: 0.625rem;
-  }
-  
-  .preferences-list {
-    grid-template-columns: 1fr;
-  }
-  
-  .preference-item {
-    padding: 0.75rem;
-  }
-}
-
-/* Tablet responsive styles */
-@media (max-width: 768px) {
-  .details-grid {
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 0.75rem;
-  }
-  
-  .preferences-list {
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   }
 }
