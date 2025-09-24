@@ -678,7 +678,12 @@ const ApprovalQueue = () => {
                       /* User/Merchant Card Header */
                       <div className="user-info">
                         <div className="user-details">
-                          <h4 className="user-name">{item.fullName || 'No Name Provided'}</h4>
+                          <h4 className="user-name">
+                            {item.userType === 'merchant' 
+                              ? (item.businessName || item.companyName || item.fullName || 'No Business Name Provided')
+                              : (item.fullName || 'No Name Provided')
+                            }
+                          </h4>
                           <div className="user-meta">
                             <span className="user-email">
                               <i className="fas fa-envelope"></i>
@@ -694,6 +699,12 @@ const ApprovalQueue = () => {
                               <span className="user-community">
                                 <i className="fas fa-globe"></i>
                                 {item.community}
+                              </span>
+                            )}
+                            {item.userType === 'merchant' && item.fullName && (
+                              <span className="owner-name">
+                                <i className="fas fa-user"></i>
+                                Owner: {item.fullName}
                               </span>
                             )}
                           </div>
@@ -744,7 +755,21 @@ const ApprovalQueue = () => {
                           <span>{formatDate(item.createdAt)}</span>
                           <small className="time-since">({getTimeSince(item.createdAt)})</small>
                         </div>
-                        {item.address && (
+                        {item.userType === 'merchant' && (item.businessDescription || item.description) && (
+                          <div className="info-item">
+                            <label>Business Description:</label>
+                            <span>{item.businessDescription || item.description}</span>
+                          </div>
+                        )}
+                        {item.userType === 'merchant' && (item.businessAddress || item.address) && (
+                          <div className="info-item">
+                            <label>Business Address:</label>
+                            <span>{typeof (item.businessAddress || item.address) === 'string' 
+                              ? (item.businessAddress || item.address) 
+                              : JSON.stringify(item.businessAddress || item.address)}</span>
+                          </div>
+                        )}
+                        {item.userType !== 'merchant' && item.address && (
                           <div className="info-item">
                             <label>Address:</label>
                             <span>{typeof item.address === 'string' ? item.address : JSON.stringify(item.address)}</span>

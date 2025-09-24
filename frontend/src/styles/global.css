@@ -569,6 +569,55 @@ color: white;
   }
 }
 
+/* Tablet mode responsive header - 832px width support */
+@media (max-width: 832px) {
+  .header-content {
+    padding: var(--space-sm) var(--space-md);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  
+  .logo {
+    flex: 0 0 auto;
+  }
+  
+  .logo img {
+    height: 45px;
+    width: 45px;
+  }
+  
+  .logo h1 {
+    font-size: 1.1rem;
+  }
+  
+  .main-nav {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+  }
+  
+  .main-nav ul {
+    gap: var(--space-sm);
+  }
+  
+  .main-nav ul li a {
+    padding: var(--space-xs) var(--space-sm);
+    font-size: 0.9rem;
+  }
+  
+  .auth-buttons {
+    flex: 0 0 auto;
+    gap: var(--space-xs);
+  }
+  
+  .auth-btn {
+    padding: var(--space-xs) var(--space-sm);
+    font-size: 0.85rem;
+  }
+}
+
 /* Mobile and Tablet (iPad Pro/Air) responsive header */
 @media (max-width: 768px) {  
   .main-nav ul li a .nav-icon {
