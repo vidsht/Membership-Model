@@ -477,7 +477,7 @@ const Deals = () => {
     const dealUrl = `${window.location.origin}/deals?id=${deal.id}`;
     const shareText = `🎉 Check out this amazing deal: *${deal.title}* at ${deal.businessName}! 
 
-💰 ${deal.discount}% OFF - Was ₵${deal.originalPrice}, now ₵${deal.discountedPrice}
+💰 ${deal.discountType === 'percentage' ? `${deal.discount}% OFF` : `GHS ${deal.discount} OFF`} - Was ₵${deal.originalPrice}, now ₵${deal.discountedPrice}
 
 Click to view details: ${dealUrl}
 
@@ -816,7 +816,7 @@ Join Indians in Ghana Community for exclusive deals!`;
                      <div className="discount-validity-row">
                        {deal.discount && (
                          <span className="discount-highlight">
-                           <strong>{deal.discount}% OFF</strong>
+                           <strong>{deal.discountType === 'percentage' ? `${deal.discount}% OFF` : `GHS ${deal.discount} OFF`}</strong>
                          </span>
                        )}
                        {(deal.expiration_date || deal.expirationDate || deal.validUntil) && (
@@ -1070,7 +1070,7 @@ Join Indians in Ghana Community for exclusive deals!`;
                   </p>
                   <div className="deal-discount">
                     <span className="discount-value">
-                      {selectedDeal.discount}% OFF
+                      {selectedDeal.discountType === 'percentage' ? `${selectedDeal.discount}% OFF` : `GHS ${selectedDeal.discount} OFF`}
                     </span>
                   </div>
                 </div>

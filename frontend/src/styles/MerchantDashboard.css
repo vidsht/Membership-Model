@@ -2836,7 +2836,7 @@ background: white;
 
 .deal-info h4 {
   margin: 0 0 8px 0;
-  color: #333;
+  color: black;
   font-size: 18px;
 }
 
@@ -4438,5 +4438,331 @@ background: white;
     height: 50px;
     font-size: 1.2rem;
     margin-bottom: 1rem;
+  }
+}
+
+/* Deal Details Modal Styles */
+.deal-details-modal {
+  max-width: 800px;
+  width: 90vw;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.deal-details-modal .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid #e0e0e0;
+  background: linear-gradient(135deg, #520A0A 0%, #5B0E0E 100%);
+  color: white;
+  border-radius: 15px 15px 0 0;
+}
+
+.deal-details-modal .modal-header h3 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.deal-details-modal .modal-close-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.deal-details-modal .modal-close-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.deal-details-content {
+  padding: 1.5rem;
+}
+
+.detail-section {
+  margin-bottom: 2rem;
+}
+
+.detail-section:last-child {
+  margin-bottom: 0;
+}
+
+.detail-section > label {
+  display: block;
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: #333;
+  margin-bottom: 0.8rem;
+  border-bottom: 2px solid #667eea;
+  padding-bottom: 0.3rem;
+  display: inline-block;
+}
+
+.detail-section h4 {
+  display: inline-block;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #333;
+  margin: 0 1rem 0 0;
+}
+
+.detail-section p {
+  color: #555;
+  line-height: 1.6;
+  margin: 0;
+  background: #f8f9fa;
+  padding: 1rem;
+  border-radius: 8px;
+  border-left: 4px solid #667eea;
+}
+
+.status-badge {
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-badge.pending_approval {
+  background: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeaa7;
+}
+
+.status-badge.approved,
+.status-badge.active {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.status-badge.rejected {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.status-badge.expired {
+  background: #e2e3e5;
+  color: #495057;
+  border: 1px solid #ced4da;
+}
+
+.deal-banner-preview {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+  max-width: 100%;
+}
+
+.deal-detail-banner {
+  width: 100%;
+  height: auto;
+  max-height: 300px;
+  object-fit: cover;
+  display: block;
+}
+
+.pricing-details,
+.validity-details,
+.additional-details,
+.stats-details {
+  background: #f8f9fa;
+  padding: 1.2rem;
+  border-radius: 12px;
+  border: 1px solid #e9ecef;
+}
+
+.price-item,
+.validity-item,
+.detail-item,
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.price-item:last-child,
+.validity-item:last-child,
+.detail-item:last-child,
+.stat-item:last-child {
+  border-bottom: none;
+}
+
+.price-label,
+.validity-label,
+.detail-label,
+.stat-label {
+  font-weight: 500;
+  color: #495057;
+  font-size: 0.95rem;
+}
+
+.price-value,
+.validity-value,
+.detail-value,
+.stat-value {
+  font-weight: 600;
+  color: #212529;
+}
+
+.price-value.discounted {
+  color: #28a745;
+  font-size: 1.1rem;
+}
+
+.price-value.discount {
+  color: #dc3545;
+  font-size: 1.05rem;
+  background: #fff5f5;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+}
+
+.rejection-reason {
+  background: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 12px;
+  padding: 1.2rem;
+}
+
+.rejection-reason label {
+  color: #721c24 !important;
+  border-bottom-color: #dc3545 !important;
+}
+
+.rejection-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.8rem;
+  background: white;
+  padding: 1rem;
+  border-radius: 8px;
+  border-left: 4px solid #dc3545;
+}
+
+.rejection-message i {
+  color: #dc3545;
+  font-size: 1.2rem;
+  margin-top: 0.1rem;
+}
+
+.rejection-message p {
+  margin: 0;
+  color: #721c24;
+  background: none;
+  padding: 0;
+  border: none;
+}
+
+.deal-details-modal .modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding: 1.5rem;
+  border-top: 1px solid #e0e0e0;
+  background: #f8f9fa;
+  border-radius: 0 0 15px 15px;
+}
+
+.deal-details-modal .modal-footer .btn {
+  padding: 0.6rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  border: none;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.deal-details-modal .modal-footer .btn-secondary {
+  background: #6c757d;
+  color: white;
+}
+
+.deal-details-modal .modal-footer .btn-secondary:hover {
+  background: #5a6268;
+  transform: translateY(-1px);
+}
+
+.deal-details-modal .modal-footer .btn-primary {
+  background: linear-gradient(135deg, #8D1515 0%, #4C0808 100%);
+  color: white;
+}
+
+.deal-details-modal .modal-footer .btn-primary:hover {
+  background: linear-gradient(135deg, #D9B389 0%, #D9B389 100%);
+  color: black;
+  transform: translateY(-1px);
+}
+
+/* Responsive Design for Deal Details Modal */
+@media (max-width: 768px) {
+  .deal-details-modal {
+    width: 95vw;
+    max-height: 95vh;
+  }
+  
+  .deal-details-content {
+    padding: 1rem;
+  }
+  
+  .detail-section {
+    margin-bottom: 1.5rem;
+  }
+  
+  .detail-section h4 {
+    font-size: 1.2rem;
+    display: block;
+    margin-bottom: 0.5rem;
+  }
+  
+  .price-item,
+  .validity-item,
+  .detail-item,
+  .stat-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.3rem;
+  }
+  
+  .deal-details-modal .modal-footer {
+    flex-direction: column;
+    padding: 1rem;
+  }
+  
+  .deal-details-modal .modal-footer .btn {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .deal-details-modal .modal-header {
+    padding: 1rem;
+  }
+  
+  .deal-details-modal .modal-header h3 {
+    font-size: 1.3rem;
+  }
+  
+  .pricing-details,
+  .validity-details,
+  .additional-details,
+  .stats-details {
+    padding: 1rem;
   }
 }

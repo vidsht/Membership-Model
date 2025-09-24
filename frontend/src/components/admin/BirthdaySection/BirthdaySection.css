@@ -225,14 +225,14 @@
 
 .user-info h4 {
   margin: 0 0 5px 0;
-  color: #2c3e50;
+  color: black;
   font-size: 1.1rem;
   font-weight: 600;
 }
 
 .user-email {
   margin: 0 0 5px 0;
-  color: #666;
+  color: black;
   font-size: 0.9rem;
 }
 
@@ -260,8 +260,7 @@
 }
 
 .birthday-date,
-.birthday-countdown,
-.birthday-age {
+.birthday-countdown{
   display: flex;
   align-items: center;
   gap: 8px;
@@ -275,11 +274,6 @@
 
 .birthday-countdown i {
   color: #ffc107;
-  width: 16px;
-}
-
-.birthday-age i {
-  color: #e91e63;
   width: 16px;
 }
 

@@ -168,19 +168,6 @@ const DealFilters = ({ filters, plans = [], onFilterChange, onSearch }) => {
           </div>
 
           <div className="user-filters__filters-container">
-            <div className="user-filters__filters-header">
-
-              {hasActiveFilters() && (
-                <button 
-                  className="user-filters__btn-reset-small" 
-                  onClick={clearFilters}
-                  aria-label="Clear all filters"
-                >
-                  <i className="fas fa-times" aria-hidden="true"></i>
-                  Clear All
-                </button>
-              )}
-            </div>
             
             {showFilters && hasActiveFilters() && (
               <div className="user-filters__active-filters" aria-label="Active filters">

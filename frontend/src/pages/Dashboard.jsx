@@ -640,7 +640,7 @@ const Dashboard = () => {
                       <i className="fas fa-tags"></i>
                       <span>
                         {currentPlan.maxRedemptions === -1 
-                          ? 'Unlimited redemptions' 
+                          ? 'Infinite redemptions' 
                           : `Up to ${currentPlan.maxRedemptions} redemptions`
                         }
                       </span>

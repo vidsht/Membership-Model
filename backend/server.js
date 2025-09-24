@@ -132,6 +132,9 @@ app.use('/api/users', seoMiddleware.protected, require('./routes/users'));
 // Mount merchant routes
 app.use('/api/merchant', seoMiddleware.protected, require('./routes/merchant'));
 
+// Download routes for cards and certificates
+app.use('/api/download', seoMiddleware.protected, require('./routes/download'));
+
 // Public deals route for users
 app.use('/api/deals', seoMiddleware.api, require('./routes/deals'));
 app.use('/api/plans', seoMiddleware.api, require('./routes/plans'));
