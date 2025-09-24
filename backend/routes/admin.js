@@ -137,8 +137,10 @@ router.get('/stats', auth, admin, async (req, res) => {
     const [activeBusinesses] = await queryAsync('SELECT COUNT(*) as count FROM users WHERE status = "approved" AND userType = "merchant"');
     
     let totalDeals = [{ count: 0 }];
+    let allDeals = [{ count: 0 }];
     try {
       totalDeals = await queryAsync('SELECT COUNT(*) as count FROM deals WHERE status = "active"');
+      allDeals = await queryAsync('SELECT COUNT(*) as count FROM deals');
     } catch (dealsError) {
       console.warn('Deals table not found');
     }
@@ -155,6 +157,7 @@ router.get('/stats', auth, admin, async (req, res) => {
       totalMerchants: merchantCount?.count || 0,
       activeBusinesses: activeBusinesses?.count || 0,
       totalDeals: totalDeals[0]?.count || 0,
+      allDeals: allDeals[0]?.count || 0,
       totalRedemptions: totalRedemptions[0]?.count || 0,
       totalRevenue: 0
     };
@@ -5811,6 +5814,88 @@ router.post('/test/restore-plan/:userId', admin, async (req, res) => {
     res.status(500).json({ 
       success: false, 
       message: 'Server error restoring plan access',
+      error: err.message 
+    });
+  }
+});
+
+// Get expired users (for expired section)
+router.get('/expired-users', auth, admin, async (req, res) => {
+  try {
+    const query = `
+      SELECT u.id, u.fullName, u.email, u.membershipType, u.planExpiryDate,
+             u.created_at, u.status,
+             p.name as planName
+      FROM users u 
+      LEFT JOIN user_plans up ON u.id = up.userId AND up.isActive = 1
+      LEFT JOIN plans p ON up.planId = p.id
+      WHERE u.userType = 'user' 
+        AND u.planExpiryDate IS NOT NULL 
+        AND u.planExpiryDate <= DATE_ADD(NOW(), INTERVAL 30 DAY)
+      ORDER BY u.planExpiryDate ASC
+    `;
+    
+    const users = await queryAsync(query);
+    
+    res.json({
+      success: true,
+      users: users || []
+    });
+
+  } catch (err) {
+    console.error('Error fetching expired users:', err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error fetching expired users',
+      error: err.message 
+    });
+  }
+});
+
+// Get expired merchants (for expired section)
+router.get('/expired-merchants', auth, admin, async (req, res) => {
+  try {
+    const businessTableExists = await tableExists('businesses');
+    
+    let query = `
+      SELECT u.id, u.fullName, u.email, u.membershipType, u.validationDate,
+             u.created_at, u.status,
+             p.name as planName
+    `;
+    
+    if (businessTableExists) {
+      query += `, b.businessName, b.businessCategory, b.businessAddress`;
+    }
+    
+    query += `
+      FROM users u 
+      LEFT JOIN user_plans up ON u.id = up.userId AND up.isActive = 1
+      LEFT JOIN plans p ON up.planId = p.id
+    `;
+    
+    if (businessTableExists) {
+      query += ` LEFT JOIN businesses b ON u.id = b.userId`;
+    }
+    
+    query += `
+      WHERE u.userType = 'merchant' 
+        AND u.validationDate IS NOT NULL 
+        AND u.validationDate <= DATE_ADD(NOW(), INTERVAL 30 DAY)
+      ORDER BY u.validationDate ASC
+    `;
+    
+    const merchants = await queryAsync(query);
+    
+    res.json({
+      success: true,
+      merchants: merchants || []
+    });
+
+  } catch (err) {
+    console.error('Error fetching expired merchants:', err);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error fetching expired merchants',
       error: err.message 
     });
   }

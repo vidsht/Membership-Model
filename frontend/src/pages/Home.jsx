@@ -1010,7 +1010,6 @@ const Home = () => {
                     <i className="fas fa-users"></i>
                   </div>
                   <div className="stat-number">{stats.totalMembers || 0}</div>
-                  <div className="stat-label">Community Members</div>
                   <div className="stat-description">Active registered members</div>
                 </div>
               )}
@@ -1020,7 +1019,6 @@ const Home = () => {
                     <i className="fas fa-store"></i>
                   </div>
                   <div className="stat-number">{stats.activeBusinesses || 0}</div>
-                  <div className="stat-label">Active Businesses</div>
                   <div className="stat-description">Verified business partners</div>
                 </div>
               )}
@@ -1030,8 +1028,7 @@ const Home = () => {
                     <i className="fas fa-tags"></i>
                   </div>
                   <div className="stat-number">{stats.exclusiveDeals || 0}</div>
-                  <div className="stat-label">Exclusive Deals</div>
-                  <div className="stat-description">Member-only offers</div>
+                  <div className="stat-description">Exclusive Member-only offers</div>
                 </div>
               )}
               {(adminSettings.features?.show_total_redemptions !== false) && (
@@ -1040,7 +1037,6 @@ const Home = () => {
                     <i className="fas fa-receipt"></i>
                   </div>
                   <div className="stat-number">{stats.totalRedemptions || 0}</div>
-                  <div className="stat-label">Total Deal Redemptions</div>
                   <div className="stat-description">All-time redemption requests</div>
                 </div>
               )}
