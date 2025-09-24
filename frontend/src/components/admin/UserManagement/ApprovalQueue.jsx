@@ -680,10 +680,16 @@ const ApprovalQueue = () => {
                         <div className="user-details">
                           <h4 className="user-name">
                             {item.userType === 'merchant' 
-                              ? (item.businessName || item.companyName || item.fullName || 'No Business Name Provided')
+                              ? (item.businessName || item.fullName || 'No Business Name Provided')
                               : (item.fullName || 'No Name Provided')
                             }
                           </h4>
+                          {item.userType === 'merchant' && item.businessName && (
+                            <p className="owner-name">
+                              <i className="fas fa-user"></i>
+                              Owner: {item.fullName || 'No Name Provided'}
+                            </p>
+                          )}
                           <div className="user-meta">
                             <span className="user-email">
                               <i className="fas fa-envelope"></i>
@@ -699,12 +705,6 @@ const ApprovalQueue = () => {
                               <span className="user-community">
                                 <i className="fas fa-globe"></i>
                                 {item.community}
-                              </span>
-                            )}
-                            {item.userType === 'merchant' && item.fullName && (
-                              <span className="owner-name">
-                                <i className="fas fa-user"></i>
-                                Owner: {item.fullName}
                               </span>
                             )}
                           </div>
@@ -755,21 +755,25 @@ const ApprovalQueue = () => {
                           <span>{formatDate(item.createdAt)}</span>
                           <small className="time-since">({getTimeSince(item.createdAt)})</small>
                         </div>
-                        {item.userType === 'merchant' && (item.businessDescription || item.description) && (
+                        {item.userType === 'merchant' && item.businessCategory && (
                           <div className="info-item">
-                            <label>Business Description:</label>
-                            <span>{item.businessDescription || item.description}</span>
+                            <label>Business Category:</label>
+                            <span>{item.businessCategory}</span>
                           </div>
                         )}
-                        {item.userType === 'merchant' && (item.businessAddress || item.address) && (
+                        {item.userType === 'merchant' && item.businessAddress && (
                           <div className="info-item">
                             <label>Business Address:</label>
-                            <span>{typeof (item.businessAddress || item.address) === 'string' 
-                              ? (item.businessAddress || item.address) 
-                              : JSON.stringify(item.businessAddress || item.address)}</span>
+                            <span>{item.businessAddress}</span>
                           </div>
                         )}
-                        {item.userType !== 'merchant' && item.address && (
+                        {item.userType === 'merchant' && item.businessPhone && (
+                          <div className="info-item">
+                            <label>Business Phone:</label>
+                            <span>{item.businessPhone}</span>
+                          </div>
+                        )}
+                        {item.address && item.userType !== 'merchant' && (
                           <div className="info-item">
                             <label>Address:</label>
                             <span>{typeof item.address === 'string' ? item.address : JSON.stringify(item.address)}</span>

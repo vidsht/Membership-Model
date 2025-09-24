@@ -145,7 +145,7 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 }
 
-/* Approval User Details */
+/* Enhanced Approval User Details - More Compact & Appealing */
 .approval-user-details {
   flex: 1;
   margin-bottom: 0.5rem;
@@ -162,6 +162,138 @@
   margin: 0.25rem 0;
   font-size: 0.9rem;
   color: #6c757d;
+}
+
+/* Enhanced User Details Section Styling */
+.user-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.user-name {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin: 0 0 0.3rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.owner-name {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #6c757d;
+  margin: 0.2rem 0 0.3rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-style: italic;
+}
+
+.user-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.85rem;
+}
+
+.user-meta span {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.7rem;
+  background: #f8f9fa;
+  border-radius: 16px;
+  color: #495057;
+  font-weight: 500;
+  border: 1px solid #e9ecef;
+  transition: all 0.2s ease;
+}
+
+.user-meta span:hover {
+  background: #e9ecef;
+  border-color: #dee2e6;
+}
+
+.user-meta .user-email {
+  background: linear-gradient(135deg, #e3f2fd, #f3e5f5);
+  border-color: #bbdefb;
+  color: #1976d2;
+}
+
+.user-meta .user-phone {
+  background: linear-gradient(135deg, #e8f5e8, #f1f8e9);
+  border-color: #c8e6c9;
+  color: #2e7d32;
+}
+
+.user-meta .user-community {
+  background: linear-gradient(135deg, #fff3e0, #fce4ec);
+  border-color: #ffcc02;
+  color: #f57c00;
+}
+
+.user-meta i {
+  font-size: 0.8rem;
+  opacity: 0.8;
+}
+
+/* Registration Info Section Enhancement */
+.registration-info {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 0.8rem;
+  margin-top: 0.5rem;
+  border: 1px solid #e9ecef;
+}
+
+.registration-info .info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin-bottom: 0.6rem;
+}
+
+.registration-info .info-item:last-child {
+  margin-bottom: 0;
+}
+
+.registration-info .info-item label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #6c757d;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.registration-info .info-item span {
+  font-size: 0.9rem;
+  color: #2c3e50;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.registration-info .time-since {
+  font-size: 0.7rem;
+  color: #6c757d;
+  font-style: italic;
+  margin-left: 0.3rem;
+  opacity: 0.8;
+}
+
+.registration-info .plan-badge {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
 }
 
 /* Approval Actions - Enhanced Buttons */
@@ -684,18 +816,39 @@
 }
 
 .deal-info-section {
-  background: #f7fafc;
+  background: #f8f9fa;
   border-radius: 8px;
-  padding: 1rem;
+  padding: 0.8rem;
   margin-top: 0.5rem;
+  border: 1px solid #e9ecef;
 }
 
 .deal-info-section .info-item {
-  margin-bottom: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin-bottom: 0.6rem;
 }
 
 .deal-info-section .info-item:last-child {
   margin-bottom: 0;
+}
+
+.deal-info-section .info-item label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #6c757d;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.deal-info-section .info-item span {
+  font-size: 0.9rem;
+  color: #2c3e50;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .discount-value {
@@ -748,6 +901,28 @@
   .deal-meta {
     flex-direction: column;
     gap: 0.5rem;
+  }
+  
+  .user-meta {
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+  
+  .user-meta span {
+    font-size: 0.8rem;
+    padding: 0.25rem 0.5rem;
+  }
+  
+  .user-name {
+    font-size: 1.1rem;
+  }
+  
+  .registration-info {
+    padding: 0.6rem;
+  }
+  
+  .registration-info .info-item {
+    margin-bottom: 0.4rem;
   }
   
   .deal-badge,

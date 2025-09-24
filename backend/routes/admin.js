@@ -675,6 +675,7 @@ router.get('/users', auth, admin, async (req, res) => {
 
     const plansTableExists = await tableExists('plans');
     const communitiesTableExists = await tableExists('communities');
+    const businessesTableExists = await tableExists('businesses');
 
     if (plansTableExists) {
       mainQuery += `, p.name as planName, p.price as planPrice, p.billingCycle, p.currency, p.features, p.maxDealRedemptions as planMaxDealRedemptions`;
@@ -682,6 +683,11 @@ router.get('/users', auth, admin, async (req, res) => {
 
     if (communitiesTableExists) {
       mainQuery += `, c.name as communityName`;
+    }
+
+    // Include business information for merchants
+    if (businessesTableExists) {
+      mainQuery += `, b.businessName, b.businessDescription, b.businessCategory, b.businessAddress, b.businessPhone, b.businessEmail, b.website`;
     }
 
     mainQuery += ` FROM users u`;
@@ -692,6 +698,11 @@ router.get('/users', auth, admin, async (req, res) => {
 
     if (communitiesTableExists) {
       mainQuery += ` LEFT JOIN communities c ON u.community = c.name`;
+    }
+
+    // Join businesses table for merchant information
+    if (businessesTableExists) {
+      mainQuery += ` LEFT JOIN businesses b ON u.id = b.userId AND u.userType = 'merchant'`;
     }
 
     mainQuery += ` ${whereClause} ORDER BY u.createdAt DESC LIMIT ? OFFSET ?`;

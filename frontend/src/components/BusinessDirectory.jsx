@@ -76,7 +76,7 @@ const BusinessDirectory = () => {
     const membershipType = (business.membershipLevel || business.membershipType || business.membership || '').toLowerCase();
     
     // Higher priority values appear first in sort
-    if (membershipType.includes('platinum plus') || membershipType.includes('platinum+')) return 6;
+    if (membershipType.includes('platinum plus') || membershipType.includes('platinum+') || membershipType.includes('platinumplus')) return 6;
     if (membershipType.includes('platinum')) return 5;
     if (membershipType.includes('gold')) return 4;
     if (membershipType.includes('silver')) return 3;
@@ -88,8 +88,9 @@ const BusinessDirectory = () => {
   const getPlanBadge = (business) => {
     const membershipType = (business.membershipLevel || business.membershipType || business.membership || '').toLowerCase();
     
-    if (membershipType.includes('platinum plus') || membershipType.includes('platinum+')) {
-      return { label: 'Platinum+', color: 'linear-gradient(135deg, #9333EA, #EC4899)', textColor: '#FFFFFF' }; // Premium gradient purple-pink
+    // Check for Platinum Plus first (more specific)
+    if (membershipType.includes('platinum plus') || membershipType.includes('platinum+') || membershipType.includes('platinumplus')) {
+      return { label: 'Platinum+', color: 'linear-gradient(135deg, #9333ea, #c084fc)', textColor: '#FFFFFF', isPlatinumPlus: true }; // Purple gradient for Platinum+
     }
     if (membershipType.includes('platinum')) {
       return { label: 'Platinum', color: '#E5E7EB', textColor: '#374151' }; // Platinum silver-gray
@@ -473,15 +474,15 @@ Discover quality services and support our community businesses! 🇮🇳🇬🇭
                 {/* Plan Badge */}
                 {(() => {
                   const badge = getPlanBadge(business);
-                  const isGradient = badge.color.includes('gradient');
                   return (
                     <div 
-                      className="plan-badge"
+                      className={`plan-badge ${badge.isPlatinumPlus ? 'platinum-plus-badge' : ''}`}
                       style={{
-                        ...(isGradient ? { background: badge.color } : { backgroundColor: badge.color }),
+                        background: badge.color,
                         color: badge.textColor
                       }}
                     >
+                      {badge.isPlatinumPlus && <i className="fas fa-crown"></i>}
                       {badge.label}
                     </div>
                   );
