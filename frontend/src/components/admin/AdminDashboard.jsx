@@ -10,6 +10,7 @@ import PlanManagement from './PlanManagement/PlanManagement';
 import AdminSettings from './Settings/AdminSettings';
 import Activities from './Activities/Activities';
 import BirthdaySection from './BirthdaySection/BirthdaySection';
+import ExpiredSection from './Expired/ExpiredSection';
 import api from '../../services/api';
 import './AdminDashboard.css';
 
@@ -29,6 +30,7 @@ const AdminDashboard = () => {
     activeBusinesses: 0,
     totalRevenue: 0,
     totalDeals: 0,
+    allDeals: 0,
     totalPlans: 0,
     planSubscribers: 0,
     totalRedemptions: 0
@@ -54,6 +56,7 @@ const AdminDashboard = () => {
     { id: 'merchants', label: 'Business Partners', icon: 'fas fa-handshake' },
     { id: 'deals', label: 'Deal Management', icon: 'fas fa-tags' },
     { id: 'plans', label: 'Plan Management', icon: 'fas fa-crown' },
+    { id: 'expired', label: 'Expired', icon: 'fas fa-calendar-times' },
     { id: 'birthdays', label: 'Birthdays', icon: 'fas fa-birthday-cake' },
     { id: 'approvals', label: 'Approvals', icon: 'fas fa-check-circle' },
     { id: 'activities', label: 'Activities', icon: 'fas fa-history' },
@@ -177,9 +180,11 @@ const AdminDashboard = () => {
         // Ensure we have a totalDeals value (safe fallback to 0)
         if (dealsStatsRes && dealsStatsRes.data && dealsStatsRes.data.stats) {
           baseStats.totalDeals = typeof dealsStatsRes.data.stats.totalDeals !== 'undefined' ? dealsStatsRes.data.stats.totalDeals : 0;
+          baseStats.allDeals = typeof dealsStatsRes.data.stats.allDeals !== 'undefined' ? dealsStatsRes.data.stats.allDeals : (dealsStatsRes.data.stats.totalDeals || 0);
           baseStats.totalRedemptions = typeof dealsStatsRes.data.stats.totalRedemptions !== 'undefined' ? dealsStatsRes.data.stats.totalRedemptions : 0;
         } else {
           baseStats.totalDeals = 0;
+          baseStats.allDeals = 0;
           baseStats.totalRedemptions = 0;
         }
 
@@ -220,6 +225,8 @@ const AdminDashboard = () => {
           return <DealList />;
         case 'plans':
           return <PlanManagement />;
+        case 'expired':
+          return <ExpiredSection />;
         case 'birthdays':
           return <BirthdaySection />;
         case 'approvals':
@@ -295,6 +302,16 @@ const AdminDashboard = () => {
           <div className="stat-info">
             <h3>{stats.totalDeals}</h3>
             <p>Active Deals</p>
+          </div>
+        </div>
+        
+        <div className="stat-card">
+          <div className="stat-icon total-deals">
+            <i className="fas fa-list"></i>
+          </div>
+          <div className="stat-info">
+            <h3>{stats.allDeals || stats.totalDeals}</h3>
+            <p>Total Deals</p>
           </div>
         </div>
         

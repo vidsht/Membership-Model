@@ -76,7 +76,13 @@ const BusinessDirectory = () => {
     const membershipType = (business.membershipLevel || business.membershipType || business.membership || '').toLowerCase();
     
     // Higher priority values appear first in sort
-    if (membershipType.includes('platinum plus') || membershipType.includes('platinum+') || membershipType.includes('platinumplus')) return 6;
+    if (membershipType.includes('platinum plus') || 
+        membershipType.includes('platinum+') || 
+        membershipType.includes('platinumplus') ||
+        membershipType.includes('platinum_plus') ||
+        membershipType.includes('platinum_plus_business') ||
+        membershipType === 'platinum_plus_business' ||
+        membershipType === 'platinum_plus') return 6;
     if (membershipType.includes('platinum')) return 5;
     if (membershipType.includes('gold')) return 4;
     if (membershipType.includes('silver')) return 3;
@@ -88,8 +94,17 @@ const BusinessDirectory = () => {
   const getPlanBadge = (business) => {
     const membershipType = (business.membershipLevel || business.membershipType || business.membership || '').toLowerCase();
     
-    // Check for Platinum Plus first (more specific)
-    if (membershipType.includes('platinum plus') || membershipType.includes('platinum+') || membershipType.includes('platinumplus')) {
+    // Check for Platinum Plus first (more specific) - expanded patterns
+    if (membershipType.includes('platinum plus') || 
+        membershipType.includes('platinum+') || 
+        membershipType.includes('platinumplus') ||
+        membershipType.includes('platinum_plus') ||
+        membershipType.includes('platinum_plus_business') || // Handle plan key
+        membershipType === 'platinum plus' ||
+        membershipType === 'platinum+' ||
+        membershipType === 'platinumplus' ||
+        membershipType === 'platinum_plus_business' ||
+        membershipType === 'platinum_plus') { // Handle exact plan key match
       return { label: 'Platinum+', color: 'linear-gradient(135deg, #9333ea, #c084fc)', textColor: '#FFFFFF', isPlatinumPlus: true }; // Purple gradient for Platinum+
     }
     if (membershipType.includes('platinum')) {

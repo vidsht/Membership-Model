@@ -746,13 +746,13 @@
 
 /* Discount Highlight - compact styling for row */
 .discount-highlight {
-  color: #dc2626;
+  color: #099D6F;
   font-size: 0.85rem;
   font-weight: 600;
-  background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%);
+  background: linear-gradient(135deg, #fef2f2 0%, #099d6e7a 100%);
   padding: 0.3rem 0.6rem;
   border-radius: 6px;
-  border: 1px solid #ef4444;
+  border: 1px solid #099D6F;
   display: flex;
   align-items: center;
   gap: 0.3rem;
@@ -760,7 +760,7 @@
 }
 
 .discount-highlight strong {
-  color: #dc2626;
+  color: #099D6F;
 }
 
 /* Validity Item - Compact styling for row */
@@ -1519,8 +1519,6 @@
     grid-template-columns: 1fr;
   }
   .deal-business-info, .business-meta {
-    display: block !important;
-    min-width: 0;
     overflow: visible;
     word-break: break-word;
   }

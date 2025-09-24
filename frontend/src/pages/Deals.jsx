@@ -1235,12 +1235,6 @@ Join Indians in Ghana Community for exclusive deals!`;
                     </div>
                   )}
 
-                  {/* Login/Register Requirement Notice - Compact */}
-                  <div className="modal-notice-compact">
-                    <i className="fas fa-info-circle"></i>
-                    <span>Login required to redeem</span>
-                  </div>
-
                   {/* Membership Requirements */}
                   {((selectedDeal.minPlanPriority || selectedDeal.requiredPlanPriority) !== null && (selectedDeal.minPlanPriority || selectedDeal.requiredPlanPriority) !== undefined) && (
                     <div className="modal-section">
@@ -1251,6 +1245,12 @@ Join Indians in Ghana Community for exclusive deals!`;
                       </div>
                     </div>
                   )}
+
+                  {/* Login/Register Requirement Notice - Compact */}
+                  <div className="modal-notice-compact">
+                    <i className="fas fa-info-circle"></i>
+                    <span>Login required to redeem</span>
+                  </div>
                 </div>
 
                 {/* Modal Footer - Now inside the grid */}

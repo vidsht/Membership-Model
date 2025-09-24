@@ -624,14 +624,14 @@ const Dashboard = () => {
                         );
                       })()}
                     </h3>
-                    {currentPlan.description && (
-                      <p className="plan-description">{currentPlan.description}</p>
-                    )}
                   </div>
                   <div className="plan-pricing">
                     <span className="price-amount">{currentPlan.currency} {currentPlan.price}</span>
                     <span className="billing-cycle">/{currentPlan.billingCycle}</span>
                   </div>
+                    {currentPlan.description && (
+                      <p className="plan-description">{currentPlan.description}</p>
+                    )}
                 </div>
                 
                 <div className="plan-details-stats">

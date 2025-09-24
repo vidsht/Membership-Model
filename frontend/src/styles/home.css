@@ -1494,8 +1494,8 @@
   }
 
   .features-grid {
-    grid-template-columns: 1fr;
-    gap: var(--space-lg);
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
   }
 
   .feature-icon {
@@ -1508,12 +1508,12 @@
   }
 
   .hero-actions {
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
   }
 
   .cta-buttons {
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
   }
 
@@ -1692,7 +1692,7 @@
   }
   
   .cards-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
     gap: 1.5rem;
   }
   
