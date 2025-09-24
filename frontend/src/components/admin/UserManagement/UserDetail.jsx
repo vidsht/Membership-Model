@@ -120,18 +120,7 @@ const UserDetail = ({ user, onClose, onApprove, onReject, onEdit, onDelete }) =>
            )}
         </div>
         <div className="user-basic-info">
-          <h2>
-            {user.userType === 'merchant' && user.businessName 
-              ? user.businessName 
-              : (user.fullName || 'Unknown User')
-            }
-          </h2>
-          {user.userType === 'merchant' && user.businessName && (
-            <p className="owner-name">
-              <i className="fas fa-user"></i>
-              Owner: {user.fullName || 'Not specified'}
-            </p>
-          )}
+          <h2>{user.fullName || 'Unknown User'}</h2>
           <p className="user-email">
             <i className="fas fa-envelope"></i>
             {user.email || 'No email'}
@@ -158,44 +147,6 @@ const UserDetail = ({ user, onClose, onApprove, onReject, onEdit, onDelete }) =>
       </div>
 
       <div className="user-detail-content">
-        {user.userType === 'merchant' && (
-          <div className="detail-section">
-            <h3>Business Information</h3>
-            <div className="detail-grid">
-              <div className="detail-item">
-                <label>Business Name:</label>
-                <span>{user.businessName || 'N/A'}</span>
-              </div>
-              <div className="detail-item">
-                <label>Business Category:</label>
-                <span>{user.businessCategory || 'N/A'}</span>
-              </div>
-              <div className="detail-item">
-                <label>Business Phone:</label>
-                <span>{user.businessPhone || 'N/A'}</span>
-              </div>
-              <div className="detail-item">
-                <label>Business Email:</label>
-                <span>{user.businessEmail || 'N/A'}</span>
-              </div>
-              <div className="detail-item full-width">
-                <label>Business Address:</label>
-                <span>{user.businessAddress || 'N/A'}</span>
-              </div>
-              <div className="detail-item">
-                <label>Website:</label>
-                <span>
-                  {user.website ? (
-                    <a href={user.website} target="_blank" rel="noopener noreferrer">
-                      {user.website}
-                    </a>
-                  ) : 'N/A'}
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
-
         <div className="detail-section">
           <h3>Personal Information</h3>
           <div className="detail-grid">

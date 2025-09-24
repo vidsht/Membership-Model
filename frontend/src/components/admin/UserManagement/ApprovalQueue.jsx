@@ -678,17 +678,7 @@ const ApprovalQueue = () => {
                       /* User/Merchant Card Header */
                       <div className="user-info">
                         <div className="user-details">
-                          <h4 className="user-name">
-                            {item.userType === 'merchant' && item.businessName 
-                              ? item.businessName 
-                              : (item.fullName || 'No Name Provided')
-                            }
-                          </h4>
-                          {item.userType === 'merchant' && item.businessName && (
-                            <div className="owner-name">
-                              <small>Owner: {item.fullName || 'Not specified'}</small>
-                            </div>
-                          )}
+                          <h4 className="user-name">{item.fullName || 'No Name Provided'}</h4>
                           <div className="user-meta">
                             <span className="user-email">
                               <i className="fas fa-envelope"></i>

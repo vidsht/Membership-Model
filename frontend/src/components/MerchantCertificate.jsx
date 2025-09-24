@@ -3,7 +3,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { withPlanAccess } from '../hooks/usePlanAccess.jsx';
 import api, { authApi } from '../services/api';
-import downloadService from '../services/downloadService';
 import '../styles/merchant-certificate.css';
 import '../styles/plan-access-blocked.css';
 
@@ -170,26 +169,25 @@ const MerchantCertificate = () => {
       return;
     }
 
-    if (!businessInfo) {
-      showNotification('Business information not available for certificate generation', 'error');
-      return;
-    }
-
     try {
-      showNotification('Preparing your certificate for download...', 'info');
-      
-      // Use the enhanced download service
-      const result = await downloadService.downloadMerchantCertificate(user, businessInfo, {
-        format: 'pdf',
-        quality: 'high',
-        size: 'a4'
+      // Import html2canvas dynamically
+      const html2canvas = await import('html2canvas');
+      const canvas = await html2canvas.default(certificateRef.current, {
+        scale: 2,
+        backgroundColor: '#ffffff',
+        useCORS: true,
+        allowTaint: true,
+        width: 700,   // Portrait A4 width
+        height: 990   // Portrait A4 height
       });
 
-      if (result.success) {
-        showNotification(result.message, 'success');
-      } else {
-        showNotification(result.message, 'error');
-      }
+      // Create download link
+      const link = document.createElement('a');
+      link.download = `merchant-certificate-${businessInfo?.businessId || user.membershipNumber}.png`;
+      link.href = canvas.toDataURL();
+      link.click();
+
+      showNotification('Certificate downloaded successfully!', 'success');
     } catch (error) {
       console.error('Error downloading certificate:', error);
       showNotification('Failed to download certificate. Please try again.', 'error');
@@ -225,20 +223,61 @@ const MerchantCertificate = () => {
     }
 
     const shareText = `I'm a certified merchant with Indians in Ghana! 🇮🇳🇬🇭\nBusiness ID: ${businessInfo?.businessId}\n\nConnect with our community: ${window.location.origin}`;
-    
-    try {
-      const certificateElement = certificateRef.current;
-      const result = await downloadService.shareWithImage(
-        certificateElement,
-        'Indians in Ghana Merchant Certificate',
-        shareText,
-        'merchant-certificate.png'
-      );
+    const shareUrl = `${window.location.origin}/merchant-certificate`;
 
-      if (result.success) {
-        showNotification(result.message, 'success');
+    try {
+      // Use Web Share API only if it can reliably share rich content
+      if (canShareRichContent()) {
+        try {
+          // First try to share with image if supported
+          const html2canvas = await import('html2canvas');
+          const canvas = await html2canvas.default(certificateRef.current, {
+            scale: 2,
+            backgroundColor: '#ffffff',
+            useCORS: true,
+            allowTaint: true,
+            width: 700,
+            height: 990
+          });
+
+          canvas.toBlob(async (blob) => {
+            if (blob && navigator.canShare && navigator.canShare({ files: [new File([blob], 'merchant-certificate.png', { type: 'image/png' })] })) {
+              const file = new File([blob], 'merchant-certificate.png', { type: 'image/png' });
+              await navigator.share({
+                title: 'Indians in Ghana Merchant Certificate',
+                text: shareText,
+                files: [file]
+              });
+            } else {
+              // Fallback to consistent text+url sharing format
+              await navigator.share({
+                title: 'Indians in Ghana Merchant Certificate',
+                text: shareText,
+                url: shareUrl
+              });
+            }
+            showNotification('Certificate shared successfully!', 'success');
+          }, 'image/png');
+          return;
+        } catch (shareError) {
+          console.log('Error sharing via Web Share API:', shareError);
+          // Continue to fallback
+        }
+      }
+      
+      // Fallback for desktop or when Web Share API fails: copy full formatted text with URL
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(shareText);
+        showNotification('Share text copied to clipboard!', 'success');
       } else {
-        showNotification(result.message, 'error');
+        // Even older browser fallback
+        const textArea = document.createElement('textarea');
+        textArea.value = shareText;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        showNotification('Share text copied to clipboard!', 'success');
       }
     } catch (error) {
       console.error('Error sharing certificate:', error);
