@@ -89,10 +89,17 @@
 
 /* Serial Number Column */
 .serial-column {
-  width: 70px;
+  width: 50px;
   text-align: center;
   font-weight: 600;
   color: #6c757d;
+}
+
+/* Redemption Limit Column */
+.limit-column {
+  width: 150px;
+  text-align: center;
+  font-weight: 600;
 }
 
 .serial-number {

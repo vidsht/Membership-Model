@@ -23,6 +23,7 @@ const UserManagement = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedUsers, setSelectedUsers] = useState([]);
+  const [showBulkActions, setShowBulkActions] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [isInitialized, setIsInitialized] = useState(false);
 
@@ -836,13 +837,13 @@ const UserManagement = () => {
           <div className="stat-label">Active Users</div>
           <div className="stat-value">{stats.activeUsers}</div>
         </div>
-        <div className="user-stat expiring-soon">
-          <div className="stat-label">Expiring Soon</div>
-          <div className="stat-value">{stats.expiringSoonUsers}</div>
-        </div>
         <div className="user-stat expired">
           <div className="stat-label">Expired Users</div>
           <div className="stat-value">{stats.expiredUsers}</div>
+        </div>
+        <div className="user-stat expiring-soon">
+          <div className="stat-label">Expiring Soon</div>
+          <div className="stat-value">{stats.expiringSoonUsers}</div>
         </div>
         <div className="user-stat">
           <div className="stat-label">Suspended Users</div>
@@ -863,18 +864,25 @@ const UserManagement = () => {
         referenceData={referenceData}
         loading={loading}
         headerActions={
-          <button
-            onClick={() => navigate('/admin/users/create')}
-            className="btn btn-primary"
-          >
-            <i className="fas fa-plus"></i>
-            Add User
-          </button>
+          <>
+            <button
+              onClick={() => navigate('/admin/users/create')}
+              className="btn btn-primary"
+            >
+              <i className="fas fa-plus"></i>
+              Add User
+            </button>
+            {selectedUsers.length > 0 && (
+              <button className="btn btn-secondary" onClick={() => setShowBulkActions(!showBulkActions)}>
+                <i className="fas fa-tasks"></i> Bulk Actions ({selectedUsers.length})
+              </button>
+            )}
+          </>
         }
       />
 
       {/* Bulk Actions */}
-      {selectedUsers.length > 0 && (
+      {showBulkActions && selectedUsers.length > 0 && (
         <BulkActions
           selectedCount={selectedUsers.length}
           onBulkAction={handleBulkAction}

@@ -957,13 +957,13 @@ const MerchantManagementEnhanced = () => {
           <div className="stat-label">Active Merchants</div>
           <div className="stat-value">{stats.activeMerchants}</div>
         </div>
-        <div className="merchant-stat expiring-soon">
-          <div className="stat-label">Expiring Soon</div>
-          <div className="stat-value">{stats.expiringSoonMerchants}</div>
-        </div>
         <div className="merchant-stat expired">
           <div className="stat-label">Expired Partners</div>
           <div className="stat-value">{stats.expiredMerchants}</div>
+        </div>
+        <div className="merchant-stat expiring-soon">
+          <div className="stat-label">Expiring Soon</div>
+          <div className="stat-value">{stats.expiringSoonMerchants}</div>
         </div>
         <div className="merchant-stat">
           <div className="stat-label">Suspended</div>
@@ -1207,13 +1207,13 @@ const MerchantManagementEnhanced = () => {
                   <div className="business-info-compact">
                     <div className="business-name">{merchant.businessName || 'N/A'}</div>
                     <div className="owner-name">{merchant.fullName}</div>
-                    <div className="joined-date">join: {formatDate(merchant.createdAt)}</div>
+                    <div className="joined-date">Joined: {formatDate(merchant.createdAt)}</div>
                   </div>
                 </td>
                 <td className="contact-cell" data-label="Contact">
                   <div className="contact-info-stacked">
                     <div className="email">{merchant.email}</div>
-                    <div className="phone">mob: {merchant.phone || 'N/A'}</div>
+                    <div className="phone">Mob: {merchant.phone || 'N/A'}</div>
                   </div>
                 </td>
                 <td className="category-cell" data-label="Category">

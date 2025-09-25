@@ -253,18 +253,6 @@ const UserTable = ({
                     </td>
                     <td>
                       <div className="user-cell business-info">
-                        <div className="user-avatar">
-                          {user.profilePhoto ? (
-                            <SmartImage 
-                              src={getProfileImageUrl(user)} 
-                              alt={user.fullName}
-                              className="avatar-image user-avatar-image"
-                              fallback={<DefaultAvatar size={40} name={user.fullName} />}
-                            />
-                          ) : (
-                            <DefaultAvatar size={40} name={user.fullName} />
-                          )}
-                        </div>
                         <div className="user-info user-details">
                           <span className="user-name business-name">{user.fullName || 'Unknown'}</span>
                           {user.membershipNumber && (

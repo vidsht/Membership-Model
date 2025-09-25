@@ -72,6 +72,40 @@ const QuickEditRedemptionLimit = ({
     }
   };
 
+  const handleResetToPlanDefault = async () => {
+    try {
+      setSaving(true);
+      console.log('🔄 QuickEdit: Resetting redemption limit to plan default for user:', user.id);
+      
+      const payload = {
+        customRedemptionLimit: null // null means use plan default
+      };
+      
+      const response = await api.put(`/admin/users/${user.id}`, payload);
+      console.log('✅ QuickEdit: Redemption limit reset response:', response);
+      
+      if (response.data.success) {
+        showNotification('Redemption limit reset to plan default successfully', 'success');
+        setCustomRedemptionLimit(''); // Clear the input field
+        handleClose();
+        if (onUpdate) {
+          onUpdate();
+        }
+      } else {
+        throw new Error(response.data.message || 'Failed to reset redemption limit');
+      }
+    } catch (error) {
+      console.error('❌ QuickEdit: Error resetting redemption limit:', error);
+      if (error.response && error.response.data && error.response.data.message) {
+        showNotification(error.response.data.message, 'error');
+      } else {
+        showNotification('Failed to reset redemption limit to plan default. Please try again.', 'error');
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (!isOpen || !user) return null;
 
   return (
@@ -128,6 +162,23 @@ const QuickEditRedemptionLimit = ({
         </div>
         
         <div className="modal-footer">
+          <button 
+            type="button" 
+            className="btn btn-warning" 
+            onClick={handleResetToPlanDefault}
+            disabled={saving}
+            title="Reset custom limit and use plan default"
+          >
+            {saving ? (
+              <>
+                <i className="fas fa-spinner fa-spin"></i> Resetting...
+              </>
+            ) : (
+              <>
+                <i className="fas fa-undo"></i> Reset to Plan Default
+              </>
+            )}
+          </button>
           <button type="button" className="btn btn-secondary" onClick={handleClose}>
             Cancel
           </button>

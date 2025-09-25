@@ -294,6 +294,16 @@ const AdminDashboard = () => {
             <p>Active Merchants</p>
           </div>
         </div>
+
+        <div className="stat-card">
+          <div className="stat-icon total-deals">
+            <i className="fas fa-list"></i>
+          </div>
+          <div className="stat-info">
+            <h3>{stats.allDeals || stats.totalDeals}</h3>
+            <p>Total Deals</p>
+          </div>
+        </div>
         
         <div className="stat-card">
           <div className="stat-icon deals">
@@ -302,16 +312,6 @@ const AdminDashboard = () => {
           <div className="stat-info">
             <h3>{stats.totalDeals}</h3>
             <p>Active Deals</p>
-          </div>
-        </div>
-        
-        <div className="stat-card">
-          <div className="stat-icon total-deals">
-            <i className="fas fa-list"></i>
-          </div>
-          <div className="stat-info">
-            <h3>{stats.allDeals || stats.totalDeals}</h3>
-            <p>Total Deals</p>
           </div>
         </div>
         
