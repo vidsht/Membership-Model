@@ -45,6 +45,24 @@ const BulkActions = ({ selectedCount, onBulkAction, onClearSelection }) => {
         </button>
 
         <button
+          className="bulk-btn suspend"
+          onClick={() => handleBulkAction('suspend')}
+          disabled={loading || selectedCount === 0}
+          title="Suspend selected"
+        >
+          <i className="fas fa-ban"></i>
+        </button>
+
+        <button
+          className="bulk-btn activate"
+          onClick={() => handleBulkAction('activate')}
+          disabled={loading || selectedCount === 0}
+          title="Activate/Unsuspend selected"
+        >
+          <i className="fas fa-check-circle"></i>
+        </button>
+
+        <button
           onClick={() => onClearSelection && onClearSelection()}
           className="bulk-btn clear"
           disabled={loading}

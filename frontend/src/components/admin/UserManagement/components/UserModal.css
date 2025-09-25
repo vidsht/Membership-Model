@@ -355,6 +355,16 @@
   font-weight: 600;
 }
 
+.validity-warning {
+  color: #f59e0b;
+  font-weight: 700;
+  background: rgba(245, 158, 11, 0.15);
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  animation: pulse-warning 1.5s ease-in-out infinite;
+}
+
 .validity-expiring {
   color: #f59e0b;
   font-weight: 600;
@@ -399,6 +409,22 @@
 @keyframes blink {
   0%, 50% { opacity: 1; }
   51%, 100% { opacity: 0.5; }
+}
+
+@keyframes pulse-warning {
+  0% { 
+    background: rgba(245, 158, 11, 0.15);
+    border-color: rgba(245, 158, 11, 0.4);
+  }
+  50% { 
+    background: rgba(245, 158, 11, 0.25);
+    border-color: rgba(245, 158, 11, 0.6);
+    transform: scale(1.02);
+  }
+  100% { 
+    background: rgba(245, 158, 11, 0.15);
+    border-color: rgba(245, 158, 11, 0.4);
+  }
 }
 
 /* ===================================

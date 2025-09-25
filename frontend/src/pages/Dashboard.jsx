@@ -408,6 +408,9 @@ const Dashboard = () => {
       <div className="dashboard-header">
         {user?.userType === 'merchant' && (user.business || user.businessName) ? (
           <div className="merchant-header-info">
+            <div className="welcome-message">
+              <span>Welcome back!</span>
+            </div>
             <div className="business-branding">
               {(user.business?.logo || user.logo) && (
                 <div className="business-logo">
@@ -426,9 +429,6 @@ const Dashboard = () => {
                   {user.business?.businessDescription || user.businessDescription || 'Manage your business and explore merchant benefits'}
                 </p>
               </div>
-            </div>
-            <div className="welcome-message">
-              <span>Welcome back!</span>
             </div>
           </div>
         ) : (

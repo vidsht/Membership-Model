@@ -306,7 +306,7 @@ const ApprovalQueue = () => {
         return;
       }
 
-      const response = await api.put(`/admin/deals/${dealId}/approve`);
+      const response = await api.patch(`/admin/deals/${dealId}/approve`);
       
       if (response.data?.success) {
         await fetchPendingApprovals();
@@ -342,7 +342,7 @@ const ApprovalQueue = () => {
       }
 
       const payload = { reason: reason || 'No reason provided' };
-      const response = await api.put(`/admin/deals/${dealId}/reject`, payload);
+      const response = await api.patch(`/admin/deals/${dealId}/reject`, payload);
       
       if (response.data?.success) {
         await fetchPendingApprovals();

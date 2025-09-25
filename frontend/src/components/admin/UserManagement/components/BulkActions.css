@@ -59,6 +59,24 @@
   border-color: #dc3545;
 }
 
+.bulk-btn.suspend {
+  color: #fd7e14;
+}
+
+.bulk-btn.suspend:hover {
+  background: #fff3cd;
+  border-color: #fd7e14;
+}
+
+.bulk-btn.activate {
+  color: #20c997;
+}
+
+.bulk-btn.activate:hover {
+  background: #d1ecf1;
+  border-color: #20c997;
+}
+
 .bulk-btn.clear {
   color: #6c757d;
 }

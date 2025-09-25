@@ -537,69 +537,6 @@ const MerchantDetailEdit = () => {
         <div className="profile-section">
           <div className="profile-card">
             <div className="profile-header">
-              <div className="profile-images">
-                {/* Profile Photo */}
-                <div className="profile-image-container">
-                  {profileImage ? (
-                    <SmartImage
-                      src={profileImage}
-                      alt={merchant.fullName}
-                      className="profile-image"
-                      fallback={<DefaultAvatar size={80} name={merchant.fullName} />}
-                    />
-                  ) : (
-                    <DefaultAvatar size={80} name={merchant.fullName} />
-                  )}
-                  {editMode && (
-                    <div className="image-upload-overlay">
-                      <ImageUpload
-                        type="profile"
-                        entityId={merchantId}
-                        onUploadSuccess={handleProfileImageUpload}
-                         currentImage={profileImage}
-                         showPreview={false}
-                         className="profile-image-upload"
-                       >
-                        <div className="upload-trigger">
-                          <i className="fas fa-camera"></i>
-                        </div>
-                      </ImageUpload>
-                    </div>
-                  )}
-                </div>
-
-                {/* Business Logo */}
-                <div className="logo-image-container">
-                  {logoImage ? (
-                    <SmartImage
-                      src={logoImage}
-                      alt={business?.businessName || 'Business Logo'}
-                      className="logo-image"
-                      fallback={<div className="logo-placeholder"><i className="fas fa-store"></i></div>}
-                    />
-                  ) : (
-                    <div className="logo-placeholder">
-                      <i className="fas fa-store"></i>
-                    </div>
-                  )}
-                  {editMode && (
-                    <div className="image-upload-overlay">
-                      <ImageUpload
-                        type="merchant"
-                        entityId={merchantId}
-                        onUploadSuccess={handleLogoUpload}
-                         currentImage={logoImage}
-                         showPreview={false}
-                         className="logo-image-upload"
-                       >
-                        <div className="upload-trigger">
-                          <i className="fas fa-camera"></i>
-                        </div>
-                      </ImageUpload>
-                    </div>
-                  )}
-                </div>
-              </div>
               
               <div className="profile-info">
                 <div className="merchant-name-section">

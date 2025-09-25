@@ -1119,6 +1119,9 @@ router.get('/users/:id', auth, admin, async (req, res) => {
 
     const user = userRows[0];
 
+    console.log('Admin GET /users/:id - Raw user data:', user);
+    console.log('Admin GET /users/:id - userCategory value:', user.userCategory);
+
     if (user.address && typeof user.address === 'string') {
       try {
         const addressObj = JSON.parse(user.address);
@@ -1135,6 +1138,12 @@ router.get('/users/:id', auth, admin, async (req, res) => {
     if (user.validationDate) {
       user.isPlanExpired = new Date(user.validationDate) < new Date();
     }
+
+    console.log('Admin GET /users/:id - Final user data being sent:', { 
+      id: user.id, 
+      fullName: user.fullName, 
+      userCategory: user.userCategory 
+    });
 
     res.json({ success: true, user });
   } catch (err) {

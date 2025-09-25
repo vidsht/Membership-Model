@@ -177,7 +177,53 @@ const PlanManagement = () => {
     } else {
       return stats.merchantPlanCounts?.[planKey] || 0;
     }
-  };  const handlePlanAssignment = (userId) => {
+  };
+
+  // Helper function to get expiry status and CSS class
+  const getExpiryStatus = (expiryDate) => {
+    if (!expiryDate) {
+      return { status: 'no-expiry', class: 'expiry-none', text: 'N/A' };
+    }
+
+    const today = new Date();
+    const expiry = new Date(expiryDate);
+    const diffTime = expiry - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) {
+      return { 
+        status: 'expired', 
+        class: 'expiry-expired', 
+        text: expiry.toLocaleDateString('en-GB', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        })
+      };
+    } else if (diffDays <= 15) {
+      return { 
+        status: 'expiring-soon', 
+        class: 'expiry-warning', 
+        text: expiry.toLocaleDateString('en-GB', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        })
+      };
+    } else {
+      return { 
+        status: 'active', 
+        class: 'expiry-active', 
+        text: expiry.toLocaleDateString('en-GB', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        })
+      };
+    }
+  };
+
+  const handlePlanAssignment = (userId) => {
     if (!userId) {
       showNotification('Error: No user ID provided for plan assignment', 'error');
       return;
@@ -558,6 +604,7 @@ const PlanManagement = () => {
               <th>Email</th>
               <th>Current Plan</th>
               <th>Join Date</th>
+              <th>Plan Expiry</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -582,6 +629,16 @@ const PlanManagement = () => {
                   month: '2-digit',
                   day: '2-digit'
                 })}</td>
+                <td>
+                  {(() => {
+                    const expiryInfo = getExpiryStatus(user.planExpiryDate || user.validationDate);
+                    return (
+                      <span className={`expiry-date ${expiryInfo.class}`}>
+                        {expiryInfo.text}
+                      </span>
+                    );
+                  })()}
+                </td>
                 <td>
                   <button
                     className="btn btn-sm btn-primary"
@@ -699,6 +756,7 @@ const PlanManagement = () => {
               <th>Email</th>
               <th>Current Plan</th>
               <th>Join Date</th>
+              <th>Plan Expiry</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -734,6 +792,16 @@ const PlanManagement = () => {
                   month: '2-digit',
                   day: '2-digit'
                 })}</td>
+                <td>
+                  {(() => {
+                    const expiryInfo = getExpiryStatus(merchant.planExpiryDate || merchant.validationDate);
+                    return (
+                      <span className={`expiry-date ${expiryInfo.class}`}>
+                        {expiryInfo.text}
+                      </span>
+                    );
+                  })()}
+                </td>
                 <td>
                   <button
                     className="btn btn-sm btn-primary"
