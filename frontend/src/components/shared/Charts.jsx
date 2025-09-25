@@ -143,7 +143,7 @@ export const SimplePieChart = ({ data, title }) => {
   };
 
   return (
-    <div className="chart-container" style={{ height: '300px' }}>
+    <div className="chart-container" style={{ height: '500px' }}>
       <Pie data={chartData} options={options} />
     </div>
   );

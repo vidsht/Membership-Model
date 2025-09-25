@@ -12,6 +12,14 @@ const ExpiredSection = () => {
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState('all');
   const [userType, setUserType] = useState('users');
+  
+  // Pagination state
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    pageSize: 12,
+    totalPages: 1,
+    totalItems: 0
+  });
 
   // Email templates for different scenarios
   const getEmailTemplate = (type, days, name) => {
@@ -207,6 +215,47 @@ Contact: cards@indiansinghana.com`
     });
   };
 
+  // Get paginated data
+  const getPaginatedData = () => {
+    const filteredData = getFilteredData();
+    const startIndex = (pagination.currentPage - 1) * pagination.pageSize;
+    const endIndex = startIndex + pagination.pageSize;
+    return filteredData.slice(startIndex, endIndex);
+  };
+
+  // Update pagination when data or filters change
+  useEffect(() => {
+    const filteredData = getFilteredData();
+    const totalItems = filteredData.length;
+    const totalPages = Math.ceil(totalItems / pagination.pageSize);
+    
+    setPagination(prev => ({
+      ...prev,
+      totalItems,
+      totalPages,
+      currentPage: Math.min(prev.currentPage, Math.max(1, totalPages))
+    }));
+  }, [expiredData, userType, activeFilter, pagination.pageSize]);
+
+  // Handle page change
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= pagination.totalPages) {
+      setPagination(prev => ({
+        ...prev,
+        currentPage: newPage
+      }));
+    }
+  };
+
+  // Handle page size change
+  const handlePageSizeChange = (newPageSize) => {
+    setPagination(prev => ({
+      ...prev,
+      pageSize: newPageSize,
+      currentPage: 1
+    }));
+  };
+
   const handleSendEmail = (member, days) => {
     const emailTemplate = getEmailTemplate(userType, days, member.fullName || member.businessName);
     const recipient = 'cards@indiansinghana.com';
@@ -252,6 +301,7 @@ Contact: cards@indiansinghana.com`
   }
 
   const filteredData = getFilteredData();
+  const paginatedData = getPaginatedData();
 
   return (
     <div className="expired-section">
@@ -277,6 +327,31 @@ Contact: cards@indiansinghana.com`
           Merchants ({expiredData.merchants.length})
         </button>
       </div>
+
+      {/* Pagination Controls Top */}
+      {filteredData.length > 0 && (
+        <div className="pagination-controls top">
+          <div className="pagination-info">
+            <span>
+              Showing {((pagination.currentPage - 1) * pagination.pageSize) + 1} to{' '}
+              {Math.min(pagination.currentPage * pagination.pageSize, pagination.totalItems)} of{' '}
+              {pagination.totalItems} {userType}
+            </span>
+          </div>
+          <div className="pagination-actions">
+            <select 
+              value={pagination.pageSize} 
+              onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+              className="page-size-selector"
+            >
+              <option value={6}>6 per page</option>
+              <option value={12}>12 per page</option>
+              <option value={24}>24 per page</option>
+              <option value={48}>48 per page</option>
+            </select>
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="filter-tabs">
@@ -321,68 +396,132 @@ Contact: cards@indiansinghana.com`
             <p>No {userType} match the selected expiry criteria.</p>
           </div>
         ) : (
-          <div className="members-grid">
-            {filteredData.map(member => {
-              const expiryInfo = getExpiryStatus(member);
-              return (
-                <div key={member.id} className={`member-card ${expiryInfo.color}`}>
-                  <div className="member-info">
-                    <div className="member-avatar">
-                      <i className={`fas ${userType === 'users' ? 'fa-user' : 'fa-store'}`}></i>
+          <>
+            <div className="members-grid">
+              {paginatedData.map(member => {
+                const expiryInfo = getExpiryStatus(member);
+                return (
+                  <div key={member.id} className={`member-card ${expiryInfo.color}`}>
+                    <div className="member-info">
+                      <div className="member-avatar">
+                        <i className={`fas ${userType === 'users' ? 'fa-user' : 'fa-store'}`}></i>
+                      </div>
+                      <div className="member-details">
+                        <h4>{member.fullName || member.businessName}</h4>
+                        <p className="member-email">{member.email}</p>
+                        <p className="member-plan">{member.membershipType || member.planName || 'No Plan'}</p>
+                        <div className={`expiry-status ${expiryInfo.color}`}>
+                          {expiryInfo.status === 'expired' 
+                            ? `Expired ${expiryInfo.days} days ago`
+                            : `Expires in ${expiryInfo.days} days`
+                          }
+                        </div>
+                      </div>
                     </div>
-                    <div className="member-details">
-                      <h4>{member.fullName || member.businessName}</h4>
-                      <p className="member-email">{member.email}</p>
-                      <p className="member-plan">{member.membershipType || member.planName || 'No Plan'}</p>
-                      <div className={`expiry-status ${expiryInfo.color}`}>
-                        {expiryInfo.status === 'expired' 
-                          ? `Expired ${expiryInfo.days} days ago`
-                          : `Expires in ${expiryInfo.days} days`
-                        }
+                    
+                    <div className="member-actions">
+                      <div className="quick-email-actions">
+                        <button 
+                          className="email-btn expired"
+                          onClick={() => handleSendEmail(member, 0)}
+                          title="Send expired notice"
+                        >
+                          <i className="fas fa-exclamation-circle"></i>
+                          Expired
+                        </button>
+                        <button 
+                          className="email-btn warning-7"
+                          onClick={() => handleSendEmail(member, 7)}
+                          title="Send 7-day warning"
+                        >
+                          <i className="fas fa-clock"></i>
+                          7 Days
+                        </button>
+                        <button 
+                          className="email-btn warning-15"
+                          onClick={() => handleSendEmail(member, 15)}
+                          title="Send 15-day notice"
+                        >
+                          <i className="fas fa-calendar"></i>
+                          15 Days
+                        </button>
+                        <button 
+                          className="email-btn warning-30"
+                          onClick={() => handleSendEmail(member, 30)}
+                          title="Send 30-day notice"
+                        >
+                          <i className="fas fa-bell"></i>
+                          30 Days
+                        </button>
                       </div>
                     </div>
                   </div>
-                  
-                  <div className="member-actions">
-                    <div className="quick-email-actions">
-                      <button 
-                        className="email-btn expired"
-                        onClick={() => handleSendEmail(member, 0)}
-                        title="Send expired notice"
-                      >
-                        <i className="fas fa-exclamation-circle"></i>
-                        Expired
-                      </button>
-                      <button 
-                        className="email-btn warning-7"
-                        onClick={() => handleSendEmail(member, 7)}
-                        title="Send 7-day warning"
-                      >
-                        <i className="fas fa-clock"></i>
-                        7 Days
-                      </button>
-                      <button 
-                        className="email-btn warning-15"
-                        onClick={() => handleSendEmail(member, 15)}
-                        title="Send 15-day notice"
-                      >
-                        <i className="fas fa-calendar"></i>
-                        15 Days
-                      </button>
-                      <button 
-                        className="email-btn warning-30"
-                        onClick={() => handleSendEmail(member, 30)}
-                        title="Send 30-day notice"
-                      >
-                        <i className="fas fa-bell"></i>
-                        30 Days
-                      </button>
-                    </div>
-                  </div>
+                );
+              })}
+            </div>
+
+            {/* Pagination Controls Bottom */}
+            {pagination.totalPages > 1 && (
+              <div className="pagination-controls bottom">
+                <button 
+                  className="pagination-btn"
+                  onClick={() => handlePageChange(1)}
+                  disabled={pagination.currentPage === 1}
+                  title="First page"
+                >
+                  <i className="fas fa-angle-double-left"></i>
+                </button>
+                <button 
+                  className="pagination-btn"
+                  onClick={() => handlePageChange(pagination.currentPage - 1)}
+                  disabled={pagination.currentPage === 1}
+                  title="Previous page"
+                >
+                  <i className="fas fa-angle-left"></i>
+                </button>
+                
+                <div className="page-numbers">
+                  {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
+                    .filter(page => {
+                      const current = pagination.currentPage;
+                      return page === 1 || 
+                             page === pagination.totalPages || 
+                             (page >= current - 2 && page <= current + 2);
+                    })
+                    .map((page, index, filteredPages) => (
+                      <React.Fragment key={page}>
+                        {index > 0 && filteredPages[index - 1] < page - 1 && (
+                          <span className="page-ellipsis">...</span>
+                        )}
+                        <button
+                          className={`page-btn ${pagination.currentPage === page ? 'active' : ''}`}
+                          onClick={() => handlePageChange(page)}
+                        >
+                          {page}
+                        </button>
+                      </React.Fragment>
+                    ))}
                 </div>
-              );
-            })}
-          </div>
+                
+                <button 
+                  className="pagination-btn"
+                  onClick={() => handlePageChange(pagination.currentPage + 1)}
+                  disabled={pagination.currentPage === pagination.totalPages}
+                  title="Next page"
+                >
+                  <i className="fas fa-angle-right"></i>
+                </button>
+                <button 
+                  className="pagination-btn"
+                  onClick={() => handlePageChange(pagination.totalPages)}
+                  disabled={pagination.currentPage === pagination.totalPages}
+                  title="Last page"
+                >
+                  <i className="fas fa-angle-double-right"></i>
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

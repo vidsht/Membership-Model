@@ -768,8 +768,8 @@ router.put('/deals/:dealId', checkMerchantAccess, [
     // Convert required plan priority to minPlanPriority
     const minPlanPriority = requiredPlanPriority ? parseInt(requiredPlanPriority) : null;
 
-    // Update the deal (keep status as is if active, else set to pending_approval)
-    const newStatus = existingDeal[0].status === 'active' ? 'active' : 'pending_approval';
+    // Update the deal while preserving the original status (do not change status on edit)
+    const newStatus = existingDeal[0].status;
     const updateQuery = `
       UPDATE deals SET 
         title = ?, 
@@ -819,8 +819,9 @@ router.put('/deals/:dealId', checkMerchantAccess, [
 
     res.json({ 
       success: true,
-      message: 'Deal updated successfully and is pending admin approval again',
-      dealId: dealId
+      message: 'Deal updated successfully',
+      dealId: dealId,
+      status: newStatus
     });
   } catch (err) {
     console.error('Update deal error:', err);

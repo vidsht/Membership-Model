@@ -1715,6 +1715,13 @@
   gap: 0.8rem;
 }
 
+/* Info list container styling */
+.info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
 .info-item {
   display: flex;
   align-items: center;
@@ -1757,6 +1764,13 @@
     box-sizing: border-box;
   }
   
+  /* Add margin around info-list in Deal Information modal for tablet */
+  .deal-detail-modal .info-list,
+  .modal-content .info-list {
+    margin: 0.8rem 0.5rem;
+    padding: 0.4rem;
+  }
+  
   .deal-banner-large {
     height: 200px;
   }
@@ -1777,7 +1791,7 @@
   }
   
   .price-row {
-    flex-direction: column;
+    flex-direction: row;
     align-items: flex-start;
     gap: 0.3rem;
   }
@@ -2262,6 +2276,16 @@
   .deal-detail-modal .info-item span,
   .modal-content .info-item span {
     font-size: 0.95rem;
+  }
+
+  /* Add margin around info-list in Deal Information modal for mobile */
+  .deal-detail-modal .info-list,
+  .modal-content .info-list {
+    margin: 1rem 0.75rem;
+    padding: 0.5rem;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border: 1px solid rgba(102, 126, 234, 0.08);
   }
 
   /* Reduce vertical spacing in modal content to keep a compact appearance */

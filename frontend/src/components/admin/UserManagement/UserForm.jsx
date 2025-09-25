@@ -4,6 +4,7 @@ import { useDynamicFields } from '../../../hooks/useDynamicFields';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useNotification } from '../../../contexts/NotificationContext';
+import { useAdminNavigation } from '../../../hooks/useAdminNavigation';
 import api from '../../../services/api';
 import './UserForm.css';
 
@@ -11,6 +12,7 @@ const UserForm = () => {
   const { getCommunityOptions, getCountryOptions, getStateOptions, isLoading: fieldsLoading } = useDynamicFields();
   const { userId } = useParams();
   const navigate = useNavigate();
+  const { navigateBackToAdmin } = useAdminNavigation();
   const isEditMode = Boolean(userId);
   const { validateSession, handleSessionExpired } = useAuth();
   const { showNotification } = useNotification();
@@ -551,7 +553,7 @@ const UserForm = () => {
           <div className="form-actions">
             <button
               type="button"
-              onClick={() => navigate('/admin')}
+              onClick={() => navigateBackToAdmin('users')}
               className="btn btn-secondary"
               disabled={loading}
             >

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useAdminNavigation } from '../../../hooks/useAdminNavigation';
 import api from '../../../services/api';
 import './DealDetail.css'; 
 import { useModal } from '../../../hooks/useModal';
@@ -8,6 +9,7 @@ import ModalComponent from '../../shared/Modal';
 const DealDetail = () => {
   const { dealId } = useParams();
   const navigate = useNavigate();
+  const { navigateBackToAdmin } = useAdminNavigation();
   const [deal, setDeal] = useState(null);
   const [business, setBusiness] = useState(null);
   const [redemptions, setRedemptions] = useState([]);
@@ -227,7 +229,7 @@ const DealDetail = () => {
       <div className="deal-detail-header">
         <button 
           className="back-button"
-          onClick={() => navigate('/admin')}
+          onClick={() => navigateBackToAdmin('deals')}
         >
           ← Back to Deals
         </button>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useNotification } from '../../../contexts/NotificationContext';
 import { useDynamicFields } from '../../../hooks/useDynamicFields';
+import { useAdminNavigation } from '../../../hooks/useAdminNavigation';
 import { useImageUrl, SmartImage } from '../../../hooks/useImageUrl.jsx';
 import api from '../../../services/api';
 import ImageUpload from '../../common/ImageUpload';
@@ -10,6 +11,7 @@ import './DealForm.css';
 const DealForm = () => {
   const { dealId } = useParams();
   const navigate = useNavigate();
+  const { navigateToAdminTab } = useAdminNavigation();
   const { showNotification } = useNotification();
   const { getDealCategoryOptions } = useDynamicFields();
   const { getDealBannerUrl } = useImageUrl();
@@ -62,7 +64,7 @@ const DealForm = () => {
     }
   }, [dealId]);  const navigateToDealsTab = () => {
     // Navigate to admin dashboard with deals tab active
-    navigate('/admin', { state: { activeTab: 'deals' } });
+    navigateToAdminTab('deals');
   };
 
   const fetchBusinesses = async () => {

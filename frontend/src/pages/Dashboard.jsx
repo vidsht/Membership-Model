@@ -4,11 +4,13 @@ import { PrivatePage } from '../components/SEOHead';
 import MembershipCard from '../components/MembershipCard';
 import MerchantCertificate from '../components/MerchantCertificate';
 import PlanExpiryBanner from '../components/PlanExpiryBanner';
+import { useImageUrl, SmartImage, DefaultAvatar } from '../hooks/useImageUrl';
 import { getAllPlans } from '../services/api';
 import '../styles/MerchantDashboard.css'; // Import for status-alert styles
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const { getMerchantLogoUrl } = useImageUrl();
   const [plans, setPlans] = useState([]);
   const [currentPlan, setCurrentPlan] = useState(null);
   const [upgradeRecommendations, setUpgradeRecommendations] = useState([]);
@@ -405,37 +407,39 @@ const Dashboard = () => {
         </div>
       )}
       
-      <div className="dashboard-header">
+      <div className="dashboard-header compact">
         {user?.userType === 'merchant' && (user.business || user.businessName) ? (
-          <div className="merchant-header-info">
-            <div className="welcome-message">
-              <span>Welcome back!</span>
-            </div>
-            <div className="business-branding">
-              {(user.business?.logo || user.logo) && (
-                <div className="business-logo">
-                  <img 
-                    src={user.business?.logo || user.logo} 
-                    alt={`${user.business?.businessName || user.businessName || user.fullName} logo`}
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                    }}
+          <div className="merchant-header-compact">
+            <div className="business-logo-compact">
+              <SmartImage
+                src={getMerchantLogoUrl(user)}
+                alt={`${user.business?.businessName || user.businessName || user.fullName} logo`}
+                fallback={
+                  <DefaultAvatar 
+                    name={user.business?.businessName || user.businessName || user.fullName || 'Business'} 
+                    size={50}
+                    className="business-logo-fallback"
                   />
-                </div>
-              )}
-              <div className="business-details">
-                <h1>{user.business?.businessName || user.businessName || user.fullName}</h1>
-                <p className="business-tagline">
-                  {user.business?.businessDescription || user.businessDescription || 'Manage your business and explore merchant benefits'}
-                </p>
-              </div>
+                }
+                className="business-logo-image"
+                maxRetries={3}
+                style={{
+                  width: '50px',
+                  height: '50px',
+                  objectFit: 'cover',
+                  borderRadius: '8px'
+                }}
+              />
+            </div>
+            <div className="business-info-compact">
+              <h1 className="business-name-compact">{user.business?.businessName || user.businessName || user.fullName}</h1>
+              <span className="welcome-text">Welcome back!</span>
             </div>
           </div>
         ) : (
-          <>
+          <div className="user-header-compact">
             <h1>Welcome back, {displayName}!</h1>
-            <p>Manage your membership and explore community benefits</p>
-          </>
+          </div>
         )}
       </div>
 
@@ -594,93 +598,65 @@ const Dashboard = () => {
               <p>Exclusive privileges for community members</p>
             </div>
 
-            {/* Plan Details Card */}
+            {/* Plan Details Card - Compact */}
             {currentPlan && (
-              <div className="plan-details-card">
-                <div className="plan-details-header">
-                  <div className="plan-info">
-                    <h3>
+              <div className="plan-details-card compact">
+                <div className="plan-details-header-compact">
+                  <div className="plan-title-section">
+                    <h3 className="plan-name-compact">
                       {(() => {
                         const remainingDays = calculateRemainingDays(user.validationDate);
                         const isExpired = remainingDays !== null && remainingDays < 0;
                         return (
                           <>
                             {isExpired && (
-                              <span className="expired-badge" style={{
-                                background: '#ff4444',
-                                color: 'white',
-                                padding: '2px 8px',
-                                borderRadius: '4px',
-                                fontSize: '12px',
-                                fontWeight: 'bold',
-                                marginRight: '8px',
-                                textTransform: 'uppercase'
-                              }}>
-                                EXPIRED
-                              </span>
+                              <span className="expired-badge-compact">EXPIRED</span>
                             )}
                             {currentPlan.name}
                           </>
                         );
                       })()}
                     </h3>
+                    <div className="plan-pricing-compact">
+                      <span className="price-compact">{currentPlan.currency} {currentPlan.price}</span>
+                      <span className="billing-compact">/{currentPlan.billingCycle}</span>
+                    </div>
                   </div>
-                  <div className="plan-pricing">
-                    <span className="price-amount">{currentPlan.currency} {currentPlan.price}</span>
-                    <span className="billing-cycle">/{currentPlan.billingCycle}</span>
-                  </div>
-                    {currentPlan.description && (
-                      <p className="plan-description">{currentPlan.description}</p>
-                    )}
                 </div>
                 
-                <div className="plan-details-stats">
-                  {currentPlan.maxRedemptions && (
-                    <div className="plan-stat">
-                      <i className="fas fa-tags"></i>
-                      <span>
-                        {currentPlan.maxRedemptions === -1 
-                          ? 'Infinite redemptions' 
-                          : `Up to ${currentPlan.maxRedemptions} redemptions`
-                        }
-                      </span>
-                    </div>
-                  )}
-                  {currentPlan.dealPostingLimit && (
-                    <div className="plan-stat">
-                      <i className="fas fa-bullhorn"></i>
-                      <span>
-                        {currentPlan.dealPostingLimit === -1 
-                          ? 'Unlimited deals/month' 
-                          : `Up to ${currentPlan.dealPostingLimit} deals/month`
-                        }
-                      </span>
-                    </div>
-                  )}
+                <div className="plan-stats-compact">
                   {user?.created_at && (
-                    <div className="plan-stat">
+                    <div className="stat-compact">
                       <i className="fas fa-calendar-plus"></i>
-                      <span>Joined {new Date(user.created_at).toLocaleDateString()}</span>
+                      <span>Joined {new Date(user.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' })}</span>
                     </div>
                   )}
                   {user.validationDate && (
-                    <div className="plan-stat">
+                    <div className="stat-compact">
                       <i className="fas fa-calendar-check"></i>
                       <span>
-                        Valid until {new Date(user.validationDate).toLocaleDateString()}
+                        Expires {new Date(user.validationDate).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' })}
                         {(() => {
                           const remainingDays = calculateRemainingDays(user.validationDate);
                           if (remainingDays !== null) {
                             if (remainingDays > 0) {
-                              return ` (${remainingDays} day${remainingDays === 1 ? '' : 's'} left)`;
+                              return ` (${remainingDays}d left)`;
                             } else if (remainingDays === 0) {
-                              return ' (Expires today)';
+                              return ' (Today)';
                             } else {
-                              return ` (Expired ${Math.abs(remainingDays)} day${Math.abs(remainingDays) === 1 ? '' : 's'} ago)`;
+                              return ` (${Math.abs(remainingDays)}d ago)`;
                             }
                           }
                           return '';
                         })()}
+                      </span>
+                    </div>
+                  )}
+                  {currentPlan.maxRedemptions && (
+                    <div className="stat-compact">
+                      <i className="fas fa-tags"></i>
+                      <span>
+                        {currentPlan.maxRedemptions === -1 ? 'Unlimited' : `${currentPlan.maxRedemptions}`} redemptions
                       </span>
                     </div>
                   )}

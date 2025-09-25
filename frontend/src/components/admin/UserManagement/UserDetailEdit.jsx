@@ -5,12 +5,14 @@ import { useNotification } from '../../../contexts/NotificationContext';
 import { useImageUrl, SmartImage, DefaultAvatar } from '../../../hooks/useImageUrl.jsx';
 import ImageUpload from '../../common/ImageUpload';
 import { useDynamicFields } from '../../../hooks/useDynamicFields';
+import { useAdminNavigation } from '../../../hooks/useAdminNavigation';
 import api from '../../../services/api';
 import './UserDetailEdit.css';
 
 const UserDetailEdit = () => {
   const { userId } = useParams();
   const navigate = useNavigate();
+  const { navigateBackToAdmin } = useAdminNavigation();
   const { validateSession, handleSessionExpired } = useAuth();
   const { showNotification } = useNotification();
   const { getProfileImageUrl } = useImageUrl();
@@ -38,7 +40,6 @@ const UserDetailEdit = () => {
     membershipType: 'community',
     status: 'approved',
     bloodGroup: '',
-    userCategory: '',
     profilePhoto: null
   });
 
@@ -120,8 +121,6 @@ const UserDetailEdit = () => {
       
       if (response.data.success && response.data.user) {
         const userData = response.data.user;
-        console.log('UserDetailEdit - User data received:', userData);
-        console.log('UserDetailEdit - userCategory value:', userData.userCategory);
         setUser(userData);
         
         // Set form data
@@ -139,7 +138,6 @@ const UserDetailEdit = () => {
           membershipType: userData.membershipType || 'community',
           status: userData.status || 'approved',
           bloodGroup: userData.bloodGroup || '',
-          userCategory: userData.userCategory || '',
           profilePhoto: userData.profilePhoto || null
         });
 
@@ -260,7 +258,6 @@ const UserDetailEdit = () => {
         membershipType: user.membershipType || 'community',
         status: user.status || 'approved',
         bloodGroup: user.bloodGroup || '',
-        userCategory: user.userCategory || '',
         profilePhoto: user.profilePhoto || null
       });
     }
@@ -318,7 +315,7 @@ const UserDetailEdit = () => {
           <i className="fas fa-user-slash"></i>
           <h3>User Not Found</h3>
           <p>The requested user could not be found.</p>
-          <button onClick={() => navigate('/admin/users')} className="btn btn-primary">
+          <button onClick={() => navigateBackToAdmin('users')} className="btn btn-primary">
             Back to Users
           </button>
         </div>
@@ -333,7 +330,7 @@ const UserDetailEdit = () => {
         <div className="header-content">
           <div className="header-left">
             <button
-              onClick={() => navigate('/admin')}
+              onClick={() => navigateBackToAdmin('users')}
               className="btn-back"
             >
               <i className="fas fa-arrow-left"></i>
@@ -725,21 +722,6 @@ const UserDetailEdit = () => {
                 <div className="detail-item">
                   <label>Membership Number</label>
                   <span>{user.membershipNumber || 'Not assigned'}</span>
-                </div>
-
-                <div className="detail-item">
-                  <label>User Category</label>
-                  {editMode ? (
-                    <input
-                      type="text"
-                      value={formData.userCategory}
-                      onChange={(e) => handleInputChange('userCategory', e.target.value)}
-                      className="edit-input"
-                      placeholder="User category"
-                    />
-                  ) : (
-                    <span>{user.userCategory || 'N/A'}</span>
-                  )}
                 </div>
               </div>
             </div>
