@@ -749,7 +749,7 @@ const Dashboard = () => {
                     className="btn-upgrade-plan"
                     onClick={() => {
                       // Open email client with prewritten text for plan upgrade
-                      const currentPlan = currentPlan?.name || user?.membershipType || 'basic';
+                      const currentPlanName = currentPlan?.name || user?.membershipType || 'basic';
                       const subject = encodeURIComponent('Plan Upgrade Request - Indians in Ghana Membership');
                       const body = encodeURIComponent(`Dear Admin,
 
@@ -758,7 +758,7 @@ I hope this email finds you well.
 I would like to upgrade my current plan for my Indians in Ghana membership account.
 
 Current Plan Details:
-- Current Plan: ${currentPlan}
+- Current Plan: ${currentPlanName}
 - Target Plan: ${plan.name}
 - Account Email: ${user?.email || 'N/A'}
 - User Name: ${user?.fullName || user?.name || 'N/A'}

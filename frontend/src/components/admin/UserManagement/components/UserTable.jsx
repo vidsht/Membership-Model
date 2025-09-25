@@ -276,19 +276,19 @@ const UserTable = ({
                       <div className="user-info-compact">
                         <div className="user-details-compact">
                           <span className="user-name">
-                            ({user.userType ? user.userType.charAt(0).toUpperCase() + user.userType.slice(1) : 'User'}) {user.fullName || 'Unknown'}
+                            {user.fullName || 'Unknown'} ({user.userType ? user.userType.charAt(0).toUpperCase() + user.userType.slice(1) : 'User'})
                           </span>
                           {user.membershipNumber && (
                             <span className="membership-number">#{formatMembershipNumber(user.membershipNumber)}</span>
                           )}
-                          <span className="registered-date">join : {formatDate(user.createdAt)}</span>
+                          <span className="registered-date">Joined : {formatDate(user.createdAt)}</span>
                         </div>
                       </div>
                     </td>
                     <td className="contact-cell" data-label="Contact Info">
                       <div className="contact-info-stacked">
                         <span className="email">{user.email || 'N/A'}</span>
-                        {user.phone && <span className="phone">mob : {user.phone}</span>}
+                        {user.phone && <span className="phone">Mob : {user.phone}</span>}
                       </div>
                     </td>
                     <td className="plan-cell" data-label="Plan & Status">

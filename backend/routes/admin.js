@@ -5823,16 +5823,15 @@ router.post('/test/restore-plan/:userId', admin, async (req, res) => {
 router.get('/expired-users', auth, admin, async (req, res) => {
   try {
     const query = `
-      SELECT u.id, u.fullName, u.email, u.membershipType, u.planExpiryDate,
+      SELECT u.id, u.fullName, u.email, u.membershipType, u.validationDate,
              u.created_at, u.status,
              p.name as planName
       FROM users u 
-      LEFT JOIN user_plans up ON u.id = up.userId AND up.isActive = 1
-      LEFT JOIN plans p ON up.planId = p.id
+      LEFT JOIN plans p ON u.membershipType = p.key AND p.type = 'user'
       WHERE u.userType = 'user' 
-        AND u.planExpiryDate IS NOT NULL 
-        AND u.planExpiryDate <= DATE_ADD(NOW(), INTERVAL 30 DAY)
-      ORDER BY u.planExpiryDate ASC
+        AND u.validationDate IS NOT NULL 
+        AND u.validationDate <= DATE_ADD(NOW(), INTERVAL 30 DAY)
+      ORDER BY u.validationDate ASC
     `;
     
     const users = await queryAsync(query);
@@ -5869,8 +5868,7 @@ router.get('/expired-merchants', auth, admin, async (req, res) => {
     
     query += `
       FROM users u 
-      LEFT JOIN user_plans up ON u.id = up.userId AND up.isActive = 1
-      LEFT JOIN plans p ON up.planId = p.id
+      LEFT JOIN plans p ON u.membershipType = p.key AND p.type = 'merchant'
     `;
     
     if (businessTableExists) {
