@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useNotification } from '../../../contexts/NotificationContext';
+import { useAdminNavigation } from '../../../hooks/useAdminNavigation';
 import api from '../../../services/api';
 import useImageUrl from '../../../hooks/useImageUrl';
 import './UserDetailPage.css';
@@ -10,6 +11,7 @@ import './UserDetailPage.css';
 const UserDetailPage = () => {
   const { userId } = useParams();
   const navigate = useNavigate();
+  const { navigateBackToAdmin } = useAdminNavigation();
   const { validateSession, handleSessionExpired } = useAuth();
   const { showNotification } = useNotification();
   const { getProfileImageUrl } = useImageUrl();
@@ -283,7 +285,7 @@ const UserDetailPage = () => {
           <i className="fas fa-user-times"></i>
           <h3>User Not Found</h3>
           <p>The requested user could not be found.</p>
-          <button onClick={() => navigate('/admin')} className="btn btn-primary">
+          <button onClick={() => navigateBackToAdmin('users')} className="btn btn-primary">
             Back to Users
           </button>
         </div>
@@ -297,7 +299,7 @@ const UserDetailPage = () => {
       <div className="page-header">
         <div className="header-content">
           <div className="header-left">
-            <button onClick={() => navigate('/admin')} className="btn-back">
+            <button onClick={() => navigateBackToAdmin('users')} className="btn-back">
               <i className="fas fa-arrow-left"></i>
             </button>
             <div className="header-info">

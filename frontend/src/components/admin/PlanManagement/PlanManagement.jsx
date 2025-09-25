@@ -794,7 +794,87 @@ const PlanManagement = () => {
                 })}</td>
                 <td>
                   {(() => {
-                    const expiryInfo = getExpiryStatus(merchant.planExpiryDate || merchant.validationDate);
+                    // Enhanced expiry calculation logic matching MerchantManagement
+                    const calculateExpiryDate = (merchant) => {
+                      // Priority 1: validationDate (custom expiry from plan management)
+                      if (merchant.validationDate && merchant.validationDate !== 'null' && merchant.validationDate !== null) {
+                        try {
+                          const validationDate = new Date(merchant.validationDate);
+                          if (!isNaN(validationDate.getTime())) {
+                            return validationDate.toISOString();
+                          }
+                        } catch (error) {
+                          console.warn('Invalid validationDate:', merchant.validationDate);
+                        }
+                      }
+                      
+                      // Priority 2: planExpiryDate (fallback)
+                      if (merchant.planExpiryDate && merchant.planExpiryDate !== 'null' && merchant.planExpiryDate !== null) {
+                        try {
+                          const planExpiryDate = new Date(merchant.planExpiryDate);
+                          if (!isNaN(planExpiryDate.getTime())) {
+                            return planExpiryDate.toISOString();
+                          }
+                        } catch (error) {
+                          console.warn('Invalid planExpiryDate:', merchant.planExpiryDate);
+                        }
+                      }
+                      
+                      // Priority 3: Calculate based on planAssignedAt and billing cycle
+                      const baseDate = merchant.planAssignedAt || merchant.createdAt;
+                      if (baseDate && baseDate !== 'null' && baseDate !== null) {
+                        try {
+                          const assignedDate = new Date(baseDate);
+                          if (isNaN(assignedDate.getTime())) return null;
+                          
+                          // Get billing cycle from merchant data or default to yearly
+                          const billingCycle = merchant.billingCycle || merchant.planExpiry || 'yearly';
+                          let validityDate = new Date(assignedDate);
+                          
+                          switch (billingCycle.toLowerCase()) {
+                            case 'monthly':
+                              validityDate.setMonth(validityDate.getMonth() + 1);
+                              break;
+                            case 'quarterly':
+                              validityDate.setMonth(validityDate.getMonth() + 3);
+                              break;
+                            case 'yearly':
+                            case 'annual':
+                              validityDate.setFullYear(validityDate.getFullYear() + 1);
+                              break;
+                            case 'lifetime':
+                              return 'lifetime';
+                            case 'weekly':
+                              validityDate.setDate(validityDate.getDate() + 7);
+                              break;
+                            default:
+                              // Default to yearly
+                              validityDate.setFullYear(validityDate.getFullYear() + 1);
+                              break;
+                          }
+                          
+                          return validityDate.toISOString();
+                        } catch (error) {
+                          console.warn('Error calculating expiry from planAssignedAt:', error);
+                        }
+                      }
+                      
+                      return null;
+                    };
+                    
+                    const calculatedExpiryDate = calculateExpiryDate(merchant);
+                    
+                    // Handle lifetime plans
+                    if (calculatedExpiryDate === 'lifetime') {
+                      return (
+                        <span className="expiry-date expiry-lifetime">
+                          Lifetime
+                        </span>
+                      );
+                    }
+                    
+                    const expiryInfo = getExpiryStatus(calculatedExpiryDate);
+                    
                     return (
                       <span className={`expiry-date ${expiryInfo.class}`}>
                         {expiryInfo.text}
@@ -916,27 +996,28 @@ const PlanManagement = () => {
               <SimplePieChart 
                 data={planUsageData.filter(d => d.value > 0)} 
                 title="Plan Usage Distribution" 
+                height={500}
               />
             </div>
             <div className="chart-container-wrapper">
               <SimpleBarChart 
                 data={revenueData} 
                 title="Estimated Revenue by Plan (GHS)" 
-                height={250}
+                height={500}
               />
             </div>
             <div className="chart-container-wrapper">
               <SimpleBarChart 
                 data={userPlanData} 
                 title="User Plan Distribution" 
-                height={200}
+                height={500}
               />
             </div>
             <div className="chart-container-wrapper">
               <SimpleBarChart 
                 data={merchantPlanData} 
                 title="Merchant Plan Distribution" 
-                height={200}
+                height={500}
               />
             </div>
           </div>

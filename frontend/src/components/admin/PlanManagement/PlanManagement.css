@@ -1054,6 +1054,13 @@
   border-color: #dee2e6;
 }
 
+.expiry-date.expiry-lifetime {
+  background-color: #e8d5ff;
+  color: #8e44ad;
+  border-color: #8e44ad;
+  font-weight: 600;
+}
+
 /* Pulsing animations for urgent states */
 @keyframes pulse-warning {
   0%, 100% {
@@ -1095,5 +1102,10 @@
   .expiry-date {
     font-size: 0.7rem;
     padding: 0.2rem 0.4rem;
+  }
+  
+  .expiry-lifetime {
+    color: #8e44ad !important;
+    font-weight: 600;
   }
 }

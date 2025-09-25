@@ -459,26 +459,46 @@
   }
   
   .dashboard-header {
-    padding: 1.5rem;
+    padding: 2rem;
     margin-bottom: 1.5rem;
   }
   
-  .dashboard-header-content {
+  .header-top-section {
     flex-direction: column;
+    align-items: flex-start;
     gap: 1rem;
+    margin-bottom: 1.5rem;
   }
   
-  .dashboard-header .business-logo {
-    width: 60px;
-    height: 60px;
+  .business-branding,
+  .user-branding {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 1.5rem;
   }
   
-  .dashboard-title-section .business-name {
-    font-size: 1.5rem;
+  .business-logo-container,
+  .user-avatar-container {
+    margin-bottom: 0.5rem;
   }
   
-  .dashboard-title-section .dashboard-label {
-    font-size: 1.2rem;
+  .business-logo,
+  .user-avatar {
+    width: 70px;
+    height: 70px;
+    border-radius: 14px;
+  }
+  
+  .business-name,
+  .user-name {
+    font-size: 1.8rem;
+  }
+  
+  .business-meta,
+  .user-meta {
+    justify-content: center;
+    gap: 1rem;
   }
   
   .dashboard-header h1 {
@@ -690,18 +710,250 @@
 }
 
 .dashboard-header {
-  text-align: center;
   margin-bottom: 2rem;
-  padding: 0.2rem;
-  background: white;
-  border-radius: 15px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  padding: 2.5rem;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border-radius: 20px;
+  box-shadow: 
+    0 20px 40px rgba(0,0,0,0.08),
+    0 8px 16px rgba(0,0,0,0.04),
+    inset 0 1px 0 rgba(255,255,255,0.5);
+  border: 1px solid rgba(255,255,255,0.8);
+  position: relative;
+  overflow: hidden;
 }
 
+.dashboard-header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #4D0808 0%, #891f1f 50%, #4D0808 100%);
+}
+
+/* Header Top Section */
+.header-top-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+.welcome-message {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.greeting-text {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #4D0808;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.header-decorative-line {
+  width: 40px;
+  height: 2px;
+  background: linear-gradient(90deg, #4D0808, #891f1f);
+  border-radius: 1px;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.user-status .plan-badge {
+  padding: 0.5rem 1rem;
+  border-radius: 25px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* Business/User Branding Sections */
+.business-branding,
+.user-branding {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.business-logo-container,
+.user-avatar-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.business-logo,
+.user-avatar {
+  width: 90px;
+  height: 90px;
+  border-radius: 18px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid white;
+  box-shadow: 
+    0 12px 24px rgba(0,0,0,0.1),
+    0 4px 8px rgba(0,0,0,0.05);
+  position: relative;
+}
+
+.business-logo img,
+.user-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 15px;
+}
+
+.logo-badge,
+.avatar-badge {
+  position: absolute;
+  bottom: -5px;
+  right: -5px;
+  width: 28px;
+  height: 28px;
+  background: linear-gradient(135deg, #4D0808, #891f1f);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 0.8rem;
+  border: 3px solid white;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+/* Business/User Details */
+.business-details,
+.user-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.business-name-section,
+.user-name-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.business-name,
+.user-name {
+  font-size: 2.2rem;
+  font-weight: 700;
+  margin: 0;
+  color: #4D0808;
+  background: linear-gradient(45deg, #891f1f 0%, #4D0808 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  line-height: 1.2;
+}
+
+.business-category,
+.user-type {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: rgba(107, 114, 128, 0.1);
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  display: inline-block;
+  width: fit-content;
+}
+
+.business-tagline,
+.user-tagline {
+  color: #4b5563;
+  font-size: 1.1rem;
+  font-style: italic;
+  line-height: 1.4;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.business-tagline i,
+.user-tagline i {
+  color: #9ca3af;
+  font-size: 0.8rem;
+}
+
+.business-meta,
+.user-meta {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #6b7280;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.meta-item i {
+  color: #4D0808;
+  font-size: 0.85rem;
+}
+
+/* Plan Badge Colors */
+.plan-badge.basic,
+.plan-badge.none {
+  background: linear-gradient(135deg, #6b7280, #4b5563);
+  color: white;
+}
+
+.plan-badge.silver {
+  background: linear-gradient(135deg, #94a3b8, #64748b);
+  color: white;
+}
+
+.plan-badge.gold {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  color: white;
+}
+
+.plan-badge.platinum {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  color: white;
+}
+
+.plan-badge.lifetime {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+}
+
+/* Legacy styles for backward compatibility */
 .dashboard-header h1 {
   color: #4D0808;
   font-size: 2.5rem;
-  margin-bottom: 0.5rem;  background: linear-gradient(45deg, #891f1f 0%, #4D0808 100%);
+  margin-bottom: 0.5rem;
+  background: linear-gradient(45deg, #891f1f 0%, #4D0808 100%);
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -1830,21 +2082,55 @@ background: white;
     gap: 0.75rem;
   }
   
+  .dashboard-header {
+    padding: 1.5rem;
+  }
+  
+  .header-top-section {
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+  }
+  
+  .greeting-text {
+    font-size: 1rem;
+  }
+  
+  .header-decorative-line {
+    width: 30px;
+  }
+  
+  .business-logo,
+  .user-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+  }
+  
+  .logo-badge,
+  .avatar-badge {
+    width: 24px;
+    height: 24px;
+    font-size: 0.7rem;
+  }
+  
+  .business-name,
+  .user-name {
+    font-size: 1.6rem;
+  }
+  
+  .business-tagline,
+  .user-tagline {
+    font-size: 1rem;
+  }
+  
+  .business-meta,
+  .user-meta {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
   .dashboard-header h1 {
     font-size: 2.25rem;
-  }
-  
-  .dashboard-header .business-logo {
-    width: 50px;
-    height: 50px;
-  }
-  
-  .dashboard-title-section .business-name {
-    font-size: 1.3rem;
-  }
-  
-  .dashboard-title-section .dashboard-label {
-    font-size: 1rem;
   }
 }
 
@@ -4762,5 +5048,269 @@ background: white;
   .additional-details,
   .stats-details {
     padding: 1rem;
+  }
+}
+
+/* Compact Dashboard Header Styles */
+.dashboard-header.compact {
+  margin-bottom: 1.5rem;
+  padding: 1.2rem 1.5rem;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.06), 0 3px 8px rgba(0,0,0,0.03);
+  border: 1px solid rgba(255,255,255,0.8);
+  position: relative;
+  overflow: hidden;
+}
+
+.dashboard-header.compact::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #4D0808 0%, #891f1f 50%, #4D0808 100%);
+}
+
+.merchant-header-compact {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.business-logo-compact {
+  flex-shrink: 0;
+}
+
+.business-logo-compact .business-logo-image,
+.business-logo-compact .business-logo-fallback {
+  width: 50px !important;
+  height: 50px !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.business-info-compact {
+  flex: 1;
+  min-width: 0;
+}
+
+.business-name-compact {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #2d3748;
+  margin: 0 0 0.2rem 0;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.welcome-text {
+  font-size: 0.9rem;
+  color: #718096;
+  font-weight: 500;
+  margin: 0;
+}
+
+.user-header-compact h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #2d3748;
+  margin: 0;
+  line-height: 1.2;
+}
+
+/* Responsive Compact Header */
+@media (max-width: 768px) {
+  .dashboard-header.compact {
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+  
+  .business-name-compact {
+    font-size: 1.2rem;
+  }
+  
+  .user-header-compact h1 {
+    font-size: 1.3rem;
+  }
+  
+  .welcome-text {
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-header.compact {
+    padding: 0.8rem;
+  }
+  
+  .merchant-header-compact {
+    gap: 0.8rem;
+  }
+  
+  .business-logo-compact .business-logo-image,
+  .business-logo-compact .business-logo-fallback {
+    width: 40px !important;
+    height: 40px !important;
+  }
+  
+  .business-name-compact {
+    font-size: 1.1rem;
+  }
+  
+  .user-header-compact h1 {
+    font-size: 1.2rem;
+  }
+}
+
+/* Compact Plan Details Card Styles */
+.plan-details-card.compact {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border-radius: 12px;
+  padding: 1.2rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.06), 0 3px 8px rgba(0,0,0,0.03);
+  border: 1px solid rgba(255,255,255,0.8);
+  position: relative;
+  overflow: hidden;
+}
+
+.plan-details-card.compact::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #4F46E5 0%, #7C3AED 50%, #EC4899 100%);
+}
+
+.plan-details-header-compact {
+  margin-bottom: 1rem;
+}
+
+.plan-title-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.plan-name-compact {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+  line-height: 1.2;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.expired-badge-compact {
+  background: #ef4444;
+  color: white;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.plan-pricing-compact {
+  display: flex;
+  align-items: baseline;
+  gap: 0.2rem;
+  flex-shrink: 0;
+}
+
+.price-compact {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #4F46E5;
+}
+
+.billing-compact {
+  font-size: 0.8rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.plan-stats-compact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(0,0,0,0.05);
+}
+
+.stat-compact {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.8rem;
+  background: rgba(79, 70, 229, 0.05);
+  border-radius: 20px;
+  border: 1px solid rgba(79, 70, 229, 0.1);
+}
+
+.stat-compact i {
+  color: #4F46E5;
+  font-size: 0.8rem;
+  width: 12px;
+  text-align: center;
+}
+
+.stat-compact span {
+  font-size: 0.8rem;
+  color: #475569;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Responsive Compact Plan Details */
+@media (max-width: 768px) {
+  .plan-details-card.compact {
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+  
+  .plan-title-section {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .plan-name-compact {
+    font-size: 1.2rem;
+  }
+  
+  .plan-stats-compact {
+    gap: 0.5rem;
+  }
+  
+  .stat-compact {
+    padding: 0.3rem 0.6rem;
+  }
+  
+  .stat-compact span {
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .plan-stats-compact {
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+  
+  .stat-compact {
+    justify-content: flex-start;
+    width: 100%;
   }
 }

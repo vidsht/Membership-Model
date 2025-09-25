@@ -219,7 +219,22 @@ const BirthdaySection = () => {
                   {user.phone && (
                     <div className="contact-info">
                       <a 
-                        href={`https://wa.me/${user.phone.replace(/[^0-9]/g, '')}?text=Hi ${user.fullName}! 🎉 Happy Birthday! Wishing you a wonderful year ahead filled with joy and happiness. Your registered contact number with us is: ${user.phone}. From all of us at Indians in Ghana Community! 🎂`} 
+                        href={(() => {
+                          // Clean phone number (remove all non-digits and ensure international format)
+                          const cleanPhone = user.phone.replace(/[^0-9]/g, '');
+                          // If phone doesn't start with country code, assume Ghana (+233) and remove leading 0
+                          const formattedPhone = cleanPhone.startsWith('233') ? cleanPhone : 
+                                               cleanPhone.startsWith('0') ? `233${cleanPhone.slice(1)}` : 
+                                               `233${cleanPhone}`;
+                          
+                          // Create the birthday message
+                          const message = `Happy Birthday ${user.fullName} 🎉🎂 Wishing you joy, health, and success always!`;
+                          
+                          // URL encode the message
+                          const encodedMessage = encodeURIComponent(message);
+                          
+                          return `https://wa.me/${formattedPhone}?text=${encodedMessage}`;
+                        })()} 
                         target="_blank" 
                         rel="noopener noreferrer" 
                         className="contact-btn whatsapp-btn"
@@ -227,7 +242,27 @@ const BirthdaySection = () => {
                         <i className="fab fa-whatsapp"></i>
                         WhatsApp
                       </a>
-                      <a href={`mailto:${user.email}`} className="contact-btn">
+                      <a 
+                        href={(() => {
+                          const subject = encodeURIComponent(`Happy Birthday ${user.fullName}! 🎉`);
+                          const body = encodeURIComponent(`Dear ${user.fullName},
+
+Happy Birthday! 🎂🎉
+
+On behalf of the entire Indians in Ghana Community, we wish you a very happy birthday and a wonderful year ahead filled with joy, health, and success!
+
+May this special day bring you lots of happiness and may all your dreams come true.
+
+Warm regards,
+Indians in Ghana Community Team
+
+---
+This is an automated birthday greeting from your community portal.`);
+                          
+                          return `mailto:${user.email}?subject=${subject}&body=${body}`;
+                        })()}
+                        className="contact-btn"
+                      >
                         <i className="fas fa-envelope"></i>
                         Email
                       </a>
