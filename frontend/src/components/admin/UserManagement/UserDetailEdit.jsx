@@ -120,6 +120,8 @@ const UserDetailEdit = () => {
       
       if (response.data.success && response.data.user) {
         const userData = response.data.user;
+        console.log('UserDetailEdit - User data received:', userData);
+        console.log('UserDetailEdit - userCategory value:', userData.userCategory);
         setUser(userData);
         
         // Set form data
@@ -391,35 +393,6 @@ const UserDetailEdit = () => {
         <div className="profile-section">
           <div className="profile-card">
             <div className="profile-header">
-              <div className="profile-image-container">
-                {profileImage ? (
-                  <SmartImage
-                    src={profileImage}
-                    alt={user.fullName}
-                    className="profile-image"
-                    fallback={<DefaultAvatar size={120} name={user.fullName} />}
-                  />
-                ) : (
-                  <DefaultAvatar size={120} name={user.fullName} />
-                )}
-                {editMode && (
-                  <div className="image-upload-overlay">
-                    <ImageUpload
-                      type="profile"
-                      entityId={userId}
-                      onUploadSuccess={handleProfileImageUpload}
-                       currentImage={profileImage}
-                       showPreview={false}
-                       className="profile-image-upload"
-                     >
-                      <div className="upload-trigger">
-                        <i className="fas fa-camera"></i>
-                        <span>Change Photo</span>
-                      </div>
-                    </ImageUpload>
-                  </div>
-                )}
-              </div>
               
               <div className="profile-info">
                 <div className="user-name-section">

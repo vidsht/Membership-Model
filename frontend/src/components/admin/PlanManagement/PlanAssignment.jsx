@@ -171,7 +171,7 @@ const PlanAssignment = (props) => {
         </h2>
         <button
           className="button button-secondary"
-          onClick={() => navigate('/admin')}
+          onClick={() => navigate('/admin/plan-management')}
         >
           <i className="fas fa-arrow-left"></i> Back to Plan Management
         </button>
@@ -180,8 +180,8 @@ const PlanAssignment = (props) => {
       <div className="user-info-card">
         <div className="user-info-header">
           <h3>{user.fullName}</h3>
-          <span className={`status-badge status-${user.isVerified ? 'approved' : 'pending'}`}>
-            {user.isVerified ? 'Verified' : 'Pending'}
+          <span className={`status-badge status-${user.status || 'pending'}`}>
+            {user.status ? user.status.charAt(0).toUpperCase() + user.status.slice(1) : 'Pending'}
           </span>
         </div>
         

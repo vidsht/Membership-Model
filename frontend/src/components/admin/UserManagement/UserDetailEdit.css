@@ -155,23 +155,6 @@
   border: 4px solid rgba(255, 255, 255, 0.3);
   object-fit: cover;
 }
-
-.image-upload-overlay {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  background: rgba(0, 0, 0, 0.8);
-  border-radius: 50%;
-  padding: 0.5rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.image-upload-overlay:hover {
-  background: rgba(0, 0, 0, 0.9);
-  transform: scale(1.05);
-}
-
 .upload-trigger {
   display: flex;
   flex-direction: column;

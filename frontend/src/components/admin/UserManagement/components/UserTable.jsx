@@ -52,6 +52,29 @@ const UserTable = ({
 
   // getPlanBadgeClass removed (plan assignment logic)
 
+  const getValidityStatus = (user) => {
+    if (!user.validationDate) {
+      return 'none';
+    }
+    
+    try {
+      const validationDate = new Date(user.validationDate);
+      const now = new Date();
+      const timeDiff = validationDate.getTime() - now.getTime();
+      const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+      
+      if (daysDiff < 0) {
+        return 'expired';
+      } else if (daysDiff <= 15) {
+        return 'warning';
+      } else {
+        return 'active';
+      }
+    } catch (error) {
+      return 'none';
+    }
+  };
+
   const formatValidTill = (user) => {
     if (!user.planValidTill || user.planValidTill === 'No validity set') {
       return <span className="validity-none">No validity set</span>;
@@ -66,7 +89,7 @@ const UserTable = ({
       return <span className="validity-error">Invalid date</span>;
     }
     
-    // Calculate remaining days for valid dates
+    // Calculate remaining days and apply color coding based on 15-day threshold
     if (user.validationDate) {
       try {
         const validationDate = new Date(user.validationDate);
@@ -79,15 +102,26 @@ const UserTable = ({
           remainingDaysText = ` (${daysDiff} day${daysDiff === 1 ? '' : 's'} left)`;
         }
         
+        const validityStatus = getValidityStatus(user);
+        let className = 'validity-active';
+        
+        if (validityStatus === 'expired') {
+          className = 'validity-expired';
+        } else if (validityStatus === 'warning') {
+          className = 'validity-warning';
+        } else {
+          className = 'validity-active';
+        }
+        
         return (
-          <span className="validity-active">
+          <span className={className}>
             {user.planValidTill}
             {remainingDaysText && <span className="remaining-days">{remainingDaysText}</span>}
           </span>
         );
       } catch (error) {
         // Fallback to original display if date calculation fails
-        return <span className="validity-active">{user.planValidTill}</span>;
+        return <span className="validity-error">Invalid date</span>;
       }
     }
     
