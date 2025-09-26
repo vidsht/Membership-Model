@@ -370,6 +370,8 @@ router.get('/dashboard', checkMerchantAccess, async (req, res) => {
           id: merchant.id,
           fullName: merchant.fullName,
           email: merchant.email,
+          profilePhoto: merchant.profilePhoto,
+          profilePicture: merchant.profilePicture,
           membershipType: merchant.membershipType, // Single source of truth for plan
           status: merchant.status,
           userType: merchant.userType,

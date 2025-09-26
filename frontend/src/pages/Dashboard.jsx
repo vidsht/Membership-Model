@@ -6,6 +6,7 @@ import MerchantCertificate from '../components/MerchantCertificate';
 import PlanExpiryBanner from '../components/PlanExpiryBanner';
 import { useImageUrl, SmartImage, DefaultAvatar } from '../hooks/useImageUrl';
 import { getAllPlans } from '../services/api';
+import api from '../services/api';
 import '../styles/MerchantDashboard.css'; // Import for status-alert styles
 
 const Dashboard = () => {
@@ -14,6 +15,7 @@ const Dashboard = () => {
   const [plans, setPlans] = useState([]);
   const [currentPlan, setCurrentPlan] = useState(null);
   const [upgradeRecommendations, setUpgradeRecommendations] = useState([]);
+  const [userProfile, setUserProfile] = useState(null);
 
   // Helper function to calculate remaining days
   const calculateRemainingDays = (validationDate) => {
@@ -30,6 +32,20 @@ const Dashboard = () => {
     const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
     
     return daysDiff;
+  };
+
+  // Fetch user profile data
+  const fetchUserProfile = async () => {
+    try {
+      const response = await api.get('/users/profile/complete');
+      const userData = response.data.user;
+      setUserProfile({
+        ...userData,
+        profilePicture: userData.profilePhoto || userData.profilePicture || ''
+      });
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+    }
   };
 
   useEffect(() => {
@@ -73,6 +89,7 @@ const Dashboard = () => {
 
     if (user) {
       fetchPlans();
+      fetchUserProfile();
     }
   }, [user]);
 
@@ -417,7 +434,7 @@ const Dashboard = () => {
               <div className="business-logo-container">
                 <div className="business-logo">
                   <SmartImage
-                    src={getMerchantLogoUrl(user)}
+                    src={getMerchantLogoUrl({ logo: userProfile?.profilePicture })}
                     alt={`${user.business?.businessName || user.businessName || user.fullName} logo`}
                     fallback={
                       <DefaultAvatar 

@@ -112,21 +112,6 @@ export const useImageUrl = () => {
                 }
             }
             
-            // Fallback to localStorage for persistent merchant images
-            if (!logoField) {
-                try {
-                    const userData = localStorage.getItem('user_data');
-                    if (userData) {
-                        const parsed = JSON.parse(userData);
-                        // Check for merchant logo in localStorage (use profilePhoto for merchants)
-                        logoField = parsed.profilePhoto || parsed.profilePicture;
-                        console.log('🔄 Fallback to localStorage logo:', logoField);
-                    }
-                } catch (e) {
-                    console.error('Error loading persisted merchant logo:', e);
-                }
-            }
-            
             console.log('🖼️ Found logo field:', logoField);
 
             // Normalize cases where backend returned a path instead of just a filename
