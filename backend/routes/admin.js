@@ -1597,7 +1597,15 @@ router.post('/users/:id/assign-plan', auth, admin, async (req, res) => {
     }
 
     // STEP 1: Get user type first to determine which plans they can have
-    const userCheck = await queryAsync('SELECT id, fullName, email, userType FROM users WHERE id = ?', [userId]);
+    let userQuery = `
+      SELECT u.id, u.fullName, u.email, u.userType,
+             b.businessName
+      FROM users u
+      LEFT JOIN businesses b ON u.id = b.userId
+      WHERE u.id = ?
+    `;
+    
+    const userCheck = await queryAsync(userQuery, [userId]);
     if (!userCheck.length) {
       return res.status(404).json({ success: false, message: 'User not found.' });
     }
@@ -1755,12 +1763,27 @@ router.post('/users/:id/assign-plan', auth, admin, async (req, res) => {
     // Log activity if activities table exists
     if (await tableExists('activities')) {
       try {
+        // Determine the appropriate description based on whether it's an expiry date update
+        let description;
+        const userName = userType === 'merchant' ? 
+          (targetUser.businessName || targetUser.fullName) : 
+          targetUser.fullName;
+        
+        if (expiryDate) {
+          // If expiry date is provided, highlight the expiry date update
+          const formattedExpiryDate = new Date(expiryDate).toLocaleDateString('en-GB');
+          description = `Expiry date updated to ${formattedExpiryDate} for ${userName} (${planDetails?.name || finalPlanKey} plan)`;
+        } else {
+          // Standard plan assignment message
+          description = `${planDetails?.name || finalPlanKey} plan assigned to ${userName}`;
+        }
+        
         await queryAsync(
           'INSERT INTO activities (type, title, description, userId, timestamp) VALUES (?, ?, ?, ?, NOW())',
           [
-            'plan_assigned',
-            'Plan Assignment',
-            `${planDetails?.name || finalPlanKey} plan assigned to ${userType} ${targetUser.fullName}`,
+            expiryDate ? 'expiry_date_updated' : 'plan_assigned',
+            expiryDate ? 'Expiry Date Updated' : 'Plan Assignment',
+            description,
             adminUserId
           ]
         );

@@ -27,7 +27,7 @@ const Activities = () => {
     'plan_management': {
       title: 'Plan Management',
       icon: 'fas fa-crown',
-      types: ['plan_expired', 'user_plan_expired', 'merchant_plan_expired', 'plan_expiring', 'plan_upgraded', 'plan_assigned', 'new_plan_assigned', 'custom_redemption_limit', 'custom_deal_limit', 'assigned_custom_deal_redemption', 'assigned_custom_deal_limit'],
+      types: ['plan_expired', 'user_plan_expired', 'merchant_plan_expired', 'plan_expiring', 'plan_upgraded', 'plan_assigned', 'new_plan_assigned', 'expiry_date_updated', 'custom_redemption_limit', 'custom_deal_limit', 'assigned_custom_deal_redemption', 'assigned_custom_deal_limit'],
       color: 'primary'
     },
     'deal_management': {
@@ -154,6 +154,8 @@ const Activities = () => {
       case 'user_plan_expiring':
       case 'merchant_plan_expiring':
         return 'fas fa-exclamation-triangle';
+      case 'expiry_date_updated':
+        return 'fas fa-calendar-check';
       case 'redemption_requested':
       case 'pending_deal_redemption_by':
         return 'fas fa-shopping-cart';
@@ -223,6 +225,7 @@ const Activities = () => {
         return 'danger';
       case 'plan_assigned':
       case 'new_plan_assigned':
+      case 'expiry_date_updated':
       case 'role_assigned':
       case 'assigned_custom_deal_redemption':
       case 'assigned_custom_deal_limit':
