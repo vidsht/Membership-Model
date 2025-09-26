@@ -182,85 +182,28 @@ const MembershipCard = () => {
     }
 
     try {
-      // Use modern browser screenshot API if available
-      if (window.getComputedStyle && window.document.fonts) {
-        await document.fonts.ready; // Wait for fonts to load
-        
-        // Add capture-mode class to optimize for capture
-        cardRef.current.classList.add('capture-mode', 'download-mode');
-        
-        // Wait a moment for styles to apply
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
-        // Try to use dom-to-image library (more reliable than html2canvas)
-        try {
-          const domtoimage = await import('dom-to-image-more');
-          const dataUrl = await domtoimage.toPng(cardRef.current, {
-            quality: 1.0,
-            bgcolor: '#ffffff',
-            width: cardRef.current.offsetWidth,
-            height: cardRef.current.offsetHeight,
-            style: {
-              transform: 'scale(1)',
-              transformOrigin: 'top left',
-              width: cardRef.current.offsetWidth + 'px',
-              height: cardRef.current.offsetHeight + 'px'
-            },
-            filter: (node) => {
-              // Filter out problematic elements
-              if (node.classList) {
-                return !node.classList.contains('card-actions') && 
-                       !node.classList.contains('card-overlay');
-              }
-              return true;
-            }
-          });
-          
-          // Remove the classes after capture
-          cardRef.current.classList.remove('capture-mode', 'download-mode');
-          
-          // Create download link
-          const link = document.createElement('a');
-          link.download = `membership-card-${user.membershipNumber || 'download'}.png`;
-          link.href = dataUrl;
-          link.click();
-          
-          showNotification('Card downloaded successfully!', 'success');
-          return;
-        } catch (domToImageError) {
-          console.log('dom-to-image failed, falling back to html2canvas:', domToImageError);
-        }
-        
-        // Fallback to html2canvas with better options
-        const html2canvas = await import('html2canvas');
-        const canvas = await html2canvas.default(cardRef.current, {
-          scale: 2,
-          backgroundColor: '#ffffff',
-          useCORS: true,
-          allowTaint: true,
-          scrollX: 0,
-          scrollY: 0,
-          windowWidth: cardRef.current.scrollWidth,
-          windowHeight: cardRef.current.scrollHeight,
-          ignoreElements: (element) => {
-            return element.classList && (
-              element.classList.contains('card-actions') || 
-              element.classList.contains('card-overlay')
-            );
-          }
-        });
+      // Add capture-mode class to remove overlay effects
+      cardRef.current.classList.add('capture-mode', 'download-mode');
+      
+      // Import html2canvas dynamically
+      const html2canvas = await import('html2canvas');
+      const canvas = await html2canvas.default(cardRef.current, {
+        scale: 2,
+        backgroundColor: '#ffffff',
+        useCORS: true,
+        allowTaint: true
+      });
 
-        // Remove the classes after capture
-        cardRef.current.classList.remove('capture-mode', 'download-mode');
+      // Remove the classes after capture
+      cardRef.current.classList.remove('capture-mode', 'download-mode');
 
-        // Create download link
-        const link = document.createElement('a');
-        link.download = `membership-card-${user.membershipNumber || 'download'}.png`;
-        link.href = canvas.toDataURL('image/png', 1.0);
-        link.click();
+      // Create download link
+      const link = document.createElement('a');
+      link.download = `membership-card-${user.membershipNumber || 'download'}.png`;
+      link.href = canvas.toDataURL();
+      link.click();
 
-        showNotification('Card downloaded successfully!', 'success');
-      }
+      showNotification('Card downloaded successfully!', 'success');
     } catch (error) {
       console.error('Error downloading card:', error);
       // Make sure to remove classes even if error occurs
@@ -281,57 +224,37 @@ const MembershipCard = () => {
     }
 
     try {
-      // Ensure fonts are loaded
-      await document.fonts.ready;
-      
-      // Add capture-mode class to optimize for capture
+      // Add capture-mode class to remove overlay effects
       cardRef.current.classList.add('capture-mode', 'download-mode');
       
-      // Wait for styles to apply
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // Try dom-to-image first for better quality
-      try {
-        const domtoimage = await import('dom-to-image-more');
-        const blob = await domtoimage.toBlob(cardRef.current, {
-          quality: 1.0,
-          bgcolor: '#ffffff',
-          width: cardRef.current.offsetWidth,
-          height: cardRef.current.offsetHeight,
-          filter: (node) => {
-            if (node.classList) {
-              return !node.classList.contains('card-actions') && 
-                     !node.classList.contains('card-overlay');
-            }
-            return true;
-          }
-        });
-        
-        // Remove the classes after capture
-        cardRef.current.classList.remove('capture-mode', 'download-mode');
-        
+      const html2canvas = await import('html2canvas');
+      const canvas = await html2canvas.default(cardRef.current, {
+        scale: 2,
+        backgroundColor: '#ffffff',
+        useCORS: true,
+        allowTaint: true
+      });
+
+      // Remove the classes after capture
+      cardRef.current.classList.remove('capture-mode', 'download-mode');
+
+      // Convert to blob
+      canvas.toBlob((blob) => {
         if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([blob], 'membership-card.png', { type: 'image/png' })] })) {
           const file = new File([blob], 'membership-card.png', { type: 'image/png' });
-          await navigator.share({
+          navigator.share({
             title: 'My Indians in Ghana Membership Card',
             text: `I'm a proud member of Indians in Ghana! 🇮🇳🇬🇭\nMember #${user.membershipNumber}`,
             files: [file]
           });
-          showNotification('Card shared successfully!', 'success');
-          return;
+        } else {
+          // Fallback to WhatsApp web link
+          const message = encodeURIComponent(`I'm a proud member of Indians in Ghana! 🇮🇳🇬🇭\nMember #${user.membershipNumber}\n\nJoin our community: ${window.location.origin}`);
+          window.open(`https://wa.me/?text=${message}`, '_blank');
         }
-      } catch (domToImageError) {
-        console.log('dom-to-image failed for WhatsApp share, using fallback');
-      }
-      
-      // Remove classes if still present
-      cardRef.current.classList.remove('capture-mode', 'download-mode');
-      
-      // Fallback to WhatsApp web link with text
-      const message = encodeURIComponent(`I'm a proud member of Indians in Ghana! 🇮🇳🇬🇭\nMember #${user.membershipNumber}\n\nJoin our community: ${window.location.origin}`);
-      window.open(`https://wa.me/?text=${message}`, '_blank');
-      showNotification('Sharing to WhatsApp...', 'info');
-      
+      }, 'image/png');
+
+      showNotification('Sharing card...', 'info');
     } catch (error) {
       console.error('Error sharing card:', error);
       // Make sure to remove classes even if error occurs
@@ -339,7 +262,6 @@ const MembershipCard = () => {
       // Fallback to text sharing
       const message = encodeURIComponent(`I'm a proud member of Indians in Ghana! 🇮🇳🇬🇭\nMember #${user.membershipNumber}\n\nJoin our community: ${window.location.origin}`);
       window.open(`https://wa.me/?text=${message}`, '_blank');
-      showNotification('Sharing to WhatsApp...', 'info');
     }
   };
 
@@ -361,35 +283,22 @@ const MembershipCard = () => {
       // Check if Web Share API is available (primarily on mobile devices)  
       if (navigator.share) {
         try {
-          // Ensure fonts are loaded for better rendering
-          await document.fonts.ready;
-          
           // First try to share with image if supported
           cardRef.current.classList.add('capture-mode', 'download-mode');
           
-          // Wait for styles to apply
-          await new Promise(resolve => setTimeout(resolve, 100));
-          
-          // Try dom-to-image first for better quality
-          try {
-            const domtoimage = await import('dom-to-image-more');
-            const blob = await domtoimage.toBlob(cardRef.current, {
-              quality: 1.0,
-              bgcolor: '#ffffff',
-              width: cardRef.current.offsetWidth,
-              height: cardRef.current.offsetHeight,
-              filter: (node) => {
-                if (node.classList) {
-                  return !node.classList.contains('card-actions') && 
-                         !node.classList.contains('card-overlay');
-                }
-                return true;
-              }
-            });
-            
-            // Remove the classes after capture
-            cardRef.current.classList.remove('capture-mode', 'download-mode');
-            
+          const html2canvas = await import('html2canvas');
+          const canvas = await html2canvas.default(cardRef.current, {
+            scale: 2,
+            backgroundColor: '#ffffff',
+            useCORS: true,
+            allowTaint: true
+          });
+
+          // Remove the classes after capture
+          cardRef.current.classList.remove('capture-mode', 'download-mode');
+
+          // Convert to blob and try sharing with image
+          canvas.toBlob(async (blob) => {
             if (blob && navigator.canShare && navigator.canShare({ files: [new File([blob], 'membership-card.png', { type: 'image/png' })] })) {
               const file = new File([blob], 'membership-card.png', { type: 'image/png' });
               await navigator.share({
@@ -397,25 +306,17 @@ const MembershipCard = () => {
                 text: shareText,
                 files: [file]
               });
-              showNotification('Card shared successfully!', 'success');
-              return;
+            } else {
+              // Fallback to consistent text+url sharing format
+              await navigator.share({
+                title: 'My Indians in Ghana Membership Card',
+                text: shareText,
+                url: shareUrl
+              });
             }
-          } catch (domToImageError) {
-            console.log('dom-to-image failed for share, using fallback');
-          }
-          
-          // Remove classes if still present
-          cardRef.current.classList.remove('capture-mode', 'download-mode');
-          
-          // Fallback to text+url sharing
-          await navigator.share({
-            title: 'My Indians in Ghana Membership Card',
-            text: shareText,
-            url: shareUrl
-          });
-          showNotification('Card shared successfully!', 'success');
+            showNotification('Card shared successfully!', 'success');
+          }, 'image/png');
           return;
-          
         } catch (shareError) {
           console.log('Error sharing via Web Share API:', shareError);
           // Continue to fallback
@@ -441,11 +342,11 @@ const MembershipCard = () => {
       // Make sure to remove classes even if error occurs
       cardRef.current?.classList.remove('capture-mode', 'download-mode');
       // Final fallback to text sharing
-      const fallbackShareText = `I'm a proud member of Indians in Ghana! 🇮🇳🇬🇭\nMember #${user.membershipNumber}\n\nJoin our community: ${window.location.origin}`;
+      const shareText = `I'm a proud member of Indians in Ghana! 🇮🇳🇬🇭\nMember #${user.membershipNumber}\n\nJoin our community: ${window.location.origin}`;
       
       if (navigator.clipboard && navigator.clipboard.writeText) {
         try {
-          await navigator.clipboard.writeText(fallbackShareText);
+          await navigator.clipboard.writeText(shareText);
           showNotification('Share text copied to clipboard!', 'success');
         } catch (clipErr) {
           showNotification('Failed to share card', 'error');

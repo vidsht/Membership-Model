@@ -169,79 +169,22 @@ const MerchantCertificate = () => {
       return;
     }
 
-    if (!certificateRef.current) {
-      showNotification('Certificate is not ready for download. Please wait.', 'error');
-      return;
-    }
-
     try {
-      // Ensure fonts are loaded
-      await document.fonts.ready;
-      
-      // Wait a moment for rendering
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // Try dom-to-image first for better quality
-      try {
-        const domtoimage = await import('dom-to-image-more');
-        const dataUrl = await domtoimage.toPng(certificateRef.current, {
-          quality: 1.0,
-          bgcolor: '#ffffff',
-          width: 700,   // Portrait A4 width
-          height: 990,  // Portrait A4 height
-          style: {
-            transform: 'scale(1)',
-            transformOrigin: 'top left',
-            width: '700px',
-            height: '990px'
-          },
-          filter: (node) => {
-            // Filter out action buttons and overlays
-            if (node.classList) {
-              return !node.classList.contains('certificate-actions') && 
-                     !node.classList.contains('certificate-overlay');
-            }
-            return true;
-          }
-        });
-        
-        // Create download link
-        const link = document.createElement('a');
-        link.download = `merchant-certificate-${businessInfo?.businessId || user.membershipNumber}.png`;
-        link.href = dataUrl;
-        link.click();
-        
-        showNotification('Certificate downloaded successfully!', 'success');
-        return;
-      } catch (domToImageError) {
-        console.log('dom-to-image failed, falling back to html2canvas:', domToImageError);
-      }
-      
-      // Fallback to html2canvas with better options
+      // Import html2canvas dynamically
       const html2canvas = await import('html2canvas');
       const canvas = await html2canvas.default(certificateRef.current, {
         scale: 2,
         backgroundColor: '#ffffff',
         useCORS: true,
         allowTaint: true,
-        scrollX: 0,
-        scrollY: 0,
         width: 700,   // Portrait A4 width
-        height: 990,  // Portrait A4 height
-        windowWidth: 700,
-        windowHeight: 990,
-        ignoreElements: (element) => {
-          return element.classList && (
-            element.classList.contains('certificate-actions') || 
-            element.classList.contains('certificate-overlay')
-          );
-        }
+        height: 990   // Portrait A4 height
       });
 
       // Create download link
       const link = document.createElement('a');
       link.download = `merchant-certificate-${businessInfo?.businessId || user.membershipNumber}.png`;
-      link.href = canvas.toDataURL('image/png', 1.0);
+      link.href = canvas.toDataURL();
       link.click();
 
       showNotification('Certificate downloaded successfully!', 'success');
@@ -279,11 +222,6 @@ const MerchantCertificate = () => {
       return;
     }
 
-    if (!certificateRef.current) {
-      showNotification('Certificate is not ready for sharing. Please wait.', 'error');
-      return;
-    }
-
     const shareText = `I'm a certified merchant with Indians in Ghana! 🇮🇳🇬🇭\nBusiness ID: ${businessInfo?.businessId}\n\nConnect with our community: ${window.location.origin}`;
     const shareUrl = `${window.location.origin}/merchant-certificate`;
 
@@ -291,29 +229,18 @@ const MerchantCertificate = () => {
       // Use Web Share API only if it can reliably share rich content
       if (canShareRichContent()) {
         try {
-          // Ensure fonts are loaded
-          await document.fonts.ready;
-          
-          // Wait for rendering
-          await new Promise(resolve => setTimeout(resolve, 100));
-          
-          // Try dom-to-image first for better quality
-          try {
-            const domtoimage = await import('dom-to-image-more');
-            const blob = await domtoimage.toBlob(certificateRef.current, {
-              quality: 1.0,
-              bgcolor: '#ffffff',
-              width: 700,
-              height: 990,
-              filter: (node) => {
-                if (node.classList) {
-                  return !node.classList.contains('certificate-actions') && 
-                         !node.classList.contains('certificate-overlay');
-                }
-                return true;
-              }
-            });
-            
+          // First try to share with image if supported
+          const html2canvas = await import('html2canvas');
+          const canvas = await html2canvas.default(certificateRef.current, {
+            scale: 2,
+            backgroundColor: '#ffffff',
+            useCORS: true,
+            allowTaint: true,
+            width: 700,
+            height: 990
+          });
+
+          canvas.toBlob(async (blob) => {
             if (blob && navigator.canShare && navigator.canShare({ files: [new File([blob], 'merchant-certificate.png', { type: 'image/png' })] })) {
               const file = new File([blob], 'merchant-certificate.png', { type: 'image/png' });
               await navigator.share({
@@ -321,20 +248,16 @@ const MerchantCertificate = () => {
                 text: shareText,
                 files: [file]
               });
-              showNotification('Certificate shared successfully!', 'success');
-              return;
+            } else {
+              // Fallback to consistent text+url sharing format
+              await navigator.share({
+                title: 'Indians in Ghana Merchant Certificate',
+                text: shareText,
+                url: shareUrl
+              });
             }
-          } catch (domToImageError) {
-            console.log('dom-to-image failed for share, using fallback');
-          }
-          
-          // Fallback to text+url sharing
-          await navigator.share({
-            title: 'Indians in Ghana Merchant Certificate',
-            text: shareText,
-            url: shareUrl
-          });
-          showNotification('Certificate shared successfully!', 'success');
+            showNotification('Certificate shared successfully!', 'success');
+          }, 'image/png');
           return;
         } catch (shareError) {
           console.log('Error sharing via Web Share API:', shareError);
@@ -368,53 +291,34 @@ const MerchantCertificate = () => {
       return;
     }
 
-    if (!certificateRef.current) {
-      showNotification('Certificate is not ready for sharing. Please wait.', 'error');
-      return;
-    }
-
     try {
-      // Ensure fonts are loaded
-      await document.fonts.ready;
-      
-      // Wait for rendering
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // Try dom-to-image first for better quality
-      try {
-        const domtoimage = await import('dom-to-image-more');
-        const blob = await domtoimage.toBlob(certificateRef.current, {
-          quality: 1.0,
-          bgcolor: '#ffffff',
-          width: 700,
-          height: 990,
-          filter: (node) => {
-            if (node.classList) {
-              return !node.classList.contains('certificate-actions') && 
-                     !node.classList.contains('certificate-overlay');
-            }
-            return true;
-          }
-        });
-        
+      const html2canvas = await import('html2canvas');
+      const canvas = await html2canvas.default(certificateRef.current, {
+        scale: 2,
+        backgroundColor: '#ffffff',
+        useCORS: true,
+        allowTaint: true,
+        width: 700,
+        height: 990
+      });
+
+      // Convert to blob
+      canvas.toBlob((blob) => {
         if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([blob], 'merchant-certificate.png', { type: 'image/png' })] })) {
           const file = new File([blob], 'merchant-certificate.png', { type: 'image/png' });
-          await navigator.share({
+          navigator.share({
             title: 'Indians in Ghana Merchant Certificate',
             text: `I'm a certified merchant with Indians in Ghana! 🇮🇳🇬🇭\nBusiness ID: ${businessInfo?.businessId}`,
             files: [file]
           });
-          showNotification('Certificate shared successfully!', 'success');
-          return;
+        } else {
+          // Fallback to WhatsApp web link
+          const message = encodeURIComponent(`I'm a certified merchant with Indians in Ghana! 🇮🇳🇬🇭\nBusiness ID: ${businessInfo?.businessId}\n\nConnect with our community: ${window.location.origin}`);
+          window.open(`https://wa.me/?text=${message}`, '_blank');
         }
-      } catch (domToImageError) {
-        console.log('dom-to-image failed for WhatsApp share, using fallback');
-      }
-      
-      // Fallback to WhatsApp web link
-      const message = encodeURIComponent(`I'm a certified merchant with Indians in Ghana! 🇮🇳🇬🇭\nBusiness ID: ${businessInfo?.businessId}\n\nConnect with our community: ${window.location.origin}`);
-      window.open(`https://wa.me/?text=${message}`, '_blank');
-      showNotification('Sharing to WhatsApp...', 'info');
+      }, 'image/png');
+
+      showNotification('Sharing certificate...', 'info');
     } catch (error) {
       console.error('Error sharing certificate:', error);
       // Fallback to text sharing
@@ -519,16 +423,7 @@ const MerchantCertificate = () => {
                     <div className="signature-org">Indians in Ghana</div>
                 </div>
             </div>
-
-        {/* Signature Section
-        <div className="signature-section-new">
-          <div className="signature-line-new">
-            <img className='signature-image' src="/public/signature.jpeg" alt="Signature" />
-          </div>
-          <div className="signature-name">Sachin Hursale</div>
-          <div className="signature-org">Indians in Ghana</div>
-        </div> */}
-
+            
         {/* Certificate Footer with QR and Verification */}
         <div className="certificate-verification-footer">
           <div className="verification-left">

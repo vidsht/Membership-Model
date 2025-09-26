@@ -5,9 +5,23 @@ import React, {useState, useMemo } from 'react';
 //                       import.meta.env.VITE_DOMAIN_URL || 
 //                       'https://membership-model.onrender.com';
 
-const IMAGE_BASE_URL = import.meta.env.VITE_DOMAIN_URL || 
-                       process.env.VITE_DOMAIN_URL || 
-                       'https://membership.indiansinghana.com'; 
+// Dynamically determine the base URL for images
+const getImageBaseUrl = () => {
+  // First, try environment variables
+  if (import.meta.env.VITE_DOMAIN_URL) {
+    return import.meta.env.VITE_DOMAIN_URL;
+  }
+  
+  // In browser, use current origin
+  if (typeof window !== 'undefined') {
+    return window.location.origin;
+  }
+  
+  // Fallback for SSR or build time
+  return 'https://membership.indiansinghana.com';
+};
+
+const IMAGE_BASE_URL = getImageBaseUrl(); 
 
 // Helper hook for handling image URLs
 export const useImageUrl = () => {
@@ -36,7 +50,18 @@ export const useImageUrl = () => {
         };
         
         const directory = typeDirectories[type] || '/uploads/';
-        return `${IMAGE_BASE_URL}${directory}${filename}`;
+        const fullUrl = `${IMAGE_BASE_URL}${directory}${filename}`;
+        
+        // Debug logging for image URL construction
+        console.log('🖼️ Image URL constructed:', {
+          filename,
+          type,
+          IMAGE_BASE_URL,
+          directory,
+          fullUrl
+        });
+        
+        return fullUrl;
     };
     }, []);
 

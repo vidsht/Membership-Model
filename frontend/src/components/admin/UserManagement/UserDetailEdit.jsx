@@ -5,14 +5,12 @@ import { useNotification } from '../../../contexts/NotificationContext';
 import { useImageUrl, SmartImage, DefaultAvatar } from '../../../hooks/useImageUrl.jsx';
 import ImageUpload from '../../common/ImageUpload';
 import { useDynamicFields } from '../../../hooks/useDynamicFields';
-import { useAdminNavigation } from '../../../hooks/useAdminNavigation';
 import api from '../../../services/api';
 import './UserDetailEdit.css';
 
 const UserDetailEdit = () => {
   const { userId } = useParams();
   const navigate = useNavigate();
-  const { navigateBackToAdmin } = useAdminNavigation();
   const { validateSession, handleSessionExpired } = useAuth();
   const { showNotification } = useNotification();
   const { getProfileImageUrl } = useImageUrl();
@@ -315,7 +313,7 @@ const UserDetailEdit = () => {
           <i className="fas fa-user-slash"></i>
           <h3>User Not Found</h3>
           <p>The requested user could not be found.</p>
-          <button onClick={() => navigateBackToAdmin('users')} className="btn btn-primary">
+          <button onClick={() => navigate('/admin/users')} className="btn btn-primary">
             Back to Users
           </button>
         </div>
@@ -330,7 +328,7 @@ const UserDetailEdit = () => {
         <div className="header-content">
           <div className="header-left">
             <button
-              onClick={() => navigateBackToAdmin('users')}
+              onClick={() => navigate('/admin')}
               className="btn-back"
             >
               <i className="fas fa-arrow-left"></i>
