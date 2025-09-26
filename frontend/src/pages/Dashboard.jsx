@@ -681,14 +681,22 @@ const Dashboard = () => {
                   {user?.created_at && (
                     <div className="plan-stat">
                       <i className="fas fa-calendar-plus"></i>
-                      <span>Joined {new Date(user.created_at).toLocaleDateString()}</span>
+                      <span>Joined {new Date(user.created_at).toLocaleDateString('en-GB', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit'
+                      })}</span>
                     </div>
                   )}
                   {user.validationDate && (
                     <div className="plan-stat">
                       <i className="fas fa-calendar-check"></i>
                       <span>
-                        Valid until {new Date(user.validationDate).toLocaleDateString()}
+                        Valid until {new Date(user.validationDate).toLocaleDateString('en-GB', {
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit'
+                        })}
                         {(() => {
                           const remainingDays = calculateRemainingDays(user.validationDate);
                           if (remainingDays !== null) {
