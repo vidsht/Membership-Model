@@ -208,7 +208,16 @@ const MerchantManagementEnhanced = () => {
         
         if (daysLeft < 0) {
           className = 'validity-expired';
-          return { label: 'Expired', className, daysLeft: 0 };
+          return { 
+            label: validationDate.toLocaleDateString('en-GB', {
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit'
+            }), 
+            className, 
+            daysLeft: Math.abs(daysLeft),
+            isExpired: true
+          };
         } else if (daysLeft <= 7) {
           className = 'validity-expiring-soon';
         } else if (daysLeft <= 14) {
@@ -1253,15 +1262,15 @@ const MerchantManagementEnhanced = () => {
                   {(() => {
                     const validity = calculateValidityInfo(merchant);
                     return (
-                      <span className={`validity-date-compact ${validity.className}`}>
-                        {validity.label}
+                      <div className={`validity-date-compact ${validity.className}`}>
+                        <div className="validity-date">{validity.label}</div>
                         {typeof validity.daysLeft === 'number' && validity.className !== 'validity-expired' && validity.className !== 'validity-none' && (
                           <span className="days-remaining">{validity.daysLeft}d</span>
                         )}
-                        {validity.className === 'validity-expired' && (
-                          <span className="days-remaining">Expired</span>
+                        {validity.isExpired && (
+                          <span className="expired-badge">Expired</span>
                         )}
-                      </span>
+                      </div>
                     );
                   })()}
                 </td>                <td className="actions-cell" data-label="Actions">

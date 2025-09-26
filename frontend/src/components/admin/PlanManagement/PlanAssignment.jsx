@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useNotification } from '../../../contexts/NotificationContext';
-import { useAdminNavigation } from '../../../hooks/useAdminNavigation';
 import api from '../../../services/api';
 import './PlanAssignment.css';
 
@@ -13,7 +12,6 @@ const PlanAssignment = (props) => {
   const params = useParams();
   const userId = props.userId || params.userId;
   const navigate = useNavigate();
-  const { navigateBackToAdmin } = useAdminNavigation();
   const { showNotification } = useNotification();
   
   // Defensive: warn if userId is missing
@@ -21,7 +19,7 @@ const PlanAssignment = (props) => {
     if (!userId) {
       console.error('PlanAssignment: userId is undefined. Cannot fetch user or assign plan.');
       showNotification('No user ID provided. Redirecting to plan management.', 'error');
-      navigateBackToAdmin('plans');
+      navigate('/admin/plan-management');
     }
   }, [userId, navigate, showNotification]);
     const [user, setUser] = useState(null);
@@ -125,8 +123,12 @@ const PlanAssignment = (props) => {
       
       showNotification(`Plan successfully assigned to ${user.fullName}.`, 'success');
       
-      // Redirect back to plan management
-      navigateBackToAdmin('plans');
+      // Redirect based on user type
+      if (user && user.userType === 'merchant') {
+        navigate('/admin/plan-management');
+      } else {
+        navigate('/admin/plan-management');
+      }
     } catch (error) {
       console.error('Error assigning plan:', error);
       const errorMessage = error.response?.data?.message || 'Failed to assign plan. Please try again.';
@@ -153,7 +155,7 @@ const PlanAssignment = (props) => {
         <p>Could not load user data. The user may not exist.</p>
         <button
           className="button button-primary"
-          onClick={() => navigateBackToAdmin('plans')}
+          onClick={() => navigate('/admin/plan-management')}
         >
           Back to Plan Management
         </button>
@@ -169,7 +171,7 @@ const PlanAssignment = (props) => {
         </h2>
         <button
           className="button button-secondary"
-          onClick={() => navigateBackToAdmin('plans')}
+          onClick={() => navigate('/admin/plan-management')}
         >
           <i className="fas fa-arrow-left"></i> Back to Plan Management
         </button>
@@ -292,7 +294,7 @@ const PlanAssignment = (props) => {
           <div className="form-actions">            <button
               type="button"
               className="button button-secondary"
-              onClick={() => navigateBackToAdmin('plans')}
+              onClick={() => navigate('/admin/plan-management')}
             >
               Cancel
             </button>

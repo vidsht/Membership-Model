@@ -79,9 +79,6 @@ const UserTable = ({
     if (!user.planValidTill || user.planValidTill === 'No validity set') {
       return <span className="validity-none">No validity set</span>;
     }
-    if (user.planValidTill === 'Expired') {
-      return <span className="validity-expired">Expired</span>;
-    }
     if (user.planValidTill === 'Lifetime') {
       return <span className="validity-lifetime">Lifetime</span>;
     }
@@ -89,7 +86,7 @@ const UserTable = ({
       return <span className="validity-error">Invalid date</span>;
     }
     
-    // Calculate remaining days and apply color coding based on 15-day threshold
+    // Calculate remaining days and apply color coding based on expiry status
     if (user.validationDate) {
       try {
         const validationDate = new Date(user.validationDate);
@@ -97,24 +94,27 @@ const UserTable = ({
         const timeDiff = validationDate.getTime() - now.getTime();
         const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
         
-        let remainingDaysText = '';
-        if (daysDiff > 0) {
-          remainingDaysText = ` (${daysDiff} day${daysDiff === 1 ? '' : 's'} left)`;
-        }
-        
         const validityStatus = getValidityStatus(user);
         let className = 'validity-active';
+        let badgeText = '';
+        let remainingDaysText = '';
         
         if (validityStatus === 'expired') {
           className = 'validity-expired';
+          badgeText = 'EXPIRED';
+          const expiredDays = Math.abs(daysDiff);
+          remainingDaysText = ` (Expired ${expiredDays} day${expiredDays === 1 ? '' : 's'} ago)`;
         } else if (validityStatus === 'warning') {
           className = 'validity-warning';
+          remainingDaysText = ` (${daysDiff} day${daysDiff === 1 ? '' : 's'} left)`;
         } else {
           className = 'validity-active';
+          remainingDaysText = ` (${daysDiff} day${daysDiff === 1 ? '' : 's'} left)`;
         }
         
         return (
           <span className={className}>
+            {badgeText && <span className="expired-badge">{badgeText}</span>}
             {user.planValidTill}
             {remainingDaysText && <span className="remaining-days">{remainingDaysText}</span>}
           </span>

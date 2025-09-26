@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useNotification } from '../../../contexts/NotificationContext';
-import { useAdminNavigation } from '../../../hooks/useAdminNavigation';
 import api from '../../../services/api';
 import './RoleAssignment.css';
 
@@ -12,7 +11,6 @@ import './RoleAssignment.css';
 const RoleAssignment = () => {
   const { userId } = useParams();
   const navigate = useNavigate();
-  const { navigateBackToAdmin } = useAdminNavigation();
   const { showNotification } = useNotification();
     const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -192,9 +190,9 @@ const RoleAssignment = () => {
       // Close confirmation dialog first
       setConfirmationVisible(false);
       
-      // Navigate back to user management
+      // Navigate back to user list
       setTimeout(() => {
-        navigateBackToAdmin('users');
+        navigate('/admin/users');
       }, 1500);
       
     } catch (error) {
@@ -222,7 +220,7 @@ const RoleAssignment = () => {
         <p>Could not load user data. The user may not exist.</p>
         <button
           className="button button-primary"
-          onClick={() => navigateBackToAdmin('users')}
+          onClick={() => navigate('/admin/users')}
         >
           Back to User List
         </button>

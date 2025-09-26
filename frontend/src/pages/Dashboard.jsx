@@ -407,39 +407,56 @@ const Dashboard = () => {
         </div>
       )}
       
-      <div className="dashboard-header compact">
+      <div className="dashboard-header">
         {user?.userType === 'merchant' && (user.business || user.businessName) ? (
-          <div className="merchant-header-compact">
-            <div className="business-logo-compact">
-              <SmartImage
-                src={getMerchantLogoUrl(user)}
-                alt={`${user.business?.businessName || user.businessName || user.fullName} logo`}
-                fallback={
-                  <DefaultAvatar 
-                    name={user.business?.businessName || user.businessName || user.fullName || 'Business'} 
-                    size={50}
-                    className="business-logo-fallback"
-                  />
-                }
-                className="business-logo-image"
-                maxRetries={3}
-                style={{
-                  width: '50px',
-                  height: '50px',
-                  objectFit: 'cover',
-                  borderRadius: '8px'
-                }}
-              />
+          <div className="merchant-header-info">
+            <div className="welcome-message">
+              <span>Welcome back!</span>
             </div>
-            <div className="business-info-compact">
-              <h1 className="business-name-compact">{user.business?.businessName || user.businessName || user.fullName}</h1>
-              <span className="welcome-text">Welcome back!</span>
+            <div className="business-branding">
+              <div className="business-logo-container">
+                <div className="business-logo">
+                  <SmartImage
+                    src={getMerchantLogoUrl(user)}
+                    alt={`${user.business?.businessName || user.businessName || user.fullName} logo`}
+                    fallback={
+                      <DefaultAvatar 
+                        name={user.business?.businessName || user.businessName || user.fullName || 'Business'} 
+                        size={90}
+                        className="business-logo-fallback"
+                      />
+                    }
+                    className="business-logo-image"
+                    maxRetries={3}
+                    style={{
+                      width: '90px',
+                      height: '90px',
+                      objectFit: 'cover',
+                      borderRadius: '16px'
+                    }}
+                  />
+                </div>
+                <div className="logo-badge">
+                  <i className="fas fa-store"></i>
+                </div>
+              </div>
+              <div className="business-details">
+                <div className="business-name-section">
+                  <h1 className="business-name">{user.business?.businessName || user.businessName || user.fullName}</h1>
+                </div>
+                <p className="business-tagline">
+                  <i className="fas fa-quote-left"></i>
+                  {user.business?.businessDescription || user.businessDescription || 'Manage your business and explore merchant benefits'}
+                  <i className="fas fa-quote-right"></i>
+                </p>
+              </div>
             </div>
           </div>
         ) : (
-          <div className="user-header-compact">
+          <>
             <h1>Welcome back, {displayName}!</h1>
-          </div>
+            <p>Manage your membership and explore community benefits</p>
+          </>
         )}
       </div>
 
@@ -598,65 +615,101 @@ const Dashboard = () => {
               <p>Exclusive privileges for community members</p>
             </div>
 
-            {/* Plan Details Card - Compact */}
+            {/* Plan Details Card */}
             {currentPlan && (
-              <div className="plan-details-card compact">
-                <div className="plan-details-header-compact">
-                  <div className="plan-title-section">
-                    <h3 className="plan-name-compact">
+              <div className="plan-details-card">
+                <div className="plan-details-header">
+                  <div className="plan-info">
+                    <h3>
                       {(() => {
                         const remainingDays = calculateRemainingDays(user.validationDate);
                         const isExpired = remainingDays !== null && remainingDays < 0;
                         return (
                           <>
                             {isExpired && (
-                              <span className="expired-badge-compact">EXPIRED</span>
+                              <span className="expired-badge" style={{
+                                background: '#ff4444',
+                                color: 'white',
+                                padding: '2px 8px',
+                                borderRadius: '4px',
+                                fontSize: '12px',
+                                fontWeight: 'bold',
+                                marginRight: '8px',
+                                textTransform: 'uppercase'
+                              }}>
+                                EXPIRED
+                              </span>
                             )}
                             {currentPlan.name}
                           </>
                         );
                       })()}
                     </h3>
-                    <div className="plan-pricing-compact">
-                      <span className="price-compact">{currentPlan.currency} {currentPlan.price}</span>
-                      <span className="billing-compact">/{currentPlan.billingCycle}</span>
-                    </div>
                   </div>
+                  <div className="plan-pricing">
+                    <span className="price-amount">{currentPlan.currency} {currentPlan.price}</span>
+                    <span className="billing-cycle">/{currentPlan.billingCycle}</span>
+                  </div>
+                    {currentPlan.description && (
+                      <p className="plan-description">{currentPlan.description}</p>
+                    )}
                 </div>
                 
-                <div className="plan-stats-compact">
+                <div className="plan-details-stats">
+                  {currentPlan.maxRedemptions && (
+                    <div className="plan-stat">
+                      <i className="fas fa-tags"></i>
+                      <span>
+                        {currentPlan.maxRedemptions === -1 
+                          ? 'Infinite redemptions' 
+                          : `Up to ${currentPlan.maxRedemptions} redemptions`
+                        }
+                      </span>
+                    </div>
+                  )}
+                  {currentPlan.dealPostingLimit && (
+                    <div className="plan-stat">
+                      <i className="fas fa-bullhorn"></i>
+                      <span>
+                        {currentPlan.dealPostingLimit === -1 
+                          ? 'Unlimited deals/month' 
+                          : `Up to ${currentPlan.dealPostingLimit} deals/month`
+                        }
+                      </span>
+                    </div>
+                  )}
                   {user?.created_at && (
-                    <div className="stat-compact">
+                    <div className="plan-stat">
                       <i className="fas fa-calendar-plus"></i>
-                      <span>Joined {new Date(user.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' })}</span>
+                      <span>Joined {new Date(user.created_at).toLocaleDateString('en-GB', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit'
+                      })}</span>
                     </div>
                   )}
                   {user.validationDate && (
-                    <div className="stat-compact">
+                    <div className="plan-stat">
                       <i className="fas fa-calendar-check"></i>
                       <span>
-                        Expires {new Date(user.validationDate).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' })}
+                        Valid until {new Date(user.validationDate).toLocaleDateString('en-GB', {
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit'
+                        })}
                         {(() => {
                           const remainingDays = calculateRemainingDays(user.validationDate);
                           if (remainingDays !== null) {
                             if (remainingDays > 0) {
-                              return ` (${remainingDays}d left)`;
+                              return ` (${remainingDays} day${remainingDays === 1 ? '' : 's'} left)`;
                             } else if (remainingDays === 0) {
-                              return ' (Today)';
+                              return ' (Expires today)';
                             } else {
-                              return ` (${Math.abs(remainingDays)}d ago)`;
+                              return ` (Expired ${Math.abs(remainingDays)} day${Math.abs(remainingDays) === 1 ? '' : 's'} ago)`;
                             }
                           }
                           return '';
                         })()}
-                      </span>
-                    </div>
-                  )}
-                  {currentPlan.maxRedemptions && (
-                    <div className="stat-compact">
-                      <i className="fas fa-tags"></i>
-                      <span>
-                        {currentPlan.maxRedemptions === -1 ? 'Unlimited' : `${currentPlan.maxRedemptions}`} redemptions
                       </span>
                     </div>
                   )}

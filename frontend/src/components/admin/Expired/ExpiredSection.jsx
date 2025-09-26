@@ -271,6 +271,58 @@ Contact: cards@indiansinghana.com`
     showNotification(`Email template opened for ${member.fullName || member.businessName}`, 'success');
   };
 
+  const handleWhatsAppMessage = (member) => {
+    const name = member.fullName || member.businessName;
+    const expiryDate = new Date(member.planExpiryDate || member.validationDate);
+    const now = new Date();
+    const diffTime = expiryDate - now;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    let message = '';
+    
+    if (userType === 'users') {
+      if (diffDays <= 0) {
+        message = `Hello ${name},\n\nYour Indians in Ghana membership has expired ${Math.abs(diffDays)} days ago (${expiryDate.toLocaleDateString('en-GB')}).\n\nPlease renew your membership to continue enjoying exclusive deals, business directory access, and community events.\n\nContact us for renewal: cards@indiansinghana.com\n\nBest regards,\nIndians in Ghana Team`;
+      } else {
+        message = `Hello ${name},\n\nYour Indians in Ghana membership expires in ${diffDays} days (${expiryDate.toLocaleDateString('en-GB')}).\n\nRenew now to avoid interruption of your membership benefits including exclusive deals, business directory access, and community events.\n\nContact us for renewal: cards@indiansinghana.com\n\nBest regards,\nIndians in Ghana Team`;
+      }
+    } else {
+      if (diffDays <= 0) {
+        message = `Hello ${name},\n\nYour Indians in Ghana business membership has expired ${Math.abs(diffDays)} days ago (${expiryDate.toLocaleDateString('en-GB')}).\n\nYour business listing and promotional capabilities have been suspended. Please renew immediately to restore your business presence in our community.\n\nContact us for renewal: cards@indiansinghana.com\n\nBest regards,\nIndians in Ghana Team`;
+      } else {
+        message = `Hello ${name},\n\nYour Indians in Ghana business membership expires in ${diffDays} days (${expiryDate.toLocaleDateString('en-GB')}).\n\nRenew now to maintain your business listing, deal posting capabilities, and customer engagement opportunities.\n\nContact us for renewal: cards@indiansinghana.com\n\nBest regards,\nIndians in Ghana Team`;
+      }
+    }
+    
+    // Format phone number for WhatsApp (remove any non-digits and add country code if needed)
+    let phoneNumber = member.phone || '';
+    if (phoneNumber) {
+      // Remove all non-digit characters
+      phoneNumber = phoneNumber.replace(/\D/g, '');
+      
+      // If phone doesn't start with country code, assume Ghana (+233) and add it
+      if (phoneNumber.length === 10 && phoneNumber.startsWith('0')) {
+        phoneNumber = '233' + phoneNumber.substring(1);
+      } else if (phoneNumber.length === 9) {
+        phoneNumber = '233' + phoneNumber;
+      } else if (!phoneNumber.startsWith('233') && phoneNumber.length >= 9) {
+        phoneNumber = '233' + phoneNumber;
+      }
+      
+      // Open WhatsApp with specific number and pre-filled message
+      const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+      window.open(whatsappUrl, '_blank');
+      
+      showNotification(`WhatsApp message sent to ${name} (${member.phone})`, 'success');
+    } else {
+      // Fallback to generic WhatsApp if no phone number
+      const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+      window.open(whatsappUrl, '_blank');
+      
+      showNotification(`WhatsApp message prepared for ${name} (no phone number available)`, 'warning');
+    }
+  };
+
   const getExpiryStatus = (member) => {
     const expiryDate = new Date(member.planExpiryDate || member.validationDate);
     const now = new Date();
@@ -306,8 +358,8 @@ Contact: cards@indiansinghana.com`
   return (
     <div className="expired-section">
       <div className="section-header">
-        <h2><i className="fas fa-calendar-times"></i> Expired Memberships</h2>
-        <p>Manage and communicate with members whose plans have expired or are expiring soon</p>
+        <h2><i className="fas fa-calendar-times"></i> Expiry Memberships</h2>
+        <p>Manage and communicate with members whose plans have expiry or are expiring soon</p>
       </div>
 
       {/* Type Selector */}
@@ -365,7 +417,7 @@ Contact: cards@indiansinghana.com`
           className={`filter-tab ${activeFilter === 'expired' ? 'active' : ''}`}
           onClick={() => setActiveFilter('expired')}
         >
-          Expired (0 days)
+          Expiry (0 days)
         </button>
         <button 
           className={`filter-tab ${activeFilter === '7days' ? 'active' : ''}`}
@@ -411,10 +463,15 @@ Contact: cards@indiansinghana.com`
                         <p className="member-email">{member.email}</p>
                         <p className="member-plan">{member.membershipType || member.planName || 'No Plan'}</p>
                         <div className={`expiry-status ${expiryInfo.color}`}>
-                          {expiryInfo.status === 'expired' 
-                            ? `Expired ${expiryInfo.days} days ago`
-                            : `Expires in ${expiryInfo.days} days`
-                          }
+                          <div className="expiry-days">
+                            {expiryInfo.status === 'expired' 
+                              ? `Expired ${expiryInfo.days} days ago`
+                              : `Expires in ${expiryInfo.days} days`
+                            }
+                          </div>
+                          <div className="expiry-date">
+                            {new Date(member.planExpiryDate || member.validationDate).toLocaleDateString('en-GB')}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -424,10 +481,10 @@ Contact: cards@indiansinghana.com`
                         <button 
                           className="email-btn expired"
                           onClick={() => handleSendEmail(member, 0)}
-                          title="Send expired notice"
+                          title="Send expiry notice"
                         >
                           <i className="fas fa-exclamation-circle"></i>
-                          Expired
+                          Expiry
                         </button>
                         <button 
                           className="email-btn warning-7"
@@ -452,6 +509,14 @@ Contact: cards@indiansinghana.com`
                         >
                           <i className="fas fa-bell"></i>
                           30 Days
+                        </button>
+                        <button 
+                          className="whatsapp-btn"
+                          onClick={() => handleWhatsAppMessage(member)}
+                          title="Send WhatsApp message"
+                        >
+                          <i className="fab fa-whatsapp"></i>
+                          WhatsApp
                         </button>
                       </div>
                     </div>

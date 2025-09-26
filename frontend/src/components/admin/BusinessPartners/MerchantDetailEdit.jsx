@@ -5,14 +5,12 @@ import { useNotification } from '../../../contexts/NotificationContext';
 import { useImageUrl, SmartImage, DefaultAvatar } from '../../../hooks/useImageUrl.jsx';
 import ImageUpload from '../../common/ImageUpload';
 import { useDynamicFields } from '../../../hooks/useDynamicFields';
-import { useAdminNavigation } from '../../../hooks/useAdminNavigation';
 import api from '../../../services/api';
 import './MerchantDetailEdit.css';
 
 const MerchantDetailEdit = () => {
   const { id: merchantId } = useParams();
   const navigate = useNavigate();
-  const { navigateBackToAdmin } = useAdminNavigation();
   const { validateSession, handleSessionExpired } = useAuth();
   const { showNotification } = useNotification();
   const { getProfileImageUrl, getMerchantLogoUrl } = useImageUrl();
@@ -201,7 +199,7 @@ const MerchantDetailEdit = () => {
       }
       if (err.response?.status === 404) {
         showNotification('Merchant not found', 'error');
-        navigateBackToAdmin('merchants');
+        navigate('/admin');
         return;
       }
       showNotification('Failed to load merchant data', 'error');
@@ -464,7 +462,7 @@ const MerchantDetailEdit = () => {
           <i className="fas fa-store-slash"></i>
           <h3>Merchant Not Found</h3>
           <p>The requested merchant could not be found.</p>
-          <button onClick={() => navigateBackToAdmin('merchants')} className="btn btn-primary">
+          <button onClick={() => navigate('/admin')} className="btn btn-primary">
             Back to Merchants
           </button>
         </div>
@@ -479,7 +477,7 @@ const MerchantDetailEdit = () => {
         <div className="header-content">
           <div className="header-left">
             <button
-              onClick={() => navigateBackToAdmin('merchants')}
+              onClick={() => navigate('/admin')}
               className="btn-back"
             >
               <i className="fas fa-arrow-left"></i>

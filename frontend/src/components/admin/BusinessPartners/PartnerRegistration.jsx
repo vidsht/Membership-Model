@@ -3,7 +3,6 @@ import { useDynamicFields } from '../../../hooks/useDynamicFields';
 import { useFormValidation } from '../../../hooks/useFormValidation';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useNotification } from '../../../contexts/NotificationContext';
-import { useAdminNavigation } from '../../../hooks/useAdminNavigation';
 import FormField from '../../common/FormField';
 import FormErrorSummary from '../../common/FormErrorSummary';
 import adminApi from '../../../services/adminApi';
@@ -19,7 +18,6 @@ const PartnerRegistration = () => {
   const { getBusinessCategoryOptions, getStateOptions, isLoading: fieldsLoading } = useDynamicFields();
   const { showNotification } = useNotification();
   const navigate = useNavigate();
-  const { navigateBackToAdmin } = useAdminNavigation();
   const { id: partnerId } = useParams();
 
   // Initialize form validation
@@ -758,9 +756,9 @@ const PartnerRegistration = () => {
           <button
             type="button"
             className="button button-outline back-to-dashboard"
-            onClick={() => navigateBackToAdmin('merchants')}
+            onClick={() => navigate('/admin')}
           >
-            <i className="fas fa-arrow-left"></i> Back to Business Partners
+            <i className="fas fa-arrow-left"></i> Back to Dashboard
           </button>
         </div>
       </div>

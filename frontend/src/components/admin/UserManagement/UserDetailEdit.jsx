@@ -5,14 +5,12 @@ import { useNotification } from '../../../contexts/NotificationContext';
 import { useImageUrl, SmartImage, DefaultAvatar } from '../../../hooks/useImageUrl.jsx';
 import ImageUpload from '../../common/ImageUpload';
 import { useDynamicFields } from '../../../hooks/useDynamicFields';
-import { useAdminNavigation } from '../../../hooks/useAdminNavigation';
 import api from '../../../services/api';
 import './UserDetailEdit.css';
 
 const UserDetailEdit = () => {
   const { userId } = useParams();
   const navigate = useNavigate();
-  const { navigateBackToAdmin } = useAdminNavigation();
   const { validateSession, handleSessionExpired } = useAuth();
   const { showNotification } = useNotification();
   const { getProfileImageUrl } = useImageUrl();
@@ -40,6 +38,7 @@ const UserDetailEdit = () => {
     membershipType: 'community',
     status: 'approved',
     bloodGroup: '',
+    userCategory: '',
     profilePhoto: null
   });
 
@@ -49,6 +48,16 @@ const UserDetailEdit = () => {
     plans: [],
     userPlans: [],
     merchantPlans: []
+  });
+
+  // Admin settings for user categories
+  const [adminSettings, setAdminSettings] = useState({
+    userCategories: {
+      available_categories: ['Individual', 'Business Owner', 'Professional', 'Student', 'Retiree'],
+      default_category: 'Individual',
+      category_required: true,
+      show_in_profile: true
+    }
   });
 
   // Fallback plans
@@ -113,6 +122,22 @@ const UserDetailEdit = () => {
     }
   }, [fallbackPlans]);
 
+  // Fetch admin settings
+  const fetchAdminSettings = useCallback(async () => {
+    try {
+      const response = await api.get('/admin/settings');
+      if (response.data.success && response.data.userCategories) {
+        setAdminSettings(prev => ({
+          ...prev,
+          userCategories: response.data.userCategories
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching admin settings:', error);
+      // Keep default settings if fetch fails
+    }
+  }, []);
+
   // Fetch user data
   const fetchUserData = useCallback(async () => {
     try {
@@ -138,6 +163,7 @@ const UserDetailEdit = () => {
           membershipType: userData.membershipType || 'community',
           status: userData.status || 'approved',
           bloodGroup: userData.bloodGroup || '',
+          userCategory: userData.userCategory || '',
           profilePhoto: userData.profilePhoto || null
         });
 
@@ -175,7 +201,7 @@ const UserDetailEdit = () => {
           return;
         }
 
-        await Promise.all([fetchReferenceData(), fetchUserData()]);
+        await Promise.all([fetchReferenceData(), fetchUserData(), fetchAdminSettings()]);
       } catch (err) {
         console.error('Error initializing component:', err);
         showNotification('Failed to initialize page', 'error');
@@ -258,6 +284,7 @@ const UserDetailEdit = () => {
         membershipType: user.membershipType || 'community',
         status: user.status || 'approved',
         bloodGroup: user.bloodGroup || '',
+        userCategory: user.userCategory || '',
         profilePhoto: user.profilePhoto || null
       });
     }
@@ -315,7 +342,7 @@ const UserDetailEdit = () => {
           <i className="fas fa-user-slash"></i>
           <h3>User Not Found</h3>
           <p>The requested user could not be found.</p>
-          <button onClick={() => navigateBackToAdmin('users')} className="btn btn-primary">
+          <button onClick={() => navigate('/admin/users')} className="btn btn-primary">
             Back to Users
           </button>
         </div>
@@ -330,7 +357,7 @@ const UserDetailEdit = () => {
         <div className="header-content">
           <div className="header-left">
             <button
-              onClick={() => navigateBackToAdmin('users')}
+              onClick={() => navigate('/admin')}
               className="btn-back"
             >
               <i className="fas fa-arrow-left"></i>
@@ -508,6 +535,25 @@ const UserDetailEdit = () => {
                     </select>
                   ) : (
                     <span>{user.bloodGroup || 'N/A'}</span>
+                  )}
+                </div>
+
+                <div className="detail-item">
+                  <label>User Category</label>
+                  {editMode ? (
+                    <select
+                      value={formData.userCategory}
+                      onChange={(e) => handleInputChange('userCategory', e.target.value)}
+                      className="edit-input"
+                      required={adminSettings.userCategories.category_required}
+                    >
+                      <option value="">Select category</option>
+                      {adminSettings.userCategories.available_categories.map(category => (
+                        <option key={category} value={category}>{category}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <span>{user.userCategory || adminSettings.userCategories.default_category || 'N/A'}</span>
                   )}
                 </div>
 

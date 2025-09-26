@@ -466,21 +466,15 @@ input:checked + .toggle-slider:before {
 }
 
 .toggle-slider {
-  position: absolute;
-  left: 2px;
+  position: absolute;   
   top: 50%;
   transform: translateY(-50%);
-  width: 20px;
-  height: 20px;
+  width: 0px;
   border-radius: 50%;
   background-color: white;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   transition: transform 0.3s ease;
   pointer-events: none;
-}
-
-.toggle-label input[type="checkbox"]:checked + .toggle-slider {
-  transform: translate(26px, -50%);
 }
 
 .toggle-text {
