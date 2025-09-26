@@ -40,7 +40,7 @@ const Home = () => {
   };
 
   // Derive the set of premium partners to show on the home carousel (only platinum and platinum_plus)
-  const premiumPartners = (Array.isArray(businesses) ? businesses : []).filter(b => {
+  const premiumPartners = (businesses || []).filter(b => {
     const membershipType = b.membershipLevel || b.membershipType || b.membership || '';
     const category = getBusinessPlanCategory(membershipType);
     // Only include platinum (featured) and premium_plus/platinum_plus plans
@@ -157,30 +157,18 @@ const Home = () => {
 
         // Process critical data immediately
         if (criticalData[0].status === 'fulfilled') {
-          const businessData = criticalData[0].value?.data;
-          const businessArray = Array.isArray(businessData) ? businessData : [];
-          setBusinesses(businessArray);
-          console.log('✅ Critical: Fetched', businessArray.length, 'businesses');
+          setBusinesses(criticalData[0].value.data || []);
+          console.log('✅ Critical: Fetched', criticalData[0].value.data?.length || 0, 'businesses');
         } else {
           console.warn('Critical businesses fetch failed:', criticalData[0].reason);
           setBusinesses([]); // fail gracefully
         }
 
         if (criticalData[1].status === 'fulfilled' && criticalData[1].value.data?.success) {
-          const settingsData = criticalData[1].value.data.settings || {};
-          setAdminSettings({
-            content: settingsData.content || { terms_conditions: '' },
-            features: settingsData.features || { show_statistics: true, business_directory: true },
-            ...settingsData
-          });
+          setAdminSettings(criticalData[1].value.data.settings);
           console.log('✅ Critical: Admin settings loaded');
         } else {
           console.log('Using default admin settings (public settings failed or absent)');
-          // Ensure default settings are always set
-          setAdminSettings({
-            content: { terms_conditions: '' },
-            features: { show_statistics: true, business_directory: true }
-          });
         }
 
         // Show initial content immediately
@@ -246,7 +234,7 @@ const Home = () => {
     fetchData();
   }, [isAuthenticated]);
 
-  const groupedBusinesses = (Array.isArray(businesses) ? businesses : []).reduce((acc, business) => {
+  const groupedBusinesses = businesses.reduce((acc, business) => {
     if (!acc[business.sector]) {
       acc[business.sector] = [];
     }
