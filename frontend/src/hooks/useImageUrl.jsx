@@ -41,47 +41,27 @@ export const useImageUrl = () => {
     }, []);
 
         const getProfileImageUrl = useMemo(() => {
-        return (userOrImageField, userId) => {
+        return (userOrImageField) => {
             // If first param is a user object, extract the image field
             if (typeof userOrImageField === 'object' && userOrImageField !== null) {
-            const user = userOrImageField;
-            const imageField = user?.profilePhoto || user?.profilePicture;
+                const user = userOrImageField;
+                const imageField = user?.profilePhoto || user?.profilePicture;
 
-            // Return full URL if available
-            if (imageField && (imageField.startsWith('http://') || imageField.startsWith('https://'))) {
-                return imageField;
-            }
-            
-            if (imageField) return getImageUrl(imageField, 'profile');
-            }
-            
-            // If it's a string (image field directly), use it
-            if (typeof userOrImageField === 'string' && userOrImageField) {
-            // Return full URL if it's a complete URL
-            if (userOrImageField.startsWith('http://') || userOrImageField.startsWith('https://')) {
-                return userOrImageField;
-            }
-            return getImageUrl(userOrImageField, 'profile');
-            }
-            
-            // Fallback to localStorage for persistent images
-            if (userId) {
-            try {
-                const userData = localStorage.getItem('user_data');
-                if (userData) {
-                const parsed = JSON.parse(userData);
-                const imageField = parsed.profilePhotoUrl || parsed.profilePicture || parsed.profilePhoto;
-                
                 // Return full URL if available
                 if (imageField && (imageField.startsWith('http://') || imageField.startsWith('https://'))) {
                     return imageField;
                 }
                 
                 if (imageField) return getImageUrl(imageField, 'profile');
-                }
-            } catch (e) {
-                console.error('Error loading persisted profile image:', e);
             }
+            
+            // If it's a string (image field directly), use it
+            if (typeof userOrImageField === 'string' && userOrImageField) {
+                // Return full URL if it's a complete URL
+                if (userOrImageField.startsWith('http://') || userOrImageField.startsWith('https://')) {
+                    return userOrImageField;
+                }
+                return getImageUrl(userOrImageField, 'profile');
             }
             
             return null;

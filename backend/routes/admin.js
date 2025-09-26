@@ -1453,12 +1453,28 @@ router.put('/users/:id/status', auth, admin, async (req, res) => {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    // Log user status change activity
-    // Log user status change activity
+    // Log user status change activity with specific user/business name
     try {
+      // Get target user information for better logging
+      const targetUserResult = await queryAsync(`
+        SELECT u.fullName, u.email, u.userType, b.businessName 
+        FROM users u 
+        LEFT JOIN businesses b ON u.id = b.userId 
+        WHERE u.id = ?
+      `, [userId]);
+      
+      let targetName = 'Unknown User';
+      if (targetUserResult.length > 0) {
+        const targetUser = targetUserResult[0];
+        // Use business name for merchants, full name for regular users
+        targetName = (targetUser.userType === 'merchant' && targetUser.businessName) 
+          ? targetUser.businessName 
+          : (targetUser.fullName || targetUser.email);
+      }
+
       await logActivity('USER_STATUS_CHANGED', {
         userId: req.user?.id,
-        description: `User status changed to ${status}: ${req.body.reason || 'User status changed by admin'}`,
+        description: `${targetName} status changed to ${status}: ${req.body.reason || 'Status changed by admin'}`,
         relatedId: userId,
         relatedType: 'user'
       });
@@ -2947,11 +2963,28 @@ router.post('/partners/:id/approve', auth, admin, async (req, res) => {
     if (result.affectedRows === 0) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
-    // Log user approval activity
+    // Log user approval activity with specific user/business name
     try {
+      // Get target user information for better logging
+      const targetUserResult = await queryAsync(`
+        SELECT u.fullName, u.email, u.userType, b.businessName 
+        FROM users u 
+        LEFT JOIN businesses b ON u.id = b.userId 
+        WHERE u.id = ?
+      `, [userId]);
+      
+      let targetName = 'Unknown User';
+      if (targetUserResult.length > 0) {
+        const targetUser = targetUserResult[0];
+        // Use business name for merchants, full name for regular users
+        targetName = (targetUser.userType === 'merchant' && targetUser.businessName) 
+          ? targetUser.businessName 
+          : (targetUser.fullName || targetUser.email);
+      }
+
       await logActivity('USER_STATUS_CHANGED', {
         userId: req.user?.id,
-        description: `User approved: ${req.body.reason || 'User status changed by admin'}`,
+        description: `${targetName} approved: ${req.body.reason || 'User approved by admin'}`,
         relatedId: userId,
         relatedType: 'user'
       });
@@ -2999,12 +3032,28 @@ router.post('/partners/:id/reject', auth, admin, async (req, res) => {
       return res.status(404).json({ success: false, message: 'Partner not found' });
     }
 
-    // Log merchant status change activity
-    // Log merchant rejection activity
+    // Log merchant rejection activity with specific business name
     try {
+      // Get target merchant information for better logging
+      const targetMerchantResult = await queryAsync(`
+        SELECT u.fullName, u.email, u.userType, b.businessName 
+        FROM users u 
+        LEFT JOIN businesses b ON u.id = b.userId 
+        WHERE u.id = ?
+      `, [merchantId]);
+      
+      let targetName = 'Unknown Merchant';
+      if (targetMerchantResult.length > 0) {
+        const targetMerchant = targetMerchantResult[0];
+        // Use business name for merchants, full name as fallback
+        targetName = targetMerchant.businessName 
+          ? targetMerchant.businessName 
+          : (targetMerchant.fullName || targetMerchant.email);
+      }
+
       await logActivity('USER_STATUS_CHANGED', {
         userId: req.user?.id,
-        description: `Merchant rejected: ${reason || 'Partner rejected by admin'}`,
+        description: `${targetName} rejected: ${reason || 'Business rejected by admin'}`,
         relatedId: merchantId,
         relatedType: 'merchant'
       });

@@ -405,7 +405,12 @@ const Activities = () => {
                   <td data-label="User">
                     {activity.user ? (
                       <div>
-                        <div>{activity.user.fullName || activity.user.email}</div>
+                        <div>
+                          {activity.user.userType === 'merchant' ? 
+                            `${activity.user.fullName || activity.user.email} (Business)` : 
+                            `${activity.user.fullName || activity.user.email} (User)`
+                          }
+                        </div>
                         <div style={{ fontSize: '0.75rem', color: 'var(--neutral-medium)' }}>
                           {activity.user.email}
                         </div>

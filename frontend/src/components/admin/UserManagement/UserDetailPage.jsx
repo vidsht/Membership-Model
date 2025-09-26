@@ -328,8 +328,8 @@ const UserDetailPage = () => {
         <div className="user-profile-card">
           <div className="profile-header">
             <div className="profile-avatar">
-              {user.profilePicture ? (
-                <img src={getProfileImageUrl(user) || '/uploads/default-avatar.jpg'} alt={user.fullName} />
+              {(user.profilePicture || user.profilePhoto) ? (
+                <img src={getProfileImageUrl({ profilePicture: user.profilePhoto || user.profilePicture }) || '/uploads/default-avatar.jpg'} alt={user.fullName} />
               ) : (
                  <div className="user-avatar-placeholder">{user.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}</div>
                )}
