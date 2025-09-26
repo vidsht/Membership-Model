@@ -374,8 +374,8 @@ const UserList = () => {
                   </td>
                   <td>
                     <div className="user-info">
-                      {user.profilePicture ? (
-                        <img src={getProfileImageUrl(user) || '/uploads/default-avatar.jpg'} alt="Profile" className="user-avatar" />
+                      {(user.profilePicture || user.profilePhoto) ? (
+                        <img src={getProfileImageUrl({ profilePicture: user.profilePhoto || user.profilePicture }) || '/uploads/default-avatar.jpg'} alt="Profile" className="user-avatar" />
                       ) : (
                         <div className="user-avatar-placeholder">{user.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}</div>
                       )}

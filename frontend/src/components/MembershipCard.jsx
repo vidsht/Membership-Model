@@ -14,6 +14,7 @@ const MembershipCard = () => {
   const qrCodeRef = useRef();
   const barcodeRef = useRef();
   const cardRef = useRef();
+  const [userProfile, setUserProfile] = useState(null);
   const [cardSettings, setCardSettings] = useState({
     show_qr_code: true,
     show_barcode: true,
@@ -37,8 +38,23 @@ const MembershipCard = () => {
     fetchCardSettings();
   }, []);
 
+  // Fetch user profile data
+  const fetchUserProfile = async () => {
+    try {
+      const response = await api.get('/users/profile/complete');
+      const userData = response.data.user;
+      setUserProfile({
+        ...userData,
+        profilePicture: userData.profilePhoto || userData.profilePicture || ''
+      });
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+    }
+  };
+
   useEffect(() => {
     if (user && user.membershipNumber) {
+      fetchUserProfile();
       // Small delay to ensure DOM elements are ready
       setTimeout(async () => {
         // Generate QR Code using lazy-loaded libraries
@@ -474,9 +490,9 @@ const MembershipCard = () => {
             <div className="photo-qr-container"> 
               {/* Profile Photo */}
               <div className="profile-photo">
-                {getProfileImageUrl(user) ? (
+                {getProfileImageUrl({ profilePicture: userProfile?.profilePicture }) ? (
                   <SmartImage 
-                    src={getProfileImageUrl(user)} 
+                    src={getProfileImageUrl({ profilePicture: userProfile?.profilePicture })} 
                     alt="Profile" 
                     className="profile-image"
                     fallback={

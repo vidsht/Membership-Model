@@ -138,8 +138,8 @@ const MerchantDetailEdit = () => {
         setMerchant(userData);
 
         // Set profile image
-        if (userData.profilePhoto) {
-          setProfileImage(getProfileImageUrl(userData));
+        if (userData.profilePhoto || userData.profilePicture) {
+          setProfileImage(getProfileImageUrl({ profilePicture: userData.profilePhoto || userData.profilePicture }));
         }
       }
 

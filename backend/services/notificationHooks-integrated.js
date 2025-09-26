@@ -5,6 +5,7 @@
 
 const notificationService = require('./notificationService-integrated');
 const { logActivity, logPlanExpiry, ACTIVITY_TYPES } = require('../utils/activityLogger');
+const { queryAsync } = require('../db');
 
 class NotificationHooks {
   // User Registration Hook
@@ -405,7 +406,7 @@ class NotificationHooks {
                 if (days <= 0) {
                   await logActivity('USER_PLAN_EXPIRED', {
                     userId: user.id,
-                    description: `User plan expired: ${user.fullName}'s ${user.currentPlan} plan has expired`,
+                    description: `${user.fullName}'s ${user.currentPlan} plan has expired`,
                     relatedId: user.id,
                     relatedType: 'user',
                     metadata: {
@@ -427,11 +428,22 @@ class NotificationHooks {
                   renewalUrl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/merchant/plans`
                 });
                 
-                // Log merchant plan expiry activity
+                // Log merchant plan expiry activity with business name
                 if (days <= 0) {
+                  // Get business name for better logging
+                  let displayName = user.fullName;
+                  try {
+                    const businessResult = await queryAsync('SELECT businessName FROM businesses WHERE userId = ?', [user.id]);
+                    if (businessResult.length > 0 && businessResult[0].businessName) {
+                      displayName = businessResult[0].businessName;
+                    }
+                  } catch (businessError) {
+                    console.warn('Error fetching business name for plan expiry log:', businessError);
+                  }
+
                   await logActivity('MERCHANT_PLAN_EXPIRED', {
                     userId: user.id,
-                    description: `Merchant plan expired: ${user.fullName}'s ${user.currentPlan} plan has expired`,
+                    description: `${displayName}'s ${user.currentPlan} plan has expired`,
                     relatedId: user.id,
                     relatedType: 'user',
                     metadata: {

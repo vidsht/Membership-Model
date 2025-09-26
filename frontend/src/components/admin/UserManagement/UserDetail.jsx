@@ -111,8 +111,8 @@ const UserDetail = ({ user, onClose, onApprove, onReject, onEdit, onDelete }) =>
     <div className="user-detail">
       <div className="user-detail-header">
         <div className="user-avatar-large">
-          {user.profilePicture ? (
-            <img src={getProfileImageUrl(user) || '/uploads/default-avatar.jpg'} alt="Profile" />
+          {(user.profilePicture || user.profilePhoto) ? (
+            <img src={getProfileImageUrl({ profilePicture: user.profilePhoto || user.profilePicture }) || '/uploads/default-avatar.jpg'} alt="Profile" />
           ) : (
              <div className="avatar-placeholder">
                {user.fullName ? user.fullName.charAt(0).toUpperCase() : '?'}
