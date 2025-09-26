@@ -137,13 +137,11 @@ const UserManagement = () => {
       try {
         const validationDate = new Date(user.validationDate);
         const now = new Date();
-        if (validationDate < now) {
-          return 'Expired';
-        }
-        return validationDate.toLocaleDateString('en-US', {
+        // Always return the formatted date, whether expired or not
+        return validationDate.toLocaleDateString('en-GB', {
           year: 'numeric',
-          month: 'short',
-          day: 'numeric'
+          month: '2-digit',
+          day: '2-digit'
         });
       } catch (error) {
         return 'Invalid date';

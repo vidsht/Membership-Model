@@ -196,20 +196,24 @@ router.get('/activities', auth, admin, async (req, res) => {
       // Try to get activities from the new activity logging system
       let activitiesQuery = `
         SELECT
-          id,
-          type,
-          title,
-          description,
-          userId,
-          userName,
-          userEmail,
-          userType,
-          timestamp,
-          icon,
-          color
-        FROM activities
+          a.id,
+          a.type,
+          a.title,
+          a.description,
+          a.userId,
+          CASE 
+            WHEN a.userType = 'merchant' AND b.businessName IS NOT NULL THEN b.businessName
+            ELSE a.userName
+          END as userName,
+          a.userEmail,
+          a.userType,
+          a.timestamp,
+          a.icon,
+          a.color
+        FROM activities a
+        LEFT JOIN businesses b ON a.userId = b.userId AND a.userType = 'merchant'
         ${whereClause}
-        ORDER BY timestamp DESC
+        ORDER BY a.timestamp DESC
         LIMIT ? OFFSET ?
       `;
       
@@ -4635,8 +4639,40 @@ router.get('/settings', auth, admin, async (req, res) => {
       },
       content: {
         terms_conditions: ''
+      },
+      userCategories: {
+        available_categories: ['Individual', 'Business Owner', 'Professional', 'Student', 'Retiree'],
+        default_category: 'Individual',
+        category_required: true,
+        show_in_profile: true
       }
     };
+
+    // Load user category settings from admin_settings table
+    try {
+      const categorySettings = await queryAsync(`
+        SELECT setting_key, setting_value, data_type 
+        FROM admin_settings 
+        WHERE category = 'user_categories'
+      `);
+      
+      categorySettings.forEach(setting => {
+        let value = setting.setting_value;
+        
+        // Convert data types
+        if (setting.data_type === 'boolean') {
+          value = value === 'true';
+        } else if (setting.data_type === 'number') {
+          value = parseFloat(value);
+        } else if (setting.setting_key === 'available_categories') {
+          value = value.split(',').map(cat => cat.trim());
+        }
+        
+        settings.userCategories[setting.setting_key] = value;
+      });
+    } catch (categoryError) {
+      console.warn('Error loading user category settings:', categoryError);
+    }
 
     // Try to load from database if settings table exists
     if (await tableExists('settings')) {
@@ -5832,7 +5868,7 @@ router.post('/test/restore-plan/:userId', admin, async (req, res) => {
 router.get('/expired-users', auth, admin, async (req, res) => {
   try {
     const query = `
-      SELECT u.id, u.fullName, u.email, u.membershipType, u.validationDate,
+      SELECT u.id, u.fullName, u.email, u.phone, u.membershipType, u.validationDate,
              u.created_at, u.status,
              p.name as planName
       FROM users u 
@@ -5866,7 +5902,7 @@ router.get('/expired-merchants', auth, admin, async (req, res) => {
     const businessTableExists = await tableExists('businesses');
     
     let query = `
-      SELECT u.id, u.fullName, u.email, u.membershipType, u.validationDate,
+      SELECT u.id, u.fullName, u.email, u.phone, u.membershipType, u.validationDate,
              u.created_at, u.status,
              p.name as planName
     `;

@@ -969,7 +969,6 @@ input:focus, select:focus, textarea:focus {
     display: flex;
     align-items: center;
     gap: 5px;
-    color: var(--dark);
     opacity: 0.7;
     font-size: 0.9rem;
 }

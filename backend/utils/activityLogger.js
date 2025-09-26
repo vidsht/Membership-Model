@@ -262,6 +262,19 @@ const logActivity = async (activityType, options = {}) => {
           finalUserName = finalUserName || userResult[0].fullName;
           finalUserEmail = finalUserEmail || userResult[0].email;
           finalUserType = finalUserType || userResult[0].userType || 'user';
+          
+          // If user is a merchant, try to get business name instead of fullName
+          if (finalUserType === 'merchant') {
+            try {
+              const businessResult = await queryAsync('SELECT businessName FROM businesses WHERE userId = ?', [userId]);
+              if (businessResult.length > 0 && businessResult[0].businessName) {
+                finalUserName = businessResult[0].businessName;
+              }
+            } catch (businessError) {
+              console.warn('Error fetching business name for activity log:', businessError);
+              // Keep using fullName as fallback
+            }
+          }
         }
       } catch (error) {
         console.warn('Error fetching user info for activity log:', error);

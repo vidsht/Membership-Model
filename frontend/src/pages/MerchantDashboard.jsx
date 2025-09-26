@@ -1102,11 +1102,11 @@ ${userInfo?.fullName || userInfo?.name || user?.fullName || user?.name || 'Merch
 
       <div className="dashboard-header">
         <div className="dashboard-header-content">
-          {(getMerchantLogoUrl(user) || user?.profilePhoto) && (
+          {(getMerchantLogoUrl(user) || user?.profilePhoto || businessInfo?.businessLogo) && (
             <div className="business-logo">
               <SmartImage
-                src={getMerchantLogoUrl(user) || user?.profilePhoto}
-                alt={user?.businessName || user?.business?.name || 'Business Logo'}
+                src={getMerchantLogoUrl(user) || user?.profilePhoto || businessInfo?.businessLogo}
+                alt={businessInfo?.businessName || user?.businessName || user?.business?.name || 'Business Logo'}
                 className="business-logo-img"
                 fallback="/api/placeholder/60/60"
                 placeholder={
@@ -1119,9 +1119,9 @@ ${userInfo?.fullName || userInfo?.name || user?.fullName || user?.name || 'Merch
           )}
           <div className="dashboard-title-section">
             <h1>
-              {(user?.businessName || user?.business?.name) && (
+              {(businessInfo?.businessName || user?.businessName || user?.business?.name) && (
                 <span className="business-name">
-                  {user.businessName || user.business?.name}
+                  {businessInfo?.businessName || user?.businessName || user?.business?.name}
                 </span>
               )}
               <span className="dashboard-label">Merchant Dashboard</span>
