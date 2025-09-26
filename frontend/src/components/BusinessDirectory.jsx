@@ -123,7 +123,7 @@ const BusinessDirectory = () => {
   };
 
   // Filter and sort businesses based on search, category, and sort option
-  const filteredAndSortedBusinesses = businesses
+  const filteredAndSortedBusinesses = (Array.isArray(businesses) ? businesses : [])
     .filter(business => {
       const name = business.businessName || business.name || '';
       const desc = business.businessDescription || business.description || '';
