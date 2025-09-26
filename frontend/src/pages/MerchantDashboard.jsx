@@ -85,10 +85,12 @@ const MerchantDashboard = () => {
   });
 
   useEffect(() => {
-    fetchDashboardData();
-    fetchNotifications();
-    fetchPlans();
-  }, []);
+    if (user && user.id) {
+      fetchDashboardData();
+      fetchNotifications();
+      fetchPlans();
+    }
+  }, [user?.id]); // Re-fetch data when user changes
 
   // Check plan expiry and handle deal expiration
   useEffect(() => {
@@ -1102,10 +1104,10 @@ ${userInfo?.fullName || userInfo?.name || user?.fullName || user?.name || 'Merch
 
       <div className="dashboard-header">
         <div className="dashboard-header-content">
-          {(getMerchantLogoUrl(user) || user?.profilePhoto || businessInfo?.businessLogo) && (
+          {(getMerchantLogoUrl({ logo: userInfo?.profilePhoto }) || businessInfo?.businessLogo) && (
             <div className="business-logo">
               <SmartImage
-                src={getMerchantLogoUrl(user) || user?.profilePhoto || businessInfo?.businessLogo}
+                src={getMerchantLogoUrl({ logo: userInfo?.profilePhoto }) || businessInfo?.businessLogo}
                 alt={businessInfo?.businessName || user?.businessName || user?.business?.name || 'Business Logo'}
                 className="business-logo-img"
                 fallback="/api/placeholder/60/60"

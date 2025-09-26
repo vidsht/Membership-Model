@@ -575,7 +575,7 @@ const handleMerchantLogoRemoval = async () => {
         <div className="merchant-logo-upload-section">
           <div className="current-logo-display">
             <SmartImage
-              src={getMerchantLogoUrl(user)}
+              src={getMerchantLogoUrl({ logo: userProfile?.profilePicture })}
               fallback={<DefaultAvatar name={user?.fullName || ''} size={120} />}
               alt="Current business logo"
               className="business-logo-preview"
@@ -591,7 +591,7 @@ const handleMerchantLogoRemoval = async () => {
             <ImageUpload
               type="merchant"
               entityId={user?.id}
-              currentImage={getMerchantLogoUrl(user)}
+              currentImage={getMerchantLogoUrl({ logo: userProfile?.profilePicture })}
               onUploadSuccess={handleMerchantLogoUpload}
               onUploadError={(error) => showNotification('Upload failed', 'error')}
               className="merchant-logo-upload"
