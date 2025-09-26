@@ -429,8 +429,6 @@ const Dashboard = () => {
                     className="business-logo-image"
                     maxRetries={3}
                     style={{
-                      width: '90px',
-                      height: '90px',
                       objectFit: 'cover',
                       borderRadius: '16px'
                     }}

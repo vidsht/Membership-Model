@@ -90,25 +90,41 @@ export const useImageUrl = () => {
 
         const getMerchantLogoUrl = useMemo(() => {
         return (merchantOrBusiness) => {
-            if (!merchantOrBusiness) return null;
-            
             // Debug logging
             console.log('🔍 getMerchantLogoUrl input:', merchantOrBusiness);
             
             let logoField = null;
             
-            // For merchants, check user.profilePhoto first (since that's where merchant logos are stored)
-            if (merchantOrBusiness.userType === 'merchant' || merchantOrBusiness.business) {
-            // If it's a merchant user object with profilePhoto
-            logoField = merchantOrBusiness.profilePhoto || merchantOrBusiness.profilePicture;
-            
-            // If it has business data nested, check business logo
-            if (!logoField && merchantOrBusiness.business) {
-                logoField = merchantOrBusiness.business.logo || merchantOrBusiness.business.logoUrl;
+            // If merchantOrBusiness is provided, try to get logo from it
+            if (merchantOrBusiness) {
+                // For merchants, check user.profilePhoto first (since that's where merchant logos are stored)
+                if (merchantOrBusiness.userType === 'merchant' || merchantOrBusiness.business) {
+                    // If it's a merchant user object with profilePhoto
+                    logoField = merchantOrBusiness.profilePhoto || merchantOrBusiness.profilePicture;
+                    
+                    // If it has business data nested, check business logo
+                    if (!logoField && merchantOrBusiness.business) {
+                        logoField = merchantOrBusiness.business.logo || merchantOrBusiness.business.logoUrl;
+                    }
+                } else {
+                    // For business objects from /businesses API, check logo fields (which now map to profilePhoto)
+                    logoField = merchantOrBusiness.logo || merchantOrBusiness.logoUrl || merchantOrBusiness.merchantLogo;
+                }
             }
-            } else {
-            // For business objects from /businesses API, check logo fields (which now map to profilePhoto)
-            logoField = merchantOrBusiness.logo || merchantOrBusiness.logoUrl || merchantOrBusiness.merchantLogo;
+            
+            // Fallback to localStorage for persistent merchant images
+            if (!logoField) {
+                try {
+                    const userData = localStorage.getItem('user_data');
+                    if (userData) {
+                        const parsed = JSON.parse(userData);
+                        // Check for merchant logo in localStorage (use profilePhoto for merchants)
+                        logoField = parsed.profilePhoto || parsed.profilePicture;
+                        console.log('🔄 Fallback to localStorage logo:', logoField);
+                    }
+                } catch (e) {
+                    console.error('Error loading persisted merchant logo:', e);
+                }
             }
             
             console.log('🖼️ Found logo field:', logoField);
@@ -132,8 +148,8 @@ export const useImageUrl = () => {
             }
             
             if (logoField && (logoField.startsWith('http://') || logoField.startsWith('https://'))) {
-            console.log('✅ Returning full URL:', logoField);
-            return logoField;
+                console.log('✅ Returning full URL:', logoField);
+                return logoField;
             }
             
             const finalUrl = logoField ? getImageUrl(logoField, 'merchant') : null; // Use 'merchant' since it's stored as profilePhoto

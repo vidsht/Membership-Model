@@ -85,10 +85,12 @@ const MerchantDashboard = () => {
   });
 
   useEffect(() => {
-    fetchDashboardData();
-    fetchNotifications();
-    fetchPlans();
-  }, []);
+    if (user && user.id) {
+      fetchDashboardData();
+      fetchNotifications();
+      fetchPlans();
+    }
+  }, [user?.id]); // Re-fetch data when user changes
 
   // Check plan expiry and handle deal expiration
   useEffect(() => {
