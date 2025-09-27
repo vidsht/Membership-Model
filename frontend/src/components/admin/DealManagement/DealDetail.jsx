@@ -227,7 +227,7 @@ const DealDetail = () => {
       <div className="deal-detail-header">
         <button 
           className="back-button"
-          onClick={() => navigate('/admin')}
+          onClick={() => navigate('/admin', { state: { activeTab: 'deals' } })}
         >
           ← Back to Deals
         </button>

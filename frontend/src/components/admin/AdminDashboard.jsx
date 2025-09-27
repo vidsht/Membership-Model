@@ -56,7 +56,7 @@ const AdminDashboard = () => {
     { id: 'merchants', label: 'Business Partners', icon: 'fas fa-handshake' },
     { id: 'deals', label: 'Deal Management', icon: 'fas fa-tags' },
     { id: 'plans', label: 'Plan Management', icon: 'fas fa-crown' },
-    { id: 'expired', label: 'Expired', icon: 'fas fa-calendar-times' },
+    { id: 'expired', label: 'Expiry Management', icon: 'fas fa-calendar-times' },
     { id: 'birthdays', label: 'Birthdays', icon: 'fas fa-birthday-cake' },
     { id: 'approvals', label: 'Approvals', icon: 'fas fa-check-circle' },
     { id: 'activities', label: 'Activities', icon: 'fas fa-history' },

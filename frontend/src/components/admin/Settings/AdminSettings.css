@@ -283,8 +283,9 @@
 .toggle-switch {
   position: relative;
   display: inline-block;
-  width: 50px;
-  height: 26px;
+  width: 60px;
+  height: 32px;
+  flex-shrink: 0;
 }
 
 .toggle-switch input {
@@ -300,33 +301,40 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #ccc;
-  transition: .4s;
-  border-radius: 34px;
+  background-color: #dc3545;
+  transition: all 0.3s ease;
+  border-radius: 32px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  border: 2px solid #fff;
 }
 
 .toggle-slider:before {
   position: absolute;
   content: "";
-  height: 18px;
-  width: 18px;
-  left: 4px;
-  bottom: 4px;
+  height: 24px;
+  width: 24px;
+  left: 2px;
+  bottom: 2px;
   background-color: white;
-  transition: .4s;
+  transition: all 0.3s ease;
   border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 input:checked + .toggle-slider {
-  background-color: #3498db;
+  background-color: #28a745;
 }
 
 input:focus + .toggle-slider {
-  box-shadow: 0 0 1px #3498db;
+  box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.25);
 }
 
 input:checked + .toggle-slider:before {
-  transform: translateX(24px);
+  transform: translateX(28px);
+}
+
+.toggle-switch:hover .toggle-slider {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .toggle-control {
@@ -422,7 +430,7 @@ input:checked + .toggle-slider:before {
   }
 }
 
-/* Statistics Settings Styles */
+/* Statistics Settings Styles - Enhanced Layout */
 .statistics-settings {
   display: flex;
   flex-direction: column;
@@ -432,17 +440,24 @@ input:checked + .toggle-slider:before {
 .stat-setting {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  padding: 1rem;
-  border: 1px solid #e1e1e1;
-  border-radius: 6px;
-  background: #f8f9fa;
+  gap: 0.75rem;
+  padding: 1.25rem;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  background: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.stat-setting:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border-color: #3498db;
 }
 
 .toggle-label {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 1rem;
   cursor: pointer;
   font-weight: 500;
   color: #2c3e50;
@@ -452,41 +467,58 @@ input:checked + .toggle-slider:before {
 .toggle-label input[type="checkbox"] {
   position: relative;
   appearance: none;
-  width: 48px;
-  height: 24px;
-  border-radius: 12px;
-  background-color: #ccc;
-  transition: background-color 0.3s ease;
+  width: 60px;
+  height: 32px;
+  border-radius: 16px;
+  background-color: #dc3545;
+  transition: all 0.3s ease;
   cursor: pointer;
   flex-shrink: 0;
+  border: 2px solid #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .toggle-label input[type="checkbox"]:checked {
-  background-color: #3498db;
+  background-color: #28a745;
+}
+
+.toggle-label input[type="checkbox"]:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.toggle-label input[type="checkbox"]:before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: white;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.toggle-label input[type="checkbox"]:checked:before {
+  transform: translateX(28px);
 }
 
 .toggle-slider {
-  position: absolute;   
-  top: 50%;
-  transform: translateY(-50%);
-  width: 0px;
-  border-radius: 50%;
-  background-color: white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  transition: transform 0.3s ease;
-  pointer-events: none;
+  display: none; /* Hide the old slider since we're using ::before */
 }
 
 .toggle-text {
   font-size: 1rem;
-  font-weight: 500;
+  font-weight: 600;
+  color: #2c3e50;
 }
 
 .setting-description {
   margin: 0;
   font-size: 0.875rem;
   color: #6c757d;
-  padding-left: 3.25rem;
+  padding-left: 4.25rem;
+  line-height: 1.4;
 }
 
 @media (max-width: 768px) {

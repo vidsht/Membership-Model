@@ -276,7 +276,7 @@ const PlanSettings = () => {
             </div>
           )}
         </div>        <div className="header-actions">
-          <Link to="/admin" className="btn-secondary">
+          <Link to="/admin" state={{ activeTab: 'deals' }} className="btn-secondary">
             <i className="fas fa-arrow-left"></i>
             Back to Dashboard
           </Link>

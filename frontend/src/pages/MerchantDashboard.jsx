@@ -499,7 +499,7 @@ const MerchantDashboard = () => {
       case 'gold_merchant':
       case 'gold_business':
       case 'gold':
-        // Gold plans - full features (DISABLE statistics, analytics, view analytics and deal analytics)
+        // Gold plans - partial statistics visible (Total deals, Active deals, Pending approval)
         access = {
           analytics: false, // DISABLED for gold (per task requirement)
           advancedStats: true,
@@ -507,7 +507,7 @@ const MerchantDashboard = () => {
           dealPosting: 'unlimited', // Maximum deal posting
           priorityListing: true,
           featuredPlacement: true,
-          statisticsPanel: false, // DISABLED for gold (per task requirement)
+          statisticsPanel: 'partial', // PARTIAL for gold (show only some stats)
           viewAnalyticsButton: false, // DISABLED for gold
           dealAnalyticsButton: false // DISABLED for gold
         };
@@ -1246,6 +1246,7 @@ ${userInfo?.fullName || userInfo?.name || user?.fullName || user?.name || 'Merch
           <>
             <h3 className="stats-heading">Deals and Redemption statistics</h3>
             <div className="stats-grid">
+            {/* Total Deals - Visible for Gold and Platinum+ */}
             <div className="stat-card primary">
               <div className="stat-icon">
                 <i className="fas fa-tags"></i>
@@ -1257,6 +1258,7 @@ ${userInfo?.fullName || userInfo?.name || user?.fullName || user?.name || 'Merch
               </div>
             </div>
             
+            {/* Active Deals - Visible for Gold and Platinum+ */}
             <div className="stat-card success">
               <div className="stat-icon">
                 <i className="fas fa-play-circle"></i>
@@ -1268,6 +1270,7 @@ ${userInfo?.fullName || userInfo?.name || user?.fullName || user?.name || 'Merch
               </div>
             </div>
             
+            {/* Pending Approval - Visible for Gold and Platinum+ */}
             <div className="stat-card warning">
               <div className="stat-icon">
                 <i className="fas fa-clock"></i>
@@ -1279,37 +1282,58 @@ ${userInfo?.fullName || userInfo?.name || user?.fullName || user?.name || 'Merch
               </div>
             </div>
             
-            <div className="stat-card info">
+            {/* Total Views - Blurred for Gold, Visible for Platinum+ */}
+            <div className={`stat-card info ${featureAccess.statisticsPanel === 'partial' ? 'stat-card-blurred' : ''}`}>
               <div className="stat-icon">
                 <i className="fas fa-eye"></i>
               </div>
               <div className="stat-content">
-                <h3>{stats.totalViews || 0}</h3>
+                <h3>{featureAccess.statisticsPanel === 'partial' ? '***' : (stats.totalViews || 0)}</h3>
                 <p>Total Views</p>
                 <small className="stat-subtext">Deal impressions</small>
               </div>
+              {featureAccess.statisticsPanel === 'partial' && (
+                <div className="upgrade-overlay">
+                  <i className="fas fa-lock"></i>
+                  <span>Upgrade to Platinum</span>
+                </div>
+              )}
             </div>
             
-            <div className="stat-card accent">
+            {/* Total Redemptions - Blurred for Gold, Visible for Platinum+ */}
+            <div className={`stat-card accent ${featureAccess.statisticsPanel === 'partial' ? 'stat-card-blurred' : ''}`}>
               <div className="stat-icon">
                 <i className="fas fa-shopping-cart"></i>
               </div>
               <div className="stat-content">
-                <h3>{stats.totalRedemptions || 0}</h3>
+                <h3>{featureAccess.statisticsPanel === 'partial' ? '***' : (stats.totalRedemptions || 0)}</h3>
                 <p>Total Redemptions</p>
                 <small className="stat-subtext">All time</small>
               </div>
+              {featureAccess.statisticsPanel === 'partial' && (
+                <div className="upgrade-overlay">
+                  <i className="fas fa-lock"></i>
+                  <span>Upgrade to Platinum</span>
+                </div>
+              )}
             </div>
             
-            <div className="stat-card secondary">
+            {/* Today's Redemptions - Blurred for Gold, Visible for Platinum+ */}
+            <div className={`stat-card secondary ${featureAccess.statisticsPanel === 'partial' ? 'stat-card-blurred' : ''}`}>
               <div className="stat-icon">
                 <i className="fas fa-calendar-day"></i>
               </div>
               <div className="stat-content">
-                <h3>{stats.todayRedemptions || 0}</h3>
+                <h3>{featureAccess.statisticsPanel === 'partial' ? '***' : (stats.todayRedemptions || 0)}</h3>
                 <p>Today's Redemptions</p>
                 <small className="stat-subtext">Last 24 hours</small>
               </div>
+              {featureAccess.statisticsPanel === 'partial' && (
+                <div className="upgrade-overlay">
+                  <i className="fas fa-lock"></i>
+                  <span>Upgrade to Platinum</span>
+                </div>
+              )}
             </div>
           </div>
           </>
@@ -1838,10 +1862,11 @@ ${userInfo?.fullName || userInfo?.name || user?.fullName || user?.name || 'Merch
                 console.log('[DEBUG] Rendering deal:', deal.id, 'status:', deal.status, 'title:', deal.title);
                 
                 const isExpired = new Date(deal.validUntil) < new Date();
-                const displayStatus = isExpired ? 'Expired' : deal.status;
+                const isUpcoming = deal.validFrom && new Date(deal.validFrom) > new Date() && deal.status !== 'pending_approval';
+                const displayStatus = isExpired ? 'Expired' : (deal.status === 'pending_approval' ? 'Pending Approval' : (isUpcoming ? 'Upcoming' : deal.status));
                 
                 return (
-                  <div key={deal.id} className={`deal-card ${isExpired ? 'expired-deal' : ''}`}>
+                  <div key={deal.id} className={`deal-card ${isExpired ? 'expired-deal' : ''} ${isUpcoming ? 'upcoming-deal' : ''}`}>
                       {deal.bannerImage && (
                       <div className="deal-banner-container">
                         {/* Limited Badge - Show when member limit is set */}
@@ -1849,6 +1874,13 @@ ${userInfo?.fullName || userInfo?.name || user?.fullName || user?.name || 'Merch
                           <div className="deal-limited-badge">
                             <i className="fas fa-users"></i>
                             Limited
+                          </div>
+                        )}
+                        {/* Upcoming Badge - Show when deal is upcoming */}
+                        {isUpcoming && (
+                          <div className="deal-upcoming-badge">
+                            <i className="fas fa-clock"></i>
+                            Upcoming
                           </div>
                         )}
                         <SmartImage 
@@ -1862,7 +1894,7 @@ ${userInfo?.fullName || userInfo?.name || user?.fullName || user?.name || 'Merch
                     <div className="deal-header">
                       <h3>{deal.title}</h3>
                       <div className="deal-header-badges">
-                        <span className={`status-badge ${isExpired ? 'expired' : deal.status}`}>
+                        <span className={`status-badge ${isExpired ? 'expired' : (deal.status === 'pending_approval' ? 'pending_approval' : (isUpcoming ? 'upcoming' : deal.status))}`}>
                           {displayStatus}
                         </span>
                         {/* Limited Badge for deals without banners */}
@@ -1870,6 +1902,13 @@ ${userInfo?.fullName || userInfo?.name || user?.fullName || user?.name || 'Merch
                           <span className="limited-badge-inline">
                             <i className="fas fa-users"></i>
                             Limited
+                          </span>
+                        )}
+                        {/* Upcoming Badge for deals without banners */}
+                        {!deal.bannerImage && isUpcoming && (
+                          <span className="upcoming-badge-inline">
+                            <i className="fas fa-clock"></i>
+                            Upcoming
                           </span>
                         )}
                       </div>
@@ -2855,7 +2894,7 @@ ${userInfo?.fullName || userInfo?.name || user?.fullName || user?.name || 'Merch
                           {!isBasicOrSilverUser(userInfo?.membershipType) && memberVerificationResult.validationDate && (
                             <div className="info-item">
                               <strong><i className="fas fa-calendar"></i> Plan Expiry:</strong>
-                              <span className={memberVerificationResult.isExpired ? 'text-danger' : memberVerificationResult.daysUntilExpiry <= 7 ? 'text-warning' : 'text-success'}>
+                              <span className={memberVerificationResult.isExpired ? 'text-danger' : memberVerificationResult.daysUntilExpiry <= 7 ? 'text-warning' : ''}>
                                 {new Date(memberVerificationResult.validationDate).toLocaleDateString('en-GB')}
                                 {memberVerificationResult.isExpired ? ' (Expired)' : 
                                   memberVerificationResult.daysUntilExpiry <= 7 ? ` (${memberVerificationResult.daysUntilExpiry} days left)` : 

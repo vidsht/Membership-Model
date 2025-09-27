@@ -78,17 +78,16 @@ const SocialMediaSettings = ({ settings, onSettingChange }) => {
           <p>Control the social media section display on the home page</p>
         </div>
         <div className="toggle-setting">
-          <label className="toggle-switch">
+          <label className="social-media-toggle-label">
             <input
               type="checkbox"
               checked={settings?.features?.show_social_media_home ?? true}
               onChange={(e) => handleToggleFeature(e.target.checked)}
             />
-            <span className="toggle-slider"></span>
+            <span className="toggle-label">
+              {settings?.features?.show_social_media_home ? 'Enabled' : 'Disabled'}
+            </span>
           </label>
-          <span className="toggle-label">
-            {settings?.features?.show_social_media_home ? 'Enabled' : 'Disabled'}
-          </span>
         </div>
       </div>
 

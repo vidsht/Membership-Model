@@ -574,6 +574,7 @@ router.post('/deals', checkMerchantAccess, checkDealPostingLimit, [
     originalPrice,
     discountedPrice,
     termsConditions,
+    validFrom,
     expiration_date,
     imageUrl,
     couponCode,
@@ -618,7 +619,7 @@ router.post('/deals', checkMerchantAccess, checkDealPostingLimit, [
     originalPrice || null,
     discountedPrice || null,
     termsConditions || null,
-    expiration_date, // validFrom
+    validFrom || expiration_date, // validFrom - use validFrom if provided, fallback to expiration_date
     expiration_date, // validUntil  
     couponCode || null,
     requiredPlanPriority || 1,
@@ -721,6 +722,7 @@ router.put('/deals/:dealId', checkMerchantAccess, [
       originalPrice,
       discountedPrice,
       termsConditions,
+      validFrom,
       expiration_date,
       couponCode,
       requiredPlanPriority,
@@ -782,6 +784,7 @@ router.put('/deals/:dealId', checkMerchantAccess, [
         originalPrice = ?, 
         discountedPrice = ?, 
         termsConditions = ?, 
+        validFrom = ?,
         expiration_date = ?, 
         couponCode = ?,
         minPlanPriority = ?,
@@ -802,6 +805,7 @@ router.put('/deals/:dealId', checkMerchantAccess, [
       originalPrice || null, 
       discountedPrice || null, 
       termsConditions || null, 
+      validFrom || expiration_date || null,  // validFrom - use validFrom if provided, fallback to expiration_date
       expiration_date || null, 
       couponCode || null,
       minPlanPriority,

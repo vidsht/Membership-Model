@@ -459,7 +459,12 @@ Contact: cards@indiansinghana.com`
                         <i className={`fas ${userType === 'users' ? 'fa-user' : 'fa-store'}`}></i>
                       </div>
                       <div className="member-details">
-                        <h4>{member.fullName || member.businessName}</h4>
+                        <h4>
+                          {userType === 'merchants' && member.businessName && member.fullName 
+                            ? `${member.businessName} (${member.fullName})`
+                            : member.fullName || member.businessName
+                          }
+                        </h4>
                         <p className="member-email">{member.email}</p>
                         <p className="member-plan">{member.membershipType || member.planName || 'No Plan'}</p>
                         <div className={`expiry-status ${expiryInfo.color}`}>

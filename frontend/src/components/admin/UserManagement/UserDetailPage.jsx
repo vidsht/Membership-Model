@@ -283,7 +283,7 @@ const UserDetailPage = () => {
           <i className="fas fa-user-times"></i>
           <h3>User Not Found</h3>
           <p>The requested user could not be found.</p>
-          <button onClick={() => navigate('/admin')} className="btn btn-primary">
+          <button onClick={() => navigate('/admin', { state: { activeTab: 'users' } })} className="btn btn-primary">
             Back to Users
           </button>
         </div>
@@ -297,7 +297,7 @@ const UserDetailPage = () => {
       <div className="page-header">
         <div className="header-content">
           <div className="header-left">
-            <button onClick={() => navigate('/admin')} className="btn-back">
+            <button onClick={() => navigate('/admin', { state: { activeTab: 'users' } })} className="btn-back">
               <i className="fas fa-arrow-left"></i>
             </button>
             <div className="header-info">

@@ -36,17 +36,16 @@ const MembershipPlanSettings = ({ settings, onSettingChange }) => {
           <p>Control the display of membership plan selection in registration forms</p>
         </div>
         <div className="toggle-setting">
-          <label className="toggle-switch">
+          <label className="membership-plan-toggle-label">
             <input
               type="checkbox"
               checked={settings?.featureToggles?.showMembershipPlans ?? true}
               onChange={(e) => handleToggleFeature(e.target.checked)}
             />
-            <span className="toggle-slider"></span>
+            <span className="toggle-label">
+              {settings?.featureToggles?.showMembershipPlans ? 'Enabled' : 'Disabled'}
+            </span>
           </label>
-          <span className="toggle-label">
-            {settings?.featureToggles?.showMembershipPlans ? 'Enabled' : 'Disabled'}
-          </span>
         </div>
       </div>
 
