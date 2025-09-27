@@ -201,13 +201,31 @@ const MembershipCard = () => {
       // Add capture-mode class to remove overlay effects
       cardRef.current.classList.add('capture-mode', 'download-mode');
       
+      // Force style recalculation and longer delay to ensure CSS changes take effect
+      cardRef.current.offsetHeight; // Force reflow
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
       // Import html2canvas dynamically
       const html2canvas = await import('html2canvas');
       const canvas = await html2canvas.default(cardRef.current, {
-        scale: 2,
-        backgroundColor: '#ffffff',
+        scale: 3, // Higher scale for better quality
+        backgroundColor: null, // Don't add white background - use card's natural background
         useCORS: true,
-        allowTaint: true
+        allowTaint: true,
+        logging: false, // Reduce console noise
+        removeContainer: true, // Clean up after rendering
+        ignoreElements: (element) => {
+          // Ignore any pseudo-elements or overlays that might cause issues
+          return element.classList?.contains('card-overlay') || 
+                 element.tagName === 'STYLE' ||
+                 (element.style && element.style.position === 'absolute' && element.style.background?.includes('rgba(255'));
+        },
+        onclone: (clonedDoc, element) => {
+          // Additional cleanup in the cloned document
+          const overlays = clonedDoc.querySelectorAll('[class*="overlay"], [style*="rgba(255"]');
+          overlays.forEach(el => el.remove());
+          return element;
+        }
       });
 
       // Remove the classes after capture
@@ -243,12 +261,28 @@ const MembershipCard = () => {
       // Add capture-mode class to remove overlay effects
       cardRef.current.classList.add('capture-mode', 'download-mode');
       
+      // Force style recalculation and longer delay
+      cardRef.current.offsetHeight; // Force reflow
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
       const html2canvas = await import('html2canvas');
       const canvas = await html2canvas.default(cardRef.current, {
-        scale: 2,
-        backgroundColor: '#ffffff',
+        scale: 3, // Higher scale for better quality
+        backgroundColor: null, // Don't add white background - use card's natural background
         useCORS: true,
-        allowTaint: true
+        allowTaint: true,
+        logging: false,
+        removeContainer: true,
+        ignoreElements: (element) => {
+          return element.classList?.contains('card-overlay') || 
+                 element.tagName === 'STYLE' ||
+                 (element.style && element.style.position === 'absolute' && element.style.background?.includes('rgba(255'));
+        },
+        onclone: (clonedDoc, element) => {
+          const overlays = clonedDoc.querySelectorAll('[class*="overlay"], [style*="rgba(255"]');
+          overlays.forEach(el => el.remove());
+          return element;
+        }
       });
 
       // Remove the classes after capture
@@ -302,12 +336,28 @@ const MembershipCard = () => {
           // First try to share with image if supported
           cardRef.current.classList.add('capture-mode', 'download-mode');
           
+          // Force style recalculation and longer delay
+          cardRef.current.offsetHeight; // Force reflow
+          await new Promise(resolve => setTimeout(resolve, 200));
+          
           const html2canvas = await import('html2canvas');
           const canvas = await html2canvas.default(cardRef.current, {
-            scale: 2,
-            backgroundColor: '#ffffff',
+            scale: 3, // Higher scale for better quality
+            backgroundColor: null, // Don't add white background - use card's natural background
             useCORS: true,
-            allowTaint: true
+            allowTaint: true,
+            logging: false,
+            removeContainer: true,
+            ignoreElements: (element) => {
+              return element.classList?.contains('card-overlay') || 
+                     element.tagName === 'STYLE' ||
+                     (element.style && element.style.position === 'absolute' && element.style.background?.includes('rgba(255'));
+            },
+            onclone: (clonedDoc, element) => {
+              const overlays = clonedDoc.querySelectorAll('[class*="overlay"], [style*="rgba(255"]');
+              overlays.forEach(el => el.remove());
+              return element;
+            }
           });
 
           // Remove the classes after capture
