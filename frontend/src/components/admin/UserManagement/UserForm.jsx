@@ -307,7 +307,7 @@ const UserForm = () => {
         <div className="header-content">
           <div className="header-left">
             <button
-              onClick={() => navigate('/admin')}
+              onClick={() => navigate('/admin', { state: { activeTab: 'users' } })}
               className="btn-back"
             >
               <i className="fas fa-arrow-left"></i>

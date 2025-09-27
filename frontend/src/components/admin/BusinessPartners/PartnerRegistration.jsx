@@ -756,7 +756,7 @@ const PartnerRegistration = () => {
           <button
             type="button"
             className="button button-outline back-to-dashboard"
-            onClick={() => navigate('/admin')}
+            onClick={() => navigate('/admin', { state: { activeTab: 'merchants' } })}
           >
             <i className="fas fa-arrow-left"></i> Back to Dashboard
           </button>

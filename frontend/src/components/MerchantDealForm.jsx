@@ -203,33 +203,35 @@ React.useEffect(() => {
         ...prev,
         [name]: e.target.files[0]
       }));
-    } else {
-      const newFormData = {
-        ...formData,
-        [name]: value
-      };
-      
-      // Auto-calculate discounted price when original price or discount changes
-      if ((name === 'originalPrice' || name === 'discount' || name === 'discountType') 
-          && newFormData.originalPrice && newFormData.discount && newFormData.discountType) {
+    } else {  
+      setFormData(prev => {
+        const newFormData = {
+          ...prev,
+          [name]: value
+        };
         
-        const originalPrice = parseFloat(newFormData.originalPrice);
-        const discountValue = parseFloat(newFormData.discount);
-        
-        if (!isNaN(originalPrice) && !isNaN(discountValue)) {
-          let discountedPrice;
+        // Auto-calculate discounted price when original price or discount changes
+        if ((name === 'originalPrice' || name === 'discount' || name === 'discountType') 
+            && newFormData.originalPrice && newFormData.discount && newFormData.discountType) {
           
-          if (newFormData.discountType === 'percentage') {
-            discountedPrice = originalPrice - (originalPrice * discountValue / 100);
-          } else {
-            discountedPrice = originalPrice - discountValue;
+          const originalPrice = parseFloat(newFormData.originalPrice);
+          const discountValue = parseFloat(newFormData.discount);
+          
+          if (!isNaN(originalPrice) && !isNaN(discountValue)) {
+            let discountedPrice;
+            
+            if (newFormData.discountType === 'percentage') {
+              discountedPrice = originalPrice - (originalPrice * discountValue / 100);
+            } else {
+              discountedPrice = originalPrice - discountValue;
+            }
+            
+            newFormData.discountedPrice = Math.max(0, discountedPrice).toFixed(2);
           }
-          
-          newFormData.discountedPrice = Math.max(0, discountedPrice).toFixed(2);
         }
-      }
-      
-      setFormData(newFormData);
+        
+        return newFormData;
+      });
     }
     
     // Clear error when field is edited
@@ -296,6 +298,7 @@ const handleBannerImageUpload = (fileOrResponse) => {
         originalPrice: formData.originalPrice,
         discountedPrice: formData.discountedPrice,
         termsConditions: formData.termsConditions,
+        validFrom: formData.validFrom,
         expiration_date: formData.validUntil,
         couponCode: formData.couponCode,
         requiredPlanPriority: parseInt(formData.requiredPlanPriority),
@@ -315,7 +318,7 @@ if (isEditing && deal) {
   dealId = deal.id;
   createdDeal = { ...deal, ...dealData };
   console.log('[DEBUG] Update response:', response);
-  showNotification('Deal updated successfully! It will be reviewed by admin before going live.', 'success');
+  showNotification('Deal edited successfully!', 'success');
 } else {
   const response = await merchantApi.createDeal(dealData);
   console.log('🔧 DEBUG: Create response:', response);

@@ -442,7 +442,7 @@ const PartnerList = () => {
               Bulk Actions ({selectedPartners.length})
             </button>
           )}
-          <Link to="/admin" className="btn-secondary" style={{marginLeft: '0.5rem'}}>
+          <Link to="/admin" state={{ activeTab: 'merchants' }} className="btn-secondary" style={{marginLeft: '0.5rem'}}>
             <i className="fas fa-arrow-left"></i> Back to Dashboard
           </Link>
         </div>

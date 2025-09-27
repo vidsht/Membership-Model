@@ -199,7 +199,7 @@ const MerchantDetailEdit = () => {
       }
       if (err.response?.status === 404) {
         showNotification('Merchant not found', 'error');
-        navigate('/admin');
+        navigate('/admin', { state: { activeTab: 'merchants' } });
         return;
       }
       showNotification('Failed to load merchant data', 'error');
@@ -462,7 +462,7 @@ const MerchantDetailEdit = () => {
           <i className="fas fa-store-slash"></i>
           <h3>Merchant Not Found</h3>
           <p>The requested merchant could not be found.</p>
-          <button onClick={() => navigate('/admin')} className="btn btn-primary">
+          <button onClick={() => navigate('/admin', { state: { activeTab: 'merchants' } })} className="btn btn-primary">
             Back to Merchants
           </button>
         </div>
@@ -477,7 +477,7 @@ const MerchantDetailEdit = () => {
         <div className="header-content">
           <div className="header-left">
             <button
-              onClick={() => navigate('/admin')}
+              onClick={() => navigate('/admin', { state: { activeTab: 'merchants' } })}
               className="btn-back"
             >
               <i className="fas fa-arrow-left"></i>

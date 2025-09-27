@@ -434,13 +434,6 @@ const PlanManagement = () => {
                   <span className="price">{formatPrice(plan.price, plan.currency)}</span>
                   <span className="billing-cycle">/{formatBillingCycle(plan.billingCycle)}</span>
                 </div>
-                <button 
-                  className="btn btn-sm btn-danger" 
-                  onClick={() => handleDeletePlan(plan.id, plan.name)} 
-                  title="Delete Plan"
-                >
-                  <i className="fas fa-trash"></i>
-                </button>
               </div>
               <div className="plan-content">
                 <div className="plan-priority">
@@ -504,13 +497,6 @@ const PlanManagement = () => {
                   <span className="price">{formatPrice(plan.price, plan.currency)}</span>
                   <span className="billing-cycle">/{formatBillingCycle(plan.billingCycle)}</span>
                 </div>
-                <button 
-                  className="btn btn-sm btn-danger" 
-                  onClick={() => handleDeletePlan(plan.id, plan.name)} 
-                  title="Delete Plan"
-                >
-                  <i className="fas fa-trash"></i>
-                </button>
               </div>
               <div className="plan-content">
                 <div className="plan-priority">
