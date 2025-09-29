@@ -323,10 +323,13 @@ router.post('/hero-background', auth, createUploadMiddleware('hero').single('her
       try {
         const subDir = config.directory.replace(/^\/public_html\/uploads\//, '').replace(/^\/uploads\//, '').replace(/^\//, '').replace(/\/$/, '');
         const localDir = path.join(__dirname, '..', 'uploads', subDir);
+        console.log('📁 Creating local directory:', localDir);
         fs.mkdirSync(localDir, { recursive: true });
         const localDest = path.join(localDir, filename);
+        console.log('📋 Copying file to:', localDest);
         fs.copyFileSync(processedPath, localDest);
         console.log('✅ File copied to local uploads folder:', localDest);
+        console.log('📋 File exists after copy:', fs.existsSync(localDest));
       } catch (localCopyErr) {
         console.error('Failed to save file locally as fallback:', localCopyErr);
         throw localCopyErr;

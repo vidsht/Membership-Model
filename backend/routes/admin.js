@@ -6363,7 +6363,20 @@ router.post('/hero-background/preview', auth, admin, async (req, res) => {
         const filename = result[0].value;
         const originalPath = path.join(__dirname, '../uploads/hero_backgrounds', filename);
         
+        console.log('📁 Looking for file at:', path.dirname(originalPath));
+        console.log('📋 File exists:', fs.existsSync(originalPath));
+        console.log('🔍 Full path being checked:', originalPath);
+        
         if (!fs.existsSync(originalPath)) {
+          console.log('❌ File not found. Let me check what files exist in the directory...');
+          try {
+            const dirPath = path.dirname(originalPath);
+            const files = fs.readdirSync(dirPath);
+            console.log('📂 Files in directory:', files);
+          } catch (dirErr) {
+            console.log('❌ Directory does not exist or cannot be read:', dirErr.message);
+          }
+          
           return res.status(404).json({
             success: false,
             message: 'Original image file not found'
