@@ -67,10 +67,39 @@ const HeroBackgroundUpload = () => {
           width: response.data.metadata.width,
           height: response.data.metadata.height
         }));
+      } else {
+        console.warn('No metadata available:', response.data.message);
+        // Set default metadata if none available
+        setImageMetadata({
+          width: 1920,
+          height: 1080,
+          format: 'jpeg',
+          size: 0
+        });
+        setEditorSettings(prev => ({
+          ...prev,
+          width: 1920,
+          height: 1080
+        }));
       }
     } catch (error) {
       console.error('Error fetching image metadata:', error);
-      showNotification('Failed to load image metadata', 'error');
+      // Don't show error notification for missing metadata - it's expected when no image is set
+      if (error.response?.status !== 404) {
+        showNotification('Failed to load image metadata', 'error');
+      }
+      // Set fallback metadata
+      setImageMetadata({
+        width: 1920,
+        height: 1080,
+        format: 'jpeg',
+        size: 0
+      });
+      setEditorSettings(prev => ({
+        ...prev,
+        width: 1920,
+        height: 1080
+      }));
     }
   };
 
@@ -88,31 +117,44 @@ const HeroBackgroundUpload = () => {
         setIsGeneratingPreview(true);
         const response = await api.post('/admin/hero-background/preview', settings);
         if (response.data.success) {
-          setPreviewUrl(response.data.previewUrl);
+          // Add cache-busting parameter to ensure fresh preview
+          const cacheBustUrl = `${response.data.previewUrl}?t=${Date.now()}`;
+          setPreviewUrl(cacheBustUrl);
+          console.log('Preview generated:', cacheBustUrl);
+        } else {
+          console.error('Preview generation failed:', response.data.message);
+          showNotification('Failed to generate preview', 'error');
         }
       } catch (error) {
         console.error('Error generating preview:', error);
+        showNotification('Failed to generate preview', 'error');
       } finally {
         setIsGeneratingPreview(false);
       }
     }, 500);
-  }, [currentImage]);
+  }, [currentImage, showNotification]);
 
   const handleEditorSettingChange = (key, value) => {
     const newSettings = { ...editorSettings, [key]: value };
     setEditorSettings(newSettings);
     setHasChanges(true);
     
+    console.log(`Editor setting changed: ${key} = ${value}`, newSettings);
+    
     // Generate preview with new settings
     generatePreview(newSettings);
   };
 
   const handleStartEditing = async () => {
-    if (!currentImage) return;
+    if (!currentImage || !imageUrl) {
+      showNotification('No image available to edit', 'warning');
+      return;
+    }
     
     setIsEditing(true);
     setEditingImage(imageUrl);
     await fetchImageMetadata();
+    // Generate initial preview with current settings
     generatePreview(editorSettings);
   };
 
@@ -226,6 +268,18 @@ const HeroBackgroundUpload = () => {
               src={isEditing && previewUrl ? previewUrl : imageUrl}
               alt="Current hero background"
               className="background-image"
+              crossOrigin="anonymous"
+              loading="lazy"
+              onError={(e) => {
+                console.error('Image load error:', e.target.src);
+                // Fallback to original image if preview fails
+                if (isEditing && previewUrl && e.target.src.includes('preview_')) {
+                  e.target.src = imageUrl;
+                }
+              }}
+              onLoad={() => {
+                console.log('Image loaded successfully:', isEditing && previewUrl ? previewUrl : imageUrl);
+              }}
             />
             <div className="preview-overlay">
               <div className="preview-info">

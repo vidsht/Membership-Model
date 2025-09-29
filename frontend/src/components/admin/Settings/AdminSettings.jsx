@@ -7,6 +7,7 @@ import SocialMediaSettings from './SocialMediaSettings';
 import MembershipPlanSettings from './MembershipPlanSettings';
 import DynamicFieldsSettings from './DynamicFieldsSettings';
 import HeroBackgroundUpload from './HeroBackgroundUpload';
+import WhatsAppBusinessSettings from './WhatsAppBusinessSettings';
 import Modal from '../../shared/Modal';
 import { useModal } from '../../../hooks/useModal';
 import './AdminSettings.css';
@@ -286,6 +287,10 @@ const AdminSettings = () => {
             </div>
           </div>
         );
+      case 'whatsapp':
+        return (
+          <WhatsAppBusinessSettings />
+        );
       case 'appearance':
         return (
           <div className="settings-section">
@@ -380,6 +385,13 @@ const AdminSettings = () => {
             >
               <i className="fas fa-chart-bar"></i>
               <span>Community Statistics</span>
+            </li>
+            <li 
+              className={activeTab === 'whatsapp' ? 'active' : ''}
+              onClick={() => setActiveTab('whatsapp')}
+            >
+              <i className="fab fa-whatsapp"></i>
+              <span>WhatsApp Business</span>
             </li>
             <li 
               className={activeTab === 'appearance' ? 'active' : ''}
