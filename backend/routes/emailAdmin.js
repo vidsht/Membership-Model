@@ -472,4 +472,58 @@ router.post('/test', async (req, res) => {
   }
 });
 
+// Test SMTP connection
+router.post('/test-smtp', requireAdmin, async (req, res) => {
+  try {
+    console.log('🔍 Admin requested SMTP connection test');
+    
+    // Get current service status
+    const status = emailService.getServiceStatus();
+    
+    // Perform verification
+    const verificationResult = await emailService.verifySMTPConnection();
+    
+    res.json({
+      success: true,
+      serviceStatus: status,
+      verificationResult: verificationResult,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error testing SMTP connection:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      serviceStatus: emailService.getServiceStatus()
+    });
+  }
+});
+
+// Get email service status
+router.get('/service-status', requireAdmin, async (req, res) => {
+  try {
+    const status = emailService.getServiceStatus();
+    const stats = await emailService.getEmailStats();
+    
+    res.json({
+      success: true,
+      status: status,
+      stats: stats,
+      environment: {
+        NODE_ENV: process.env.NODE_ENV,
+        SMTP_HOST: process.env.SMTP_HOST,
+        SMTP_PORT: process.env.SMTP_PORT,
+        SMTP_USER: process.env.SMTP_USER,
+        DISABLE_SMTP_VERIFY: process.env.DISABLE_SMTP_VERIFY
+      }
+    });
+  } catch (error) {
+    console.error('Error getting service status:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 module.exports = router;

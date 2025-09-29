@@ -1,6 +1,21 @@
 /**
- * Email Service for Indians in Ghana Membership Platform
- * Integrated with existing database structure
+ * Email Service for Indians in Ghana Membership     // Initialize email transporter
+    this.transporter = nodemailer.createTransporter({
+      host: process.env.SMTP_HOST || 'smtp.gmail.com',
+      port: process.env.SMTP_PORT || 587,
+      secure: false, // true for 465, false for other ports
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS
+      },
+      tls: {
+        rejectUnauthorized: false
+      },
+      // Add timeout configurations
+      connectionTimeout: 10000, // 10 seconds
+      greetingTimeout: 5000,    // 5 seconds
+      socketTimeout: 15000      // 15 seconds
+    });Integrated with existing database structure
  */
 
 const nodemailer = require('nodemailer');
@@ -48,7 +63,12 @@ class EmailService {
     this.transporter = null;
     this.templatesCache = new Map();
     this.queryAsync = promisify(db.query).bind(db);
-    this.initialize();
+    this.smtpVerified = false;
+    
+    // Initialize in the background to not block server startup
+    this.initialize().catch(error => {
+      console.error('Email service background initialization failed:', error.message);
+    });
   }
 
   async initialize() {
@@ -66,17 +86,59 @@ class EmailService {
       }
     });
 
-    // Verify connection in production
+    // Verify connection in production (with option to skip)
     try {
-      if (process.env.NODE_ENV === 'production' && process.env.SMTP_USER && process.env.SMTP_PASS) {
+      const shouldVerify = process.env.NODE_ENV === 'production' 
+        && process.env.SMTP_USER 
+        && process.env.SMTP_PASS 
+        && process.env.DISABLE_SMTP_VERIFY !== 'true';
+        
+      if (shouldVerify) {
         console.log('🔍 Verifying SMTP connection...');
-        await this.transporter.verify();
+        
+        // Add timeout wrapper for the verify call
+        const verifyWithTimeout = new Promise((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            reject(new Error('Connection timeout - SMTP server did not respond within 15 seconds'));
+          }, 15000);
+          
+          this.transporter.verify().then(resolve).catch(reject).finally(() => {
+            clearTimeout(timeout);
+          });
+        });
+        
+        await verifyWithTimeout;
         console.log('✅ Email service initialized successfully');
+        this.smtpVerified = true;
       } else {
-        console.log('⚠️ Email service initialized without SMTP verification (development mode)');
+        console.log('⚠️ Email service initialized without SMTP verification');
+        if (process.env.DISABLE_SMTP_VERIFY === 'true') {
+          console.log('   (SMTP verification disabled by DISABLE_SMTP_VERIFY=true)');
+        } else {
+          console.log('   (development mode or missing credentials)');
+        }
+        // Still mark as "verified" for functionality, but log that it's not tested
+        this.smtpVerified = false;
       }
     } catch (error) {
       console.error('❌ Email service initialization failed:', error.message);
+      
+      // Provide more specific error guidance
+      if (error.message.includes('timeout') || error.message.includes('ETIMEDOUT')) {
+        console.log('⚠️ SMTP Connection Timeout - Possible causes:');
+        console.log('   1. Network connectivity issues');
+        console.log('   2. Firewall blocking SMTP port 587');
+        console.log('   3. Gmail SMTP server temporarily unavailable');
+        console.log('   4. Invalid SMTP credentials');
+        console.log('   5. Gmail account has 2FA enabled without app password');
+        console.log('💡 To skip SMTP verification during startup, add DISABLE_SMTP_VERIFY=true to .env');
+      } else if (error.message.includes('authentication') || error.message.includes('Invalid login')) {
+        console.log('⚠️ SMTP Authentication Failed - Check credentials:');
+        console.log('   1. Verify SMTP_USER and SMTP_PASS in .env file');
+        console.log('   2. Use App Password if 2FA is enabled on Gmail');
+        console.log('   3. Enable "Less secure app access" (if available)');
+      }
+      
       console.log('📧 Emails will be logged only (SMTP connection failed)');
     }
   }
@@ -459,6 +521,42 @@ class EmailService {
   // Clear template cache
   clearTemplateCache() {
     this.templatesCache.clear();
+  }
+
+  // On-demand SMTP verification (useful for health checks)
+  async verifySMTPConnection() {
+    try {
+      if (!this.transporter) {
+        throw new Error('Email transporter not initialized');
+      }
+
+      const verifyWithTimeout = new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(new Error('Connection timeout - SMTP server did not respond within 15 seconds'));
+        }, 15000);
+        
+        this.transporter.verify().then(resolve).catch(reject).finally(() => {
+          clearTimeout(timeout);
+        });
+      });
+
+      await verifyWithTimeout;
+      this.smtpVerified = true;
+      return { success: true, message: 'SMTP connection verified' };
+    } catch (error) {
+      this.smtpVerified = false;
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Get email service status
+  getServiceStatus() {
+    return {
+      initialized: !!this.transporter,
+      smtpVerified: this.smtpVerified,
+      hasCredentials: !!(process.env.SMTP_USER && process.env.SMTP_PASS),
+      templatesLoaded: this.templatesCache.size
+    };
   }
 }
 
