@@ -103,7 +103,15 @@ const UserTable = ({
           className = 'validity-expired';
           badgeText = 'EXPIRED';
           const expiredDays = Math.abs(daysDiff);
-          remainingDaysText = ` (Expired ${expiredDays} day${expiredDays === 1 ? '' : 's'} ago)`;
+          remainingDaysText = `${expiredDays} day${expiredDays === 1 ? '' : 's'} ago`;
+          
+          return (
+            <span className={className}>
+              <div className="expired-badge">{badgeText}</div>
+              <div className="validity-date">{user.planValidTill}</div>
+              <div className="days-ago">{remainingDaysText}</div>
+            </span>
+          );
         } else if (validityStatus === 'warning') {
           className = 'validity-warning';
           remainingDaysText = ` (${daysDiff} day${daysDiff === 1 ? '' : 's'} left)`;

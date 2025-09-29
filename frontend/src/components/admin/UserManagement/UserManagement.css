@@ -893,9 +893,26 @@
   font-weight: 700;
   padding: 0.15rem 0.4rem;
   border-radius: 4px;
-  margin-right: 0.5rem;
   letter-spacing: 0.5px;
   text-transform: uppercase;
+  display: block;
+  text-align: center;
+  margin-bottom: 0.25rem;
+}
+
+.validity-date {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #1e293b;
+  text-align: center;
+  margin-bottom: 0.25rem;
+}
+
+.days-ago {
+  font-size: 0.7rem;
+  color: #6b7280;
+  font-style: italic;
+  text-align: center;
 }
 
 .validity-none {

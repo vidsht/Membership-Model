@@ -610,7 +610,7 @@
   }
 
   .main-title {
-    font-size: 16px;
+    font-size: 22px;
   }
 
   .subtitle {
@@ -721,7 +721,7 @@
   }
 
   .logo-circle {
-    height: 35px;
+    height: 40px;
   }
 
   .card-title-section {
@@ -729,7 +729,7 @@
   }
 
   .main-title {
-    font-size: 12px;
+    font-size: 18px;
   }
 
   .subtitle {
@@ -738,7 +738,7 @@
 
   .membership-badge {
     padding: 3px 6px;
-    font-size: 7px;
+    font-size: 8px;
   }
 
   .membership-card-title {

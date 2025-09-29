@@ -96,7 +96,7 @@ h3 { font-size: var(--h3-size); }
 .home-hero-subheading {
   font-size: 2.2rem;
   font-weight: 600;
-  color: #4C0707;
+  color: #5A0D0D;
   margin-top: 2px;
   margin-bottom: 20px;
   opacity: 0.95;
@@ -575,6 +575,37 @@ color: white;
   .logout-btn {
     font-size: 14px;
     padding: var(--space-xs) var(--space-md);
+  }
+}
+
+/* Tablet responsive header (1246px and smaller) */
+@media (max-width: 1246px) {
+  .header-content {
+    padding: 0 2rem;
+  }
+
+  .logo-img {
+    height: 60px;
+    width: auto;
+    max-width: 180px;
+  }
+
+  .main-nav ul {
+    gap: 1rem;
+  }
+
+  .main-nav ul li a {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.9rem;
+  }
+
+  .auth-buttons {
+    gap: 0.5rem;
+  }
+
+  .auth-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
   }
 }
 
