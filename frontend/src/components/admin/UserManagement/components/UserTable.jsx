@@ -400,8 +400,8 @@ const UserTable = ({
                           </button>
                         )}
 
-                        {/* Status Actions (PRESERVED) */}
-                        {user.status === 'pending' && (
+                        {/* Status Actions (PRESERVED) - Don't show for admin users */}
+                        {user.userType !== 'admin' && user.status === 'pending' && (
                           <>
                             <button
                               onClick={() => handleStatusChange(user.id, 'approved')}
@@ -420,7 +420,7 @@ const UserTable = ({
                           </>
                         )}
 
-                        {user.status === 'approved' && (
+                        {user.userType !== 'admin' && user.status === 'approved' && (
                           <button
                             onClick={() => handleStatusChange(user.id, 'suspended')}
                             className="btn-compact btn-suspend"
@@ -430,7 +430,7 @@ const UserTable = ({
                           </button>
                         )}
 
-                        {user.status === 'suspended' && (
+                        {user.userType !== 'admin' && user.status === 'suspended' && (
                           <button
                             onClick={() => handleStatusChange(user.id, 'approved')}
                             className="btn-compact btn-activate"

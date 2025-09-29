@@ -40,6 +40,12 @@ const UPLOAD_CONFIGS = {
     dimensions: { width: 800, height: 400 },
     directory: '/public_html/uploads/deal_banners/',
     allowedTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/gif']
+  },
+  hero: {
+    maxSize: 10 * 1024 * 1024, // 10MB
+    dimensions: { width: 1920, height: 1080 },
+    directory: '/public_html/uploads/hero_backgrounds/',
+    allowedTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/gif']
   }
 };
 
@@ -277,6 +283,104 @@ router.post('/merchant-logo/:id', auth, createUploadMiddleware('merchant').singl
 // Deal Banner Upload
 router.post('/deal-banner/:id', auth, createUploadMiddleware('deal').single('dealBanner'), async (req, res) => {
   await handleImageUpload(req, res, 'deal', 'id', 'bannerImage', 'deals');
+});
+
+// Hero Background Upload
+router.post('/hero-background', auth, createUploadMiddleware('hero').single('heroBackground'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'No file uploaded' 
+      });
+    }
+
+    const config = UPLOAD_CONFIGS['hero'];
+    
+    // Generate unique filename
+    const timestamp = Date.now();
+    const extension = path.extname(req.file.originalname).toLowerCase();
+    const filename = `hero_bg_${timestamp}${extension}`;
+    
+    // Process image
+    const processedPath = path.join(path.dirname(req.file.path), 'processed_' + req.file.filename);
+    await processImage(req.file.path, processedPath, config.dimensions);
+    
+    // Upload to FTP
+    const remotePath = config.directory + filename;
+    let uploadedToFTP = false;
+    try {
+      // Try FTP upload first (if FTP configured)
+      if (FTP_CONFIG && FTP_CONFIG.host && FTP_CONFIG.host !== 'ftp.yourdomain.com') {
+        await uploadToFTP(processedPath, remotePath, config);
+        uploadedToFTP = true;
+      } else {
+        throw new Error('FTP not configured, using local storage fallback');
+      }
+    } catch (ftpErr) {
+      console.warn('FTP upload failed or not configured, falling back to local storage:', ftpErr.message);
+      // Ensure local uploads directory exists and copy processed file there
+      try {
+        const subDir = config.directory.replace(/^\/public_html\/uploads\//, '').replace(/^\/uploads\//, '').replace(/^\//, '').replace(/\/$/, '');
+        const localDir = path.join(__dirname, '..', 'uploads', subDir);
+        fs.mkdirSync(localDir, { recursive: true });
+        const localDest = path.join(localDir, filename);
+        fs.copyFileSync(processedPath, localDest);
+        console.log('✅ File copied to local uploads folder:', localDest);
+      } catch (localCopyErr) {
+        console.error('Failed to save file locally as fallback:', localCopyErr);
+        throw localCopyErr;
+      }
+    }
+
+    // Get old image for cleanup
+    const oldImageQuery = `SELECT value FROM settings WHERE \`key\` = ?`;
+    const oldImageResult = await queryAsync(oldImageQuery, ['hero_background_image']);
+    const oldImage = oldImageResult[0]?.value;
+    
+    // Update/insert settings table
+    const upsertQuery = `
+      INSERT INTO settings (\`key\`, value, section, updated_at) 
+      VALUES (?, ?, ?, NOW()) 
+      ON DUPLICATE KEY UPDATE value = VALUES(value), updated_at = NOW()
+    `;
+    await queryAsync(upsertQuery, ['hero_background_image', filename, 'appearance']);
+    
+    // Delete old image from FTP if exists
+    if (oldImage && oldImage !== filename) {
+      await deleteFromFTP(config.directory + oldImage);
+    }
+    
+    // Clean up temporary files
+    fs.unlinkSync(req.file.path);
+    fs.unlinkSync(processedPath);
+    
+    // Return success response
+    const domain = process.env.DOMAIN_URL || process.env.VITE_DOMAIN_URL || 'https://membership.indiansinghana.com';
+    const subDir = config.directory.replace(/^\/public_html\/uploads\//, '').replace(/^\/uploads\//, '').replace(/^\//, '').replace(/\/$/, '');
+    const imageUrl = `${domain}/uploads/${subDir}/${filename}`;
+
+    res.json({
+      success: true,
+      message: 'Hero background uploaded successfully',
+      imageUrl: imageUrl,
+      filename: filename
+    });
+    
+  } catch (error) {
+    console.error('Hero background upload error:', error);
+    
+    // Clean up temporary files on error
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+    
+    res.status(500).json({
+      success: false,
+      message: 'Hero background upload failed',
+      error: error.message
+    });
+  }
 });
 
 // Get image URL helper endpoint

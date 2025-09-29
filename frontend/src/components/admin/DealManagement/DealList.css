@@ -239,6 +239,20 @@
   color: #8B1515;
 }
 
+/* Created Date Column */
+.created-date {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.created-time {
+  font-size: 0.7rem;
+  color: #999;
+  margin-top: 2px;
+}
+
 /* Action Buttons */
 .actions-cell {
   white-space: nowrap;

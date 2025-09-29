@@ -68,6 +68,13 @@ const ImageUpload = ({
       allowedTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'],
       endpoint: `/upload/deal-banner/${entityId}`,
       fieldName: 'dealBanner'
+    },
+    hero: {
+      maxSize: 10, // MB
+      dimensions: '1920x1080px',
+      allowedTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'],
+      endpoint: `/upload/hero-background`,
+      fieldName: 'heroBackground'
     }
   };
 

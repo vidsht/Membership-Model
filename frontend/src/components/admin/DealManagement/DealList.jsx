@@ -560,14 +560,15 @@ const DealList = ({ onTabChange }) => {
           <table className="deals-table">            <thead>
               <tr>
                 <th>S.No</th>
-                <th>Deal Title</th>
                 <th>Business</th>
                 <th>Category</th>
+                <th>Deal Title</th>
                 <th>Discount</th>
                 <th>Expires</th>
                 <th>Status</th>
                 <th>Redemptions</th>
                 <th>Views</th>
+                <th>Created Date</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -577,16 +578,6 @@ const DealList = ({ onTabChange }) => {
                 return (                  <tr key={deal.id}>
                     <td data-label="S.No" className="sno-cell">
                       {((pagination.page - 1) * pagination.limit) + index + 1}
-                    </td>
-                    <td data-label="Deal Title">
-                      <Link to={`/admin/deals/${deal.id}`} className="deal-title-link">
-                        {deal.title}
-                      </Link>
-                      <div className="deal-description-preview">
-                        {deal.description && deal.description.length > 60 
-                          ? `${deal.description.substring(0, 60)}...` 
-                          : deal.description || 'No description'}
-                      </div>
                     </td>
                     <td data-label="Business">
                       <div className="business-info">
@@ -603,6 +594,16 @@ const DealList = ({ onTabChange }) => {
                       <span className={`category-badge ${deal.category}`}>
                         {deal.category}
                       </span>
+                    </td>
+                    <td data-label="Deal Title">
+                      <Link to={`/admin/deals/${deal.id}`} className="deal-title-link">
+                        {deal.title}
+                      </Link>
+                      <div className="deal-description-preview">
+                        {deal.description && deal.description.length > 60 
+                          ? `${deal.description.substring(0, 60)}...` 
+                          : deal.description || 'No description'}
+                      </div>
                     </td>
                     <td data-label="Discount">
                       <div className="discount-info">
@@ -669,6 +670,23 @@ const DealList = ({ onTabChange }) => {
                         {deal.views > 0 && deal.redemptionCount > 0 && (
                           <div className="conversion-rate">
                             {Math.round((deal.redemptionCount / deal.views) * 100)}% conversion
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    <td data-label="Created Date">
+                      <div className="created-date">
+                        {deal.created_at ? new Date(deal.created_at).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'short', 
+                          day: 'numeric'
+                        }) : 'N/A'}
+                        {deal.created_at && (
+                          <div className="created-time">
+                            {new Date(deal.created_at).toLocaleTimeString('en-US', {
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
                           </div>
                         )}
                       </div>
