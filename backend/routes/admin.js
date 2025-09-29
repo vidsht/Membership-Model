@@ -6125,7 +6125,7 @@ router.get('/hero-background', auth, admin, async (req, res) => {
       
       if (result.length > 0) {
         const filename = result[0].value;
-        const domain = process.env.DOMAIN_URL || process.env.VITE_DOMAIN_URL || 'https://membership.indiansinghana.com';
+        const domain = process.env.DOMAIN_URL || process.env.VITE_DOMAIN_URL || 'http://localhost:5001';
         const imageUrl = `${domain}/uploads/hero_backgrounds/${filename}`;
         
         res.json({
@@ -6379,6 +6379,7 @@ router.post('/hero-background/preview', auth, admin, async (req, res) => {
         const tempPath = path.join(__dirname, '../uploads/hero_backgrounds', tempFilename);
 
         // Process the image with specified parameters
+        console.log('Processing image with settings:', { width, height, quality, crop, position, fit, zoom, offsetX, offsetY });
         const processResult = await imageEditor.processImage(originalPath, tempPath, {
           width,
           height,
@@ -6391,13 +6392,18 @@ router.post('/hero-background/preview', auth, admin, async (req, res) => {
           offsetY
         });
 
+        console.log('Process result:', processResult.success ? 'Success' : 'Failed', processResult);
+
         if (processResult.success) {
           // Generate smaller preview from processed image
+          console.log('Generating preview from', tempPath, 'to', previewPath);
           await imageEditor.generatePreview(tempPath, previewPath, {
             width: 400,
             height: 300,
             quality: 80
           });
+
+          console.log('Preview generated successfully');
 
           // Generate preview URL
           const domain = process.env.DOMAIN_URL || process.env.VITE_DOMAIN_URL || 'http://localhost:5001';
@@ -6419,9 +6425,10 @@ router.post('/hero-background/preview', auth, admin, async (req, res) => {
             metadata: processResult.metadata
           });
         } else {
+          console.error('Image processing failed:', processResult);
           res.status(500).json({
             success: false,
-            message: 'Failed to generate preview'
+            message: 'Failed to process image for preview'
           });
         }
       } else {
@@ -6440,7 +6447,8 @@ router.post('/hero-background/preview', auth, admin, async (req, res) => {
     console.error('Error generating preview:', err);
     res.status(500).json({
       success: false,
-      message: 'Server error generating preview'
+      message: 'Server error generating preview',
+      error: err.message
     });
   }
 });
