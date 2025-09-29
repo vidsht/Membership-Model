@@ -3730,8 +3730,19 @@ router.get('/deals', auth, admin, async (req, res) => {
       }
     }
 
-    // Get total count
-    const countQuery = `SELECT COUNT(*) as total FROM deals d ${whereClause}`;
+    // Get total count with proper JOIN if needed
+    let countQuery;
+    if (businessTableExists) {
+      countQuery = `
+        SELECT COUNT(DISTINCT d.id) as total 
+        FROM deals d
+        LEFT JOIN businesses b ON d.businessId = b.businessId
+        LEFT JOIN users u ON b.userId = u.id
+        ${whereClause}
+      `;
+    } else {
+      countQuery = `SELECT COUNT(*) as total FROM deals d ${whereClause}`;
+    }
     const countParams = params.slice(0, -2);
     const countResult = await queryAsync(countQuery, countParams);
     const total = countResult[0]?.total || 0;
