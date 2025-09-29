@@ -266,6 +266,23 @@ const AdminSettings = () => {
               </div>
             </div>
             )}
+
+            {/* Community Associations Section Toggle */}
+            <div className="form-group">
+              <label>Community Associations Section</label>
+              <div className="stat-setting">
+                <label className="toggle-label">
+                  <input
+                    type="checkbox"
+                    checked={settings.features?.show_community_associations === true}
+                    onChange={(e) => handleSettingChange('features', 'show_community_associations', e.target.checked)}
+                  />
+                  <span className="toggle-slider"></span>
+                  <span className="toggle-text">Show Community Associations</span>
+                </label>
+                <p className="setting-description">Display the "Our Community Associations" section on the home page</p>
+              </div>
+            </div>
           </div>
         );
       default:

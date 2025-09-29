@@ -1904,13 +1904,7 @@ ${userInfo?.fullName || userInfo?.name || user?.fullName || user?.name || 'Merch
                             Limited
                           </span>
                         )}
-                        {/* Upcoming Badge for deals without banners */}
-                        {!deal.bannerImage && isUpcoming && (
-                          <span className="upcoming-badge-inline">
-                            <i className="fas fa-clock"></i>
-                            Upcoming
-                          </span>
-                        )}
+
                       </div>
                     </div>
                     <p className="deal-description">{deal.description}</p>
@@ -2492,6 +2486,40 @@ ${userInfo?.fullName || userInfo?.name || user?.fullName || user?.name || 'Merch
                       <div className="analytics-label">Total Deals</div>
                     </div>
                   </div>
+                  
+                  <div className="analytics-card">
+                    <div className="analytics-icon">
+                      <i className="fas fa-calendar-alt"></i>
+                    </div>
+                    <div className="analytics-info">
+                      <div className="analytics-number">
+                        {(() => {
+                          const currentMonth = new Date().getMonth();
+                          const currentYear = new Date().getFullYear();
+                          let monthlyRedemptions = 0;
+                          
+                          deals.forEach(deal => {
+                            if (deal.redemptions && Array.isArray(deal.redemptions)) {
+                              monthlyRedemptions += deal.redemptions.filter(redemption => {
+                                const redemptionDate = new Date(redemption.created_at || redemption.date);
+                                return redemptionDate.getMonth() === currentMonth && 
+                                       redemptionDate.getFullYear() === currentYear;
+                              }).length;
+                            } else if (deal.actualRedemptions && deal.last_redemption_date) {
+                              const lastRedemptionDate = new Date(deal.last_redemption_date);
+                              if (lastRedemptionDate.getMonth() === currentMonth && 
+                                  lastRedemptionDate.getFullYear() === currentYear) {
+                                monthlyRedemptions += deal.actualRedemptions;
+                              }
+                            }
+                          });
+                          
+                          return monthlyRedemptions;
+                        })()}
+                      </div>
+                      <div className="analytics-label">Redemptions This Month</div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -2687,7 +2715,7 @@ ${userInfo?.fullName || userInfo?.name || user?.fullName || user?.name || 'Merch
                         </div>
                         <div className="analytics-info">
                           <div className="analytics-number">{dealAnalyticsData.stats.weeklyRedemptions}</div>
-                          <div className="analytics-label">This Week</div>
+                          <div className="analytics-label">This Week total Redemptions</div>
                         </div>
                       </div>
                       
@@ -2697,7 +2725,7 @@ ${userInfo?.fullName || userInfo?.name || user?.fullName || user?.name || 'Merch
                         </div>
                         <div className="analytics-info">
                           <div className="analytics-number">{dealAnalyticsData.stats.monthlyRedemptions}</div>
-                          <div className="analytics-label">This Month</div>
+                          <div className="analytics-label">This Month total Redemptions</div>
                         </div>
                       </div>
                     </div>

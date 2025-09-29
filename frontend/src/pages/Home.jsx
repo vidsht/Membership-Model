@@ -17,7 +17,11 @@ const Home = () => {
   const [stats, setStats] = useState({});
   const [adminSettings, setAdminSettings] = useState({
     content: { terms_conditions: '' },
-    features: { show_statistics: true, business_directory: true }
+    features: { 
+      show_statistics: true, 
+      business_directory: true,
+      show_community_associations: true 
+    }
   });
   const [loading, setLoading] = useState(true);
   const [showAuthNotification, setShowAuthNotification] = useState(false);
@@ -785,12 +789,13 @@ const Home = () => {
       </section>
 
       {/* Community Associations Section */}
-      <section className="community-section">
-        <div className="community-section-container">
-          <div className="community-section-header">
-            <h2>Our Community Associations</h2>
-            <p>Representing the diversity and unity of Indians in Ghana</p>
-          </div>
+      {adminSettings.features?.show_community_associations === true && (
+        <section className="community-section">
+          <div className="community-section-container">
+            <div className="community-section-header">
+              <h2>Our Community Associations</h2>
+              <p>Representing the diversity and unity of Indians in Ghana</p>
+            </div>
           
           <div className="communities-container">
             {/* Big Bengalies in Ghana */}
@@ -994,6 +999,7 @@ const Home = () => {
           </div>
         </div>
       </section>
+      )}
 
       {/* Community Statistics Section */}
       {adminSettings.features?.show_community_statistics !== false && (

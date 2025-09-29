@@ -4542,7 +4542,9 @@ router.get('/settings/public', async (req, res) => {
         show_community_members: true,
         show_active_businesses: true,
         show_exclusive_deals: true,
-        show_total_redemptions: true
+        show_total_redemptions: true,
+        // Community Associations section toggle
+        show_community_associations: true
       },
       content: {
         terms_conditions: 'By using this service, you agree to abide by all rules and regulations set forth by the Indians in Ghana community. Membership benefits are subject to change without prior notice.'
@@ -4644,6 +4646,10 @@ router.get('/settings/public', async (req, res) => {
                 settings.features.show_total_redemptions = isOn;
                 break;
 
+              case 'show_community_associations':
+                settings.features.show_community_associations = isOn;
+                break;
+
               default:
                 // Unknown feature toggle - ignore for now
                 break;
@@ -4707,7 +4713,8 @@ router.get('/settings', auth, admin, async (req, res) => {
         show_active_businesses: true,
         show_exclusive_deals: true,
         show_total_redemptions: true,
-        show_community_statistics: true
+        show_community_statistics: true,
+        show_community_associations: true
       },
       content: {
         terms_conditions: ''

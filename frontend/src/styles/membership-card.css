@@ -358,10 +358,9 @@
 .membership-card-new.download-mode {
   box-shadow: none !important;
   filter: none !important;
-}
-
-.membership-card-new.download-mode::before {
-  display: none !important;
+  /* Ensure solid background and remove any overlays */
+  background: linear-gradient(135deg, #1e113b 0%, #55188e 50%, #7C3AED 100%) !important;
+  position: relative !important;
 }
 
 .membership-card-new.download-mode * {
@@ -375,21 +374,44 @@
   filter: none !important;
   /* Ensure solid background during capture */
   background: linear-gradient(135deg, #1e113b 0%, #55188e 50%, #7C3AED 100%) !important;
+  /* Force remove any overlay effects */
+  position: relative !important;
 }
 
-/* Disable the pseudo-element overlay during capture */
-.membership-card-new.capture-mode::before {
+/* CRITICAL: Completely disable the pseudo-element overlay during capture with maximum specificity */
+.membership-card-new.capture-mode::before,
+.membership-card-new.download-mode::before,
+.membership-card-container .membership-card-new.capture-mode::before,
+.membership-card-container .membership-card-new.download-mode::before {
   display: none !important;
   content: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  background: none !important;
+  background-image: none !important;
+  background-color: transparent !important;
 }
 
-/* Remove box-shadow from all child elements during capture */
+/* AGGRESSIVE: Remove ALL visual effects from child elements during capture */
 .membership-card-new.capture-mode *,
 .membership-card-new.capture-mode *::before,
-.membership-card-new.capture-mode *::after {
+.membership-card-new.capture-mode *::after,
+.membership-card-new.download-mode *,
+.membership-card-new.download-mode *::before,
+.membership-card-new.download-mode *::after {
   box-shadow: none !important;
   filter: none !important;
   text-shadow: none !important;
+  /* Remove any potential white backgrounds or overlays */
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  /* Remove animations and transitions */
+  animation: none !important;
+  transition: none !important;
+  /* Remove transforms that might cause rendering issues */
+  transform: none !important;
+  /* Ensure no white bleeding from child elements */
+  outline: none !important;
 }
 
 /* Specific fixes for elements that commonly cause issues */
@@ -418,10 +440,60 @@
   text-shadow: none !important;
 }
 
-/* Ensure profile photo border remains visible but without shadow */
-.membership-card-new.capture-mode .profile-photo {
+/* Ensure profile photo border remains visible but without shadow or white background overlay */
+.membership-card-new.capture-mode .profile-photo,
+.membership-card-new.download-mode .profile-photo {
   border: 2px solid rgba(255, 255, 255, 0.8) !important;
   box-shadow: none !important;
+  /* Remove the semi-transparent white background that causes whitecasting */
+  background: transparent !important;
+}
+
+/* COMPREHENSIVE FIX: Remove ALL possible white overlays during capture */
+.membership-card-new.capture-mode,
+.membership-card-new.download-mode {
+  /* Prevent any white background bleeding through */
+  -webkit-backface-visibility: hidden !important;
+  backface-visibility: hidden !important;
+  /* Ensure no white overlays or filters */
+  mix-blend-mode: normal !important;
+  /* Force clean background with no transparency */
+  background: linear-gradient(135deg, #1e113b 0%, #55188e 50%, #7C3AED 100%) !important;
+  background-image: linear-gradient(135deg, #1e113b 0%, #55188e 50%, #7C3AED 100%) !important;
+  background-color: #1e113b !important;
+  /* Remove any CSS transformations that might cause white bleeding */
+  transform: none !important;
+  /* Ensure no white borders or outlines */
+  outline: none !important;
+  border: none !important;
+  /* Remove animation during capture */
+  animation: none !important;
+  transition: none !important;
+  /* Ensure solid rendering */
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* FINAL OVERRIDE: Ensure the card is completely opaque during capture */
+.membership-card-new.capture-mode *,
+.membership-card-new.download-mode * {
+  /* Remove any transparency that might cause white bleeding */
+  opacity: 1 !important;
+}
+
+/* Special handling for elements that should remain transparent */
+.membership-card-new.capture-mode .profile-photo,
+.membership-card-new.download-mode .profile-photo {
+  background: transparent !important;
+  /* But ensure the image itself is opaque */
+}
+
+.membership-card-new.capture-mode .qr-code,
+.membership-card-new.download-mode .qr-code,
+.membership-card-new.capture-mode .barcode,
+.membership-card-new.download-mode .barcode {
+  background: #ffffff !important;
+  opacity: 1 !important;
 }
 
 /* Responsive Design - Maintaining Desktop Layout */
@@ -538,7 +610,7 @@
   }
 
   .main-title {
-    font-size: 16px;
+    font-size: 22px;
   }
 
   .subtitle {
@@ -649,7 +721,7 @@
   }
 
   .logo-circle {
-    height: 35px;
+    height: 40px;
   }
 
   .card-title-section {
@@ -657,7 +729,7 @@
   }
 
   .main-title {
-    font-size: 12px;
+    font-size: 18px;
   }
 
   .subtitle {
@@ -666,7 +738,7 @@
 
   .membership-badge {
     padding: 3px 6px;
-    font-size: 7px;
+    font-size: 8px;
   }
 
   .membership-card-title {

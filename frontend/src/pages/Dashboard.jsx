@@ -668,10 +668,9 @@ const Dashboard = () => {
                     {currentPlan.description && (
                       <p className="plan-description">{currentPlan.description}</p>
                     )}
-                </div>
-                
+                </div>       
                 <div className="plan-details-stats">
-                  {currentPlan.maxRedemptions && (
+                  {(currentPlan.maxRedemptions !== undefined && currentPlan.maxRedemptions !== null) && (
                     <div className="plan-stat">
                       <i className="fas fa-tags"></i>
                       <span>
@@ -682,7 +681,7 @@ const Dashboard = () => {
                       </span>
                     </div>
                   )}
-                  {currentPlan.dealPostingLimit && (
+                  {(currentPlan.dealPostingLimit !== undefined && currentPlan.dealPostingLimit !== null) && user.userType === 'merchant' && (
                     <div className="plan-stat">
                       <i className="fas fa-bullhorn"></i>
                       <span>
@@ -706,26 +705,28 @@ const Dashboard = () => {
                   {user.validationDate && (
                     <div className="plan-stat">
                       <i className="fas fa-calendar-check"></i>
-                      <span>
-                        Valid until {new Date(user.validationDate).toLocaleDateString('en-GB', {
-                          year: 'numeric',
-                          month: '2-digit',
-                          day: '2-digit'
-                        })}
+                      <div className="plan-stat-content">
+                        <span className="plan-stat-main">
+                          Valid until {new Date(user.validationDate).toLocaleDateString('en-GB', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit'
+                          })}
+                        </span>
                         {(() => {
                           const remainingDays = calculateRemainingDays(user.validationDate);
                           if (remainingDays !== null) {
                             if (remainingDays > 0) {
-                              return ` (${remainingDays} day${remainingDays === 1 ? '' : 's'} left)`;
+                              return <span className="plan-stat-days remaining">{remainingDays} day{remainingDays === 1 ? '' : 's'} left</span>;
                             } else if (remainingDays === 0) {
-                              return ' (Expires today)';
+                              return <span className="plan-stat-days expires-today">Expires today</span>;
                             } else {
-                              return ` (Expired ${Math.abs(remainingDays)} day${Math.abs(remainingDays) === 1 ? '' : 's'} ago)`;
+                              return <span className="plan-stat-days expired">Expired {Math.abs(remainingDays)} day{Math.abs(remainingDays) === 1 ? '' : 's'} ago</span>;
                             }
                           }
-                          return '';
+                          return null;
                         })()}
-                      </span>
+                      </div>
                     </div>
                   )}
                 </div>
