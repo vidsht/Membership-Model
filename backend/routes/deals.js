@@ -5,7 +5,6 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const { logDealView, logRedemptionRequest, logDealStatusChange } = require('../utils/activityLogger');
-const { dealsCache, invalidateDealsCache } = require('../middleware/cacheMiddleware');
 
 const router = express.Router();
 
@@ -253,8 +252,7 @@ router.get('/', async (req, res) => {
 });
 
 // Get all public deals (no authentication required) - MUST be before /:id route
-// Public deals endpoint with caching
-router.get('/public', dealsCache, async (req, res) => {
+router.get('/public', async (req, res) => {
   try {
     // Simple query to get all active and non-expired deals for public viewing
     const dealsQuery = `
