@@ -411,6 +411,12 @@ const UserManagement = () => {
   const handleStatusChange = useCallback(async (userId, status) => {
     const user = users.find(u => u.id === userId);
 
+    // Prevent status changes for admin users
+    if (user?.userType === 'admin') {
+      showNotification('Cannot change status of admin users', 'error');
+      return;
+    }
+
     // Show warning for suspend action
     if (status === 'suspended') {
       showWarningDialog({
@@ -524,29 +530,43 @@ const UserManagement = () => {
       return;
     }
 
+    // Filter out admin users from bulk actions
+    const selectedUsersData = users.filter(u => userIds.includes(u.id));
+    const adminUsers = selectedUsersData.filter(u => u.userType === 'admin');
+    const nonAdminUserIds = selectedUsersData.filter(u => u.userType !== 'admin').map(u => u.id);
+
+    if (adminUsers.length > 0) {
+      showNotification(`Cannot perform bulk actions on ${adminUsers.length} admin user(s). Admin users excluded from operation.`, 'warning');
+    }
+
+    if (nonAdminUserIds.length === 0) {
+      showNotification('No eligible users selected (admin users cannot be modified)', 'error');
+      return;
+    }
+
     const actionMessages = {
       approve: {
-        message: `Are you sure you want to approve ${userIds.length} selected users?`,
+        message: `Are you sure you want to approve ${nonAdminUserIds.length} selected users?`,
         details: 'This will grant access to the platform for all selected users.',
         confirmText: 'approved'
       },
       reject: {
-        message: `Are you sure you want to reject ${userIds.length} selected users?`,
+        message: `Are you sure you want to reject ${nonAdminUserIds.length} selected users?`,
         details: 'This will deny access to the platform for all selected users.',
         confirmText: 'rejected'
       },
       suspend: {
-        message: `Are you sure you want to suspend ${userIds.length} selected users?`,
+        message: `Are you sure you want to suspend ${nonAdminUserIds.length} selected users?`,
         details: 'This will suspend all selected users and restrict their access to the platform.',
         confirmText: 'suspended'
       },
       activate: {
-        message: `Are you sure you want to activate ${userIds.length} selected users?`,
+        message: `Are you sure you want to activate ${nonAdminUserIds.length} selected users?`,
         details: 'This will restore access to the platform for all selected users.',
         confirmText: 'activated'
       },
       delete: {
-        message: `Are you sure you want to delete ${userIds.length} selected users?`,
+        message: `Are you sure you want to delete ${nonAdminUserIds.length} selected users?`,
         details: 'This action cannot be undone. All user data will be permanently removed.',
         confirmText: 'deleted'
       }
@@ -561,7 +581,7 @@ const UserManagement = () => {
     showWarningDialog({
       type: 'bulk',
       action: action,
-      userIds: userIds,
+      userIds: nonAdminUserIds,
       message: config.message,
       details: config.details,
       onConfirm: async () => {
@@ -573,17 +593,17 @@ const UserManagement = () => {
             return;
           }
 
-          // Call both endpoints: users and partners
+          // Call both endpoints: users and partners (using filtered non-admin user IDs)
           const [usersRes, partnersRes] = await Promise.allSettled([
-            api.post('/admin/users/bulk-action', { action, userIds }),
-            api.post('/admin/partners/bulk-action', { action, merchantIds: userIds })
+            api.post('/admin/users/bulk-action', { action, userIds: nonAdminUserIds }),
+            api.post('/admin/partners/bulk-action', { action, merchantIds: nonAdminUserIds })
           ]);
 
           const usersSuccess = usersRes.status === 'fulfilled' && usersRes.value?.data?.success;
           const partnersSuccess = partnersRes.status === 'fulfilled' && partnersRes.value?.data?.success;
 
           if (usersSuccess || partnersSuccess) {
-            const totalCount = Array.isArray(userIds) ? userIds.length : 0;
+            const totalCount = Array.isArray(nonAdminUserIds) ? nonAdminUserIds.length : 0;
             showNotification(`Successfully ${config.confirmText} ${totalCount} users/partners.`, 'success');
             setSelectedUsers([]);
             // Refresh data

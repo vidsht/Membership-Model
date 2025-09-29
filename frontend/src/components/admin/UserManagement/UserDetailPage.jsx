@@ -87,6 +87,12 @@ const UserDetailPage = () => {
 
   // Handle user approval
   const handleApprove = async () => {
+    // Prevent approval for admin users
+    if (user?.userType === 'admin') {
+      showNotification('Cannot change status of admin users', 'error');
+      return;
+    }
+
     try {
       setActionLoading('approve');
       const response = await api.put(`/admin/users/${userId}/status`, { status: 'approved' });
@@ -109,6 +115,12 @@ const UserDetailPage = () => {
 
   // Handle user rejection
   const handleReject = async () => {
+    // Prevent rejection for admin users
+    if (user?.userType === 'admin') {
+      showNotification('Cannot change status of admin users', 'error');
+      return;
+    }
+
     try {
       setActionLoading('reject');
       const response = await api.put(`/admin/users/${userId}/status`, { 
@@ -136,6 +148,12 @@ const UserDetailPage = () => {
 
   // Handle user suspension
   const handleSuspend = async () => {
+    // Prevent suspension for admin users
+    if (user?.userType === 'admin') {
+      showNotification('Cannot change status of admin users', 'error');
+      return;
+    }
+
     try {
       setActionLoading('suspend');
       const response = await api.put(`/admin/users/${userId}/status`, { status: 'suspended' });
@@ -158,6 +176,12 @@ const UserDetailPage = () => {
 
   // Handle user activation
   const handleActivate = async () => {
+    // Prevent activation for admin users
+    if (user?.userType === 'admin') {
+      showNotification('Cannot change status of admin users', 'error');
+      return;
+    }
+
     try {
       setActionLoading('activate');
       const response = await api.put(`/admin/users/${userId}/status`, { status: 'approved' });
@@ -343,8 +367,8 @@ const UserDetailPage = () => {
             </div>
           </div>
 
-          {/* Quick Actions */}
-          {user.status === 'pending' && (
+          {/* Quick Actions - Don't show for admin users */}
+          {user.userType !== 'admin' && user.status === 'pending' && (
             <div className="quick-actions">
               <button
                 onClick={handleApprove}
@@ -374,7 +398,7 @@ const UserDetailPage = () => {
             </div>
           )}
 
-          {user.status === 'approved' && (
+          {user.userType !== 'admin' && user.status === 'approved' && (
             <div className="quick-actions">
               <button
                 onClick={handleSuspend}
@@ -396,7 +420,7 @@ const UserDetailPage = () => {
             </div>
           )}
 
-          {user.status === 'suspended' && (
+          {user.userType !== 'admin' && user.status === 'suspended' && (
             <div className="quick-actions">
               <button
                 onClick={handleActivate}

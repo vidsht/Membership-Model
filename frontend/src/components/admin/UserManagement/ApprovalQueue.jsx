@@ -206,6 +206,12 @@ const ApprovalQueue = () => {
     try {
       console.log('✅ Approving user:', { userId, userType, userName });
 
+      // Prevent approval for admin users
+      if (userType === 'admin') {
+        showNotification('Cannot change status of admin users', 'error');
+        return;
+      }
+
       // Validate session
       const sessionValid = await validateSession();
       if (!sessionValid) {
@@ -251,6 +257,13 @@ const ApprovalQueue = () => {
   const handleRejectUser = useCallback(async (userId, userName) => {
     try {
       console.log('❌ Rejecting user:', { userId, userName });
+
+      // Get user info to check if admin
+      const userItem = pendingApprovals.find(item => item.id === userId);
+      if (userItem?.userType === 'admin') {
+        showNotification('Cannot change status of admin users', 'error');
+        return;
+      }
 
       // Validate session
       const sessionValid = await validateSession();

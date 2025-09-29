@@ -6,6 +6,7 @@ import api from '../../../services/api';
 import SocialMediaSettings from './SocialMediaSettings';
 import MembershipPlanSettings from './MembershipPlanSettings';
 import DynamicFieldsSettings from './DynamicFieldsSettings';
+import HeroBackgroundUpload from './HeroBackgroundUpload';
 import Modal from '../../shared/Modal';
 import { useModal } from '../../../hooks/useModal';
 import './AdminSettings.css';
@@ -285,6 +286,23 @@ const AdminSettings = () => {
             </div>
           </div>
         );
+      case 'appearance':
+        return (
+          <div className="settings-section">
+            <div className="settings-section-header">
+              <h3>Appearance Settings</h3>
+              <p>Customize the visual appearance of your website</p>
+            </div>
+            
+            <div className="form-group">
+              <label>Hero Section Background Image</label>
+              <HeroBackgroundUpload />
+              <p className="field-description">
+                Upload a background image for the hero section on the home page. Recommended size: 1920x1080 pixels.
+              </p>
+            </div>
+          </div>
+        );
       default:
         return <div>Select a tab to view settings</div>;
     }  };
@@ -362,6 +380,13 @@ const AdminSettings = () => {
             >
               <i className="fas fa-chart-bar"></i>
               <span>Community Statistics</span>
+            </li>
+            <li 
+              className={activeTab === 'appearance' ? 'active' : ''}
+              onClick={() => setActiveTab('appearance')}
+            >
+              <i className="fas fa-paint-brush"></i>
+              <span>Appearance</span>
             </li>
           </ul>
         </div>

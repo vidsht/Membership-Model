@@ -67,7 +67,7 @@ const DealFilters = ({ filters, onFilterChange, onSearch, onResetFilters, busine
           <input
             type="text"
             name="search"
-            placeholder="Search deals by title, description, or business name..."
+            placeholder="Search deals by title, business name, category, discount, coupon code, or any field..."
             value={filters.search || ''}
             onChange={handleInputChange}
             className="search-input"

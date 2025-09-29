@@ -1427,6 +1427,19 @@ router.put('/users/:id/status', auth, admin, async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid status' });
     }
 
+    // Check if target user is an admin - prevent status changes for admin users
+    const targetUserResult = await queryAsync('SELECT userType FROM users WHERE id = ?', [userId]);
+    if (targetUserResult.length === 0) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    if (targetUserResult[0].userType === 'admin') {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Cannot change status of admin users' 
+      });
+    }
+
     const adminUserId = getAdminUserId(req);
 
     const hasStatusUpdatedAt = await columnExists('users', 'statusUpdatedAt');
@@ -1444,7 +1457,7 @@ router.put('/users/:id/status', auth, admin, async (req, res) => {
       params.push(adminUserId);
     }
 
-    updateQuery += ' WHERE id = ?';
+    updateQuery += ' WHERE id = ? AND userType != "admin"';
     params.push(userId);
 
     const result = await queryAsync(updateQuery, params);
@@ -3434,19 +3447,19 @@ router.post('/users/bulk-action', auth, admin, async (req, res) => {
         switch (action) {
           case 'approve':
             await queryAsync(
-              'UPDATE users SET status = "approved", updated_at = NOW() WHERE id = ? AND userType != "merchant"',
+              'UPDATE users SET status = "approved", updated_at = NOW() WHERE id = ? AND userType NOT IN ("merchant", "admin")',
               [userId]
             );
             break;
           case 'reject':
             await queryAsync(
-              'UPDATE users SET status = "rejected", updated_at = NOW() WHERE id = ? AND userType != "merchant"',
+              'UPDATE users SET status = "rejected", updated_at = NOW() WHERE id = ? AND userType NOT IN ("merchant", "admin")',
               [userId]
             );
             break;
           case 'suspend':
             await queryAsync(
-              'UPDATE users SET status = "suspended", updated_at = NOW() WHERE id = ? AND userType != "merchant"',
+              'UPDATE users SET status = "suspended", updated_at = NOW() WHERE id = ? AND userType NOT IN ("merchant", "admin")',
               [userId]
             );
             break;
@@ -3597,9 +3610,9 @@ router.get('/deals', auth, admin, async (req, res) => {
     }
 
     if (search && search.trim()) {
-      whereClause += ' AND (d.title LIKE ? OR d.description LIKE ?)';
+      whereClause += ' AND (d.title LIKE ? OR d.description LIKE ? OR b.businessName LIKE ? OR d.category LIKE ? OR d.discountType LIKE ? OR d.discount LIKE ? OR d.couponCode LIKE ? OR d.termsConditions LIKE ?)';
       const searchTerm = `%${search.trim()}%`;
-      params.push(searchTerm, searchTerm);
+      params.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
     }
 
     if (dateFrom) {
@@ -4668,13 +4681,28 @@ router.get('/settings/public', async (req, res) => {
       }
     }
 
+    // Add hero background image to settings
+    if (await tableExists('settings')) {
+      try {
+        const heroResult = await queryAsync('SELECT value FROM settings WHERE `key` = ?', ['hero_background_image']);
+        if (heroResult.length > 0) {
+          const filename = heroResult[0].value;
+          const domain = process.env.DOMAIN_URL || process.env.VITE_DOMAIN_URL || 'https://membership.indiansinghana.com';
+          settings.heroBackgroundImage = `${domain}/uploads/hero_backgrounds/${filename}`;
+        }
+      } catch (heroError) {
+        console.warn('Error loading hero background:', heroError);
+      }
+    }
+
     console.log('📤 Sending public settings:', {
       hasSocialMedia: Object.keys(settings.socialMediaRequirements).length > 0,
       showSocialHome: settings.features.show_social_media_home,
       socialPlatforms: Object.keys(settings.socialMediaRequirements),
       hasMembershipPlans: Object.keys(settings.membershipPlanRequirements).length > 0,
       showMembershipPlans: settings.features.showMembershipPlans,
-      membershipPlans: Object.keys(settings.membershipPlanRequirements)
+      membershipPlans: Object.keys(settings.membershipPlanRequirements),
+      heroBackgroundImage: settings.heroBackgroundImage || null
     });
 
     res.json({
@@ -6019,6 +6047,79 @@ router.get('/expired-merchants', auth, admin, async (req, res) => {
       success: false, 
       message: 'Server error fetching expired merchants',
       error: err.message 
+    });
+  }
+});
+
+// ===== HERO BACKGROUND MANAGEMENT =====
+// Get current hero background image
+router.get('/hero-background', auth, admin, async (req, res) => {
+  try {
+    if (await tableExists('settings')) {
+      const result = await queryAsync('SELECT value FROM settings WHERE `key` = ?', ['hero_background_image']);
+      
+      if (result.length > 0) {
+        const filename = result[0].value;
+        const domain = process.env.DOMAIN_URL || process.env.VITE_DOMAIN_URL || 'https://membership.indiansinghana.com';
+        const imageUrl = `${domain}/uploads/hero_backgrounds/${filename}`;
+        
+        res.json({
+          success: true,
+          filename: filename,
+          imageUrl: imageUrl
+        });
+      } else {
+        res.json({
+          success: true,
+          filename: null,
+          imageUrl: null
+        });
+      }
+    } else {
+      res.json({
+        success: true,
+        filename: null,
+        imageUrl: null
+      });
+    }
+  } catch (err) {
+    console.error('Error fetching hero background:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Server error fetching hero background'
+    });
+  }
+});
+
+// Delete hero background image
+router.delete('/hero-background', auth, admin, async (req, res) => {
+  try {
+    if (await tableExists('settings')) {
+      // Get current image for cleanup
+      const result = await queryAsync('SELECT value FROM settings WHERE `key` = ?', ['hero_background_image']);
+      const currentImage = result[0]?.value;
+      
+      // Delete from settings
+      await queryAsync('DELETE FROM settings WHERE `key` = ?', ['hero_background_image']);
+      
+      // TODO: Delete from FTP/local storage if needed
+      // This would require the deleteFromFTP function from upload.js
+      
+      res.json({
+        success: true,
+        message: 'Hero background deleted successfully'
+      });
+    } else {
+      res.json({
+        success: true,
+        message: 'No hero background to delete'
+      });
+    }
+  } catch (err) {
+    console.error('Error deleting hero background:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Server error deleting hero background'
     });
   }
 });

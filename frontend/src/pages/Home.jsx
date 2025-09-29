@@ -268,7 +268,14 @@ const Home = () => {
         </div>
       )}
 
-      <section className="hero">
+      <section 
+        className="hero" 
+        style={{
+          '--hero-bg-image': adminSettings.heroBackgroundImage 
+            ? `url('${adminSettings.heroBackgroundImage}')` 
+            : 'url(\'/background.jpg\')'
+        }}
+      >
         <div className="hero-content">
           <h1>Welcome to Indians in Ghana</h1>
           <h2 className="home-hero-subheading">Membership Program</h2>
