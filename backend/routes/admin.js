@@ -16,6 +16,7 @@ const {
 const fs = require('fs');
 const path = require('path');
 const imageEditor = require('../services/imageEditor');
+const WhatsAppBusinessService = require('../services/whatsappBusinessService');
 const router = express.Router();
 
 // Utility function to promisify db.query
@@ -6124,7 +6125,7 @@ router.get('/hero-background', auth, admin, async (req, res) => {
       
       if (result.length > 0) {
         const filename = result[0].value;
-        const domain = process.env.DOMAIN_URL || process.env.VITE_DOMAIN_URL || 'https://membership.indiansinghana.com';
+        const domain = process.env.DOMAIN_URL || process.env.VITE_DOMAIN_URL || 'http://localhost:5001';
         const imageUrl = `${domain}/uploads/hero_backgrounds/${filename}`;
         
         res.json({
@@ -6199,26 +6200,34 @@ router.get('/hero-background/metadata', auth, admin, async (req, res) => {
         const filename = result[0].value;
         const imagePath = path.join(__dirname, '../uploads/hero_backgrounds', filename);
         
+        console.log('Looking for image at:', imagePath);
+        
         if (fs.existsSync(imagePath)) {
           const metadata = await imageEditor.getImageMetadata(imagePath);
+          console.log('Image metadata retrieved:', metadata);
+          
           res.json({
             success: true,
             filename: filename,
             metadata: metadata.metadata
           });
         } else {
+          console.log('Image file not found at path:', imagePath);
           res.status(404).json({
             success: false,
-            message: 'Image file not found'
+            message: 'Image file not found',
+            requestedPath: imagePath
           });
         }
       } else {
+        console.log('No hero background image setting found in database');
         res.status(404).json({
           success: false,
           message: 'No hero background image set'
         });
       }
     } else {
+      console.log('Settings table does not exist');
       res.status(404).json({
         success: false,
         message: 'Settings table not found'
@@ -6228,7 +6237,8 @@ router.get('/hero-background/metadata', auth, admin, async (req, res) => {
     console.error('Error getting image metadata:', err);
     res.status(500).json({
       success: false,
-      message: 'Server error getting image metadata'
+      message: 'Server error getting image metadata',
+      error: err.message
     });
   }
 });
@@ -6369,6 +6379,7 @@ router.post('/hero-background/preview', auth, admin, async (req, res) => {
         const tempPath = path.join(__dirname, '../uploads/hero_backgrounds', tempFilename);
 
         // Process the image with specified parameters
+        console.log('Processing image with settings:', { width, height, quality, crop, position, fit, zoom, offsetX, offsetY });
         const processResult = await imageEditor.processImage(originalPath, tempPath, {
           width,
           height,
@@ -6381,22 +6392,32 @@ router.post('/hero-background/preview', auth, admin, async (req, res) => {
           offsetY
         });
 
+        console.log('Process result:', processResult.success ? 'Success' : 'Failed', processResult);
+
         if (processResult.success) {
           // Generate smaller preview from processed image
+          console.log('Generating preview from', tempPath, 'to', previewPath);
           await imageEditor.generatePreview(tempPath, previewPath, {
             width: 400,
             height: 300,
             quality: 80
           });
 
+          console.log('Preview generated successfully');
+
           // Generate preview URL
-          const domain = process.env.DOMAIN_URL || process.env.VITE_DOMAIN_URL || 'https://membership.indiansinghana.com';
+          const domain = process.env.DOMAIN_URL || process.env.VITE_DOMAIN_URL || 'http://localhost:5001';
           const previewUrl = `${domain}/uploads/hero_backgrounds/${previewFilename}`;
 
-          // Clean up temp file
+          // Clean up temp and preview files after a longer delay
           setTimeout(() => {
-            imageEditor.cleanupFiles([tempPath, previewPath]);
-          }, 30000); // Clean up after 30 seconds
+            imageEditor.cleanupFiles([tempPath]);
+          }, 10000); // Clean up temp file after 10 seconds
+
+          // Clean up preview file after a much longer delay
+          setTimeout(() => {
+            imageEditor.cleanupFiles([previewPath]);
+          }, 300000); // Clean up preview after 5 minutes
 
           res.json({
             success: true,
@@ -6404,9 +6425,10 @@ router.post('/hero-background/preview', auth, admin, async (req, res) => {
             metadata: processResult.metadata
           });
         } else {
+          console.error('Image processing failed:', processResult);
           res.status(500).json({
             success: false,
-            message: 'Failed to generate preview'
+            message: 'Failed to process image for preview'
           });
         }
       } else {
@@ -6425,7 +6447,8 @@ router.post('/hero-background/preview', auth, admin, async (req, res) => {
     console.error('Error generating preview:', err);
     res.status(500).json({
       success: false,
-      message: 'Server error generating preview'
+      message: 'Server error generating preview',
+      error: err.message
     });
   }
 });
@@ -6493,6 +6516,88 @@ router.post('/hero-background/restore', auth, admin, async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Server error restoring image'
+    });
+  }
+});
+
+// ===== WHATSAPP BUSINESS API ENDPOINTS =====
+// Get WhatsApp Business configuration status
+router.get('/whatsapp/status', auth, admin, async (req, res) => {
+  try {
+    const status = WhatsAppBusinessService.getConfigurationStatus();
+    
+    let connectionTest = { success: false, error: 'Not configured' };
+    if (status.configured) {
+      connectionTest = await WhatsAppBusinessService.testConnection();
+    }
+
+    res.json({
+      success: true,
+      configuration: status,
+      connection: connectionTest,
+      instructions: {
+        setup: 'Configure WHATSAPP_PHONE_NUMBER_ID and WHATSAPP_ACCESS_TOKEN environment variables',
+        documentation: 'https://developers.facebook.com/docs/whatsapp/cloud-api/get-started'
+      }
+    });
+  } catch (err) {
+    console.error('Error checking WhatsApp status:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Server error checking WhatsApp status'
+    });
+  }
+});
+
+// Test WhatsApp Business API connection
+router.post('/whatsapp/test-connection', auth, admin, async (req, res) => {
+  try {
+    const testResult = await WhatsAppBusinessService.testConnection();
+    
+    res.json({
+      success: true,
+      testResult: testResult
+    });
+  } catch (err) {
+    console.error('Error testing WhatsApp connection:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Server error testing WhatsApp connection'
+    });
+  }
+});
+
+// Send test WhatsApp message
+router.post('/whatsapp/test-message', auth, admin, async (req, res) => {
+  try {
+    const { phone, message } = req.body;
+
+    if (!phone || !message) {
+      return res.status(400).json({
+        success: false,
+        message: 'Phone number and message are required'
+      });
+    }
+
+    // Validate phone number format
+    if (!WhatsAppBusinessService.isValidPhoneNumber(phone)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid phone number format. Use format: +233501234567 or 0501234567'
+      });
+    }
+
+    const result = await WhatsAppBusinessService.sendMessage(phone, message);
+    
+    res.json({
+      success: true,
+      result: result
+    });
+  } catch (err) {
+    console.error('Error sending test WhatsApp message:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Server error sending test message'
     });
   }
 });

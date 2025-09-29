@@ -1,5 +1,6 @@
 const emailService = require('./emailService');
 const WhatsAppMessageService = require('./whatsappMessageService');
+const WhatsAppBusinessService = require('./whatsappBusinessService');
 const { formatDateForEmail } = require('../utils/dateFormatter');
 const db = require('../db');
 
@@ -291,6 +292,7 @@ class NotificationService {
 
       const emailType = deal.status === 'approved' ? 'deal_approved' : 'deal_rejected';
 
+      // Send email notification
       await this.emailService.sendEmail({
         to: merchant.email,
         type: emailType,
@@ -305,6 +307,19 @@ class NotificationService {
           dealUrl: deal.status === 'approved' ? `${process.env.FRONTEND_URL}/deals` : null
         }
       });
+
+      // Send WhatsApp notification for approved deals
+      if (deal.status === 'approved') {
+        const whatsappMessage = WhatsAppMessageService.generateDealApprovalMessage(merchant, deal);
+        const whatsappResult = await WhatsAppBusinessService.sendDealApprovalNotification(merchant, deal, whatsappMessage);
+        
+        console.log(`Deal approval notification processed for ${merchant.fullName}`);
+        if (whatsappResult.success) {
+          console.log(`✅ WhatsApp message sent successfully`);
+        } else {
+          console.log(`❌ WhatsApp message failed: ${whatsappResult.error}`);
+        }
+      }
 
       console.log(`Deal response notification sent to merchant: ${merchant.email}`);
     } catch (error) {
@@ -1145,23 +1160,21 @@ class NotificationService {
         fullName: user.fullName
       });
 
-      console.log(`🎉 Birthday WhatsApp message for ${user.fullName}:`);
-      console.log('=' .repeat(50));
-      console.log(whatsappMessage);
-      console.log('=' .repeat(50));
-      console.log(`📱 Send to: ${user.phone || 'Phone number not available'}`);
+      // Send via WhatsApp Business API
+      const whatsappResult = await WhatsAppBusinessService.sendBirthdayGreeting(user, whatsappMessage);
 
-      // In a real implementation, you would integrate with a WhatsApp API service here
-      // For now, we're logging the message for manual sending
-
-      // Optional: Log birthday greeting in database
-      await this.logBirthdayGreeting(userId);
+      console.log(`🎉 Birthday greeting processed for ${user.fullName}`);
+      if (whatsappResult.success) {
+        console.log(`✅ WhatsApp message sent successfully`);
+      } else {
+        console.log(`❌ WhatsApp message failed: ${whatsappResult.error}`);
+      }
 
       return {
         success: true,
-        message: whatsappMessage,
-        phone: user.phone,
-        recipient: user.fullName
+        whatsappResult: whatsappResult,
+        recipient: user.fullName,
+        phone: user.phone
       };
 
     } catch (error) {
@@ -1293,19 +1306,23 @@ class NotificationService {
             }
           );
 
-      console.log(`⚠️ Plan expiry WhatsApp message for ${user.fullName}:`);
-      console.log('=' .repeat(50));
-      console.log(whatsappMessage);
-      console.log('=' .repeat(50));
-      console.log(`📱 Send to: ${user.phone || 'Phone number not available'}`);
+      // Send via WhatsApp Business API
+      const whatsappResult = await WhatsAppBusinessService.sendPlanExpiryWarning(user, whatsappMessage, daysUntilExpiry);
+
+      console.log(`⚠️ Plan expiry warning processed for ${user.fullName}`);
+      if (whatsappResult.success) {
+        console.log(`✅ WhatsApp message sent successfully`);
+      } else {
+        console.log(`❌ WhatsApp message failed: ${whatsappResult.error}`);
+      }
 
       return {
         success: true,
         emailSent: true,
-        whatsappMessage: whatsappMessage,
-        phone: user.phone,
+        whatsappResult: whatsappResult,
         recipient: user.fullName,
-        businessName: user.businessName
+        businessName: user.businessName,
+        phone: user.phone
       };
 
     } catch (error) {
