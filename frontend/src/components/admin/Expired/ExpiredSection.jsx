@@ -22,19 +22,21 @@ const ExpiredSection = () => {
   });
 
   // Email templates for different scenarios
-  const getEmailTemplate = (type, days, name) => {
+  const getEmailTemplate = (type, days, name, expiryDate) => {
     const templates = {
       users: {
         0: `Subject: Your Membership Has Expired - Immediate Renewal Required
 
 Dear ${name},
 
-We hope this message finds you well. We're writing to inform you that your membership with Indians in Ghana has expired.
+We hope this message finds you well. We're writing to inform you that your membership with Indians in Ghana has expired on ${expiryDate}.
 
 Your membership benefits have been suspended, and you'll no longer have access to:
 - Exclusive member deals and discounts
 - Business directory privileges
 - Community events and notifications
+
+Expiry Date: ${expiryDate}
 
 To restore your membership and continue enjoying these benefits, please contact us immediately.
 
@@ -46,12 +48,14 @@ Contact: cards@indiansinghana.com`,
 
 Dear ${name},
 
-This is an important reminder that your membership with Indians in Ghana will expire in 7 days.
+This is an important reminder that your membership with Indians in Ghana will expire in 7 days on ${expiryDate}.
 
 Don't miss out on:
 - Exclusive deals and discounts
 - Access to our business directory
 - Community events and networking opportunities
+
+Expiry Date: ${expiryDate}
 
 Please renew your membership before it expires to maintain uninterrupted access.
 
@@ -63,12 +67,14 @@ Contact: cards@indiansinghana.com`,
 
 Dear ${name},
 
-We wanted to remind you that your membership with Indians in Ghana will expire in 15 days.
+We wanted to remind you that your membership with Indians in Ghana will expire in 15 days on ${expiryDate}.
 
 Take advantage of your remaining time to:
 - Browse exclusive member deals
 - Connect with community businesses
 - Participate in upcoming events
+
+Expiry Date: ${expiryDate}
 
 Contact us to renew your membership and continue being part of our vibrant community.
 
@@ -80,12 +86,14 @@ Contact: cards@indiansinghana.com`,
 
 Dear ${name},
 
-This is a friendly reminder that your membership with Indians in Ghana will expire in 30 days.
+This is a friendly reminder that your membership with Indians in Ghana will expire in 30 days on ${expiryDate}.
 
 We value your membership and want to ensure you continue enjoying:
 - Exclusive deals and discounts
 - Business directory access
 - Community networking opportunities
+
+Expiry Date: ${expiryDate}
 
 Consider renewing early to avoid any interruption in your membership benefits.
 
@@ -98,13 +106,15 @@ Contact: cards@indiansinghana.com`
 
 Dear ${name},
 
-We're writing to inform you that your business membership with Indians in Ghana has expired.
+We're writing to inform you that your business membership with Indians in Ghana has expired on ${expiryDate}.
 
 Your business listing and promotional privileges have been suspended. This affects:
 - Business directory visibility
 - Deal posting capabilities
 - Featured listing benefits
 - Customer reach and engagement
+
+Expiry Date: ${expiryDate}
 
 To restore your business profile and continue reaching our community, please contact us immediately.
 
@@ -116,13 +126,15 @@ Contact: cards@indiansinghana.com`,
 
 Dear ${name},
 
-Your business membership with Indians in Ghana will expire in 7 days.
+Your business membership with Indians in Ghana will expire in 7 days on ${expiryDate}.
 
 Don't lose access to:
 - Business directory listing
 - Deal posting and promotions
 - Featured placement opportunities
 - Direct customer engagement
+
+Expiry Date: ${expiryDate}
 
 Renew now to maintain your business presence in our community.
 
@@ -134,13 +146,15 @@ Contact: cards@indiansinghana.com`,
 
 Dear ${name},
 
-This is a reminder that your business membership will expire in 15 days.
+This is a reminder that your business membership will expire in 15 days on ${expiryDate}.
 
 Ensure continuous:
 - Business visibility in our directory
 - Promotional deal opportunities
 - Customer engagement capabilities
 - Community networking benefits
+
+Expiry Date: ${expiryDate}
 
 Contact us to renew and keep your business thriving with our community.
 
@@ -152,13 +166,15 @@ Contact: cards@indiansinghana.com`,
 
 Dear ${name},
 
-Your business membership with Indians in Ghana will expire in 30 days.
+Your business membership with Indians in Ghana will expire in 30 days on ${expiryDate}.
 
 Maintain your competitive edge with:
 - Enhanced business directory presence
 - Unlimited deal posting capabilities
 - Priority customer visibility
 - Community networking opportunities
+
+Expiry Date: ${expiryDate}
 
 Renew early to ensure uninterrupted business benefits.
 
@@ -257,7 +273,8 @@ Contact: cards@indiansinghana.com`
   };
 
   const handleSendEmail = (member, days) => {
-    const emailTemplate = getEmailTemplate(userType, days, member.fullName || member.businessName);
+    const expiryDate = new Date(member.planExpiryDate || member.validationDate).toLocaleDateString('en-GB');
+    const emailTemplate = getEmailTemplate(userType, days, member.fullName || member.businessName, expiryDate);
     const recipient = 'cards@indiansinghana.com';
     const subject = emailTemplate.split('\n')[0].replace('Subject: ', '');
     const body = emailTemplate.split('\n').slice(2).join('\n');
@@ -489,7 +506,7 @@ Contact: cards@indiansinghana.com`
                           title="Send expiry notice"
                         >
                           <i className="fas fa-exclamation-circle"></i>
-                          Expiry
+                          Expired
                         </button>
                         <button 
                           className="email-btn warning-7"

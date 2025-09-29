@@ -228,7 +228,13 @@ const BirthdaySection = () => {
                                                `233${cleanPhone}`;
                           
                           // Create the birthday message
-                          const message = `Happy Birthday ${user.fullName} 🎉🎂 Wishing you joy, health, and success always!`;
+                          const message = `🎉 Happy Birthday! 🎉 
+                                            Dear ${user.fullName},
+                                            On this special day, we wish you joy, health, and prosperity. May your year ahead be filled with happiness and success. 🌟
+                                            Warm regards,
+                                            🇮🇳 Indians In Ghana Team 🇬🇭
+                                            _____
+                                            This is an automated birthday greeting from your community portal.`;
                           
                           // URL encode the message
                           const encodedMessage = encodeURIComponent(message);
@@ -244,19 +250,15 @@ const BirthdaySection = () => {
                       </a>
                       <a 
                         href={(() => {
-                          const subject = encodeURIComponent(`Happy Birthday ${user.fullName}! 🎉`);
+                          const subject = encodeURIComponent(`🎉 Happy Birthday ${user.fullName}! 🎉`);
                           const body = encodeURIComponent(`Dear ${user.fullName},
 
-Happy Birthday! 🎂🎉
+🎉 Happy Birthday! 🎉
 
-On behalf of the entire Indians in Ghana Community, we wish you a very happy birthday and a wonderful year ahead filled with joy, health, and success!
-
-May this special day bring you lots of happiness and may all your dreams come true.
-
+On this special day, we wish you joy, health, and prosperity. May your year ahead be filled with happiness and success. 🌟
 Warm regards,
-Indians in Ghana Community Team
-
----
+🇮🇳 Indians In Ghana Team 🇬🇭
+_____
 This is an automated birthday greeting from your community portal.`);
                           
                           return `mailto:${user.email}?subject=${subject}&body=${body}`;

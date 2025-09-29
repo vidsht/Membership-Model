@@ -178,6 +178,14 @@ const DealFilters = ({ filters, onFilterChange, onSearch, onResetFilters, busine
           <div>
             <button 
               type="button" 
+              className="clear-btn"
+              onClick={clearFilters}
+            >
+              <i className="fas fa-times"></i>
+              Clear Filters
+            </button>
+            <button 
+              type="button" 
               className="apply-btn"
               onClick={applyFilters}
             >

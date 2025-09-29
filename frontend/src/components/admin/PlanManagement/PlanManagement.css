@@ -473,25 +473,17 @@
 .plan-badge.silver,
 .plan-badge.silver_business {
   background-color: #c0c0c0;
-  color: #333;
 }
 
 .plan-badge.gold,
 .plan-badge.gold_business {
   background-color: #ffd700;
-  color: #333;
 }
 
 .plan-badge.platinum,
 .plan-badge.platinum_business,
 .plan-badge.platinum_plus_business {
   background-color: #e5e4e2;
-  color: #333;
-}
-
-.plan-badge.diamond {
-  background-color: #b9f2ff;
-  color: #333;
 }
 
 .plan-badge.none {

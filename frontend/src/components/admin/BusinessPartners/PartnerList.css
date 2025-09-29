@@ -139,12 +139,10 @@
 
 .plan-badge.silver {
   background-color: rgba(158, 158, 158, 0.1);
-  color: #757575;
 }
 
 .plan-badge.gold {
   background-color: rgba(255, 193, 7, 0.1);
-  color: #FFC107;
 }
 
 /* Deal Limit Display */

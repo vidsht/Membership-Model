@@ -3644,11 +3644,11 @@ router.get('/deals', auth, admin, async (req, res) => {
       const hasRedemptionsTableExists = await tableExists('deal_redemptions');
       if (hasRedemptionsTableExists) {
         if (hasRedemptions === 'yes') {
-          whereClause += ' AND EXISTS (SELECT 1 FROM deal_redemptions dr WHERE dr.dealId = d.id)';
+          whereClause += ' AND EXISTS (SELECT 1 FROM deal_redemptions dr WHERE dr.deal_id = d.id)';
         } else if (hasRedemptions === 'no') {
-          whereClause += ' AND NOT EXISTS (SELECT 1 FROM deal_redemptions dr WHERE dr.dealId = d.id)';
+          whereClause += ' AND NOT EXISTS (SELECT 1 FROM deal_redemptions dr WHERE dr.deal_id = d.id)';
         } else if (hasRedemptions === 'high') {
-          whereClause += ' AND (SELECT COUNT(*) FROM deal_redemptions dr WHERE dr.dealId = d.id) >= 10';
+          whereClause += ' AND (SELECT COUNT(*) FROM deal_redemptions dr WHERE dr.deal_id = d.id) >= 10';
         }
       }
     }
@@ -3661,9 +3661,9 @@ router.get('/deals', auth, admin, async (req, res) => {
     // Build the ORDER BY clause based on sort column
     let orderByClause;
     if (sortBy === 'discount') {
-      orderByClause = `d.discountValue ${validSortOrder}`;
+      orderByClause = `d.discount ${validSortOrder}`;
     } else if (sortBy === 'redemptions') {
-      orderByClause = `(SELECT COUNT(*) FROM deal_redemptions dr WHERE dr.dealId = d.id) ${validSortOrder}`;
+      orderByClause = `(SELECT COUNT(*) FROM deal_redemptions dr WHERE dr.deal_id = d.id) ${validSortOrder}`;
     } else {
       orderByClause = `d.${validSortBy} ${validSortOrder}`;
     }
@@ -3678,7 +3678,7 @@ router.get('/deals', auth, admin, async (req, res) => {
           b.businessName,
           u.fullName as merchantName,
           u.email as merchantEmail,
-          (SELECT COUNT(*) FROM deal_redemptions dr WHERE dr.dealId = d.id) as redemptionCount
+          (SELECT COUNT(*) FROM deal_redemptions dr WHERE dr.deal_id = d.id) as redemptionCount
         FROM deals d
         LEFT JOIN businesses b ON d.businessId = b.businessId
         LEFT JOIN users u ON b.userId = u.id
@@ -3693,7 +3693,7 @@ router.get('/deals', auth, admin, async (req, res) => {
           NULL as merchantName,
           NULL as merchantEmail,
           NULL as businessName,
-          (SELECT COUNT(*) FROM deal_redemptions dr WHERE dr.dealId = d.id) as redemptionCount
+          (SELECT COUNT(*) FROM deal_redemptions dr WHERE dr.deal_id = d.id) as redemptionCount
         FROM deals d
         ${whereClause}
         ORDER BY ${orderByClause}
