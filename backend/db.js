@@ -1,27 +1,37 @@
 const mysql = require('mysql2');
 require('dotenv').config();
 
-// Use a connection pool for robust, concurrent MySQL access
+// Optimized connection pool for 1000-2000 users
 const pool = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
   waitForConnections: true,
-  connectionLimit: 20,
+  // Optimized for high concurrency (1000-2000 users)
+  connectionLimit: process.env.DB_CONNECTION_LIMIT || 100,  // Increased from 20
   queueLimit: 0,
   idleTimeout: 300000,        // 5 minutes
   enableKeepAlive: true,
   keepAliveInitialDelay: 30000,
-  // Enhanced timeout settings to handle connection issues
-  connectTimeout: 60000,      // 60 seconds
-  acquireTimeout: 60000,      // 60 seconds
-  timeout: 60000,             // 60 seconds
+  // Optimized timeout settings for production load
+  connectTimeout: 30000,      // 30 seconds (reduced for faster failover)
+  acquireTimeout: 30000,      // 30 seconds
+  timeout: 30000,             // 30 seconds (faster query timeout)
   reconnect: true,
   // Additional settings for better connection stability
   ssl: false,
   multipleStatements: false,
-  charset: 'utf8mb4'
+  charset: 'utf8mb4',
+  // Performance optimizations
+  dateStrings: false,
+  supportBigNumbers: true,
+  bigNumberStrings: false,
+  // Connection pool optimization
+  removeNodeErrorCount: 5,
+  restoreNodeTimeout: 0,
+  // Query cache optimization (if supported by hosting)
+  flags: '-FOUND_ROWS'
 });
 
 // Add global error handler for pool

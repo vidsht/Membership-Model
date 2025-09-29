@@ -7,11 +7,29 @@ require('dotenv').config();
 const uploadRouter = require('./routes/upload');
 const seoMiddleware = require('./middleware/seoMiddleware');
 const { setupPerformanceOptimizations, setupPerformanceFlagEndpoint } = require('./middleware/performanceMiddleware');
+const rateLimiting = require('./middleware/rateLimiting');
+const { businessDirectoryCache, invalidateBusinessCache } = require('./middleware/cacheMiddleware');
+const performanceMonitor = require('./services/performanceMonitor');
+const compression = require('compression');
+const helmet = require('helmet');
 
 const app = express();
 
 // Setup performance optimizations BEFORE other middleware
 setupPerformanceOptimizations(app);
+
+// Security and performance middleware
+app.use(helmet({
+  contentSecurityPolicy: false, // Disable CSP to avoid issues with dynamic content
+  crossOriginEmbedderPolicy: false
+}));
+app.use(compression()); // Gzip compression
+
+// Performance monitoring middleware
+app.use(performanceMonitor.requestTracker());
+
+// Apply general rate limiting to all requests
+app.use(rateLimiting.generalLimiter);
 
 // CORS configuration for credentials
 
@@ -32,8 +50,8 @@ app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 
 // Basic middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' })); // Increased limit for base64 images
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // SEO Middleware - Apply globally with environment-aware settings
 app.use(seoMiddleware.conditional);
@@ -60,18 +78,22 @@ app.use('/uploads/*', (req, res, next) => {
 // Trust first proxy (Render / Cloudflare) so secure cookies are set correctly when behind a proxy
 app.set('trust proxy', 1);
 
-// Session configuration (MySQL store)
+// Session configuration (MySQL store) - Optimized for 1000-2000 users
 const MySQLStore = require('express-mysql-session')(session);
 
 // Import existing pool from db.js to share connections
 const dbPool = require('./db');
 
-// Create session store using the existing pool for better connection handling
+// Optimized session store configuration for high concurrency
 const sessionStoreOptions = {
   clearExpired: true,
-  checkExpirationInterval: 900000, // 15 minutes
-  expiration: 86400000, // 1 day
+  checkExpirationInterval: 300000, // 5 minutes (reduced for better cleanup)
+  expiration: 24 * 60 * 60 * 1000, // 24 hours
   createDatabaseTable: true,
+  endConnectionOnClose: false, // Keep connections alive for better performance
+  // Optimizations for production scale
+  useConnectionPooling: true,
+  reconnect: true,
   // Use the pool's promise-based connections
   schema: {
     tableName: 'sessions',
@@ -100,14 +122,16 @@ app.use(session({
   saveUninitialized: false,
   name: 'sessionId',
   store: sessionStore,
+  // Optimized cookie settings for production scale
   cookie: {
-    // secure: false,
-    secure: true,
-    httpOnly: true,
-    maxAge: 1000 * 60 * 60 * 24 * 7,
-    // sameSite: 'lax'
-    sameSite: 'none'
-  }
+    secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+    httpOnly: true, // Prevent XSS attacks
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Cross-site compatibility
+  },
+  // Performance optimizations
+  rolling: false, // Don't reset expiry on every request
+  unset: 'destroy' // Clean up session data properly
 }));
 
 // MySQL connection (handled in db.js)
@@ -125,33 +149,36 @@ const db = require('./db');
 const { promisify } = require('util');
 const queryAsync = promisify(db.query).bind(db);
 
-// Basic routes
-app.use('/api/auth', seoMiddleware.protected, require('./routes/auth'));
+// Basic routes with specific rate limiting
+app.use('/api/auth', rateLimiting.authLimiter, seoMiddleware.protected, require('./routes/auth'));
 app.use('/api/users', seoMiddleware.protected, require('./routes/users'));
 
-// Mount merchant routes
-app.use('/api/merchant', seoMiddleware.protected, require('./routes/merchant'));
+// Mount merchant routes with deal-specific rate limiting
+app.use('/api/merchant', rateLimiting.dealLimiter, seoMiddleware.protected, require('./routes/merchant'));
 
-// Public deals route for users
-app.use('/api/deals', seoMiddleware.api, require('./routes/deals'));
-app.use('/api/plans', seoMiddleware.api, require('./routes/plans'));
+// Public deals route for users with public rate limiting
+app.use('/api/deals', rateLimiting.publicLimiter, seoMiddleware.api, require('./routes/deals'));
+app.use('/api/plans', rateLimiting.publicLimiter, seoMiddleware.api, require('./routes/plans'));
 
-// Admin routes
-app.use('/api/admin', seoMiddleware.blockAll, require('./routes/admin'));
-app.use('/api/admin', seoMiddleware.blockAll, require('./routes/roles'));
+// Admin routes with admin-specific rate limiting
+app.use('/api/admin', rateLimiting.adminLimiter, seoMiddleware.blockAll, require('./routes/admin'));
+app.use('/api/admin', rateLimiting.adminLimiter, seoMiddleware.blockAll, require('./routes/roles'));
 
-// Migration routes (for database schema updates)
-app.use('/api/migration', seoMiddleware.blockAll, require('./routes/migration'));
+// Migration routes (for database schema updates) - admin level
+app.use('/api/migration', rateLimiting.adminLimiter, seoMiddleware.blockAll, require('./routes/migration'));
 
-// Email admin routes
+// Email admin routes with email-specific rate limiting
 const emailAdminRoutes = require('./routes/emailAdmin');
-app.use('/api/admin/email', seoMiddleware.blockAll, emailAdminRoutes);
+app.use('/api/admin/email', rateLimiting.emailLimiter, seoMiddleware.blockAll, emailAdminRoutes);
 
 // Public admin endpoints that don't require authentication
-app.use('/api/admin', seoMiddleware.blockAll, require('./routes/admin')); // This ensures public routes work
+app.use('/api/admin', rateLimiting.adminLimiter, seoMiddleware.blockAll, require('./routes/admin')); // This ensures public routes work
 
-// Upload routes
-app.use('/api/upload', seoMiddleware.api, require('./routes/upload'));
+// Upload routes with upload-specific rate limiting
+app.use('/api/upload', rateLimiting.uploadLimiter, seoMiddleware.api, require('./routes/upload'));
+
+// Monitoring and health check routes
+app.use('/api/monitoring', require('./routes/monitoring'));
 
 // Performance flag management endpoint
 setupPerformanceFlagEndpoint(app);
@@ -167,7 +194,8 @@ app.get('/api/health', seoMiddleware.api, (req, res) => {
 });
 
 // Public businesses endpoint for home page
-app.get('/api/businesses', seoMiddleware.api, async (req, res) => {
+// Public businesses endpoint with caching
+app.get('/api/businesses', businessDirectoryCache, seoMiddleware.api, async (req, res) => {
   try {
     const businesses = await queryAsync(`
       SELECT
