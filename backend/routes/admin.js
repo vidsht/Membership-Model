@@ -5,6 +5,7 @@ const { body, validationResult } = require('express-validator');
 const { auth, admin } = require('../middleware/auth');
 const db = require('../db');
 const { generateMembershipNumber } = require('../utils/membershipGenerator');
+const { formatDateForEmail, getCurrentDateForEmail } = require('../utils/dateFormatter');
 const NotificationHooks = require('../services/notificationHooks-integrated');
 const { 
   logActivity, 
@@ -12,6 +13,9 @@ const {
   logDealStatusChange,
   logPlanExpiry 
 } = require('../utils/activityLogger');
+const fs = require('fs');
+const path = require('path');
+const imageEditor = require('../services/imageEditor');
 const router = express.Router();
 
 // Utility function to promisify db.query
@@ -859,7 +863,7 @@ router.get('/users/export', auth, admin, async (req, res) => {
       return `"${s.replace(/"/g, '""')}"`;
     };
 
-    const fmtDate = (d) => d ? new Date(d).toLocaleDateString() : '';
+    const fmtDate = (d) => d ? formatDateForEmail(d) : '';
 
     const csvRows = [headers.join(',')];
 
@@ -875,9 +879,9 @@ router.get('/users/export', auth, admin, async (req, res) => {
         user.planName || user.membershipType || '',
         user.userType || '',
         user.status || '',
-        user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '',
-        user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : '',
-        user.validationDate ? new Date(user.validationDate).toLocaleDateString() : '',
+        user.createdAt ? formatDateForEmail(user.createdAt) : '',
+        user.lastLogin ? formatDateForEmail(user.lastLogin) : '',
+        user.validationDate ? formatDateForEmail(user.validationDate) : '',
         user.bloodGroup || '',
         user.country || '',
         user.state || '',
@@ -1061,6 +1065,55 @@ router.get('/users/birthdays', auth, admin, async (req, res) => {
   } catch (err) {
     console.error('Error fetching birthdays:', err);
     res.status(500).json({ success: false, message: 'Failed to fetch birthdays' });
+  }
+});
+
+// Send birthday greetings
+router.post('/send-birthday-greetings', auth, admin, async (req, res) => {
+  try {
+    const NotificationService = require('../services/notificationService');
+    
+    // Send today's birthday greetings
+    const result = await NotificationService.sendTodaysBirthdayGreetings();
+    
+    res.json({
+      success: true,
+      message: `Birthday greetings processed for ${result.count} users`,
+      data: {
+        totalBirthdays: result.count,
+        results: result.sent
+      }
+    });
+  } catch (error) {
+    console.error('Error sending birthday greetings:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to send birthday greetings',
+      error: error.message
+    });
+  }
+});
+
+// Send individual birthday greeting
+router.post('/send-birthday-greeting/:userId', auth, admin, async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId);
+    const NotificationService = require('../services/notificationService');
+    
+    const result = await NotificationService.sendBirthdayGreeting(userId);
+    
+    res.json({
+      success: true,
+      message: 'Birthday greeting generated successfully',
+      data: result
+    });
+  } catch (error) {
+    console.error('Error sending birthday greeting:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to send birthday greeting',
+      error: error.message
+    });
   }
 });
 
@@ -1784,7 +1837,7 @@ router.post('/users/:id/assign-plan', auth, admin, async (req, res) => {
         
         if (expiryDate) {
           // If expiry date is provided, highlight the expiry date update
-          const formattedExpiryDate = new Date(expiryDate).toLocaleDateString('en-GB');
+          const formattedExpiryDate = formatDateForEmail(expiryDate);
           description = `Expiry date updated to ${formattedExpiryDate} for ${userName} (${planDetails?.name || finalPlanKey} plan)`;
         } else {
           // Standard plan assignment message
@@ -1812,8 +1865,8 @@ router.post('/users/:id/assign-plan', auth, admin, async (req, res) => {
         planId: planDetails?.id,
         planName: planDetails?.name,
         planType: planDetails?.type,
-        effectiveDate: new Date().toLocaleDateString(),
-        expiryDate: validationDate ? validationDate.toLocaleDateString() : null,
+        effectiveDate: getCurrentDateForEmail(),
+        expiryDate: validationDate ? formatDateForEmail(validationDate) : null,
         assignedBy: adminUserId,
         message: req.body.adminMessage || null
       };
@@ -1932,8 +1985,8 @@ router.get('/users/export', auth, admin, async (req, res) => {
         user.planName || user.membershipType || '',
         user.userType || '',
         user.status || '',
-        user.createdAt ? new Date(user.createdAt).toLocaleDateString() : '',
-        user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : '',
+        user.createdAt ? formatDateForEmail(user.createdAt) : '',
+        user.lastLogin ? formatDateForEmail(user.lastLogin) : '',
         user.country || '',
         user.state || '',
         user.city || '',
@@ -2937,8 +2990,8 @@ router.put('/partners/:id', auth, admin, async (req, res) => {
         planId: planDetails?.id,
         planName: planDetails?.name,
         planType: planDetails?.type,
-        effectiveDate: new Date().toLocaleDateString(),
-        expiryDate: validationDate ? validationDate.toLocaleDateString() : null,
+        effectiveDate: getCurrentDateForEmail(),
+        expiryDate: validationDate ? formatDateForEmail(validationDate) : null,
         assignedBy: adminUserId,
         message: req.body.adminMessage || null
       };
@@ -6131,6 +6184,315 @@ router.delete('/hero-background', auth, admin, async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Server error deleting hero background'
+    });
+  }
+});
+
+// ===== IMAGE EDITOR ENDPOINTS =====
+// Get image metadata for editor
+router.get('/hero-background/metadata', auth, admin, async (req, res) => {
+  try {
+    if (await tableExists('settings')) {
+      const result = await queryAsync('SELECT value FROM settings WHERE `key` = ?', ['hero_background_image']);
+      
+      if (result.length > 0) {
+        const filename = result[0].value;
+        const imagePath = path.join(__dirname, '../uploads/hero_backgrounds', filename);
+        
+        if (fs.existsSync(imagePath)) {
+          const metadata = await imageEditor.getImageMetadata(imagePath);
+          res.json({
+            success: true,
+            filename: filename,
+            metadata: metadata.metadata
+          });
+        } else {
+          res.status(404).json({
+            success: false,
+            message: 'Image file not found'
+          });
+        }
+      } else {
+        res.status(404).json({
+          success: false,
+          message: 'No hero background image set'
+        });
+      }
+    } else {
+      res.status(404).json({
+        success: false,
+        message: 'Settings table not found'
+      });
+    }
+  } catch (err) {
+    console.error('Error getting image metadata:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Server error getting image metadata'
+    });
+  }
+});
+
+// Process image with resize/position adjustments
+router.post('/hero-background/edit', auth, admin, async (req, res) => {
+  try {
+    const {
+      width,
+      height,
+      quality = 90,
+      crop,
+      position = 'centre',
+      fit = 'cover',
+      zoom = 1,
+      offsetX = 0,
+      offsetY = 0
+    } = req.body;
+
+    if (await tableExists('settings')) {
+      const result = await queryAsync('SELECT value FROM settings WHERE `key` = ?', ['hero_background_image']);
+      
+      if (result.length > 0) {
+        const filename = result[0].value;
+        const originalPath = path.join(__dirname, '../uploads/hero_backgrounds', filename);
+        
+        if (!fs.existsSync(originalPath)) {
+          return res.status(404).json({
+            success: false,
+            message: 'Original image file not found'
+          });
+        }
+
+        // Create backup
+        const backupPath = path.join(__dirname, '../uploads/hero_backgrounds', `backup_${filename}`);
+        await imageEditor.createBackup(originalPath, backupPath);
+
+        // Generate new filename for edited version
+        const fileExt = path.extname(filename);
+        const baseName = path.basename(filename, fileExt);
+        const editedFilename = `${baseName}_edited_${Date.now()}${fileExt}`;
+        const outputPath = path.join(__dirname, '../uploads/hero_backgrounds', editedFilename);
+
+        // Process the image
+        const processResult = await imageEditor.processImage(originalPath, outputPath, {
+          width,
+          height,
+          quality,
+          crop,
+          position,
+          fit,
+          zoom,
+          offsetX,
+          offsetY
+        });
+
+        if (processResult.success) {
+          // Update settings with new filename
+          await queryAsync(
+            'UPDATE settings SET value = ? WHERE `key` = ?',
+            [editedFilename, 'hero_background_image']
+          );
+
+          // Generate image URL
+          const domain = process.env.DOMAIN_URL || process.env.VITE_DOMAIN_URL || 'https://membership.indiansinghana.com';
+          const imageUrl = `${domain}/uploads/hero_backgrounds/${editedFilename}`;
+
+          res.json({
+            success: true,
+            message: 'Image edited successfully',
+            filename: editedFilename,
+            imageUrl: imageUrl,
+            metadata: processResult.metadata,
+            backupFilename: `backup_${filename}`
+          });
+        } else {
+          res.status(500).json({
+            success: false,
+            message: 'Failed to process image'
+          });
+        }
+      } else {
+        res.status(404).json({
+          success: false,
+          message: 'No hero background image to edit'
+        });
+      }
+    } else {
+      res.status(404).json({
+        success: false,
+        message: 'Settings table not found'
+      });
+    }
+  } catch (err) {
+    console.error('Error editing image:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Server error editing image'
+    });
+  }
+});
+
+// Generate preview of edited image
+router.post('/hero-background/preview', auth, admin, async (req, res) => {
+  try {
+    const {
+      width,
+      height,
+      quality = 80,
+      crop,
+      position = 'centre',
+      fit = 'cover',
+      zoom = 1,
+      offsetX = 0,
+      offsetY = 0
+    } = req.body;
+
+    if (await tableExists('settings')) {
+      const result = await queryAsync('SELECT value FROM settings WHERE `key` = ?', ['hero_background_image']);
+      
+      if (result.length > 0) {
+        const filename = result[0].value;
+        const originalPath = path.join(__dirname, '../uploads/hero_backgrounds', filename);
+        
+        if (!fs.existsSync(originalPath)) {
+          return res.status(404).json({
+            success: false,
+            message: 'Original image file not found'
+          });
+        }
+
+        // Generate preview filename
+        const previewFilename = `preview_${Date.now()}.jpg`;
+        const previewPath = path.join(__dirname, '../uploads/hero_backgrounds', previewFilename);
+
+        // Create a temporary processed image for preview
+        const tempFilename = `temp_${Date.now()}.jpg`;
+        const tempPath = path.join(__dirname, '../uploads/hero_backgrounds', tempFilename);
+
+        // Process the image with specified parameters
+        const processResult = await imageEditor.processImage(originalPath, tempPath, {
+          width,
+          height,
+          quality,
+          crop,
+          position,
+          fit,
+          zoom,
+          offsetX,
+          offsetY
+        });
+
+        if (processResult.success) {
+          // Generate smaller preview from processed image
+          await imageEditor.generatePreview(tempPath, previewPath, {
+            width: 400,
+            height: 300,
+            quality: 80
+          });
+
+          // Generate preview URL
+          const domain = process.env.DOMAIN_URL || process.env.VITE_DOMAIN_URL || 'https://membership.indiansinghana.com';
+          const previewUrl = `${domain}/uploads/hero_backgrounds/${previewFilename}`;
+
+          // Clean up temp file
+          setTimeout(() => {
+            imageEditor.cleanupFiles([tempPath, previewPath]);
+          }, 30000); // Clean up after 30 seconds
+
+          res.json({
+            success: true,
+            previewUrl: previewUrl,
+            metadata: processResult.metadata
+          });
+        } else {
+          res.status(500).json({
+            success: false,
+            message: 'Failed to generate preview'
+          });
+        }
+      } else {
+        res.status(404).json({
+          success: false,
+          message: 'No hero background image found'
+        });
+      }
+    } else {
+      res.status(404).json({
+        success: false,
+        message: 'Settings table not found'
+      });
+    }
+  } catch (err) {
+    console.error('Error generating preview:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Server error generating preview'
+    });
+  }
+});
+
+// Restore image from backup
+router.post('/hero-background/restore', auth, admin, async (req, res) => {
+  try {
+    const { backupFilename } = req.body;
+
+    if (!backupFilename) {
+      return res.status(400).json({
+        success: false,
+        message: 'Backup filename is required'
+      });
+    }
+
+    if (await tableExists('settings')) {
+      const backupPath = path.join(__dirname, '../uploads/hero_backgrounds', backupFilename);
+      
+      if (!fs.existsSync(backupPath)) {
+        return res.status(404).json({
+          success: false,
+          message: 'Backup file not found'
+        });
+      }
+
+      // Extract original filename from backup
+      const originalFilename = backupFilename.replace(/^backup_/, '');
+      const restorePath = path.join(__dirname, '../uploads/hero_backgrounds', originalFilename);
+
+      // Restore from backup
+      const restored = await imageEditor.restoreFromBackup(backupPath, restorePath);
+
+      if (restored) {
+        // Update settings to point to restored file
+        await queryAsync(
+          'UPDATE settings SET value = ? WHERE `key` = ?',
+          [originalFilename, 'hero_background_image']
+        );
+
+        // Generate image URL
+        const domain = process.env.DOMAIN_URL || process.env.VITE_DOMAIN_URL || 'https://membership.indiansinghana.com';
+        const imageUrl = `${domain}/uploads/hero_backgrounds/${originalFilename}`;
+
+        res.json({
+          success: true,
+          message: 'Image restored from backup successfully',
+          filename: originalFilename,
+          imageUrl: imageUrl
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          message: 'Failed to restore image from backup'
+        });
+      }
+    } else {
+      res.status(404).json({
+        success: false,
+        message: 'Settings table not found'
+      });
+    }
+  } catch (err) {
+    console.error('Error restoring image:', err);
+    res.status(500).json({
+      success: false,
+      message: 'Server error restoring image'
     });
   }
 });

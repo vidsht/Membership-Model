@@ -244,6 +244,15 @@
                 Hi {{firstName}},
             </p>
             
+            {{#if businessName}}
+            <div style="background: #f0f8ff; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #2196f3;">
+                <h3 style="color: #1976d2; margin-bottom: 8px; font-size: 16px;">📍 Business Account</h3>
+                <p style="color: #666; margin: 0; font-size: 14px;">
+                    This notice is for your business: <strong>{{businessName}}</strong>
+                </p>
+            </div>
+            {{/if}}
+            
             <div class="alert-box urgency-{{#if (lte daysLeft 1)}}high{{else if (lte daysLeft 3)}}medium{{else}}low{{/if}}">
                 <h2 style="color: #ff6b35; margin-bottom: 15px;">
                     {{#if (eq daysLeft 1)}}
@@ -255,42 +264,66 @@
                     {{/if}}
                 </h2>
                 <p style="color: #666; font-size: 16px;">
+                    {{#if businessName}}
+                    Don't lose access to business directory listing, deal posting, and marketing opportunities
+                    {{else}}
                     Don't lose access to exclusive deals and community benefits
+                    {{/if}}
                 </p>
             </div>
             
             <div class="expiry-details">
                 <div class="detail-card">
-                    <div class="detail-label">Plan Name</div>
-                    <div class="detail-value">{{planName}}</div>
+                    <div class="detail-label">{{#if businessName}}Business{{else}}Plan Name{{/if}}</div>
+                    <div class="detail-value">{{#if businessName}}{{businessName}}{{else}}{{planName}}{{/if}}</div>
                 </div>
                 <div class="detail-card">
-                    <div class="detail-label">Days Left</div>
-                    <div class="days-left">{{daysLeft}}</div>
+                    <div class="detail-label">{{#if businessName}}Plan Type{{else}}Days Left{{/if}}</div>
+                    <div class="{{#if businessName}}detail-value{{else}}days-left{{/if}}">{{#if businessName}}{{planName}}{{else}}{{daysLeft}}{{/if}}</div>
                 </div>
+                <div class="detail-card">
+                    <div class="detail-label">{{#if businessName}}Days Left{{else}}Expires On{{/if}}</div>
+                    <div class="{{#if businessName}}days-left{{else}}detail-value{{/if}}">{{#if businessName}}{{daysLeft}}{{else}}{{expiryDate}}{{/if}}</div>
+                </div>
+                {{#if businessName}}
                 <div class="detail-card">
                     <div class="detail-label">Expires On</div>
                     <div class="detail-value">{{expiryDate}}</div>
                 </div>
+                {{/if}}
             </div>
             
             <div class="benefits-reminder">
                 <h3>🎯 What You'll Lose After Expiry:</h3>
                 <ul class="benefits-list">
+                    {{#if businessName}}
+                    <li>Business directory listing and visibility</li>
+                    <li>Ability to post exclusive deals and offers</li>
+                    <li>Marketing and promotional opportunities</li>
+                    <li>Social media promotion (Facebook, Instagram, WhatsApp)</li>
+                    <li>Priority business support and account management</li>
+                    <li>Community networking and event access</li>
+                    {{else}}
                     <li>Access to exclusive member deals and discounts</li>
                     <li>Digital membership card and QR code</li>
                     <li>Priority customer support</li>
                     <li>Community event notifications</li>
                     <li>Business directory access</li>
                     <li>Special festival offers and promotions</li>
+                    {{/if}}
                 </ul>
             </div>
             
             <div class="renewal-section">
-                <h3>🔄 Renew Your Membership Today</h3>
+                <h3>🔄 Renew Your {{#if businessName}}Business Plan{{else}}Membership{{/if}} Today</h3>
                 <p>
+                    {{#if businessName}}
+                    Keep your business visible and continue reaching new customers through the Indians in Ghana platform. 
+                    Renewal ensures uninterrupted marketing and promotional opportunities for {{businessName}}.
+                    {{else}}
                     Continue enjoying all the benefits of being part of the Indians in Ghana community. 
                     Renewal is quick, easy, and keeps you connected to exclusive offers.
+                    {{/if}}
                 </p>
             </div>
             
@@ -310,7 +343,7 @@
                 </p>
                 <p style="color: #666;">
                     📧 Email: cards@indiansinghana.com<br>
-                    📱 WhatsApp: +233 XXX XXX XXX
+                    📱 WhatsApp: +233 57 232 3912
                 </p>
             </div>
         </div>
@@ -318,7 +351,7 @@
         <div class="footer">
             <p><strong>Indians in Ghana</strong> - Connecting Community, Creating Value</p>
             <p>This is an automated security notification. Please do not reply to this message.</p>
-            <p>Email: {{supportEmail}} | Website: www.indiansinghana.com</p>
+            <p>Email: cards@indiansinghana.com | Website: www.indiansinghana.com</p>
         </div>
     </div>
 </body>

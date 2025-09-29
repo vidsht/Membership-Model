@@ -1,4 +1,6 @@
 const emailService = require('./emailService');
+const WhatsAppMessageService = require('./whatsappMessageService');
+const { formatDateForEmail } = require('../utils/dateFormatter');
 const db = require('../db');
 
 class NotificationService {
@@ -1129,6 +1131,206 @@ class NotificationService {
     const now = new Date();
     const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
     return nextMonth.toLocaleDateString();
+  }
+
+  // Birthday Notification Methods
+  async sendBirthdayGreeting(userId) {
+    try {
+      const user = await this.getUserById(userId);
+      if (!user) throw new Error('User not found');
+
+      // Generate WhatsApp birthday message
+      const whatsappMessage = WhatsAppMessageService.generateBirthdayMessage({
+        firstName: (user.fullName || '').split(' ')[0] || 'Dear Member',
+        fullName: user.fullName
+      });
+
+      console.log(`🎉 Birthday WhatsApp message for ${user.fullName}:`);
+      console.log('=' .repeat(50));
+      console.log(whatsappMessage);
+      console.log('=' .repeat(50));
+      console.log(`📱 Send to: ${user.phone || 'Phone number not available'}`);
+
+      // In a real implementation, you would integrate with a WhatsApp API service here
+      // For now, we're logging the message for manual sending
+
+      // Optional: Log birthday greeting in database
+      await this.logBirthdayGreeting(userId);
+
+      return {
+        success: true,
+        message: whatsappMessage,
+        phone: user.phone,
+        recipient: user.fullName
+      };
+
+    } catch (error) {
+      console.error('Error sending birthday greeting:', error);
+      throw error;
+    }
+  }
+
+  async logBirthdayGreeting(userId) {
+    try {
+      const query = `
+        INSERT INTO activity_logs (user_id, action, description, timestamp)
+        VALUES (?, 'birthday_greeting', 'Birthday WhatsApp greeting sent', NOW())
+      `;
+      await this.queryAsync(query, [userId]);
+    } catch (error) {
+      console.error('Error logging birthday greeting:', error);
+    }
+  }
+
+  async sendTodaysBirthdayGreetings() {
+    try {
+      console.log('🎂 Checking for today\'s birthdays...');
+
+      const query = `
+        SELECT id, fullName, phone, email, dateOfBirth
+        FROM users 
+        WHERE status = 'active' 
+        AND dateOfBirth IS NOT NULL
+        AND (
+          -- Current year birthday
+          DATE_FORMAT(dateOfBirth, '%m-%d') = DATE_FORMAT(CURDATE(), '%m-%d')
+        )
+      `;
+
+      const birthdayUsers = await this.queryAsync(query);
+
+      if (birthdayUsers.length === 0) {
+        console.log('🎂 No birthdays today');
+        return { count: 0, sent: [] };
+      }
+
+      console.log(`🎉 Found ${birthdayUsers.length} birthday(s) today!`);
+
+      const results = [];
+      for (const user of birthdayUsers) {
+        try {
+          const result = await this.sendBirthdayGreeting(user.id);
+          results.push({
+            userId: user.id,
+            name: user.fullName,
+            success: true,
+            ...result
+          });
+        } catch (error) {
+          console.error(`Failed to send birthday greeting to ${user.fullName}:`, error);
+          results.push({
+            userId: user.id,
+            name: user.fullName,
+            success: false,
+            error: error.message
+          });
+        }
+      }
+
+      return {
+        count: birthdayUsers.length,
+        sent: results
+      };
+
+    } catch (error) {
+      console.error('Error sending birthday greetings:', error);
+      throw error;
+    }
+  }
+
+  // Enhanced Plan Expiry Notifications with Business Names
+  async sendPlanExpiryWarning(userId, daysUntilExpiry = 7) {
+    try {
+      const user = await this.getUserById(userId);
+      if (!user) throw new Error('User not found');
+
+      // Get plan details
+      const planDetails = await this.getUserPlanDetails(userId);
+      if (!planDetails) throw new Error('Plan details not found');
+
+      // Prepare template data with business name for merchants
+      const templateData = {
+        firstName: (user.fullName || '').split(' ')[0] || 'Member',
+        fullName: user.fullName,
+        planName: planDetails.planName || 'Your Plan',
+        daysLeft: daysUntilExpiry,
+        expiryDate: formatDateForEmail(planDetails.validationDate)
+      };
+
+      // Add business name for merchants
+      if (user.userType === 'merchant' && user.businessName) {
+        templateData.businessName = user.businessName;
+      }
+
+      // Send email notification
+      await this.emailService.sendEmail({
+        to: user.email,
+        type: 'plan_expiry_warning',
+        data: templateData
+      });
+
+      // Generate WhatsApp message
+      const whatsappMessage = user.userType === 'merchant' 
+        ? WhatsAppMessageService.generateMerchantExpiryMessage(
+            { 
+              firstName: templateData.firstName,
+              fullName: user.fullName,
+              businessName: user.businessName 
+            }, 
+            {
+              daysLeft: daysUntilExpiry,
+              planName: templateData.planName
+            }
+          )
+        : WhatsAppMessageService.generateUserExpiryMessage(
+            { 
+              firstName: templateData.firstName,
+              fullName: user.fullName 
+            },
+            {
+              daysLeft: daysUntilExpiry,
+              planName: templateData.planName
+            }
+          );
+
+      console.log(`⚠️ Plan expiry WhatsApp message for ${user.fullName}:`);
+      console.log('=' .repeat(50));
+      console.log(whatsappMessage);
+      console.log('=' .repeat(50));
+      console.log(`📱 Send to: ${user.phone || 'Phone number not available'}`);
+
+      return {
+        success: true,
+        emailSent: true,
+        whatsappMessage: whatsappMessage,
+        phone: user.phone,
+        recipient: user.fullName,
+        businessName: user.businessName
+      };
+
+    } catch (error) {
+      console.error('Error sending plan expiry warning:', error);
+      throw error;
+    }
+  }
+
+  async getUserPlanDetails(userId) {
+    try {
+      const query = `
+        SELECT up.*, p.name as planName, p.type as planType
+        FROM user_plans up
+        LEFT JOIN plans p ON up.plan_id = p.id
+        WHERE up.user_id = ? AND up.status = 'active'
+        ORDER BY up.id DESC
+        LIMIT 1
+      `;
+      
+      const results = await this.queryAsync(query, [userId]);
+      return results[0] || null;
+    } catch (error) {
+      console.error('Error getting user plan details:', error);
+      return null;
+    }
   }
 }
 

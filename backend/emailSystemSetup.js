@@ -1,4 +1,5 @@
 const db = require('./db');
+const { formatDateForEmail, getCurrentDateForEmail } = require('./utils/dateFormatter');
 const fs = require('fs').promises;
 const path = require('path');
 const emailService = require('./services/emailService');
