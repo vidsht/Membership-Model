@@ -1377,7 +1377,7 @@ router.patch('/redemption-requests/:requestId/approve', checkMerchantAccess, asy
       userId: redemptionData.user_id,
       dealTitle: redemptionData.title,
       businessName: merchant.businessName || 'Business',
-      redemptionDate: new Date().toLocaleDateString()
+      redemptionDate: getCurrentDateForEmail()
     }).then(emailResult => {
       console.log('📧 Redemption approval email sent:', emailResult);
     }).catch(emailError => {
@@ -1469,7 +1469,7 @@ router.patch('/redemption-requests/:requestId/reject', checkMerchantAccess, asyn
       dealTitle: redemptionData.title,
       businessName: merchant.businessName || 'Business',
       reason: reason?.trim() || 'No reason provided',
-      redemptionDate: new Date().toLocaleDateString()
+      redemptionDate: getCurrentDateForEmail()
     }).then(emailResult => {
       console.log('📧 Redemption rejection email sent:', emailResult);
     }).catch(emailError => {
