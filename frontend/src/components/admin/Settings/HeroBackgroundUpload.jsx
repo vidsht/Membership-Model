@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNotification } from '../../../contexts/NotificationContext';
 import ImageUpload from '../../common/ImageUpload';
-import SmartImage from '../../common/SmartImage';
+import { SmartImage } from '../../../hooks/useImageUrl.jsx';
 import api from '../../../services/api';
 import './HeroBackgroundUpload.css';
 
