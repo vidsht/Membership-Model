@@ -25,6 +25,7 @@ const UserSettings = () => {
     dob: '',
     gender: '',
     bloodGroup: '',
+    bloodGroupConfident: false,
     employerName: '',
     yearsInGhana: '',
     community: '',
@@ -80,6 +81,7 @@ const UserSettings = () => {
     phone: '',
     dob: '',
     bloodGroup: '',
+    bloodGroupConfident: false,
     employerName: '',
     yearsInGhana: '',
     community: '',
@@ -149,6 +151,7 @@ const UserSettings = () => {
         dob: userData.dob ? userData.dob.split('T')[0] : '',
         gender: userData.gender || '',
         bloodGroup: userData.bloodGroup || '',
+        bloodGroupConfident: userData.bloodGroupConfident || false,
         employerName: userData.employer_name || '',
         yearsInGhana: userData.years_in_ghana || '',
         community: userData.community || '',
@@ -261,6 +264,7 @@ useEffect(() => {
       phone: userProfile.phone || '',
       dob: userProfile.dob || '',
       bloodGroup: userProfile.bloodGroup || '',
+      bloodGroupConfident: userProfile.bloodGroupConfident || false,
       employerName: userProfile.employerName || '',
       yearsInGhana: userProfile.yearsInGhana || '',
       community: userProfile.community || '',
@@ -280,6 +284,7 @@ useEffect(() => {
       phone: '',
       dob: '',
       bloodGroup: '',
+      bloodGroupConfident: false,
       employerName: '',
       yearsInGhana: '',
       community: '',
@@ -291,7 +296,8 @@ useEffect(() => {
   };
 
   const handleEditFormChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
+    const inputValue = type === 'checkbox' ? checked : value;
     
     if (name.startsWith('address.')) {
       const addressField = name.split('.')[1];
@@ -299,13 +305,13 @@ useEffect(() => {
         ...prev,
         address: {
           ...prev.address,
-          [addressField]: value
+          [addressField]: inputValue
         }
       }));
     } else {
       setEditFormData(prev => ({
         ...prev,
-        [name]: value
+        [name]: inputValue
       }));
     }
   };
@@ -319,6 +325,7 @@ useEffect(() => {
         phone: editFormData.phone !== undefined && editFormData.phone !== null && String(editFormData.phone).trim() !== '' ? editFormData.phone : (userProfile.phone || ''),
         dob: editFormData.dob !== undefined && editFormData.dob !== null && String(editFormData.dob).trim() !== '' ? editFormData.dob : (userProfile.dob || null),
         bloodGroup: editFormData.bloodGroup !== undefined && editFormData.bloodGroup !== null && String(editFormData.bloodGroup).trim() !== '' ? editFormData.bloodGroup : (userProfile.bloodGroup || ''),
+        bloodGroupConfident: editFormData.bloodGroupConfident !== undefined ? editFormData.bloodGroupConfident : (userProfile.bloodGroupConfident || false),
         employerName: editFormData.employerName !== undefined && editFormData.employerName !== null && String(editFormData.employerName).trim() !== '' ? editFormData.employerName : (userProfile.employerName || ''),
         yearsInGhana: editFormData.yearsInGhana !== undefined && editFormData.yearsInGhana !== null && String(editFormData.yearsInGhana).trim() !== '' ? editFormData.yearsInGhana : (userProfile.yearsInGhana || ''),
         community: editFormData.community !== undefined && editFormData.community !== null && String(editFormData.community).trim() !== '' ? editFormData.community : (userProfile.community || ''),
@@ -774,6 +781,23 @@ const handleMerchantLogoRemoval = async () => {
                     <option value="O+">O+</option>
                     <option value="O-">O-</option>
                   </select>
+                </div>
+
+                <div className="form-field-group">
+                  <label className="form-field-label">Blood Group Confidence</label>
+                  <div className="confidence-display">
+                    <span className={`confidence-badge ${userProfile.bloodGroupConfident ? 'confident' : 'not-confident'}`}>
+                      {userProfile.bloodGroupConfident ? (
+                        <>
+                          <i className="fas fa-check-circle"></i> Yes, Laboratory Checked
+                        </>
+                      ) : (
+                        <>
+                          <i className="fas fa-times-circle"></i> Not Confirmed
+                        </>
+                      )}
+                    </span>
+                  </div>
                 </div>
 
                 <div className="form-field-group">
@@ -1405,6 +1429,25 @@ return (
                         </select>
                       </div>
                       
+                      <div className="form-group">
+                        <label htmlFor="edit-bloodGroupConfident">Blood Group Confidence</label>
+                        <div className="checkbox-wrapper">
+                          <input
+                            type="checkbox"
+                            id="edit-bloodGroupConfident"
+                            name="bloodGroupConfident"
+                            checked={editFormData.bloodGroupConfident}
+                            onChange={handleEditFormChange}
+                            className="form-checkbox"
+                          />
+                          <label htmlFor="edit-bloodGroupConfident" className="checkbox-label">
+                            Laboratory Confirmed
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="form-row">
                       <div className="form-group">
                         <label htmlFor="edit-employerName">Employer Name</label>
                         <input
