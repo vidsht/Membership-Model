@@ -1016,12 +1016,12 @@
   font-weight: 500;
 }
 
-.confidence-badge.confirmed {
+.confidence-badge.confident {
   background-color: rgba(76, 175, 80, 0.1);
   color: #4caf50;
 }
 
-.confidence-badge.not-confirmed {
+.confidence-badge.not-confident {
   background-color: rgba(244, 67, 54, 0.1);
   color: #f44336;
 }
