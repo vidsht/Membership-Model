@@ -80,6 +80,7 @@ router.get('/profile/complete', auth, (req, res) => {
       u.phone,
       u.dob,
       u.bloodGroup,
+      u.blood_group_confident,
       u.employer_name,
       u.years_in_ghana,
       u.community,
@@ -299,6 +300,10 @@ router.get('/profile/with-plan', auth, (req, res) => {
       console.log('🔍 Profile complete - Final response fields:', Object.keys(user));
       console.log('🔍 Profile complete - Final employer_name:', user.employer_name);
       console.log('🔍 Profile complete - Final years_in_ghana:', user.years_in_ghana);
+      console.log('🔍 Profile complete - Final blood_group_confident:', user.blood_group_confident);
+
+      // Map database field names to frontend expected field names
+      user.bloodGroupConfident = user.blood_group_confident;
 
       res.json({ user });
     });

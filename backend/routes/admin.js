@@ -1370,7 +1370,7 @@ router.put('/users/:id', auth, admin, async (req, res) => {
     const allowedFields = [
       'fullName', 'email', 'phone', 'address', 'dob', 'community',
       'country', 'state', 'city', 'membershipType', 'status',
-      'userCategory', 'currentPlan', 'bloodGroup'
+      'userCategory', 'currentPlan', 'bloodGroup', 'bloodGroupConfident'
     ];
 
     // Check if customRedemptionLimit column exists before adding it to allowed fields
@@ -1396,7 +1396,13 @@ router.put('/users/:id', auth, admin, async (req, res) => {
           return;
         }
         
-        updates.push(`${field} = ?`);
+        // Map frontend field names to database column names
+        let dbFieldName = field;
+        if (field === 'bloodGroupConfident') {
+          dbFieldName = 'blood_group_confident';
+        }
+        
+        updates.push(`${dbFieldName} = ?`);
         
         if (field === 'address' && typeof updateData[field] === 'object') {
           values.push(JSON.stringify(updateData[field]));
@@ -2871,7 +2877,7 @@ router.put('/partners/:id', auth, admin, async (req, res) => {
     // If flat fields (from old frontend), map them to userInfo/businessInfo
     const flat = req.body;
     // User fields
-    const allowedUserFields = ['fullName', 'ownerName', 'email', 'phone', 'address', 'community', 'membershipType', 'status'];
+    const allowedUserFields = ['fullName', 'ownerName', 'email', 'phone', 'address', 'community', 'membershipType', 'status', 'bloodGroup', 'bloodGroupConfident', 'employerName', 'yearsInGhana'];
     allowedUserFields.forEach(field => {
       if (flat[field] !== undefined && userInfo[field] === undefined) {
         userInfo[field] = flat[field];
@@ -2899,10 +2905,20 @@ router.put('/partners/:id', auth, admin, async (req, res) => {
     // Update user information
     const userUpdates = [];
     const userValues = [];
-    const userDbFields = ['fullName', 'email', 'phone', 'address', 'community', 'membershipType', 'status'];
+    const userDbFields = ['fullName', 'email', 'phone', 'address', 'community', 'membershipType', 'status', 'bloodGroup', 'bloodGroupConfident', 'employerName', 'yearsInGhana'];
     userDbFields.forEach(field => {
       if (userInfo[field] !== undefined) {
-        userUpdates.push(`${field} = ?`);
+        // Map frontend field names to database column names
+        let dbFieldName = field;
+        if (field === 'bloodGroupConfident') {
+          dbFieldName = 'blood_group_confident';
+        } else if (field === 'employerName') {
+          dbFieldName = 'employer_name';
+        } else if (field === 'yearsInGhana') {
+          dbFieldName = 'years_in_ghana';
+        }
+        
+        userUpdates.push(`${dbFieldName} = ?`);
         userValues.push(userInfo[field]);
       }
     });
