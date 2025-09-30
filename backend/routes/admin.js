@@ -2649,6 +2649,7 @@ router.get('/partners/:id', auth, admin, async (req, res) => {
         SELECT 
           u.id, u.fullName, u.email, u.phone, u.address, u.community, 
           u.membershipType, u.status, u.createdAt, u.lastLogin,
+          u.blood_group, u.blood_group_confident, u.employer_name, u.years_in_ghana,
           b.businessId, b.businessName, b.businessDescription, b.businessCategory,
           b.businessAddress, b.businessPhone, b.businessEmail, b.website,
           b.businessLicense, b.taxId, b.customDealLimit,
@@ -2664,6 +2665,7 @@ router.get('/partners/:id', auth, admin, async (req, res) => {
         SELECT 
           u.id, u.fullName, u.email, u.phone, u.address, u.community, 
           u.membershipType, u.status, u.createdAt, u.lastLogin,
+          u.blood_group, u.blood_group_confident, u.employer_name, u.years_in_ghana,
           NULL as businessId, NULL as businessName, NULL as businessDescription, 
           NULL as businessCategory, NULL as businessAddress, NULL as businessPhone, 
           NULL as businessEmail, NULL as website, NULL as businessLicense, 
@@ -2684,9 +2686,18 @@ router.get('/partners/:id', auth, admin, async (req, res) => {
 
     const partner = result[0];
     
+    // Map database field names to frontend format
+    const mappedPartner = {
+      ...partner,
+      bloodGroup: partner.blood_group,
+      bloodGroupConfident: partner.blood_group_confident,
+      employerName: partner.employer_name,
+      yearsInGhana: partner.years_in_ghana
+    };
+    
     res.json({ 
       success: true, 
-      partner: partner
+      partner: mappedPartner
     });
   } catch (err) {
     console.error('Error fetching partner:', err);

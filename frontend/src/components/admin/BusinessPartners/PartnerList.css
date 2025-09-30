@@ -1004,3 +1004,28 @@
   white-space: normal;
   word-wrap: break-word;
 }
+
+/* Confidence Badge Styles */
+.confidence-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 1rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.confidence-badge.confirmed {
+  background-color: rgba(76, 175, 80, 0.1);
+  color: #4caf50;
+}
+
+.confidence-badge.not-confirmed {
+  background-color: rgba(244, 67, 54, 0.1);
+  color: #f44336;
+}
+
+.confidence-badge i {
+  font-size: 0.625rem;
+}
