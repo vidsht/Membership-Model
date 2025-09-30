@@ -670,7 +670,7 @@ router.get('/users', auth, admin, async (req, res) => {
         u.id, u.fullName, u.email, u.phone, u.address, u.community, u.membershipType,
         u.userType, u.userCategory, u.status, u.createdAt, u.lastLogin, u.dob,
         u.country, u.state, u.city, u.planAssignedAt, u.planAssignedBy, u.currentPlan,
-        u.membershipNumber, u.validationDate, u.updated_at, u.profilePicture`;
+        u.membershipNumber, u.validationDate, u.updated_at, u.profilePicture, u.bloodGroup, u.blood_group_confident, u.employer_name, u.years_in_ghana`;
 
     // Check if customRedemptionLimit column exists
     const customRedemptionColumnExists = await queryAsync(`
@@ -740,6 +740,11 @@ router.get('/users', auth, admin, async (req, res) => {
       if (user.validationDate) {
         processedUser.isPlanExpired = new Date(user.validationDate) < new Date();
       }
+
+      // Map database field names to frontend expected field names
+      processedUser.bloodGroupConfident = user.blood_group_confident;
+      processedUser.employerName = user.employer_name;
+      processedUser.yearsInGhana = user.years_in_ghana;
 
       return processedUser;
     });
@@ -835,6 +840,7 @@ router.get('/users/export', auth, admin, async (req, res) => {
       SELECT 
         u.id, u.fullName, u.email, u.phone, u.address, u.dob, u.community, u.membershipType,
         u.userType, u.status, u.createdAt, u.lastLogin, u.validationDate, u.bloodGroup,
+        u.blood_group_confident, u.employer_name, u.years_in_ghana,
         u.country, u.state, u.city, u.membershipNumber`;
 
     if (await tableExists('plans')) {
@@ -853,7 +859,7 @@ router.get('/users/export', auth, admin, async (req, res) => {
 
     const headers = [
       'ID', 'Full Name', 'Email', 'Phone', 'Address', 'DOB', 'Community', 'Plan', 'User Type',
-      'Status', 'Registration Date', 'Last Login', 'Validation Date', 'Blood Group', 'Country', 'State', 'City',
+      'Status', 'Registration Date', 'Last Login', 'Validation Date', 'Blood Group', 'Blood Group Confident', 'Employer Name', 'Years in Ghana', 'Country', 'State', 'City',
       'Membership Number'
     ];
 
@@ -884,6 +890,9 @@ router.get('/users/export', auth, admin, async (req, res) => {
         user.lastLogin ? formatDateForEmail(user.lastLogin) : '',
         user.validationDate ? formatDateForEmail(user.validationDate) : '',
         user.bloodGroup || '',
+        user.blood_group_confident ? 'Yes' : 'No',
+        csvSafe(user.employer_name || ''),
+        user.years_in_ghana || '',
         user.country || '',
         user.state || '',
         user.city || '',
@@ -1132,7 +1141,7 @@ router.get('/users/:id', auth, admin, async (req, res) => {
         u.userType, u.userCategory, u.status, u.createdAt, u.lastLogin, u.dob,
         u.country, u.state, u.city, u.planAssignedAt, u.planAssignedBy, u.currentPlan,
         u.membershipNumber, u.validationDate, u.updated_at, u.profilePicture, u.bloodGroup,
-        u.employer_name, u.years_in_ghana`;
+        u.blood_group_confident, u.employer_name, u.years_in_ghana`;
 
     // Check if customRedemptionLimit column exists
     const customRedemptionColumnExists = await queryAsync(`
@@ -1197,6 +1206,11 @@ router.get('/users/:id', auth, admin, async (req, res) => {
     if (user.validationDate) {
       user.isPlanExpired = new Date(user.validationDate) < new Date();
     }
+
+    // Map database field names to frontend expected field names
+    user.bloodGroupConfident = user.blood_group_confident;
+    user.employerName = user.employer_name;
+    user.yearsInGhana = user.years_in_ghana;
 
     console.log('Admin GET /users/:id - Final user data being sent:', { 
       id: user.id, 

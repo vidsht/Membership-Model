@@ -892,3 +892,33 @@ html {
     padding: 12px 20px;
   }
 }
+
+/* Blood Group Confidence Checkbox Styles */
+.blood-group-confidence {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  background-color: rgba(245, 245, 245, 0.8);
+  border-radius: 4px;
+  border: 1px solid #e0e0e0;
+}
+
+.blood-group-confidence input[type="checkbox"] {
+  margin-right: 8px;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.blood-group-confidence label {
+  font-size: 0.9em;
+  color: #666;
+  margin: 0;
+  cursor: pointer;
+  line-height: 1.4;
+}
+
+.blood-group-confidence:hover {
+  background-color: rgba(240, 240, 240, 0.9);
+}
