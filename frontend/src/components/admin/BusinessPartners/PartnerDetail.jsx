@@ -134,6 +134,34 @@ const PartnerDetail = () => {
                 <span className="detail-value">{partner.email || 'N/A'}</span>
               </div>
               <div className="detail-item">
+                <span className="detail-label">Blood Group</span>
+                <span className="detail-value">{partner.bloodGroup || 'N/A'}</span>
+              </div>
+              <div className="detail-item">
+                <span className="detail-label">Blood Group Confident</span>
+                <span className="detail-value">
+                  <span className={`confidence-badge ${partner.bloodGroupConfident ? 'confident' : 'not-confident'}`}>
+                    {partner.bloodGroupConfident ? (
+                      <>
+                        <i className="fas fa-check-circle"></i> Yes, Laboratory Checked
+                      </>
+                    ) : (
+                      <>
+                        <i className="fas fa-times-circle"></i> Not Confirmed
+                      </>
+                    )}
+                  </span>
+                </span>
+              </div>
+              <div className="detail-item">
+                <span className="detail-label">Employer Name</span>
+                <span className="detail-value">{partner.employerName || partner.employer_name || 'N/A'}</span>
+              </div>
+              <div className="detail-item">
+                <span className="detail-label">Years in Ghana</span>
+                <span className="detail-value">{partner.yearsInGhana || partner.years_in_ghana || 'N/A'}</span>
+              </div>
+              <div className="detail-item">
                 <span className="detail-label">Website</span>
                 <span className="detail-value">{partner.website ? <a href={partner.website} target="_blank" rel="noopener noreferrer">{partner.website}</a> : 'N/A'}</span>
               </div>

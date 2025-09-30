@@ -38,6 +38,7 @@ const UserDetailEdit = () => {
     membershipType: 'community',
     status: 'approved',
     bloodGroup: '',
+    bloodGroupConfident: false,
     employerName: '',
     yearsInGhana: '',
     userCategory: '',
@@ -165,6 +166,7 @@ const UserDetailEdit = () => {
           membershipType: userData.membershipType || 'community',
           status: userData.status || 'approved',
           bloodGroup: userData.bloodGroup || '',
+          bloodGroupConfident: userData.bloodGroupConfident || false,
           employerName: userData.employer_name || '',
           yearsInGhana: userData.years_in_ghana || '',
           userCategory: userData.userCategory || '',
@@ -288,6 +290,7 @@ const UserDetailEdit = () => {
         membershipType: user.membershipType || 'community',
         status: user.status || 'approved',
         bloodGroup: user.bloodGroup || '',
+        bloodGroupConfident: user.bloodGroupConfident || false,
         employerName: user.employer_name || '',
         yearsInGhana: user.years_in_ghana || '',
         userCategory: user.userCategory || '',
@@ -541,6 +544,36 @@ const UserDetailEdit = () => {
                     </select>
                   ) : (
                     <span>{user.bloodGroup || 'N/A'}</span>
+                  )}
+                </div>
+
+                <div className="detail-item">
+                  <label>Blood Group Confidence</label>
+                  {editMode ? (
+                    <div className="checkbox-wrapper">
+                      <input
+                        type="checkbox"
+                        id="bloodGroupConfident"
+                        checked={formData.bloodGroupConfident}
+                        onChange={(e) => handleInputChange('bloodGroupConfident', e.target.checked)}
+                        className="edit-checkbox"
+                      />
+                      <label htmlFor="bloodGroupConfident" className="checkbox-label">
+                        Laboratory Confirmed
+                      </label>
+                    </div>
+                  ) : (
+                    <span className={`confidence-badge ${user.bloodGroupConfident ? 'confident' : 'not-confident'}`}>
+                      {user.bloodGroupConfident ? (
+                        <>
+                          <i className="fas fa-check-circle"></i> Yes, Laboratory Checked
+                        </>
+                      ) : (
+                        <>
+                          <i className="fas fa-times-circle"></i> Not Confirmed
+                        </>
+                      )}
+                    </span>
                   )}
                 </div>
 
