@@ -68,53 +68,45 @@ class EmailService {
       },
       tls: {
         rejectUnauthorized: false
-      },
-      // Add timeout configurations to prevent connection timeouts
-      connectionTimeout: parseInt(process.env.SMTP_CONNECTION_TIMEOUT) || 30000, // 30 seconds default
-      greetingTimeout: parseInt(process.env.SMTP_GREETING_TIMEOUT) || 15000,     // 15 seconds default
-      socketTimeout: parseInt(process.env.SMTP_SOCKET_TIMEOUT) || 30000,         // 30 seconds default
-      // Add pool configuration for better connection management
-      pool: true,
-      maxConnections: 5,
-      maxMessages: 100,
-      // Rate limiting to prevent overwhelming the SMTP server
-      rateLimit: 14 // max 14 emails per second (Gmail limit is 15/sec)
+      }
     });
 
-    // Verify connection in production (with option to skip)
+    // Skip SMTP verification entirely if disabled or in development
+    if (process.env.DISABLE_SMTP_VERIFY === 'true') {
+      console.log('⚠️ Email service initialized without SMTP verification (DISABLE_SMTP_VERIFY=true)');
+      this.smtpVerified = false;
+      return;
+    }
+
+    // Only verify in production with credentials
+    const shouldVerify = process.env.NODE_ENV === 'production' 
+      && process.env.SMTP_USER 
+      && process.env.SMTP_PASS;
+      
+    if (!shouldVerify) {
+      console.log('⚠️ Email service initialized without SMTP verification (development mode or missing credentials)');
+      this.smtpVerified = false;
+      return;
+    }
+
+    // Verify connection in production
     try {
-      const shouldVerify = process.env.NODE_ENV === 'production' 
-        && process.env.SMTP_USER 
-        && process.env.SMTP_PASS 
-        && process.env.DISABLE_SMTP_VERIFY !== 'true';
+      console.log('🔍 Verifying SMTP connection...');
+      
+      // Add timeout wrapper for the verify call
+      const verifyWithTimeout = new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(new Error('Connection timeout - SMTP server did not respond within 15 seconds'));
+        }, 15000);
         
-      if (shouldVerify) {
-        console.log('🔍 Verifying SMTP connection...');
-        
-        // Add timeout wrapper for the verify call
-        const verifyWithTimeout = new Promise((resolve, reject) => {
-          const timeout = setTimeout(() => {
-            reject(new Error('Connection timeout - SMTP server did not respond within 15 seconds'));
-          }, 15000);
-          
-          this.transporter.verify().then(resolve).catch(reject).finally(() => {
-            clearTimeout(timeout);
-          });
+        this.transporter.verify().then(resolve).catch(reject).finally(() => {
+          clearTimeout(timeout);
         });
-        
-        await verifyWithTimeout;
-        console.log('✅ Email service initialized successfully');
-        this.smtpVerified = true;
-      } else {
-        console.log('⚠️ Email service initialized without SMTP verification');
-        if (process.env.DISABLE_SMTP_VERIFY === 'true') {
-          console.log('   (SMTP verification disabled by DISABLE_SMTP_VERIFY=true)');
-        } else {
-          console.log('   (development mode or missing credentials)');
-        }
-        // Still mark as "verified" for functionality, but log that it's not tested
-        this.smtpVerified = false;
-      }
+      });
+      
+      await verifyWithTimeout;
+      console.log('✅ Email service initialized successfully');
+      this.smtpVerified = true;
     } catch (error) {
       console.error('❌ Email service initialization failed:', error.message);
       
