@@ -22,7 +22,15 @@ const ExpiredSection = () => {
   });
 
   // Email templates for different scenarios
-  const getEmailTemplate = (type, days, name, expiryDate) => {
+  const getEmailTemplate = (type, days, member, expiryDate) => {
+    // For merchants, include business name with owner name if both are available
+    let name;
+    if (type === 'merchants' && member.businessName && member.fullName) {
+      name = `${member.businessName} (${member.fullName})`;
+    } else {
+      name = member.fullName || member.businessName;
+    }
+    
     const templates = {
       users: {
         0: `Subject: Your Membership Has Expired - Immediate Renewal Required
@@ -274,7 +282,7 @@ Contact: cards@indiansinghana.com`
 
   const handleSendEmail = (member, days) => {
     const expiryDate = new Date(member.planExpiryDate || member.validationDate).toLocaleDateString('en-GB');
-    const emailTemplate = getEmailTemplate(userType, days, member.fullName || member.businessName, expiryDate);
+    const emailTemplate = getEmailTemplate(userType, days, member, expiryDate);
     const recipient = 'cards@indiansinghana.com';
     const subject = emailTemplate.split('\n')[0].replace('Subject: ', '');
     const body = emailTemplate.split('\n').slice(2).join('\n');
@@ -285,11 +293,23 @@ Contact: cards@indiansinghana.com`
     // Open default email client
     window.open(mailtoLink);
     
-    showNotification(`Email template opened for ${member.fullName || member.businessName}`, 'success');
+    // Get display name for notification
+    const displayName = userType === 'merchants' && member.businessName && member.fullName 
+      ? `${member.businessName} (${member.fullName})`
+      : member.fullName || member.businessName;
+    
+    showNotification(`Email template opened for ${displayName}`, 'success');
   };
 
   const handleWhatsAppMessage = (member) => {
-    const name = member.fullName || member.businessName;
+    // For merchants, include business name with owner name if both are available
+    let name;
+    if (userType === 'merchants' && member.businessName && member.fullName) {
+      name = `${member.businessName} (${member.fullName})`;
+    } else {
+      name = member.fullName || member.businessName;
+    }
+    
     const expiryDate = new Date(member.planExpiryDate || member.validationDate);
     const now = new Date();
     const diffTime = expiryDate - now;

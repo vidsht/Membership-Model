@@ -229,12 +229,12 @@ const BirthdaySection = () => {
                           
                           // Create the birthday message
                           const message = `🎉 Happy Birthday! 🎉 
-                                            Dear ${user.fullName},
-                                            On this special day, we wish you joy, health, and prosperity. May your year ahead be filled with happiness and success. 🌟
-                                            Warm regards,
-                                            🇮🇳 Indians In Ghana Team 🇬🇭
-                                            _____
-                                            This is an automated birthday greeting from your community portal.`;
+Dear ${user.fullName},
+On this special day, we wish you joy, health, and prosperity. May your year ahead be filled with happiness and success. 🌟
+Warm regards,
+Indians In Ghana Team 
+_____
+This is an automated birthday greeting from your community portal.`;
                           
                           // URL encode the message
                           const encodedMessage = encodeURIComponent(message);

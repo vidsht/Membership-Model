@@ -26,7 +26,7 @@ const MerchantFilters = ({
     }, 500); // 500ms delay
 
     return () => clearTimeout(timeoutId);
-  }, [searchTerm, filters.search, onFilterChange]);
+  }, [searchTerm, filters.search]);
 
   // Update local search term when filters change externally
   useEffect(() => {

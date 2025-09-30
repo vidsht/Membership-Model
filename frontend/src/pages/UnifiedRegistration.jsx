@@ -44,6 +44,7 @@ const UnifiedRegistration = () => {
     city: '',
     plan: '',
     bloodGroup: '',
+    bloodGroupConfident: false, // New field for blood group confidence
     employerName: '',
     yearsInGhana: '',
     socialMediaFollowed: {
@@ -82,6 +83,7 @@ const UnifiedRegistration = () => {
     phone: '',
     plan: '', // Add plan selection for merchants
     bloodGroup: '',
+    bloodGroupConfident: false, // New field for blood group confidence
     employerName: '',
     yearsInGhana: '',
     businessName: '',
@@ -554,6 +556,7 @@ const UnifiedRegistration = () => {
         phone: merchantForm.phone,
         plan: finalPlan, // Include selected or default plan
         bloodGroup: merchantForm.bloodGroup, // Include blood group
+        bloodGroupConfident: merchantForm.bloodGroupConfident, // Include blood group confidence
         employerName: merchantForm.employerName, // Include employer name
         yearsInGhana: merchantForm.yearsInGhana, // Include years in Ghana
         // Send as array for backend compatibility
@@ -887,7 +890,7 @@ const UnifiedRegistration = () => {
 
                 {/* Blood Group */}
                 <div className="form-group">
-                  <label htmlFor="bloodGroup">Blood Group<span className="required">*</span></label>
+                  <label htmlFor="bloodGroup">Blood Group <span style={{ color: '#666', fontWeight: 'normal' }}>(Optional)</span></label>
                   <div className="select-with-icon" style={{ position: 'relative' }}>
                     <select
                       id="bloodGroup"
@@ -908,6 +911,22 @@ const UnifiedRegistration = () => {
                     </select>
                     <i className="fas fa-chevron-down dropdown-arrow" style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}></i>
                   </div>
+                  {/* Blood Group Confidence Checkbox */}
+                  {userForm.bloodGroup && (
+                    <div className="checkbox-container" style={{ marginTop: '8px' }}>
+                      <input
+                        type="checkbox"
+                        id="bloodGroupConfident"
+                        name="bloodGroupConfident"
+                        checked={userForm.bloodGroupConfident}
+                        onChange={(e) => setUserForm(prev => ({ ...prev, bloodGroupConfident: e.target.checked }))}
+                        style={{ marginRight: '8px' }}
+                      />
+                      <label htmlFor="bloodGroupConfident" style={{ fontSize: '0.9em', color: '#666' }}>
+                        I got the blood group checked from laboratory, I am confident
+                      </label>
+                    </div>
+                  )}
                 </div>
 
                 {/* Employer Name */}
@@ -1133,7 +1152,7 @@ const UnifiedRegistration = () => {
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="bloodGroup">Blood Group<span className="required">*</span></label>
+                  <label htmlFor="bloodGroup">Blood Group <span style={{ color: '#666', fontWeight: 'normal' }}>(Optional)</span></label>
                   <div className="select-with-icon" style={{ position: 'relative' }}>
                     <select
                       id="bloodGroup"
@@ -1154,6 +1173,22 @@ const UnifiedRegistration = () => {
                     </select>
                     <i className="fas fa-chevron-down dropdown-arrow" style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}></i>
                   </div>
+                  {/* Blood Group Confidence Checkbox */}
+                  {merchantForm.bloodGroup && (
+                    <div className="checkbox-container" style={{ marginTop: '8px' }}>
+                      <input
+                        type="checkbox"
+                        id="merchantBloodGroupConfident"
+                        name="bloodGroupConfident"
+                        checked={merchantForm.bloodGroupConfident}
+                        onChange={(e) => setMerchantForm(prev => ({ ...prev, bloodGroupConfident: e.target.checked }))}
+                        style={{ marginRight: '8px' }}
+                      />
+                      <label htmlFor="merchantBloodGroupConfident" style={{ fontSize: '0.9em', color: '#666' }}>
+                        I got the blood group checked from laboratory, I am confident
+                      </label>
+                    </div>
+                  )}
                 </div>
 
                 {/* Employer Name */}
