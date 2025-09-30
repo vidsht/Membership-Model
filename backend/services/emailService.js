@@ -278,7 +278,7 @@ class EmailService {
       await this.updateEmailLog(logId, {
         status: 'sent',
         messageId: result.messageId,
-        sentAt: new Date()
+        sent_at: new Date()
       });
 
       console.log(`✅ Email sent successfully: ${type} to ${to}`);
@@ -292,7 +292,7 @@ class EmailService {
         await this.updateEmailLog(options.logId, {
           status: 'failed',
           error: error.message,
-          failedAt: new Date()
+          failed_at: new Date()
         });
       }
 
