@@ -320,7 +320,7 @@ router.put('/profile', auth, (req, res) => {
 
     const { 
       fullName, email, phone, dob, 
-      bloodGroup, employerName, yearsInGhana, community, address, country 
+      bloodGroup, bloodGroupConfident, employerName, yearsInGhana, community, address, country 
     } = req.body;
 
     // Serialize address if it's an object
@@ -339,9 +339,9 @@ router.put('/profile', auth, (req, res) => {
         db.query(
           `UPDATE users SET 
            fullName=?, email=?, phone=?, dob=?, 
-           bloodGroup=?, employer_name=?, years_in_ghana=?, community=?, address=?, country=?, updated_at=NOW() 
+           bloodGroup=?, blood_group_confident=?, employer_name=?, years_in_ghana=?, community=?, address=?, country=?, updated_at=NOW() 
            WHERE id=?`,
-          [fullName, email, phone, dob, bloodGroup, employerName, yearsInGhana, community, addressStr, country, userId],
+          [fullName, email, phone, dob, bloodGroup, bloodGroupConfident, employerName, yearsInGhana, community, addressStr, country, userId],
           (err2) => {
             if (err2) {
               console.error('Profile update error (email branch):', err2);
@@ -351,7 +351,7 @@ router.put('/profile', auth, (req, res) => {
             // Fetch updated user data
             db.query(
               `SELECT id, fullName, email, phone, dob, 
-               bloodGroup, employer_name, years_in_ghana, community, address, country, profilePicture, membership, 
+               bloodGroup, blood_group_confident, employer_name, years_in_ghana, community, address, country, profilePicture, membership, 
                membershipType, membershipNumber, status, created_at 
                FROM users WHERE id = ?`, 
               [userId], 
@@ -371,6 +371,9 @@ router.put('/profile', auth, (req, res) => {
                   }
                 }
                 
+                // Map database field names to frontend expected field names
+                user.bloodGroupConfident = user.blood_group_confident;
+                
                 res.json({ user });
               }
             );
@@ -382,9 +385,9 @@ router.put('/profile', auth, (req, res) => {
       db.query(
         `UPDATE users SET 
          fullName=?, phone=?, dob=?, 
-         bloodGroup=?, employer_name=?, years_in_ghana=?, community=?, address=?, country=?, updated_at=NOW() 
+         bloodGroup=?, blood_group_confident=?, employer_name=?, years_in_ghana=?, community=?, address=?, country=?, updated_at=NOW() 
          WHERE id=?`,
-        [fullName, phone, dob, bloodGroup, employerName, yearsInGhana, community, addressStr, country, userId],
+        [fullName, phone, dob, bloodGroup, bloodGroupConfident, employerName, yearsInGhana, community, addressStr, country, userId],
         (err2) => {
           if (err2) {
             console.error('Profile update error (no-email branch):', err2);
@@ -394,7 +397,7 @@ router.put('/profile', auth, (req, res) => {
           // Fetch updated user data
           db.query(
             `SELECT id, fullName, email, phone, dob, 
-             bloodGroup, employer_name, years_in_ghana, community, address, country, profilePicture, membership, 
+             bloodGroup, blood_group_confident, employer_name, years_in_ghana, community, address, country, profilePicture, membership, 
              membershipType, membershipNumber, status, created_at 
              FROM users WHERE id = ?`, 
             [userId], 
@@ -413,6 +416,9 @@ router.put('/profile', auth, (req, res) => {
                   // Keep as string if not valid JSON
                 }
               }
+              
+              // Map database field names to frontend expected field names
+              user.bloodGroupConfident = user.blood_group_confident;
               
               res.json({ user });
             }
