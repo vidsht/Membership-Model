@@ -1,21 +1,6 @@
 /**
- * Email Service for Indians in Ghana Membership     // Initialize email transporter
-    this.transporter = nodemailer.createTransporter({
-      host: process.env.SMTP_HOST || 'smtp.gmail.com',
-      port: process.env.SMTP_PORT || 587,
-      secure: false, // true for 465, false for other ports
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
-      },
-      tls: {
-        rejectUnauthorized: false
-      },
-      // Add timeout configurations
-      connectionTimeout: 10000, // 10 seconds
-      greetingTimeout: 5000,    // 5 seconds
-      socketTimeout: 15000      // 15 seconds
-    });Integrated with existing database structure
+ * Email Service for Indians in Ghana Membership
+ * Integrated with existing database structure
  */
 
 const nodemailer = require('nodemailer');
@@ -83,7 +68,17 @@ class EmailService {
       },
       tls: {
         rejectUnauthorized: false
-      }
+      },
+      // Add timeout configurations to prevent connection timeouts
+      connectionTimeout: parseInt(process.env.SMTP_CONNECTION_TIMEOUT) || 30000, // 30 seconds default
+      greetingTimeout: parseInt(process.env.SMTP_GREETING_TIMEOUT) || 15000,     // 15 seconds default
+      socketTimeout: parseInt(process.env.SMTP_SOCKET_TIMEOUT) || 30000,         // 30 seconds default
+      // Add pool configuration for better connection management
+      pool: true,
+      maxConnections: 5,
+      maxMessages: 100,
+      // Rate limiting to prevent overwhelming the SMTP server
+      rateLimit: 14 // max 14 emails per second (Gmail limit is 15/sec)
     });
 
     // Verify connection in production (with option to skip)

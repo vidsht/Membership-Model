@@ -370,6 +370,9 @@ useEffect(() => {
           address: parsedAddress
         }));
 
+        console.log('🔍 UserSettings - Updated userProfile state:');
+        console.log('  bloodGroupConfident:', Boolean(returnedUser.bloodGroupConfident));
+
         updateUser({
           ...user,
           ...returnedUser
