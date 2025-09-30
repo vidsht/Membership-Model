@@ -58,11 +58,8 @@ const Header = () => {
     const width = window.innerWidth;
     const height = window.innerHeight;
     
-    // Mobile devices
-    if (width <= 768) return true;
-    
-    // Tablet devices up to 1246px (including iPad Pro/Air and larger tablets)
-    if (width <= 1246) return true;
+    // Show hamburger menu for screens 980px and below
+    if (width <= 980) return true;
     
     return false;
   };

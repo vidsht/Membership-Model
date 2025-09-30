@@ -62,12 +62,16 @@ class ImageEditorService {
 
       // Apply position offset if specified
       if (offsetX !== 0 || offsetY !== 0) {
-        const offsetOptions = {
-          top: Math.round(offsetY),
-          left: Math.round(offsetX),
+        // Sharp's extend method only accepts positive values
+        // For negative offsets, we need to crop instead of extend
+        const extendOptions = {
+          top: Math.max(0, Math.round(offsetY)),
+          bottom: Math.max(0, -Math.round(offsetY)),
+          left: Math.max(0, Math.round(offsetX)),
+          right: Math.max(0, -Math.round(offsetX)),
           background: background
         };
-        imageProcessor = imageProcessor.extend(offsetOptions);
+        imageProcessor = imageProcessor.extend(extendOptions);
       }
 
       // Apply final resize if width/height specified
@@ -127,7 +131,11 @@ class ImageEditorService {
       };
     } catch (error) {
       console.error('Image processing error:', error);
-      throw error;
+      return {
+        success: false,
+        error: error.message,
+        details: error
+      };
     }
   }
 
@@ -174,7 +182,11 @@ class ImageEditorService {
       };
     } catch (error) {
       console.error('Preview generation error:', error);
-      throw error;
+      return {
+        success: false,
+        error: error.message,
+        details: error
+      };
     }
   }
 

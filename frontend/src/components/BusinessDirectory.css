@@ -657,12 +657,12 @@
 }
 
 .business-website-modal {
-  display: inline-flex;
+  display: flow-root;
   align-items: center;
   gap: 0.5rem;
   color: #2563eb;
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 0.8rem;
   text-decoration: none;
   background: #f0f9ff;
   border-radius: 8px;
@@ -997,7 +997,7 @@
   }
   
   .business-website-modal {
-    font-size: 0.9rem;
+    font-size: 0.7rem;
     padding: 0.4rem 0.6rem;
   }
 }
