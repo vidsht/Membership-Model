@@ -303,7 +303,9 @@ router.get('/profile/with-plan', auth, (req, res) => {
       console.log('🔍 Profile complete - Final blood_group_confident:', user.blood_group_confident);
 
       // Map database field names to frontend expected field names
-      user.bloodGroupConfident = user.blood_group_confident;
+      user.bloodGroupConfident = Boolean(user.blood_group_confident);
+      
+      console.log('🔍 Profile complete - Final bloodGroupConfident mapped value:', user.bloodGroupConfident);
 
       res.json({ user });
     });
@@ -317,6 +319,7 @@ router.put('/profile', auth, (req, res) => {
   try {
     const userId = req.user.id;
     console.log('PUT /api/users/profile called for userId=', userId, 'payload=', req.body);
+    console.log('🔍 PUT /users/profile - bloodGroupConfident received:', req.body.bloodGroupConfident, 'type:', typeof req.body.bloodGroupConfident);
 
     const { 
       fullName, email, phone, dob, 
@@ -361,6 +364,7 @@ router.put('/profile', auth, (req, res) => {
                   return res.status(500).json({ message: 'Server error', error: err3.message });
                 }
                 const user = results2[0];
+                console.log('🔍 PUT /users/profile - Retrieved user blood_group_confident:', user.blood_group_confident, 'type:', typeof user.blood_group_confident);
                 
                 // Parse address if it's JSON string
                 if (user.address && typeof user.address === 'string') {
@@ -372,7 +376,7 @@ router.put('/profile', auth, (req, res) => {
                 }
                 
                 // Map database field names to frontend expected field names
-                user.bloodGroupConfident = user.blood_group_confident;
+                user.bloodGroupConfident = Boolean(user.blood_group_confident);
                 
                 res.json({ user });
               }
@@ -407,6 +411,7 @@ router.put('/profile', auth, (req, res) => {
                 return res.status(500).json({ message: 'Server error', error: err3.message });
               }
               const user = results2[0];
+              console.log('🔍 PUT /users/profile (no-email) - Retrieved user blood_group_confident:', user.blood_group_confident, 'type:', typeof user.blood_group_confident);
               
               // Parse address if it's JSON string
               if (user.address && typeof user.address === 'string') {
@@ -418,7 +423,7 @@ router.put('/profile', auth, (req, res) => {
               }
               
               // Map database field names to frontend expected field names
-              user.bloodGroupConfident = user.blood_group_confident;
+              user.bloodGroupConfident = Boolean(user.blood_group_confident);
               
               res.json({ user });
             }

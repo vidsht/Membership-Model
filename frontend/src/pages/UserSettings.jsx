@@ -116,6 +116,8 @@ const UserSettings = () => {
       console.log('🔍 UserSettings - Received userData:', userData);
       console.log('🔍 UserSettings - employer_name:', userData.employer_name);
       console.log('🔍 UserSettings - years_in_ghana:', userData.years_in_ghana);
+      console.log('🔍 UserSettings - bloodGroupConfident:', userData.bloodGroupConfident);
+      console.log('🔍 UserSettings - bloodGroupConfident type:', typeof userData.bloodGroupConfident);
 
       // Parse address if it's a string
       let parsedAddress = { street: '', city: '', state: '', zipCode: '' };
@@ -151,7 +153,7 @@ const UserSettings = () => {
         dob: userData.dob ? userData.dob.split('T')[0] : '',
         gender: userData.gender || '',
         bloodGroup: userData.bloodGroup || '',
-        bloodGroupConfident: userData.bloodGroupConfident || false,
+        bloodGroupConfident: Boolean(userData.bloodGroupConfident),
         employerName: userData.employer_name || '',
         yearsInGhana: userData.years_in_ghana || '',
         community: userData.community || '',
@@ -352,6 +354,9 @@ useEffect(() => {
 
       if (response.data && response.data.user) {
         const returnedUser = response.data.user;
+        console.log('🔍 UserSettings - Profile update response:', returnedUser);
+        console.log('🔍 UserSettings - Returned bloodGroupConfident:', returnedUser.bloodGroupConfident);
+        
         // Normalize address
         let parsedAddress = returnedUser.address;
         if (parsedAddress && typeof parsedAddress === 'string') {
@@ -361,6 +366,7 @@ useEffect(() => {
         setUserProfile(prev => ({
           ...prev,
           ...returnedUser,
+          bloodGroupConfident: Boolean(returnedUser.bloodGroupConfident),
           address: parsedAddress
         }));
 
