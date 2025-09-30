@@ -107,8 +107,13 @@ const UserSettings = () => {
       setIsLoading(true);
       
       // Always call the API to get fresh plan data including effectiveRedemptionLimit and planMaxDealRedemptions
-      const response = await api.get('/users/profile/complete');
+      const response = await api.get(`/users/profile/complete?t=${Date.now()}`);
       const userData = response.data.user;
+      
+      // Debug: Log the received user data
+      console.log('🔍 UserSettings - Received userData:', userData);
+      console.log('🔍 UserSettings - employer_name:', userData.employer_name);
+      console.log('🔍 UserSettings - years_in_ghana:', userData.years_in_ghana);
 
       // Parse address if it's a string
       let parsedAddress = { street: '', city: '', state: '', zipCode: '' };

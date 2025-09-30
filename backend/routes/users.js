@@ -80,6 +80,8 @@ router.get('/profile/complete', auth, (req, res) => {
       u.phone,
       u.dob,
       u.bloodGroup,
+      u.employer_name,
+      u.years_in_ghana,
       u.community,
       u.address,
       u.country,
@@ -136,6 +138,11 @@ router.get('/profile/complete', auth, (req, res) => {
     }
     
     const user = results[0];
+    
+    // Debug: Log the raw user data to see what fields are returned
+    console.log('🔍 Profile complete - Raw user data fields:', Object.keys(user));
+    console.log('🔍 Profile complete - employer_name:', user.employer_name);
+    console.log('🔍 Profile complete - years_in_ghana:', user.years_in_ghana);
     
     // Parse JSON fields if they exist
     if (user.socialMediaFollowed) {
@@ -287,6 +294,11 @@ router.get('/profile/with-plan', auth, (req, res) => {
       const dealLimit = Number(user.monthlyDealLimit || 0);
       const dealUsed = Number(user.monthlyDealCount || 0);
       user.monthlyDealsRemaining = Math.max(dealLimit - dealUsed, 0);
+
+      // Debug: Log final user object being sent to frontend
+      console.log('🔍 Profile complete - Final response fields:', Object.keys(user));
+      console.log('🔍 Profile complete - Final employer_name:', user.employer_name);
+      console.log('🔍 Profile complete - Final years_in_ghana:', user.years_in_ghana);
 
       res.json({ user });
     });
