@@ -218,6 +218,7 @@ class EmailService {
   }
 
   async sendEmail(options) {
+    let logId = null;
     try {
       const {
         to,
@@ -252,7 +253,7 @@ class EmailService {
         data: JSON.stringify(data)
       };
 
-      const logId = await this.logEmail(logData);
+      logId = await this.logEmail(logData);
 
       // If scheduled for future, add to queue
       if (scheduledFor && new Date(scheduledFor) > new Date()) {
@@ -288,8 +289,8 @@ class EmailService {
       console.error('❌ Email sending failed:', error);
       
       // Update log with failure
-      if (options.logId) {
-        await this.updateEmailLog(options.logId, {
+      if (logId) {
+        await this.updateEmailLog(logId, {
           status: 'failed',
           error: error.message,
           failed_at: new Date()
