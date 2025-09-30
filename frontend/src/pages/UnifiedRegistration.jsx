@@ -44,6 +44,8 @@ const UnifiedRegistration = () => {
     city: '',
     plan: '',
     bloodGroup: '',
+    employerName: '',
+    yearsInGhana: '',
     socialMediaFollowed: {
       facebook: false,
       instagram: false,
@@ -80,6 +82,8 @@ const UnifiedRegistration = () => {
     phone: '',
     plan: '', // Add plan selection for merchants
     bloodGroup: '',
+    employerName: '',
+    yearsInGhana: '',
     businessName: '',
     businessDescription: '',
     businessCategory: '',
@@ -550,6 +554,8 @@ const UnifiedRegistration = () => {
         phone: merchantForm.phone,
         plan: finalPlan, // Include selected or default plan
         bloodGroup: merchantForm.bloodGroup, // Include blood group
+        employerName: merchantForm.employerName, // Include employer name
+        yearsInGhana: merchantForm.yearsInGhana, // Include years in Ghana
         // Send as array for backend compatibility
         socialMediaFollowed: followedPlatforms,
         businessInfo: {
@@ -904,6 +910,34 @@ const UnifiedRegistration = () => {
                   </div>
                 </div>
 
+                {/* Employer Name */}
+                <div className="form-group">
+                  <label htmlFor="employerName">Name of Employer <span style={{ color: '#666', fontWeight: 'normal' }}>(Optional)</span></label>
+                  <input
+                    type="text"
+                    id="employerName"
+                    name="employerName"
+                    value={userForm.employerName}
+                    onChange={handleUserInputChange}
+                    placeholder="Enter your employer's name"
+                  />
+                </div>
+
+                {/* Years in Ghana */}
+                <div className="form-group">
+                  <label htmlFor="yearsInGhana">Number of Years in Ghana <span style={{ color: '#666', fontWeight: 'normal' }}>(Optional)</span></label>
+                  <input
+                    type="number"
+                    id="yearsInGhana"
+                    name="yearsInGhana"
+                    value={userForm.yearsInGhana}
+                    onChange={handleUserInputChange}
+                    placeholder="Enter number of years you've been in Ghana"
+                    min="0"
+                    max="100"
+                  />
+                </div>
+
                 {/* Password */}
                 <div className="form-group">
                   <label htmlFor="password">Password <span className="required">*</span></label>
@@ -1120,6 +1154,34 @@ const UnifiedRegistration = () => {
                     </select>
                     <i className="fas fa-chevron-down dropdown-arrow" style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}></i>
                   </div>
+                </div>
+
+                {/* Employer Name */}
+                <div className="form-group">
+                  <label htmlFor="employerName">Name of Employer <span style={{ color: '#666', fontWeight: 'normal' }}>(Optional)</span></label>
+                  <input
+                    type="text"
+                    id="employerName"
+                    name="employerName"
+                    value={merchantForm.employerName}
+                    onChange={handleMerchantInputChange}
+                    placeholder="Enter your employer's name"
+                  />
+                </div>
+
+                {/* Years in Ghana */}
+                <div className="form-group">
+                  <label htmlFor="yearsInGhana">Number of Years in Ghana <span style={{ color: '#666', fontWeight: 'normal' }}>(Optional)</span></label>
+                  <input
+                    type="number"
+                    id="yearsInGhana"
+                    name="yearsInGhana"
+                    value={merchantForm.yearsInGhana}
+                    onChange={handleMerchantInputChange}
+                    placeholder="Enter number of years you've been in Ghana"
+                    min="0"
+                    max="100"
+                  />
                 </div>
 
                 <div className="form-row">

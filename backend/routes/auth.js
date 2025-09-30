@@ -138,8 +138,8 @@ router.post('/register', async (req, res) => {
       }
 
       const insertQuery = `INSERT INTO users
-        (fullName, email, password, phone, address, dob, bloodGroup, employer_name, community, country, state, city, userCategory, profilePicture, preferences, membershipType, socialMediaFollowed, userType, status, adminRole, permissions, termsAccepted, validationDate, planAssignedAt)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`;
+        (fullName, email, password, phone, address, dob, bloodGroup, employer_name, years_in_ghana, community, country, state, city, userCategory, profilePicture, preferences, membershipType, socialMediaFollowed, userType, status, adminRole, permissions, termsAccepted, validationDate, planAssignedAt)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`;
       const insertValues = [
         fullName,
         email,
@@ -170,7 +170,12 @@ router.post('/register', async (req, res) => {
       db.query(insertQuery, insertValues, (err2, result) => {
         if (err2) {
           console.error('Registration SQL error (INSERT):', err2);
-          return res.status(500).json({ success: false, message: 'Server error', error: err2.message });
+          console.error('Error details:', {
+            code: err2.code,
+            sqlMessage: err2.sqlMessage,
+            sql: err2.sql
+          });
+          return res.status(500).json({ success: false, message: 'Registration failed. Please try again.', error: err2.message });
         }
         
         // Generate new format membershipNumber (16 digits: ABCD EFGH IJKL MNOP)
@@ -367,6 +372,8 @@ router.post('/merchant/register', async (req, res) => {
       password,
       phone,
       bloodGroup,
+      employerName,
+      yearsInGhana,
       plan, // Add dynamic plan selection
       socialMediaFollowed,
       businessInfo
@@ -480,14 +487,24 @@ router.post('/merchant/register', async (req, res) => {
 
       // Insert user first (include validationDate and planAssignedAt)
       const insertUserQuery = `INSERT INTO users
-        (fullName, email, password, phone, bloodGroup, socialMediaFollowed, userType, status, membershipType, validationDate, planAssignedAt)
-        VALUES (?, ?, ?, ?, ?, ?, 'merchant', 'pending', ?, ?, NOW())`;
+        (fullName, email, password, phone, bloodGroup, employer_name, years_in_ghana, socialMediaFollowed, userType, status, membershipType, validationDate, planAssignedAt)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'merchant', 'pending', ?, ?, NOW())`;
       
-      const userValues = [fullName, email, hashedPassword, phone || null, bloodGroup || null, socialMediaJson, selectedPlan, validationDate ? validationDate.toISOString().slice(0, 19).replace('T', ' ') : null];
+      const userValues = [fullName, email, hashedPassword, phone || null, bloodGroup || null, employerName || null, yearsInGhana || null, socialMediaJson, selectedPlan, validationDate ? validationDate.toISOString().slice(0, 19).replace('T', ' ') : null];
       
       db.query(insertUserQuery, userValues, (err2, userResult) => {
         if (err2) {
           console.error('Merchant registration SQL error (INSERT user):', err2);
+          
+          // Check if it's a column not found error
+          if (err2.code === 'ER_BAD_FIELD_ERROR' && (err2.message.includes('employer_name') || err2.message.includes('years_in_ghana'))) {
+            return res.status(400).json({ 
+              success: false, 
+              message: 'Database schema needs to be updated. Missing employer_name or years_in_ghana columns.',
+              error: 'MISSING_COLUMNS'
+            });
+          }
+          
           return res.status(500).json({ success: false, message: 'Server error', error: err2.message });
         }
 
