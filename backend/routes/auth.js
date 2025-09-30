@@ -186,7 +186,7 @@ router.post('/register', async (req, res) => {
             // Not fatal, continue
           }
             // Fetch the created user (excluding password)
-          db.query('SELECT id, fullName, email, phone, address, community, country, state, city, profilePicture, preferences, membership, membershipNumber, socialMediaFollowed, userType, status, adminRole, permissions, created_at, lastLogin, bloodGroup, validationDate, membershipType FROM users WHERE id = ?', [result.insertId], (err3, userRows) => {
+          db.query('SELECT id, fullName, email, phone, address, community, country, state, city, profilePicture, preferences, membership, membershipNumber, socialMediaFollowed, userType, status, adminRole, permissions, created_at, lastLogin, bloodGroup, employer_name, years_in_ghana, validationDate, membershipType FROM users WHERE id = ?', [result.insertId], (err3, userRows) => {
             if (err3) {
               console.error('Registration SQL error (SELECT after INSERT):', err3);
               return res.status(500).json({ success: false, message: 'Server error', error: err3.message });
@@ -548,7 +548,7 @@ router.post('/merchant/register', async (req, res) => {
 
           // Fetch the created user and business
           const selectQuery = `
-            SELECT u.id, u.fullName, u.email, u.phone, u.membershipNumber, u.socialMediaFollowed, u.userType, u.status, u.created_at,
+            SELECT u.id, u.fullName, u.email, u.phone, u.membershipNumber, u.socialMediaFollowed, u.userType, u.status, u.created_at, u.bloodGroup, u.employer_name, u.years_in_ghana, u.validationDate, u.membershipType,
                    b.businessId, b.businessName, b.businessDescription, b.businessCategory, b.businessAddress, b.businessPhone, b.businessEmail, b.website
             FROM users u
             LEFT JOIN businesses b ON u.id = b.userId
@@ -649,7 +649,7 @@ router.get('/me', auth, (req, res) => {
     }
 
     // Fetch user and include business details for merchants
-    const userQuery = `SELECT id, fullName, email, phone, address, dob, community, country, state, city, profilePicture, preferences, membership, membershipType, membershipNumber, socialMediaFollowed, userType, status, adminRole, permissions, created_at, lastLogin, bloodGroup, validationDate, customRedemptionLimit FROM users WHERE id = ?`;
+    const userQuery = `SELECT id, fullName, email, phone, address, dob, community, country, state, city, profilePicture, preferences, membership, membershipType, membershipNumber, socialMediaFollowed, userType, status, adminRole, permissions, created_at, lastLogin, bloodGroup, employer_name, years_in_ghana, validationDate, customRedemptionLimit FROM users WHERE id = ?`;
 
     db.query(userQuery, [userId], (err, results) => {
       if (err) {
