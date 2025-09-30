@@ -38,6 +38,8 @@ const UserDetailEdit = () => {
     membershipType: 'community',
     status: 'approved',
     bloodGroup: '',
+    employerName: '',
+    yearsInGhana: '',
     userCategory: '',
     profilePhoto: null
   });
@@ -163,6 +165,8 @@ const UserDetailEdit = () => {
           membershipType: userData.membershipType || 'community',
           status: userData.status || 'approved',
           bloodGroup: userData.bloodGroup || '',
+          employerName: userData.employer_name || '',
+          yearsInGhana: userData.years_in_ghana || '',
           userCategory: userData.userCategory || '',
           profilePhoto: userData.profilePhoto || null
         });
@@ -284,6 +288,8 @@ const UserDetailEdit = () => {
         membershipType: user.membershipType || 'community',
         status: user.status || 'approved',
         bloodGroup: user.bloodGroup || '',
+        employerName: user.employer_name || '',
+        yearsInGhana: user.years_in_ghana || '',
         userCategory: user.userCategory || '',
         profilePhoto: user.profilePhoto || null
       });
@@ -535,6 +541,38 @@ const UserDetailEdit = () => {
                     </select>
                   ) : (
                     <span>{user.bloodGroup || 'N/A'}</span>
+                  )}
+                </div>
+
+                <div className="detail-item">
+                  <label>Employer Name</label>
+                  {editMode ? (
+                    <input
+                      type="text"
+                      value={formData.employerName}
+                      onChange={(e) => handleInputChange('employerName', e.target.value)}
+                      className="edit-input"
+                      placeholder="Enter employer name"
+                    />
+                  ) : (
+                    <span>{user.employer_name || 'N/A'}</span>
+                  )}
+                </div>
+
+                <div className="detail-item">
+                  <label>Years in Ghana</label>
+                  {editMode ? (
+                    <input
+                      type="number"
+                      value={formData.yearsInGhana}
+                      onChange={(e) => handleInputChange('yearsInGhana', e.target.value)}
+                      className="edit-input"
+                      placeholder="Enter years in Ghana"
+                      min="0"
+                      max="100"
+                    />
+                  ) : (
+                    <span>{user.years_in_ghana || 'N/A'}</span>
                   )}
                 </div>
 

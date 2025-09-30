@@ -19,6 +19,8 @@ router.post('/register', async (req, res) => {
       address,
       dob,
       bloodGroup,
+      employerName,
+      yearsInGhana,
       community,
       country,
       state,
@@ -136,8 +138,8 @@ router.post('/register', async (req, res) => {
       }
 
       const insertQuery = `INSERT INTO users
-        (fullName, email, password, phone, address, dob, bloodGroup, community, country, state, city, userCategory, profilePicture, preferences, membershipType, socialMediaFollowed, userType, status, adminRole, permissions, termsAccepted, validationDate, planAssignedAt)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`;
+        (fullName, email, password, phone, address, dob, bloodGroup, employer_name, community, country, state, city, userCategory, profilePicture, preferences, membershipType, socialMediaFollowed, userType, status, adminRole, permissions, termsAccepted, validationDate, planAssignedAt)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`;
       const insertValues = [
         fullName,
         email,
@@ -146,6 +148,8 @@ router.post('/register', async (req, res) => {
         address || null,
         dob || null,
         bloodGroup || null,
+        employerName || null,
+        yearsInGhana || null,
         community || null,
         country || 'Ghana',
         state || null,

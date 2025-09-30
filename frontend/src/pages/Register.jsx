@@ -19,7 +19,9 @@ function Register() {
     city: '',
     userCategory: '',
     plan: 'community',
-    profilePhoto: ''
+    profilePhoto: '',
+    employerName: '',
+    yearsInGhana: ''
   });
   
   // Dynamic data from backend
@@ -428,6 +430,30 @@ function Register() {
                       onChange={handleInputChange}
                       placeholder="Enter your full address in Ghana" 
                       required 
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="employerName">Name of Employer <span style={{ color: '#666' }}>(Optional)</span></label>
+                    <input 
+                      type="text" 
+                      id="employerName" 
+                      value={formData.employerName}
+                      onChange={handleInputChange}
+                      placeholder="Enter your employer's name" 
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="yearsInGhana">Number of Years in Ghana <span style={{ color: '#666' }}>(Optional)</span></label>
+                    <input 
+                      type="number" 
+                      id="yearsInGhana" 
+                      value={formData.yearsInGhana}
+                      onChange={handleInputChange}
+                      placeholder="Enter number of years you've been in Ghana"
+                      min="0"
+                      max="100"
                     />
                   </div>
 

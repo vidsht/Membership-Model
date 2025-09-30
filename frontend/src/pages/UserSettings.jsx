@@ -25,6 +25,8 @@ const UserSettings = () => {
     dob: '',
     gender: '',
     bloodGroup: '',
+    employerName: '',
+    yearsInGhana: '',
     community: '',
     address: {
       street: '',
@@ -78,6 +80,8 @@ const UserSettings = () => {
     phone: '',
     dob: '',
     bloodGroup: '',
+    employerName: '',
+    yearsInGhana: '',
     community: '',
     address: {
       street: ''
@@ -140,6 +144,8 @@ const UserSettings = () => {
         dob: userData.dob ? userData.dob.split('T')[0] : '',
         gender: userData.gender || '',
         bloodGroup: userData.bloodGroup || '',
+        employerName: userData.employer_name || '',
+        yearsInGhana: userData.years_in_ghana || '',
         community: userData.community || '',
         address: parsedAddress,
         country: userData.country || 'Ghana',
@@ -250,6 +256,8 @@ useEffect(() => {
       phone: userProfile.phone || '',
       dob: userProfile.dob || '',
       bloodGroup: userProfile.bloodGroup || '',
+      employerName: userProfile.employerName || '',
+      yearsInGhana: userProfile.yearsInGhana || '',
       community: userProfile.community || '',
       address: {
         street: userProfile.address?.street || ''
@@ -267,6 +275,8 @@ useEffect(() => {
       phone: '',
       dob: '',
       bloodGroup: '',
+      employerName: '',
+      yearsInGhana: '',
       community: '',
       address: {
         street: ''
@@ -304,6 +314,8 @@ useEffect(() => {
         phone: editFormData.phone !== undefined && editFormData.phone !== null && String(editFormData.phone).trim() !== '' ? editFormData.phone : (userProfile.phone || ''),
         dob: editFormData.dob !== undefined && editFormData.dob !== null && String(editFormData.dob).trim() !== '' ? editFormData.dob : (userProfile.dob || null),
         bloodGroup: editFormData.bloodGroup !== undefined && editFormData.bloodGroup !== null && String(editFormData.bloodGroup).trim() !== '' ? editFormData.bloodGroup : (userProfile.bloodGroup || ''),
+        employerName: editFormData.employerName !== undefined && editFormData.employerName !== null && String(editFormData.employerName).trim() !== '' ? editFormData.employerName : (userProfile.employerName || ''),
+        yearsInGhana: editFormData.yearsInGhana !== undefined && editFormData.yearsInGhana !== null && String(editFormData.yearsInGhana).trim() !== '' ? editFormData.yearsInGhana : (userProfile.yearsInGhana || ''),
         community: editFormData.community !== undefined && editFormData.community !== null && String(editFormData.community).trim() !== '' ? editFormData.community : (userProfile.community || ''),
         country: editFormData.country !== undefined && editFormData.country !== null && String(editFormData.country).trim() !== '' ? editFormData.country : (userProfile.country || 'Ghana')
       };
@@ -757,6 +769,34 @@ const handleMerchantLogoRemoval = async () => {
                     <option value="O+">O+</option>
                     <option value="O-">O-</option>
                   </select>
+                </div>
+
+                <div className="form-field-group">
+                  <label className="form-field-label">Employer Name</label>
+                  <input
+                    type="text"
+                    name="employerName"
+                    value={userProfile.employerName}
+                    onChange={handleProfileInputChange}
+                    className="enhanced-form-input"
+                    placeholder="Enter employer name"
+                    disabled
+                  />
+                </div>
+
+                <div className="form-field-group">
+                  <label className="form-field-label">Years in Ghana</label>
+                  <input
+                    type="number"
+                    name="yearsInGhana"
+                    value={userProfile.yearsInGhana}
+                    onChange={handleProfileInputChange}
+                    className="enhanced-form-input"
+                    placeholder="Enter years in Ghana"
+                    min="0"
+                    max="100"
+                    disabled
+                  />
                 </div>
 
                 <div className="form-field-group">
@@ -1360,6 +1400,36 @@ return (
                         </select>
                       </div>
                       
+                      <div className="form-group">
+                        <label htmlFor="edit-employerName">Employer Name</label>
+                        <input
+                          type="text"
+                          id="edit-employerName"
+                          name="employerName"
+                          value={editFormData.employerName}
+                          onChange={handleEditFormChange}
+                          className="form-input"
+                          placeholder="Enter employer name"
+                        />
+                      </div>
+                      
+                      <div className="form-group">
+                        <label htmlFor="edit-yearsInGhana">Years in Ghana</label>
+                        <input
+                          type="number"
+                          id="edit-yearsInGhana"
+                          name="yearsInGhana"
+                          value={editFormData.yearsInGhana}
+                          onChange={handleEditFormChange}
+                          className="form-input"
+                          placeholder="Enter years in Ghana"
+                          min="0"
+                          max="100"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="form-row">
                       <div className="form-group">
                         <label htmlFor="edit-community">Community</label>
                         <div className="select-with-icon" style={{ position: 'relative' }}>
