@@ -277,7 +277,7 @@ class EmailService {
       // Update log with success
       await this.updateEmailLog(logId, {
         status: 'sent',
-        messageId: result.messageId,
+        message_id: result.messageId,
         sent_at: new Date()
       });
 
@@ -404,8 +404,8 @@ class EmailService {
 
     await this.updateEmailLog(queuedEmail.email_log_id, {
       status: 'sent',
-      messageId: result.messageId,
-      sentAt: new Date()
+      message_id: result.messageId,
+      sent_at: new Date()
     });
   }
 
