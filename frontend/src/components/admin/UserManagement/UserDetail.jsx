@@ -171,6 +171,32 @@ const UserDetail = ({ user, onClose, onApprove, onReject, onEdit, onDelete }) =>
               <span>{user.userType ? user.userType.charAt(0).toUpperCase() + user.userType.slice(1) : 'User'}</span>
             </div>
             <div className="detail-item">
+              <label>Blood Group:</label>
+              <span>{user.bloodGroup || 'N/A'}</span>
+            </div>
+            <div className="detail-item">
+              <label>Blood Group Confident:</label>
+              <span className={`confidence-badge ${user.bloodGroupConfident ? 'confident' : 'not-confident'}`}>
+                {user.bloodGroupConfident ? (
+                  <>
+                    <i className="fas fa-check-circle"></i> Yes, Laboratory Checked
+                  </>
+                ) : (
+                  <>
+                    <i className="fas fa-times-circle"></i> Not Confirmed
+                  </>
+                )}
+              </span>
+            </div>
+            <div className="detail-item">
+              <label>Employer Name:</label>
+              <span>{user.employerName || user.employer_name || 'N/A'}</span>
+            </div>
+            <div className="detail-item">
+              <label>Years in Ghana:</label>
+              <span>{user.yearsInGhana || user.years_in_ghana || 'N/A'}</span>
+            </div>
+            <div className="detail-item">
               <label>Community:</label>
               <span>{user.community || user.communityName || 'N/A'}</span>
             </div>
