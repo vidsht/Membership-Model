@@ -6410,38 +6410,48 @@ router.post('/hero-background/preview', auth, admin, async (req, res) => {
         if (processResult.success) {
           // Generate smaller preview from processed image
           console.log('Generating preview from', tempPath, 'to', previewPath);
-          await imageEditor.generatePreview(tempPath, previewPath, {
+          const previewResult = await imageEditor.generatePreview(tempPath, previewPath, {
             width: 400,
             height: 300,
             quality: 80
           });
 
-          console.log('Preview generated successfully');
+          if (previewResult.success) {
+            console.log('Preview generated successfully');
 
-          // Generate preview URL
-          const domain = process.env.DOMAIN_URL || process.env.VITE_DOMAIN_URL || 'http://localhost:5001';
-          const previewUrl = `${domain}/uploads/hero_backgrounds/${previewFilename}`;
+            // Generate preview URL
+            const domain = process.env.DOMAIN_URL || process.env.VITE_DOMAIN_URL || 'http://localhost:5001';
+            const previewUrl = `${domain}/uploads/hero_backgrounds/${previewFilename}`;
 
-          // Clean up temp and preview files after a longer delay
-          setTimeout(() => {
-            imageEditor.cleanupFiles([tempPath]);
-          }, 10000); // Clean up temp file after 10 seconds
+            // Clean up temp and preview files after a longer delay
+            setTimeout(() => {
+              imageEditor.cleanupFiles([tempPath]);
+            }, 10000); // Clean up temp file after 10 seconds
 
-          // Clean up preview file after a much longer delay
-          setTimeout(() => {
-            imageEditor.cleanupFiles([previewPath]);
-          }, 300000); // Clean up preview after 5 minutes
+            // Clean up preview file after a much longer delay
+            setTimeout(() => {
+              imageEditor.cleanupFiles([previewPath]);
+            }, 300000); // Clean up preview after 5 minutes
 
-          res.json({
-            success: true,
-            previewUrl: previewUrl,
-            metadata: processResult.metadata
-          });
+            res.json({
+              success: true,
+              previewUrl: previewUrl,
+              metadata: processResult.metadata
+            });
+          } else {
+            console.error('Preview generation failed:', previewResult.error);
+            res.status(500).json({
+              success: false,
+              message: 'Failed to generate preview image',
+              error: previewResult.error
+            });
+          }
         } else {
-          console.error('Image processing failed:', processResult);
+          console.error('Image processing failed:', processResult.error);
           res.status(500).json({
             success: false,
-            message: 'Failed to process image for preview'
+            message: 'Failed to process image for preview',
+            error: processResult.error
           });
         }
       } else {

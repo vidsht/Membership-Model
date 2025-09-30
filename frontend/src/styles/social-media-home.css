@@ -85,7 +85,7 @@
 /* SOCIAL GRID AND CARDS */
 .social-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); /* slightly larger min width */
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* slightly larger min width */
   gap: 1.6rem;
   margin-top: 0.5rem;
   align-items: stretch;
@@ -263,5 +263,34 @@
   .social-card .btn {
     font-size: 0.65rem;
     padding: 0.5rem 1rem;
+  }
+}
+
+/* Tablet mode (980px and below) - 2 cards per line for Join Our Community section */
+@media (max-width: 980px) {
+  .social-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-md);
+  }
+
+  .social-card {
+    padding: var(--space-lg);
+  }
+
+  .social-icon {
+    width: 85px;
+    height: 85px;
+  }
+
+  .social-icon i {
+    font-size: 2rem;
+  }
+
+  .social-title {
+    font-size: 1.2rem;
+  }
+
+  .social-description {
+    font-size: 0.9rem;
   }
 }

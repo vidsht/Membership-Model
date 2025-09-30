@@ -408,7 +408,6 @@
   background-repeat: no-repeat;
   background-size: cover;
   z-index: 1;
-  opacity: 0.6;
 }
 
 .hero-content {
@@ -422,7 +421,7 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  margin-top: 25rem;
+  margin-top: 28rem;
   animation: fadeInUp 1s ease-out;
 }
 
@@ -1457,19 +1456,9 @@
     width: 80px;
     height: 80px;
   }
+}
 
-  .feature-icon i {
-    font-size: 2rem;
-  }
-
-  .feature-title {
-    font-size: 1.2rem;
-  }
-
-  .feature-description {
-    font-size: 0.9rem;
-  }
-
+@media (max-width: 980px) {
   .hero h1 {
     font-size: 2.5rem;
   }
@@ -1483,30 +1472,76 @@
   }
 }
 
+@media (max-width: 980px) {
+  .hero::before {
+    height: 60%;
+  }
+
+  .hero-content {
+    padding: 0.2rem var(--space-md);
+    margin-top: 35rem;
+  }
+
+  .hero h1 {
+    font-size: 3rem;
+  }
+
+  .home-hero-subheading {
+    font-size: 2rem;
+  }
+
+  .hero p {
+    font-size: 1.4rem;
+  }
+}
+
+@media (max-width: 1024px) {
+  .hero::before {
+    height: 60%;
+  }
+
+  .hero-content {
+    padding: 0.2rem var(--space-md);
+    margin-top: 45rem;
+  }
+
+  .hero h1 {
+    font-size: 3.4rem;
+  }
+
+  .home-hero-subheading {
+    font-size: 2.2rem;
+  }
+
+  .hero p {
+    font-size: 1.6rem;
+  }
+}
+
 @media (max-width: 768px) {
   .hero {
     min-height: 80vh;
   }
 
   .hero::before {
-    height: 55%;
+    height: 40%;
   }
 
   .hero-content {
     padding: 0.2rem var(--space-md);
-    margin-top: 23rem;
+    margin-top: 15rem;
   }
 
   .hero h1 {
-    font-size: 1.95rem;
-  }
-
-  .home-hero-subheading {
     font-size: 1.5rem;
   }
 
-  .hero p {
+  .home-hero-subheading {
     font-size: 1rem;
+  }
+
+  .hero p {
+    font-size: 0.8rem;
   }
 
   .stats-grid {
