@@ -303,7 +303,7 @@ router.put('/profile', auth, (req, res) => {
 
     const { 
       fullName, email, phone, dob, 
-      bloodGroup, community, address, country 
+      bloodGroup, employerName, yearsInGhana, community, address, country 
     } = req.body;
 
     // Serialize address if it's an object
@@ -322,9 +322,9 @@ router.put('/profile', auth, (req, res) => {
         db.query(
           `UPDATE users SET 
            fullName=?, email=?, phone=?, dob=?, 
-           bloodGroup=?, community=?, address=?, country=?, updated_at=NOW() 
+           bloodGroup=?, employer_name=?, years_in_ghana=?, community=?, address=?, country=?, updated_at=NOW() 
            WHERE id=?`,
-          [fullName, email, phone, dob, bloodGroup, community, addressStr, country, userId],
+          [fullName, email, phone, dob, bloodGroup, employerName, yearsInGhana, community, addressStr, country, userId],
           (err2) => {
             if (err2) {
               console.error('Profile update error (email branch):', err2);
@@ -334,7 +334,7 @@ router.put('/profile', auth, (req, res) => {
             // Fetch updated user data
             db.query(
               `SELECT id, fullName, email, phone, dob, 
-               bloodGroup, community, address, country, profilePicture, membership, 
+               bloodGroup, employer_name, years_in_ghana, community, address, country, profilePicture, membership, 
                membershipType, membershipNumber, status, created_at 
                FROM users WHERE id = ?`, 
               [userId], 
@@ -365,9 +365,9 @@ router.put('/profile', auth, (req, res) => {
       db.query(
         `UPDATE users SET 
          fullName=?, phone=?, dob=?, 
-         bloodGroup=?, community=?, address=?, country=?, updated_at=NOW() 
+         bloodGroup=?, employer_name=?, years_in_ghana=?, community=?, address=?, country=?, updated_at=NOW() 
          WHERE id=?`,
-        [fullName, phone, dob, bloodGroup, community, addressStr, country, userId],
+        [fullName, phone, dob, bloodGroup, employerName, yearsInGhana, community, addressStr, country, userId],
         (err2) => {
           if (err2) {
             console.error('Profile update error (no-email branch):', err2);
@@ -377,7 +377,7 @@ router.put('/profile', auth, (req, res) => {
           // Fetch updated user data
           db.query(
             `SELECT id, fullName, email, phone, dob, 
-             bloodGroup, community, address, country, profilePicture, membership, 
+             bloodGroup, employer_name, years_in_ghana, community, address, country, profilePicture, membership, 
              membershipType, membershipNumber, status, created_at 
              FROM users WHERE id = ?`, 
             [userId], 
