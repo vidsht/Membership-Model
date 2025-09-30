@@ -913,7 +913,7 @@ const UnifiedRegistration = () => {
                   </div>
                   {/* Blood Group Confidence Checkbox */}
                   {userForm.bloodGroup && (
-                    <div className="checkbox-container" style={{ marginTop: '8px' }}>
+                    <div className="blood-group-confidence" style={{ marginTop: '8px', display: 'flex', alignItems: 'center' }}>
                       <input
                         type="checkbox"
                         id="bloodGroupConfident"
@@ -922,7 +922,7 @@ const UnifiedRegistration = () => {
                         onChange={(e) => setUserForm(prev => ({ ...prev, bloodGroupConfident: e.target.checked }))}
                         style={{ marginRight: '8px' }}
                       />
-                      <label htmlFor="bloodGroupConfident" style={{ fontSize: '0.9em', color: '#666' }}>
+                      <label htmlFor="bloodGroupConfident" style={{ fontSize: '0.9em', color: '#666', margin: 0, cursor: 'pointer' }}>
                         I got the blood group checked from laboratory, I am confident
                       </label>
                     </div>
@@ -1175,7 +1175,7 @@ const UnifiedRegistration = () => {
                   </div>
                   {/* Blood Group Confidence Checkbox */}
                   {merchantForm.bloodGroup && (
-                    <div className="checkbox-container" style={{ marginTop: '8px' }}>
+                    <div className="blood-group-confidence" style={{ marginTop: '8px', display: 'flex', alignItems: 'center' }}>
                       <input
                         type="checkbox"
                         id="merchantBloodGroupConfident"
@@ -1184,7 +1184,7 @@ const UnifiedRegistration = () => {
                         onChange={(e) => setMerchantForm(prev => ({ ...prev, bloodGroupConfident: e.target.checked }))}
                         style={{ marginRight: '8px' }}
                       />
-                      <label htmlFor="merchantBloodGroupConfident" style={{ fontSize: '0.9em', color: '#666' }}>
+                      <label htmlFor="merchantBloodGroupConfident" style={{ fontSize: '0.9em', color: '#666', margin: 0, cursor: 'pointer' }}>
                         I got the blood group checked from laboratory, I am confident
                       </label>
                     </div>
