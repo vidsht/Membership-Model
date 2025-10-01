@@ -3,7 +3,7 @@
  * Easy integration points for existing routes
  */
 
-const notificationService = require('./notificationService-integrated');
+const notificationService = require('./notificationService');
 const { logActivity, logPlanExpiry, ACTIVITY_TYPES } = require('../utils/activityLogger');
 const { queryAsync } = require('../db');
 
@@ -242,6 +242,18 @@ class NotificationHooks {
       return { success: true, message: 'No notification needed for status: ' + status };
     } catch (error) {
       console.error('Error in redemption response hook:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Password Changed by Admin Hook
+  static async onPasswordChangedByAdmin(userId, userData) {
+    try {
+      await notificationService.notifyPasswordChangedByAdmin(userId, userData);
+      console.log(`✅ Password change notification sent for user ID: ${userId}`);
+      return { success: true, userId: userId };
+    } catch (error) {
+      console.error('❌ Error sending password change notification:', error);
       return { success: false, error: error.message };
     }
   }

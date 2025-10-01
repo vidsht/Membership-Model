@@ -1,4 +1,4 @@
-const emailService = require('./emailService');
+const emailService = require('./emailService-integrated');
 const WhatsAppMessageService = require('./whatsappMessageService');
 const WhatsAppBusinessService = require('./whatsappBusinessService');
 const { formatDateForEmail } = require('../utils/dateFormatter');
