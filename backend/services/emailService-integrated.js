@@ -205,10 +205,16 @@ class EmailService {
       .trim();
   }
 
-  async sendEmail({ to, templateType, data, priority = 'normal', scheduledFor = null }) {
+  async sendEmail({ to, templateType, type, data, priority = 'normal', scheduledFor = null }) {
     try {
+      // Support both 'type' and 'templateType' for backward compatibility
+      const emailType = templateType || type;
+      if (!emailType) {
+        throw new Error('Email type/templateType is required');
+      }
+      
       // Get email template
-      const template = await this.getTemplate(templateType);
+      const template = await this.getTemplate(emailType);
       
       // Render subject and content with data
       const subject = this.renderTemplate(template.subject, data);
@@ -230,7 +236,7 @@ class EmailService {
         // Queue for later sending
         result = await this.queueEmail({
           recipient: to,
-          type: templateType,
+          type: emailType,
           subject: subject,
           html_content: htmlContent,
           text_content: textContent,
@@ -267,7 +273,7 @@ class EmailService {
             console.log('📧 Email would be sent (no SMTP configured):');
             console.log(`To: ${to}`);
             console.log(`Subject: ${subject}`);
-            console.log('Template Type:', templateType);
+            console.log('Template Type:', emailType);
             console.log('---');
             result = {
               success: true,
@@ -293,7 +299,7 @@ class EmailService {
       // Log the email attempt (whether successful or not)
       await this.logEmail({
         recipient: to,
-        type: templateType,
+        type: emailType,
         subject: subject,
         status: result.sent ? 'sent' : 'logged',
         message_id: result.messageId,
@@ -309,7 +315,7 @@ class EmailService {
       // Log failed email
       await this.logEmail({
         recipient: to,
-        type: templateType,
+        type: emailType,
         subject: 'Failed to render',
         status: 'failed',
         error: error.message,
