@@ -12,7 +12,7 @@ class EmailService {
 
   async initialize() {
     // Simple email transporter setup
-    this.transporter = nodemailer.createTransport({
+    this.transporter = nodemailer.createTransporter({
       host: process.env.SMTP_HOST || 'smtp.gmail.com',
       port: process.env.SMTP_PORT || 587,
       secure: false,

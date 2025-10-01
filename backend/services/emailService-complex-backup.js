@@ -2,6 +2,7 @@ const nodemailer = require('nodemailer');
 const fs = require('fs').promises;
 const path = require('path');
 const handlebars = require('handlebars');
+const db = require('../db');
 
 class EmailService {
   constructor() {
@@ -11,11 +12,11 @@ class EmailService {
   }
 
   async initialize() {
-    // Simple email transporter setup
+    // Initialize email transporter
     this.transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || 'smtp.gmail.com',
       port: process.env.SMTP_PORT || 587,
-      secure: false,
+      secure: false, // true for 465, false for other ports
       auth: {
         user: process.env.SMTP_USER || 'cards@indiansinghana.com',
         pass: process.env.SMTP_PASS || process.env.EMAIL_PASSWORD
@@ -25,7 +26,17 @@ class EmailService {
       }
     });
 
-    console.log('📧 Email service initialized');
+    // Verify connection (optional in development)
+    try {
+      if (process.env.SMTP_USER && process.env.SMTP_PASS && process.env.SMTP_USER !== 'cards@indiansinghana.com') {
+        await this.transporter.verify();
+        console.log('✅ Email service initialized successfully');
+      } else {
+        console.log('⚠️ Email service initialized without SMTP verification (development mode)');
+      }
+    } catch (error) {
+      console.error('❌ Email service initialization failed:', error);
+    }
   }
 
   async loadTemplate(templateName) {
@@ -47,7 +58,24 @@ class EmailService {
   }
 
   async getEmailTemplate(type) {
-    // Simple template configurations
+    try {
+      const query = 'SELECT * FROM email_templates WHERE type = ?';
+      const results = await this.queryAsync(query, [type]);
+      
+      if (results.length > 0) {
+        return results[0];
+      }
+      
+      // Fallback to default template
+      return await this.getDefaultTemplate(type);
+    } catch (error) {
+      console.error('Error fetching email template:', error);
+      return await this.getDefaultTemplate(type);
+    }
+  }
+
+  async getDefaultTemplate(type) {
+    // Define template configurations without loading them
     const templateConfigs = {
       'user_welcome': {
         subject: 'Welcome to Indians in Ghana - {{fullName}}!',
@@ -171,6 +199,7 @@ class EmailService {
     }
 
     try {
+      // Load the template only when needed
       const htmlContent = await this.loadTemplate(config.templateName);
       return {
         subject: config.subject,
@@ -179,6 +208,7 @@ class EmailService {
       };
     } catch (error) {
       console.error(`Error loading template ${config.templateName}:`, error);
+      // Return a fallback template
       return {
         subject: config.subject,
         htmlContent: `<p>{{message}}</p>`,
@@ -188,11 +218,14 @@ class EmailService {
   }
 
   async sendEmail(options) {
+    let logId = null;
     try {
       const {
         to,
         type,
-        data = {}
+        data = {},
+        priority = 'normal',
+        scheduledFor = null
       } = options;
 
       // Get email template
@@ -209,24 +242,225 @@ class EmailService {
       const html = htmlTemplate(data);
       const text = textTemplate(data);
 
-      // Simple mail options
+      // Log email attempt
+      const logData = {
+        to,
+        type,
+        subject,
+        status: 'pending',
+        scheduledFor,
+        createdAt: new Date(),
+        data: JSON.stringify(data)
+      };
+
+      logId = await this.logEmail(logData);
+
+      // If scheduled for future, add to queue
+      if (scheduledFor && new Date(scheduledFor) > new Date()) {
+        await this.queueEmail({ ...logData, id: logId });
+        return { success: true, messageId: logId, status: 'queued' };
+      }
+
+      // Send immediately
       const mailOptions = {
         from: `"Indians in Ghana" <${process.env.SMTP_USER || 'cards@indiansinghana.com'}>`,
         to,
         subject,
         text,
-        html
+        html,
+        headers: {
+          'X-Priority': priority === 'high' ? '1' : priority === 'low' ? '5' : '3'
+        }
       };
 
-      // Send email directly
       const result = await this.transporter.sendMail(mailOptions);
       
+      // Update log with success
+      await this.updateEmailLog(logId, {
+        status: 'sent',
+        message_id: result.messageId,
+        sent_at: new Date()
+      });
+
       console.log(`✅ Email sent successfully: ${type} to ${to}`);
-      return { success: true, messageId: result.messageId };
+      return { success: true, messageId: result.messageId, logId };
 
     } catch (error) {
-      console.error(`❌ Email sending failed for ${options.type} to ${options.to}:`, error);
+      console.error('❌ Email sending failed:', error);
+      
+      // Update log with failure
+      if (logId) {
+        await this.updateEmailLog(logId, {
+          status: 'failed',
+          error: error.message,
+          failed_at: new Date()
+        });
+      }
+
       throw error;
+    }
+  }
+
+  async logEmail(data) {
+    try {
+      const query = `
+        INSERT INTO email_notifications 
+        (recipient, type, subject, status, scheduled_for, created_at, data) 
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `;
+      const result = await this.queryAsync(query, [
+        data.to,
+        data.type,
+        data.subject,
+        data.status,
+        data.scheduledFor,
+        data.createdAt,
+        data.data
+      ]);
+      return result.insertId;
+    } catch (error) {
+      console.error('Error logging email:', error);
+      return null;
+    }
+  }
+
+  async updateEmailLog(id, updates) {
+    try {
+      const setClause = Object.keys(updates).map(key => `${key} = ?`).join(', ');
+      const query = `UPDATE email_notifications SET ${setClause} WHERE id = ?`;
+      const values = [...Object.values(updates), id];
+      await this.queryAsync(query, values);
+    } catch (error) {
+      console.error('Error updating email log:', error);
+    }
+  }
+
+  async queueEmail(emailData) {
+    try {
+      const query = `
+        INSERT INTO email_queue 
+        (email_log_id, recipient, type, subject, html_content, text_content, scheduled_for, priority, data) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `;
+      await this.queryAsync(query, [
+        emailData.id,
+        emailData.to,
+        emailData.type,
+        emailData.subject,
+        emailData.html,
+        emailData.text,
+        emailData.scheduledFor,
+        emailData.priority || 'normal',
+        emailData.data
+      ]);
+    } catch (error) {
+      console.error('Error queueing email:', error);
+    }
+  }
+
+  async processEmailQueue() {
+    try {
+      const query = `
+        SELECT * FROM email_queue 
+        WHERE status = 'pending' 
+        AND (scheduled_for IS NULL OR scheduled_for <= NOW())
+        ORDER BY priority DESC, created_at ASC
+        LIMIT 10
+      `;
+      const emails = await this.queryAsync(query);
+
+      for (const email of emails) {
+        try {
+          await this.sendQueuedEmail(email);
+        } catch (error) {
+          console.error(`Failed to send queued email ${email.id}:`, error);
+          await this.updateQueuedEmail(email.id, { 
+            status: 'failed', 
+            error: error.message,
+            failed_at: new Date()
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error processing email queue:', error);
+    }
+  }
+
+  async sendQueuedEmail(queuedEmail) {
+    const mailOptions = {
+      from: `"Indians in Ghana" <${process.env.SMTP_USER || 'cards@indiansinghana.com'}>`,
+      to: queuedEmail.recipient,
+      subject: queuedEmail.subject,
+      text: queuedEmail.text_content,
+      html: queuedEmail.html_content
+    };
+
+    const result = await this.transporter.sendMail(mailOptions);
+    
+    await this.updateQueuedEmail(queuedEmail.id, {
+      status: 'sent',
+      message_id: result.messageId,
+      sent_at: new Date()
+    });
+
+    await this.updateEmailLog(queuedEmail.email_log_id, {
+      status: 'sent',
+      message_id: result.messageId,
+      sent_at: new Date()
+    });
+  }
+
+  async updateQueuedEmail(id, updates) {
+    try {
+      const setClause = Object.keys(updates).map(key => `${key} = ?`).join(', ');
+      const query = `UPDATE email_queue SET ${setClause} WHERE id = ?`;
+      const values = [...Object.values(updates), id];
+      await this.queryAsync(query, values);
+    } catch (error) {
+      console.error('Error updating queued email:', error);
+    }
+  }
+
+  // Utility method to promisify database queries
+  queryAsync(sql, params = []) {
+    return new Promise((resolve, reject) => {
+      db.query(sql, params, (err, results) => {
+        if (err) reject(err);
+        else resolve(results);
+      });
+    });
+  }
+
+  // Method to check email delivery status
+  async getEmailStatus(logId) {
+    try {
+      const query = 'SELECT * FROM email_notifications WHERE id = ?';
+      const results = await this.queryAsync(query, [logId]);
+      return results[0] || null;
+    } catch (error) {
+      console.error('Error fetching email status:', error);
+      return null;
+    }
+  }
+
+  // Method to get email statistics
+  async getEmailStats(dateFrom, dateTo) {
+    try {
+      const query = `
+        SELECT 
+          type,
+          status,
+          COUNT(*) as count,
+          DATE(created_at) as date
+        FROM email_notifications
+        WHERE created_at BETWEEN ? AND ?
+        GROUP BY type, status, DATE(created_at)
+        ORDER BY date DESC
+      `;
+      return await this.queryAsync(query, [dateFrom, dateTo]);
+    } catch (error) {
+      console.error('Error fetching email stats:', error);
+      return [];
     }
   }
 }
