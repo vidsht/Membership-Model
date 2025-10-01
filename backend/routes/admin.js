@@ -1647,20 +1647,15 @@ router.put('/users/:id/password', auth, admin, async (req, res) => {
 
     // Send notification to user about password change
     const NotificationHooks = require('../services/notificationHooks');
-    
-    try {
-      console.log('📧 Sending password change notification...');
-      const emailResult = await NotificationHooks.onPasswordChangedByAdmin(userId, {
-        fullName: targetUser.fullName,
-        email: targetUser.email,
-        tempPassword: newPassword
-      });
-      console.log('✅ Password change notification sent:', emailResult);
-    } catch (emailError) {
-      console.error('❌ Failed to send password change notification:', emailError);
-      // Continue execution - don't fail the password change if email fails
-      console.warn('Password was changed successfully but email notification failed');
-    }
+    NotificationHooks.onPasswordChangedByAdmin(userId, {
+      fullName: targetUser.fullName,
+      email: targetUser.email,
+      tempPassword: newPassword
+    }).then(emailResult => {
+      console.log('📧 Password change notification sent:', emailResult);
+    }).catch(emailError => {
+      console.error('📧 Failed to send password change notification:', emailError);
+    });
 
     res.json({ 
       success: true, 
