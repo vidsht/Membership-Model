@@ -11,23 +11,14 @@ class EmailService {
   }
 
   async initialize() {
-    // Validate required environment variables
-    if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
-      console.error('❌ Missing required email environment variables:');
-      console.error('SMTP_HOST:', process.env.SMTP_HOST ? '✓' : '✗');
-      console.error('SMTP_USER:', process.env.SMTP_USER ? '✓' : '✗');
-      console.error('SMTP_PASS:', process.env.SMTP_PASS ? '✓' : '✗');
-      throw new Error('Email service cannot initialize: Missing SMTP credentials');
-    }
-
-    // Simple email transporter setup with validated credentials
+    // Simple email transporter setup
     this.transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT) || 587,
+      host: process.env.SMTP_HOST || 'smtp.gmail.com',
+      port: process.env.SMTP_PORT || 587,
       secure: false,
       auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
+        user: process.env.SMTP_USER || 'cards@indiansinghana.com',
+        pass: process.env.SMTP_PASS || process.env.EMAIL_PASSWORD
       },
       tls: {
         rejectUnauthorized: false
@@ -35,9 +26,6 @@ class EmailService {
     });
 
     console.log('📧 Email service initialized');
-    console.log('   SMTP Host:', process.env.SMTP_HOST);
-    console.log('   SMTP User:', process.env.SMTP_USER);
-    console.log('   SMTP Port:', process.env.SMTP_PORT || 587);
   }
 
   async loadTemplate(templateName) {
