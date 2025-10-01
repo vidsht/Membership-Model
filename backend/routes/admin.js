@@ -1646,6 +1646,7 @@ router.put('/users/:id/password', auth, admin, async (req, res) => {
     }
 
     // Send notification to user about password change
+    const NotificationHooks = require('../services/notificationHooks');
     NotificationHooks.onPasswordChangedByAdmin(userId, {
       fullName: targetUser.fullName,
       email: targetUser.email,

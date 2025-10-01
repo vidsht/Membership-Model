@@ -370,9 +370,6 @@ useEffect(() => {
           address: parsedAddress
         }));
 
-        console.log('🔍 UserSettings - Updated userProfile state:');
-        console.log('  bloodGroupConfident:', Boolean(returnedUser.bloodGroupConfident));
-
         updateUser({
           ...user,
           ...returnedUser
@@ -790,23 +787,6 @@ const handleMerchantLogoRemoval = async () => {
                     <option value="O+">O+</option>
                     <option value="O-">O-</option>
                   </select>
-                </div>
-
-                <div className="form-field-group">
-                  <label className="form-field-label">Blood Group Confidence</label>
-                  <div className="confidence-display">
-                    <span className={`confidence-badge ${userProfile.bloodGroupConfident ? 'confident' : 'not-confident'}`}>
-                      {userProfile.bloodGroupConfident ? (
-                        <>
-                          <i className="fas fa-check-circle"></i> Yes, Laboratory Checked
-                        </>
-                      ) : (
-                        <>
-                          <i className="fas fa-times-circle"></i> Not Confirmed
-                        </>
-                      )}
-                    </span>
-                  </div>
                 </div>
 
                 <div className="form-field-group">
