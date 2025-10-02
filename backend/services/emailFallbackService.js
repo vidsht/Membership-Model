@@ -1,76 +1,71 @@
-// Enhanced Email Fallback Service with real email delivery
+// Enhanced Email Fallback Service with SendGrid implementation
 const https = require('https');
 const querystring = require('querystring');
 
 class EmailFallbackService {
   
+  constructor() {
+    // Initialize SendGrid if available
+    this.sendGrid = null;
+    if (process.env.SENDGRID_API_KEY) {
+      try {
+        this.sendGrid = require('@sendgrid/mail');
+        this.sendGrid.setApiKey(process.env.SENDGRID_API_KEY);
+        console.log('✅ SendGrid initialized successfully');
+      } catch (error) {
+        console.error('❌ SendGrid initialization failed:', error.message);
+      }
+    }
+  }
+  
   // Use SendGrid API for real email delivery
   async sendViaAPI(emailData) {
     try {
-      if (process.env.SENDGRID_API_KEY) {
+      if (this.sendGrid && process.env.SENDGRID_API_KEY) {
         return await this.sendViaSendGrid(emailData);
       } else if (process.env.MAILGUN_API_KEY) {
         return await this.sendViaMailgun(emailData);
       } else {
-        throw new Error('No email API configured');
+        throw new Error('No email API configured - add SENDGRID_API_KEY to environment variables');
       }
     } catch (error) {
       throw new Error(`API email failed: ${error.message}`);
     }
   }
 
-  // SendGrid API implementation
+  // SendGrid API implementation using official package
   async sendViaSendGrid(emailData) {
-    return new Promise((resolve, reject) => {
-      const postData = JSON.stringify({
-        personalizations: [{
-          to: [{ email: emailData.to }],
-          subject: emailData.subject
-        }],
-        from: { 
+    try {
+      const msg = {
+        to: emailData.to,
+        from: {
           email: process.env.SMTP_FROM_EMAIL || 'cards@indiansinghana.com',
           name: process.env.SMTP_FROM_NAME || 'Indians in Ghana'
         },
-        content: [
-          { type: 'text/html', value: emailData.html },
-          { type: 'text/plain', value: emailData.text }
-        ]
-      });
-
-      const options = {
-        hostname: 'api.sendgrid.com',
-        port: 443,
-        path: '/v3/mail/send',
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.SENDGRID_API_KEY}`,
-          'Content-Type': 'application/json',
-          'Content-Length': Buffer.byteLength(postData)
-        }
+        subject: emailData.subject,
+        text: emailData.text,
+        html: emailData.html,
       };
 
-      const req = https.request(options, (res) => {
-        let data = '';
-        res.on('data', (chunk) => data += chunk);
-        res.on('end', () => {
-          if (res.statusCode === 202) {
-            console.log(`✅ SendGrid email sent to ${emailData.to}`);
-            resolve({ 
-              success: true, 
-              messageId: `sendgrid-${Date.now()}`,
-              sent: true,
-              method: 'sendgrid_api'
-            });
-          } else {
-            reject(new Error(`SendGrid failed: ${res.statusCode} - ${data}`));
-          }
-        });
-      });
-
-      req.on('error', reject);
-      req.write(postData);
-      req.end();
-    });
+      console.log(`📧 Sending via SendGrid to ${emailData.to}...`);
+      const response = await this.sendGrid.send(msg);
+      
+      console.log(`✅ SendGrid email sent successfully to ${emailData.to}`);
+      return { 
+        success: true, 
+        messageId: response[0].headers['x-message-id'] || `sendgrid-${Date.now()}`,
+        sent: true,
+        method: 'sendgrid_api',
+        statusCode: response[0].statusCode
+      };
+      
+    } catch (error) {
+      console.error('SendGrid send failed:', error.message);
+      if (error.response) {
+        console.error('SendGrid error details:', error.response.body);
+      }
+      throw error;
+    }
   }
 
   // Mailgun API implementation  
@@ -145,24 +140,29 @@ class EmailFallbackService {
     };
   }
 
-  // Try multiple fallback methods
+  // Try multiple fallback methods with SendGrid priority
   async sendWithMultipleFallbacks(emailData) {
     try {
-      // Method 1: Try API service (if configured)
-      if (process.env.ENABLE_API_EMAIL === 'true') {
-        return await this.sendViaAPI(emailData);
+      // Method 1: Try SendGrid API (if configured)
+      if (this.sendGrid && process.env.SENDGRID_API_KEY) {
+        console.log('📧 Using SendGrid API for email delivery');
+        return await this.sendViaSendGrid(emailData);
       }
       
-      // Method 2: Enhanced logging
+      // Method 2: Try other API services
+      if (process.env.MAILGUN_API_KEY) {
+        console.log('📧 Using Mailgun API for email delivery');
+        return await this.sendViaMailgun(emailData);
+      }
+      
+      // Method 3: Enhanced logging fallback
+      console.log('📧 No API configured - using console logging');
       return this.logEmailFallback(emailData);
       
     } catch (error) {
-      console.error('All fallback methods failed:', error);
-      return {
-        success: false,
-        error: error.message,
-        sent: false
-      };
+      console.error('SendGrid/API delivery failed, falling back to logging:', error.message);
+      // Always fall back to logging if API fails
+      return this.logEmailFallback(emailData);
     }
   }
 }

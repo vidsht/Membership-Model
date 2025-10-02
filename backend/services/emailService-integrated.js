@@ -27,6 +27,14 @@ class EmailService {
     this.templatesCache = new Map();
     this.queryAsync = promisify(db.query).bind(db);
     this.smtpBlocked = false; // Track if SMTP is completely blocked
+    this.sendGridAvailable = !!process.env.SENDGRID_API_KEY;
+    
+    if (this.sendGridAvailable) {
+      console.log('✅ SendGrid API key detected - email delivery enabled');
+    } else {
+      console.log('⚠️ No SendGrid API key - emails will be logged only');
+      console.log('💡 Add SENDGRID_API_KEY to environment variables for real email delivery');
+    }
     
     this.initialize().catch(error => {
       console.error('Email service initialization failed:', error.message);
@@ -155,10 +163,11 @@ class EmailService {
         });
       } else {
         // Try sending immediately with fallback
-        if (!this.smtpBlocked && process.env.SMTP_USER && process.env.SMTP_PASS && this.transporter) {
+        if (!this.smtpBlocked && !this.sendGridAvailable && process.env.SMTP_USER && process.env.SMTP_PASS && this.transporter) {
+          // Try SMTP only if SendGrid is not available
           result = await this.sendWithFallback(mailOptions, to);
         } else {
-          // Use fallback method immediately
+          // Use SendGrid API or other fallback method immediately
           result = await this.sendViaFallback(mailOptions);
         }
       }
@@ -232,13 +241,13 @@ class EmailService {
     }
   }
 
-  // Fallback email method
+  // Fallback email method with enhanced options
   async sendViaFallback(mailOptions) {
     try {
-      console.log(`📧 Using fallback email method for ${mailOptions.to}`);
+      console.log(`📧 Using enhanced fallback for ${mailOptions.to}`);
       
-      // Simple console log fallback (can be replaced with webhook service)
-      const result = emailFallback.logEmailFallback({
+      // Use enhanced fallback service
+      const result = await emailFallback.sendWithMultipleFallbacks({
         to: mailOptions.to,
         subject: mailOptions.subject,
         text: mailOptions.text,
@@ -248,7 +257,7 @@ class EmailService {
       return result;
       
     } catch (fallbackError) {
-      console.error('Fallback email also failed:', fallbackError);
+      console.error('Enhanced fallback also failed:', fallbackError);
       return {
         success: false,
         error: fallbackError.message,
@@ -330,9 +339,14 @@ class EmailService {
           console.log(`📧 Queue processing: Sending from ${process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER} to ${email.recipient}`);
 
           let result;
-          if (!this.smtpBlocked && process.env.SMTP_USER && process.env.SMTP_PASS) {
+          if (this.sendGridAvailable) {
+            // Use SendGrid API for queue processing
+            result = await this.sendViaFallback(mailOptions);
+          } else if (!this.smtpBlocked && process.env.SMTP_USER && process.env.SMTP_PASS) {
+            // Try SMTP only if SendGrid is not available and SMTP is not blocked
             result = await this.sendWithFallback(mailOptions, email.recipient);
           } else {
+            // Use console logging fallback
             result = await this.sendViaFallback(mailOptions);
           }
 
