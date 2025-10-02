@@ -35,6 +35,19 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 
+// Add aggressive cache control for API responses
+app.use('/api', (req, res, next) => {
+  // Force cache invalidation for all API responses
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.setHeader('Surrogate-Control', 'no-store');
+  res.setHeader('X-Cache-Version', cacheBustingManager.getBuildVersion());
+  res.setHeader('Last-Modified', new Date().toUTCString());
+  res.setHeader('ETag', `"${cacheBustingManager.getBuildVersion()}-${Date.now()}"`);
+  next();
+});
+
 // Basic middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

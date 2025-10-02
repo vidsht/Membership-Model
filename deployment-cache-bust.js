@@ -14,8 +14,8 @@ class DeploymentCacheBuster {
     this.baseUrl = process.env.BACKEND_URL || 'https://membership.indiansinghana.com';
     this.localMode = process.argv.includes('--local');
     
-    if (this.localMode) {
-      this.baseUrl = 'http://localhost:5000';
+    if (this.localMode && !process.env.BACKEND_URL) {
+      this.baseUrl = 'http://localhost:5001'; // Updated default port
     }
   }
 

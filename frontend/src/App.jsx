@@ -12,6 +12,9 @@ import Toast from './components/Toast';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/admin/AdminRoute';
 
+// Import cache manager for automatic cache busting
+import './utils/cacheManager';
+
 // Critical routes - load immediately
 import Home from './pages/Home';
 import UnifiedLogin from './pages/UnifiedLogin';

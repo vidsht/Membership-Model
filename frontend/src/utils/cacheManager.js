@@ -7,7 +7,7 @@ class FrontendCacheManager {
   constructor() {
     this.cacheVersion = null;
     this.lastVersionCheck = 0;
-    this.checkInterval = 5 * 60 * 1000; // Check every 5 minutes
+    this.checkInterval = 30 * 1000; // Check every 30 seconds (more frequent)
     this.localStorageKey = 'membership_cache_version';
     this.init();
   }
@@ -101,11 +101,19 @@ class FrontendCacheManager {
   handleVersionChange(newVersion) {
     this.storeVersion(newVersion);
     
+    console.log(`🔄 Version mismatch detected! Local: ${this.cacheVersion}, Server: ${newVersion}`);
+    
+    // Clear various caches immediately
+    this.clearBrowserCaches();
+    
     // Show user notification about updates
     this.showUpdateNotification();
     
-    // Clear various caches
-    this.clearBrowserCaches();
+    // Auto-refresh after a short delay to ensure cache clearing
+    setTimeout(() => {
+      console.log('🔄 Auto-refreshing page due to version change...');
+      window.location.reload(true);
+    }, 2000);
   }
 
   /**
@@ -268,15 +276,32 @@ class FrontendCacheManager {
    * Start periodic version checks
    */
   startPeriodicChecks() {
+    // Check immediately when starting
+    this.checkForUpdates(true);
+    
+    // Check every 30 seconds
     setInterval(() => {
       this.checkForUpdates();
     }, this.checkInterval);
 
-    // Also check when page becomes visible again
+    // Check when page becomes visible again
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden) {
-        this.checkForUpdates();
+        console.log('🔍 Page became visible, checking for updates...');
+        this.checkForUpdates(true);
       }
+    });
+
+    // Check when window gains focus
+    window.addEventListener('focus', () => {
+      console.log('🔍 Window gained focus, checking for updates...');
+      this.checkForUpdates(true);
+    });
+
+    // Check on page load/reload
+    window.addEventListener('load', () => {
+      console.log('🔍 Page loaded, checking for updates...');
+      setTimeout(() => this.checkForUpdates(true), 1000);
     });
   }
 
