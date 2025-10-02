@@ -1,6 +1,30 @@
 /**
  * Email Service for Indians in Ghana Membership
- * Integrated with existing database structure
+ * Integrate  async initialize() {
+    // Initialize email transporter with fallback support
+    const smtpConfig = {
+      host: process.env.SMTP_HOST || 'smtp.gmail.com',
+      port: process.env.SMTP_PORT || 587,
+      secure: false, // true for 465, false for other ports
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS
+      },
+      tls: {
+        rejectUnauthorized: false
+      },
+      // Add connection timeout and retry settings
+      connectionTimeout: 60000, // 60 seconds
+      greetingTimeout: 30000, // 30 seconds
+      socketTimeout: 60000, // 60 seconds
+    };
+
+    this.transporter = nodemailer.createTransporter(smtpConfig);
+    
+    // Log SMTP configuration (without password)
+    console.log(`📧 SMTP Configuration: ${smtpConfig.host}:${smtpConfig.port} with user: ${smtpConfig.auth.user}`);
+
+    // Skip SMTP verification entirely if disabled or in developmentdatabase structure
  */
 
 const nodemailer = require('nodemailer');
@@ -246,6 +270,7 @@ class EmailService {
       } catch (sendError) {
         console.error(`❌ Attempt ${attempt} failed for ${recipient}:`, sendError.message);
         
+        const isConnectionError = sendError.code === 'ETIMEDOUT' && sendError.command === 'CONN';
         const isTimeoutError = sendError.message.includes('timeout') || 
                               sendError.message.includes('ETIMEDOUT') ||
                               sendError.message.includes('ECONNRESET') ||
@@ -255,6 +280,18 @@ class EmailService {
                               sendError.code === 'ETIMEDOUT' ||
                               sendError.code === 'ECONNRESET' ||
                               sendError.code === 'ECONNREFUSED';
+
+        // For connection errors, don't retry immediately - queue for later
+        if (isConnectionError) {
+          console.log(`🔌 SMTP connection failure detected - skipping retries and queueing immediately`);
+          return {
+            success: true,
+            error: sendError.message,
+            sent: false,
+            mode: 'queued_due_to_connection_failure',
+            attempts: attempt
+          };
+        }
         
         // If it's the last attempt or not a timeout error, don't retry
         if (attempt === maxRetries || !isTimeoutError) {
@@ -444,12 +481,26 @@ class EmailService {
 
   async processEmailQueue() {
     try {
+      // Check for recent connection failures to avoid spamming
+      const recentFailures = await this.queryAsync(`
+        SELECT COUNT(*) as failures
+        FROM email_queue 
+        WHERE status = 'failed' 
+        AND error LIKE '%ETIMEDOUT%' 
+        AND updated_at >= DATE_SUB(NOW(), INTERVAL 10 MINUTE)
+      `);
+      
+      if (recentFailures[0].failures > 5) {
+        console.log(`⏸️ Skipping queue processing - too many recent connection failures (${recentFailures[0].failures})`);
+        return { processed: 0, success: true, skipped: 'connection_issues' };
+      }
+
       const pendingEmails = await this.queryAsync(
         `SELECT * FROM email_queue 
          WHERE status = 'pending' 
          AND (scheduled_for IS NULL OR scheduled_for <= NOW()) 
          ORDER BY priority DESC, created_at ASC 
-         LIMIT 10`
+         LIMIT 5`  // Reduced from 10 to 5 for connection issues
       );
 
       for (const email of pendingEmails) {
