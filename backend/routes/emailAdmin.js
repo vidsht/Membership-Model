@@ -1,9 +1,7 @@
 const express = require('express');
 const { formatDateForEmail, getCurrentDateForEmail, getExpiryDateForEmail } = require('../utils/dateFormatter');
 const router = express.Router();
-const emailService = require('../services/emailService-integrated');
-const notificationService = require('../services/notificationService-integrated');
-const NotificationHooks = require('../services/notificationHooks-integrated');
+const notificationService = require('../services/unifiedNotificationService');
 const ScheduledTasks = require('../services/scheduledTasks-integrated');
 const db = require('../db');
 
@@ -283,7 +281,7 @@ router.post('/resend-email/:id', requireAdmin, async (req, res) => {
 router.get('/user-preferences/:userId', requireAdmin, async (req, res) => {
   try {
     const userId = req.params.userId;
-    const preferences = await NotificationHooks.getUserNotificationPreferences(userId);
+    const preferences = await notificationService.getUserNotificationPreferences(userId);
     
     res.json({ userId, preferences });
     
@@ -305,7 +303,7 @@ router.put('/user-preferences/:userId', requireAdmin, async (req, res) => {
     
     const results = [];
     for (const [notificationType, isEnabled] of Object.entries(preferences)) {
-      const success = await NotificationHooks.updateNotificationPreference(
+      const success = await notificationService.updateNotificationPreference(
         userId, 
         notificationType, 
         isEnabled
@@ -456,7 +454,7 @@ router.post('/test', async (req, res) => {
       });
     }
 
-    const result = await NotificationHooks.sendTestEmail(email, templateType);
+    const result = await notificationService.sendTestEmail(email, templateType);
     
     res.json({
       success: true,

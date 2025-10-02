@@ -138,7 +138,7 @@ class EmailService {
 
     try {
       // First, try to load from local template files
-      const templatePath = path.join(__dirname, '..', 'templates', 'emails', `${templateType.replace(/_/g, '-')}.hbs`);
+      const templatePath = path.join(__dirname, '..', 'templates', 'emails', `${templateType}.hbs`);
       
       if (fs.existsSync(templatePath)) {
         console.log(`📄 Loading template from file: ${templateType}`);

@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Deal Approval Required</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f4f4f4;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+            color: white;
+            padding: 25px 20px;
+            text-align: center;
+        }
+        
+        .alert-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+        
+        .content {
+            padding: 40px 30px;
+        }
+        
+        .alert-box {
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+            border: 2px solid #ff6b35;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 25px 0;
+            text-align: center;
+            position: relative;
+        }
+        
+        .alert-box::before {
+            content: "🔔";
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ff6b35;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+        
+        .deal-preview {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 25px;
+            margin: 25px 0;
+        }
+        
+        .deal-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .deal-icon {
+            font-size: 32px;
+            margin-right: 15px;
+            color: #ff6b35;
+        }
+        
+        .deal-title {
+            color: #333;
+            font-size: 20px;
+            font-weight: bold;
+            margin: 0;
+        }
+        
+        .deal-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .detail-item {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #ff6b35;
+        }
+        
+        .detail-label {
+            font-size: 12px;
+            color: #ff6b35;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+        }
+        
+        .detail-value {
+            font-size: 16px;
+            color: #333;
+            font-weight: 600;
+        }
+        
+        .description-box {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 4px solid #28a745;
+        }
+        
+        .description-box h4 {
+            color: #28a745;
+            margin-bottom: 10px;
+        }
+        
+        .description-box p {
+            color: #666;
+            line-height: 1.6;
+        }
+        
+        .merchant-info {
+            background: #e8f5e8;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 25px 0;
+            border-left: 4px solid #28a745;
+        }
+        
+        .merchant-info h4 {
+            color: #28a745;
+            margin-bottom: 15px;
+        }
+        
+        .merchant-details {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .merchant-detail {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .merchant-label {
+            font-weight: bold;
+            color: #28a745;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .merchant-value {
+            font-size: 16px;
+            color: #333;
+            margin-top: 5px;
+        }
+        
+        .action-required {
+            background: #ffebee;
+            border: 2px solid #f44336;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 25px 0;
+            text-align: center;
+        }
+        
+        .action-required h4 {
+            color: #d32f2f;
+            margin-bottom: 15px;
+        }
+        
+        .action-required p {
+            color: #666;
+            margin-bottom: 20px;
+        }
+        
+        .cta-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 25px 0;
+        }
+        
+        .cta-button {
+            display: inline-block;
+            padding: 12px 25px;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .cta-button.approve {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+        }
+        
+        .cta-button.reject {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+        }
+        
+        .cta-button.review {
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+            color: white;
+        }
+        
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .stats-summary {
+            background: #f0f8f0;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 25px 0;
+            border-left: 4px solid #28a745;
+        }
+        
+        .stats-summary h4 {
+            color: #28a745;
+            margin-bottom: 15px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 10px;
+            background: white;
+            border-radius: 6px;
+        }
+        
+        .stat-number {
+            font-size: 20px;
+            font-weight: bold;
+            color: #28a745;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+        }
+        
+        .footer {
+            background-color: #f8f9fa;
+            padding: 25px;
+            text-align: center;
+            border-top: 1px solid #eee;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        @media (max-width: 600px) {
+            .container {
+                margin: 0;
+                box-shadow: none;
+            }
+            
+            .content {
+                padding: 20px 15px;
+            }
+            
+            .deal-details {
+                grid-template-columns: 1fr;
+            }
+            
+            .merchant-details {
+                flex-direction: column;
+            }
+            
+            .merchant-detail {
+                min-width: auto;
+            }
+            
+            .cta-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .cta-button {
+                width: 100%;
+                max-width: 250px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="alert-icon">🎯</div>
+            <h1>New Deal Approval Required</h1>
+            <p>Merchant Deal Submission</p>
+        </div>
+        
+        <div class="content">
+            <p style="font-size: 18px; margin-bottom: 25px;">
+                Hi {{adminName}},
+            </p>
+            
+            <div class="alert-box">
+                <h2 style="color: #ff6b35; margin-bottom: 15px;">New Deal Pending Approval</h2>
+                <p style="color: #666; font-size: 16px;">
+                    A merchant has submitted a new deal that requires your review and approval before it goes live.
+                </p>
+            </div>
+            
+            <div class="deal-preview">
+                <div class="deal-header">
+                    <div class="deal-icon">🏷️</div>
+                    <h3 class="deal-title">{{dealTitle}}</h3>
+                </div>
+                
+                <div class="deal-details">
+                    <div class="detail-item">
+                        <div class="detail-label">Category</div>
+                        <div class="detail-value">{{category}}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Discount</div>
+                        <div class="detail-value">{{discount}}{{#if (eq discountType 'percentage')}}%{{else if (eq discountType 'fixed')}} GHS{{/if}} OFF</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Valid Until</div>
+                        <div class="detail-value">{{validUntil}}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Submission Date</div>
+                        <div class="detail-value">{{submissionDate}}</div>
+                    </div>
+                </div>
+                
+                <div class="description-box">
+                    <h4>📝 Deal Description</h4>
+                    <p>{{dealDescription}}</p>
+                </div>
+                
+                {{#if termsConditions}}
+                <div class="description-box">
+                    <h4>📋 Terms & Conditions</h4>
+                    <p>{{termsConditions}}</p>
+                </div>
+                {{/if}}
+            </div>
+            
+            <div class="merchant-info">
+                <h4>🏪 Merchant Information</h4>
+                <div class="merchant-details">
+                    <div class="merchant-detail">
+                        <div class="merchant-label">Business Name</div>
+                        <div class="merchant-value">{{businessName}}</div>
+                    </div>
+                    <div class="merchant-detail">
+                        <div class="merchant-label">Contact Email</div>
+                        <div class="merchant-value">{{email}}</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="action-required">
+                <h4>⚡ Action Required</h4>
+                <p>
+                    Please review this deal submission and decide whether to approve or reject it. 
+                    The merchant is waiting for your decision to make their deal available to customers.
+                </p>
+            </div>
+            
+            <div style="background: #e3f2fd; padding: 20px; border-radius: 8px; margin: 25px 0; text-align: center;">
+                <h4 style="color: #1976d2; margin-bottom: 15px;">⏰ Review Guidelines</h4>
+                <p style="color: #666; margin-bottom: 10px;">
+                    Please review and respond within <strong>24-48 hours</strong> to maintain good merchant experience.
+                </p>
+                <p style="color: #666; font-size: 14px;">
+                    Quick responses help keep merchants engaged and encourage more quality deal submissions.
+                </p>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p><strong>Indians in Ghana - Admin Dashboard</strong></p>
+            <p>You're receiving this notification because you're an admin.</p>
+            <p>📧 Admin Support: cards@indiansinghana.com</p>
+        </div>
+    </div>
+</body>
+</html>

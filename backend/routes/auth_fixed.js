@@ -2,6 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const db = require('../db');
 const { auth } = require('../middleware/auth');
+const notificationService = require('../services/unifiedNotificationService');
 
 const router = express.Router();
 
@@ -115,6 +116,22 @@ router.post('/register', async (req, res) => {
               return res.status(500).json({ success: false, message: 'Server error', error: err3.message });
             }
             const user = userRows && userRows[0] ? userRows[0] : null;
+            
+            // Send user registration notification
+            if (user) {
+              notificationService.onUserRegistration(user.id, {
+                fullName: user.fullName,
+                email: user.email,
+                membershipNumber: user.membershipNumber,
+                community: user.community,
+                userType: user.userType || 'user'
+              }).then(emailResult => {
+                console.log('📧 User registration emails sent:', emailResult);
+              }).catch(emailError => {
+                console.error('📧 Failed to send user registration emails:', emailError);
+              });
+            }
+            
             res.status(201).json({ 
               success: true, 
               message: 'Registration successful! Your account is pending approval. Welcome to Indians in Ghana community.', 

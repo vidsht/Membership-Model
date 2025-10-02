@@ -1,7 +1,6 @@
 const cron = require('node-cron');
-const notificationService = require('./notificationService');
-const emailService = require('./emailService');
-const NotificationHooks = require('./notificationHooks');
+const notificationService = require('./unifiedNotificationService');
+const emailService = require('./emailService-integrated');
 
 class ScheduledTasks {
   static initialize() {
@@ -11,7 +10,7 @@ class ScheduledTasks {
     cron.schedule('0 9 * * *', async () => {
       console.log('🔄 Running daily plan expiry check...');
       try {
-        await NotificationHooks.onPlanExpiryCheck();
+        await notificationService.onPlanExpiryCheck();
         console.log('✅ Daily plan expiry check completed');
       } catch (error) {
         console.error('❌ Error in daily plan expiry check:', error);
@@ -25,7 +24,7 @@ class ScheduledTasks {
     cron.schedule('1 0 1 * *', async () => {
       console.log('🔄 Running monthly limits renewal...');
       try {
-        await NotificationHooks.onMonthlyLimitsRenewal();
+        await notificationService.onMonthlyLimitsRenewal();
         console.log('✅ Monthly limits renewal completed');
       } catch (error) {
         console.error('❌ Error in monthly limits renewal:', error);
@@ -339,13 +338,13 @@ class ScheduledTasks {
   // Manual trigger for plan expiry check (for testing)
   static async runPlanExpiryCheck() {
     console.log('🔄 Manually running plan expiry check...');
-    await NotificationHooks.onPlanExpiryCheck();
+    await notificationService.onPlanExpiryCheck();
   }
 
   // Manual trigger for monthly limits renewal (for testing)
   static async runMonthlyLimitsRenewal() {
     console.log('🔄 Manually running monthly limits renewal...');
-    await NotificationHooks.onMonthlyLimitsRenewal();
+    await notificationService.onMonthlyLimitsRenewal();
   }
 
   // Get scheduled task status
