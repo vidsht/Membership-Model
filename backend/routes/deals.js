@@ -5,7 +5,6 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const { logDealView, logRedemptionRequest, logDealStatusChange } = require('../utils/activityLogger');
-const { dealsCache, invalidateDealsCache } = require('../middleware/cacheMiddleware');
 const notificationService = require('../services/unifiedNotificationService');
 
 const router = express.Router();
