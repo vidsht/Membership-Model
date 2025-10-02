@@ -37,18 +37,35 @@ export default defineConfig({
           router: ['react-router-dom'],
           utils: ['react-helmet-async']
         },
-        chunkFileNames: 'assets/js/[name]-[hash].js',
-        entryFileNames: 'assets/js/[name]-[hash].js',
+        // Enhanced cache busting with timestamps
+        chunkFileNames: (chunkInfo) => {
+          const hash = chunkInfo.facadeModuleId ? 
+            `${Date.now()}-[hash]` : '[hash]';
+          return `assets/js/[name]-${hash}.js`;
+        },
+        entryFileNames: `assets/js/[name]-${Date.now()}-[hash].js`,
         assetFileNames: (assetInfo) => {
           const info = assetInfo.name.split('.');
           const ext = info[info.length - 1];
+          const timestamp = Date.now();
           if (/\.(css)$/.test(assetInfo.name)) {
-            return `assets/css/[name]-[hash].${ext}`;
+            return `assets/css/[name]-${timestamp}-[hash].${ext}`;
           }
-          return `assets/[ext]/[name]-[hash].${ext}`;
+          if (/\.(woff|woff2|eot|ttf|otf)$/.test(assetInfo.name)) {
+            return `assets/fonts/[name]-${timestamp}-[hash].${ext}`;
+          }
+          if (/\.(png|jpg|jpeg|gif|svg|webp|avif)$/.test(assetInfo.name)) {
+            return `assets/images/[name]-${timestamp}-[hash].${ext}`;
+          }
+          return `assets/[ext]/[name]-${timestamp}-[hash].${ext}`;
         }
       }
     },
     chunkSizeWarningLimit: 600
+  },
+  // Enhanced cache busting for development
+  define: {
+    __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+    __BUILD_VERSION__: JSON.stringify(Date.now().toString())
   }
 })

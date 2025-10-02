@@ -7,11 +7,15 @@ require('dotenv').config();
 const uploadRouter = require('./routes/upload');
 const seoMiddleware = require('./middleware/seoMiddleware');
 const { setupPerformanceOptimizations, setupPerformanceFlagEndpoint } = require('./middleware/performanceMiddleware');
+const cacheBustingManager = require('./utils/cacheBusting');
 
 const app = express();
 
 // Setup performance optimizations BEFORE other middleware
 setupPerformanceOptimizations(app);
+
+// Apply cache busting middleware early in the stack
+app.use(cacheBustingManager.middleware());
 
 // CORS configuration for credentials
 
@@ -40,12 +44,36 @@ app.use(seoMiddleware.conditional);
 
 // **IMPORTANT: Serve static files BEFORE other routes - MOVE THIS UP**
 const uploadsPath = process.env.UPLOADS_PATH || path.join(__dirname, 'uploads');
+
+// Enhanced cache control for different file types
 app.use('/uploads', express.static(uploadsPath, {
-  maxAge: '1d', 
+  maxAge: '7d', // Cache for 7 days for uploaded files
   etag: true,
+  lastModified: true,
   setHeaders: (res, filePath) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET');
+    
+    // Enhanced cache busting headers
+    const ext = path.extname(filePath).toLowerCase();
+    
+    if (['.css', '.js'].includes(ext)) {
+      // For CSS/JS files, force revalidation
+      res.setHeader('Cache-Control', 'public, max-age=3600, must-revalidate');
+      res.setHeader('Vary', 'Accept-Encoding');
+    } else if (['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.avif'].includes(ext)) {
+      // For images, longer cache but with version checking
+      res.setHeader('Cache-Control', 'public, max-age=86400, immutable');
+    } else if (['.woff', '.woff2', '.ttf', '.eot'].includes(ext)) {
+      // For fonts, very long cache
+      res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
+    } else {
+      // Default cache for other files
+      res.setHeader('Cache-Control', 'public, max-age=3600, must-revalidate');
+    }
+    
+    // Add build version for cache busting
+    res.setHeader('X-Build-Version', process.env.BUILD_VERSION || Date.now().toString());
   }
 }));
 
@@ -227,6 +255,33 @@ app.get('/api/businesses', seoMiddleware.api, async (req, res) => {
   }
 });
 
+// Cache busting management endpoint
+app.post('/api/admin/update-cache-version', (req, res) => {
+  try {
+    const newVersion = cacheBustingManager.updateVersion();
+    console.log(`🔄 Cache version updated to: ${newVersion}`);
+    res.json({ 
+      success: true, 
+      message: 'Cache version updated successfully',
+      version: newVersion 
+    });
+  } catch (error) {
+    console.error('Error updating cache version:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to update cache version',
+      error: error.message 
+    });
+  }
+});
+
+// Get current cache version endpoint
+app.get('/api/cache-version', (req, res) => {
+  res.json({ 
+    version: cacheBustingManager.getBuildVersion(),
+    timestamp: new Date().toISOString()
+  });
+});
 
 // 404 handler for unknown API routes
 app.use('/api/*', (req, res) => {
@@ -246,7 +301,9 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📁 Static files served from: ${uploadsPath}`); // ADD THIS
+  console.log(`📁 Static files served from: ${uploadsPath}`);
   console.log(`🌐 CORS enabled for: https://membership.indiansinghana.com`);
   console.log(`📱 Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:3001'}`);
+  console.log(`📦 Cache busting version: ${cacheBustingManager.getBuildVersion()}`);
+  console.log(`🔄 Cache management endpoint: POST /api/admin/update-cache-version`);
 });

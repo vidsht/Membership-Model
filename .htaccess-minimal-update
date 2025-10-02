@@ -1,0 +1,28 @@
+# Your existing .htaccess with ONLY cache headers updated
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  RewriteRule ^index\.html$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /index.html [L]
+</IfModule>
+
+# UPDATED: Smart cache headers instead of no-cache
+<IfModule mod_headers.c>
+  # HTML files - Short cache for SPA updates
+  <FilesMatch "\.(html)$">
+    Header set Cache-Control "public, max-age=300, must-revalidate"
+  </FilesMatch>
+
+  # JavaScript and CSS - Works with cache busting system
+  <FilesMatch "\.(js|css)$">
+    Header set Cache-Control "public, max-age=3600, must-revalidate"
+  </FilesMatch>
+
+  # Images - Longer cache
+  <FilesMatch "\.(jpg|jpeg|png|gif|webp|svg|ico)$">
+    Header set Cache-Control "public, max-age=86400, stale-while-revalidate=3600"
+  </FilesMatch>
+</IfModule>

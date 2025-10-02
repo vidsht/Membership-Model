@@ -39,10 +39,10 @@ const EXCLUDED_CACHE_ROUTES = [
 ];
 
 /**
- * Enhanced cache control middleware
+ * Enhanced cache control middleware with cache busting
  */
 const cacheControlMiddleware = {
-  // Static assets caching
+  // Static assets caching with cache busting
   staticAssets: (req, res, next) => {
     const flags = getPerformanceFlags();
     
@@ -55,10 +55,39 @@ const cacheControlMiddleware = {
       if (req.path.startsWith('/uploads/') && req.method === 'GET') {
         // Cache uploaded files but NOT during upload process
         if (!req.path.includes('/temp_uploads/')) {
-          res.set({
-            'Cache-Control': 'public, max-age=31536000, immutable', // 1 year
-            'ETag': 'true'
-          });
+          const fileExt = path.extname(req.path).toLowerCase();
+          const buildVersion = process.env.BUILD_VERSION || Date.now().toString();
+          
+          // Different cache strategies for different file types
+          if (['.css', '.js'].includes(fileExt)) {
+            // CSS/JS: Short cache with must-revalidate for cache busting
+            res.set({
+              'Cache-Control': 'public, max-age=3600, must-revalidate',
+              'ETag': `"${buildVersion}-${req.path}"`,
+              'X-Build-Version': buildVersion,
+              'Vary': 'Accept-Encoding'
+            });
+          } else if (['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.avif'].includes(fileExt)) {
+            // Images: Longer cache but with version
+            res.set({
+              'Cache-Control': 'public, max-age=86400, stale-while-revalidate=3600',
+              'ETag': `"${buildVersion}-${req.path}"`,
+              'X-Build-Version': buildVersion
+            });
+          } else if (['.woff', '.woff2', '.ttf', '.eot'].includes(fileExt)) {
+            // Fonts: Very long cache (they rarely change)
+            res.set({
+              'Cache-Control': 'public, max-age=2592000, immutable',
+              'ETag': `"${buildVersion}-${req.path}"`
+            });
+          } else {
+            // Default: Medium cache with revalidation
+            res.set({
+              'Cache-Control': 'public, max-age=7200, must-revalidate',
+              'ETag': `"${buildVersion}-${req.path}"`,
+              'X-Build-Version': buildVersion
+            });
+          }
         }
       }
       
@@ -69,7 +98,7 @@ const cacheControlMiddleware = {
     }
   },
   
-  // API response caching for safe endpoints
+  // API response caching for safe endpoints with cache busting
   apiResponses: (req, res, next) => {
     const flags = getPerformanceFlags();
     
@@ -79,23 +108,27 @@ const cacheControlMiddleware = {
     
     try {
       const path = req.path;
+      const buildVersion = process.env.BUILD_VERSION || Date.now().toString();
       
       // Check if route is safe for caching
       const isSafe = SAFE_CACHE_ROUTES.some(route => path.startsWith(route));
       const isExcluded = EXCLUDED_CACHE_ROUTES.some(route => path.startsWith(route));
       
       if (isSafe && !isExcluded && req.method === 'GET') {
-        // Cache safe GET responses for 5 minutes
+        // Cache safe GET responses for 5 minutes with version tracking
         res.set({
           'Cache-Control': 'public, max-age=300, stale-while-revalidate=60',
-          'Vary': 'Accept-Encoding'
+          'Vary': 'Accept-Encoding',
+          'X-API-Version': buildVersion,
+          'ETag': `"api-${buildVersion}-${Buffer.from(path).toString('base64').substr(0, 8)}"`
         });
       } else if (isExcluded || req.method !== 'GET') {
         // Explicitly prevent caching for excluded routes and non-GET requests
         res.set({
           'Cache-Control': 'no-cache, no-store, must-revalidate',
           'Pragma': 'no-cache',
-          'Expires': '0'
+          'Expires': '0',
+          'X-API-Version': buildVersion
         });
       }
       

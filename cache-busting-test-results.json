@@ -1,0 +1,54 @@
+{
+  "timestamp": "2025-10-02T15:26:19.948Z",
+  "tests": [
+    {
+      "name": "Cache Version Endpoint",
+      "status": "pass",
+      "details": "Version: v20251002.1759418768357",
+      "timestamp": "2025-10-02T15:26:19.990Z"
+    },
+    {
+      "name": "Cache Version Update",
+      "status": "pass",
+      "details": "New version: v20251002.1759418780017",
+      "timestamp": "2025-10-02T15:26:20.018Z"
+    },
+    {
+      "name": "Version Change Verification",
+      "status": "pass",
+      "details": "Changed from v20251002.1759418768357 to v20251002.1759418780017",
+      "timestamp": "2025-10-02T15:26:20.019Z"
+    },
+    {
+      "name": "Cache Headers (/api/cache-version)",
+      "status": "pass",
+      "details": "Version: v20251002.1759418780017, Cache: public, max-age=300, stale-while-revalidate=60",
+      "timestamp": "2025-10-02T15:26:20.021Z"
+    },
+    {
+      "name": "Cache Headers Overall",
+      "status": "pass",
+      "details": "1/1 endpoints have proper headers",
+      "timestamp": "2025-10-02T15:26:20.030Z"
+    },
+    {
+      "name": "Build Version File",
+      "status": "pass",
+      "details": "File exists with version v20251002.1759418780017",
+      "timestamp": "2025-10-02T15:26:20.031Z"
+    },
+    {
+      "name": "Frontend Cache Utilities",
+      "status": "pass",
+      "details": "All required functionality present",
+      "timestamp": "2025-10-02T15:26:20.031Z"
+    }
+  ],
+  "overall": "pass",
+  "summary": {
+    "total": 7,
+    "passed": 7,
+    "failed": 0,
+    "passRate": "100.0%"
+  }
+}
