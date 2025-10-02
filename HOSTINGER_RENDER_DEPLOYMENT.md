@@ -66,7 +66,7 @@ RewriteRule . /index.html [L]
 
 # JSON files
 <FilesMatch "\.json$">
-  Header set Cache-Control "public, max-age=300, must-revalidate"
+  Header set Cache-Control "public, max-age=300, must-revalida`te"
 </FilesMatch>
 ```
 

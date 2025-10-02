@@ -10,7 +10,7 @@ const http = require('http');
 
 class GlobalRefreshTrigger {
   constructor() {
-    this.backendUrl = process.env.BACKEND_URL || 'http://localhost:5001';
+    this.backendUrl = process.env.BACKEND_URL || 'https://membership-model.onrender.com';
     this.isLocal = this.backendUrl.includes('localhost');
   }
 

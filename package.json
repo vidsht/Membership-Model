@@ -17,7 +17,7 @@
     "deploy-local": "npm run build && npm run cache-bust-local",
     "deploy-hostinger": "npm run build-frontend && echo 'Frontend built - Upload build folder to Hostinger'",
     "force-refresh": "node force-global-refresh-trigger.js",
-    "force-refresh-render": "BACKEND_URL=https://membership-model.onrender.com node force-global-refresh-trigger.js",
+    "force-refresh-render": "node force-global-refresh-trigger.js",
     "deploy-production": "npm run build-frontend && npm run cache-bust-render && echo 'Ready for Hostinger upload'",
     "post-deploy": "npm run force-refresh-render"
   },
