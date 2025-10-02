@@ -46,7 +46,10 @@ const corsOptions = {
     'X-Cache-Version',
     'Cache-Control',
     'ETag',
-    'Last-Modified'
+    'Last-Modified',
+    'X-Force-Refresh',
+    'X-Force-Refresh-Version',
+    'X-Force-Refresh-Timestamp'
   ]
 };
 app.use(cors(corsOptions));
@@ -350,6 +353,55 @@ app.get('/api/cache-version', (req, res) => {
     version: cacheBustingManager.getBuildVersion(),
     timestamp: new Date().toISOString()
   });
+});
+
+// Force global refresh endpoint
+app.post('/api/admin/force-global-refresh', (req, res) => {
+  try {
+    // Update cache version to force refresh
+    const newVersion = cacheBustingManager.updateVersion();
+    
+    // Set a global refresh flag
+    global.forceRefreshFlag = {
+      timestamp: Date.now(),
+      version: newVersion,
+      active: true
+    };
+    
+    console.log(`🔄 GLOBAL REFRESH TRIGGERED - Version: ${newVersion}`);
+    
+    res.json({
+      success: true,
+      message: 'Global refresh triggered for all users',
+      version: newVersion,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Failed to trigger global refresh:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to trigger global refresh',
+      error: error.message
+    });
+  }
+});
+
+// Middleware to check for global refresh flag
+app.use((req, res, next) => {
+  if (global.forceRefreshFlag && global.forceRefreshFlag.active) {
+    // Add special header to force refresh
+    res.setHeader('X-Force-Refresh', 'true');
+    res.setHeader('X-Force-Refresh-Version', global.forceRefreshFlag.version);
+    res.setHeader('X-Force-Refresh-Timestamp', global.forceRefreshFlag.timestamp);
+    
+    // Clear flag after 5 minutes to avoid indefinite refreshing
+    const fiveMinutes = 5 * 60 * 1000;
+    if (Date.now() - global.forceRefreshFlag.timestamp > fiveMinutes) {
+      global.forceRefreshFlag.active = false;
+      console.log('🔄 Global refresh flag expired and cleared');
+    }
+  }
+  next();
 });
 
 // CORS Debug endpoint

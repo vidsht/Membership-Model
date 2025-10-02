@@ -14,6 +14,8 @@ import AdminRoute from './components/admin/AdminRoute';
 
 // Import cache manager for automatic cache busting
 import './utils/cacheManager';
+// Import global refresh detector
+import './hooks/useGlobalRefreshDetector';
 
 // Critical routes - load immediately
 import Home from './pages/Home';

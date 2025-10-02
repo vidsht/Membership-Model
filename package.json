@@ -8,12 +8,18 @@
     "server": "cd backend && npm run dev",
     "client": "cd frontend && npm run dev",
     "build": "cd backend && npm install && cd ../frontend && npm install && npm run build",
+    "build-frontend": "cd frontend && npm install && npm run build",
     "start": "cd backend && npm run start & cd ../frontend && npm run start",
     "install-all": "npm install && cd backend && npm install && cd ../frontend && npm install",
     "cache-bust": "node deployment-cache-bust.js",
     "cache-bust-local": "node deployment-cache-bust.js --local",
-    "deploy": "npm run build && npm run cache-bust",
-    "deploy-local": "npm run build && npm run cache-bust-local"
+    "cache-bust-render": "BACKEND_URL=https://membership-model.onrender.com node deployment-cache-bust.js",
+    "deploy-local": "npm run build && npm run cache-bust-local",
+    "deploy-hostinger": "npm run build-frontend && echo 'Frontend built - Upload build folder to Hostinger'",
+    "force-refresh": "node force-global-refresh-trigger.js",
+    "force-refresh-render": "BACKEND_URL=https://membership-model.onrender.com node force-global-refresh-trigger.js",
+    "deploy-production": "npm run build-frontend && npm run cache-bust-render && echo 'Ready for Hostinger upload'",
+    "post-deploy": "npm run force-refresh-render"
   },
   "keywords": [
     "mern",
