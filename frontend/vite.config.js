@@ -67,5 +67,9 @@ export default defineConfig({
   define: {
     __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
     __BUILD_VERSION__: JSON.stringify(Date.now().toString())
+  },
+  // Prevent automatic service worker registration
+  worker: {
+    format: 'es'
   }
 })

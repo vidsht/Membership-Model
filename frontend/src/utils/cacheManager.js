@@ -217,13 +217,34 @@ class FrontendCacheManager {
       // Clear sessionStorage
       sessionStorage.clear();
 
-      // If Service Worker is available, clear its cache
+      // If Service Worker is available, clear its cache safely
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.getRegistrations().then(registrations => {
           registrations.forEach(registration => {
-            registration.unregister();
+            try {
+              registration.unregister();
+              console.log('🧹 Service worker unregistered:', registration.scope);
+            } catch (swError) {
+              console.warn('Failed to unregister service worker:', swError);
+            }
           });
+        }).catch(error => {
+          console.warn('Failed to get service worker registrations:', error);
         });
+
+        // Clear service worker caches if available
+        if ('caches' in window) {
+          caches.keys().then(cacheNames => {
+            return Promise.all(
+              cacheNames.map(cacheName => {
+                console.log('🧹 Deleting cache:', cacheName);
+                return caches.delete(cacheName);
+              })
+            );
+          }).catch(error => {
+            console.warn('Failed to clear cache storage:', error);
+          });
+        }
       }
 
       console.log('✅ Browser caches cleared');
