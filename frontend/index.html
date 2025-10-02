@@ -24,33 +24,57 @@
         var timestamp = Date.now();
         var buildVersion = '1759421427139'; // Update this with each deployment
         
+        // Skip aggressive cache clearing on localhost to prevent infinite refreshes
+        var isLocalhost = window.location.hostname === 'localhost' || 
+                         window.location.hostname === '127.0.0.1' ||
+                         window.location.port === '3000' ||
+                         window.location.port === '3001';
+        
         console.log('🚨 Emergency cache check at HTML level...');
+        console.log('🏠 Localhost detected:', isLocalhost);
+        
+        // Check if we've recently done a cache clear to prevent loops
+        var lastCacheClear = localStorage.getItem('last_cache_clear');
+        var timeSinceLastClear = timestamp - (parseInt(lastCacheClear) || 0);
+        var recentlyClearedCache = timeSinceLastClear < 10000; // 10 seconds
+        
+        if (recentlyClearedCache) {
+          console.log('⏸️ Skipping cache clear (recent clear detected)');
+          return;
+        }
         
         // Check if we have a version mismatch
         var storedVersion = localStorage.getItem('membership_cache_version');
-        if (storedVersion) {
+        if (storedVersion && !isLocalhost) {
           try {
             var versionData = JSON.parse(storedVersion);
             if (versionData.version !== buildVersion) {
               console.log('🔄 Version mismatch detected in HTML! Clearing cache...');
               
-              // Clear all storage immediately
-              localStorage.clear();
-              sessionStorage.clear();
+              // Mark that we're doing a cache clear
+              localStorage.setItem('last_cache_clear', timestamp);
               
-              // Force reload with cache bypass
-              var url = new URL(window.location);
-              url.searchParams.set('cache_bust', timestamp);
-              url.searchParams.set('v', buildVersion);
-              window.location.replace(url.toString());
+              // Clear all storage immediately
+              setTimeout(function() {
+                localStorage.clear();
+                sessionStorage.clear();
+                
+                // Force reload with cache bypass
+                var url = new URL(window.location);
+                url.searchParams.set('cache_bust', timestamp);
+                url.searchParams.set('v', buildVersion);
+                window.location.replace(url.toString());
+              }, 100);
               return; // Stop execution
             }
           } catch (e) {
             console.log('🧹 Clearing corrupted version data...');
-            localStorage.clear();
-            sessionStorage.clear();
+            if (!isLocalhost) {
+              localStorage.clear();
+              sessionStorage.clear();
+            }
           }
-        } else {
+        } else if (!storedVersion && !isLocalhost) {
           // First visit, store version
           localStorage.setItem('membership_cache_version', JSON.stringify({
             version: buildVersion,
@@ -58,22 +82,24 @@
           }));
         }
         
-        // Add cache busting to all resource URLs
-        document.addEventListener('DOMContentLoaded', function() {
-          // Add version parameter to script tags
-          var scripts = document.querySelectorAll('script[src]');
-          scripts.forEach(function(script) {
-            if (!script.src.includes('cache_bust')) {
-              var separator = script.src.includes('?') ? '&' : '?';
-              script.src = script.src + separator + 'cache_bust=' + timestamp + '&v=' + buildVersion;
-            }
+        // Add cache busting to all resource URLs (only in production)
+        if (!isLocalhost) {
+          document.addEventListener('DOMContentLoaded', function() {
+            // Add version parameter to script tags
+            var scripts = document.querySelectorAll('script[src]');
+            scripts.forEach(function(script) {
+              if (!script.src.includes('cache_bust')) {
+                var separator = script.src.includes('?') ? '&' : '?';
+                script.src = script.src + separator + 'cache_bust=' + timestamp + '&v=' + buildVersion;
+              }
+            });
           });
-        });
+        }
         
         console.log('✅ HTML-level cache check complete, version:', buildVersion);
         
-        // Register emergency cache clearing service worker
-        if ('serviceWorker' in navigator) {
+        // Register emergency cache clearing service worker (only in production)
+        if ('serviceWorker' in navigator && !isLocalhost) {
           navigator.serviceWorker.register('/emergency-cache-clear-sw.js')
             .then(function(registration) {
               console.log('🔧 Emergency cache clear SW registered');
@@ -88,6 +114,8 @@
             .catch(function(error) {
               console.warn('⚠️ Emergency SW registration failed:', error);
             });
+        } else if (isLocalhost) {
+          console.log('🏠 Skipping service worker registration on localhost');
         }
       })();
     </script>

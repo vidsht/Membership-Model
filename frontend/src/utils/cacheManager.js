@@ -7,9 +7,20 @@ class FrontendCacheManager {
   constructor() {
     this.cacheVersion = null;
     this.lastVersionCheck = 0;
-    this.checkInterval = 30 * 1000; // Check every 30 seconds (more frequent)
+    this.checkInterval = this.isLocalhost() ? 5 * 60 * 1000 : 30 * 1000; // 5 min on localhost, 30 sec in production
     this.localStorageKey = 'membership_cache_version';
+    this.lastRefreshTime = Date.now();
     this.init();
+  }
+
+  /**
+   * Check if running on localhost
+   */
+  isLocalhost() {
+    return window.location.hostname === 'localhost' || 
+           window.location.hostname === '127.0.0.1' ||
+           window.location.port === '3000' ||
+           window.location.port === '3001';
   }
 
   /**
@@ -103,13 +114,29 @@ class FrontendCacheManager {
     
     console.log(`🔄 Version mismatch detected! Local: ${this.cacheVersion}, Server: ${newVersion}`);
     
+    // Prevent rapid refresh loops
+    const now = Date.now();
+    const timeSinceLastRefresh = now - this.lastRefreshTime;
+    
+    if (timeSinceLastRefresh < 10000) { // 10 seconds
+      console.log('⏸️ Skipping refresh (too recent)');
+      return;
+    }
+    
     // Clear various caches immediately
     this.clearBrowserCaches();
     
     // Show user notification about updates
     this.showUpdateNotification();
     
-    // Auto-refresh after a short delay to ensure cache clearing
+    // On localhost, just show notification, don't auto-refresh
+    if (this.isLocalhost()) {
+      console.log('🏠 Localhost detected - skipping auto-refresh');
+      return;
+    }
+    
+    // Auto-refresh after a short delay to ensure cache clearing (production only)
+    this.lastRefreshTime = now;
     setTimeout(() => {
       console.log('🔄 Auto-refreshing page due to version change...');
       window.location.reload(true);
@@ -276,32 +303,49 @@ class FrontendCacheManager {
    * Start periodic version checks
    */
   startPeriodicChecks() {
-    // Check immediately when starting
-    this.checkForUpdates(true);
+    // On localhost, do initial check but less aggressive
+    if (this.isLocalhost()) {
+      console.log('🏠 Localhost mode - reduced cache checking frequency');
+      setTimeout(() => this.checkForUpdates(), 5000); // Initial check after 5 seconds
+    } else {
+      // Check immediately when starting (production)
+      this.checkForUpdates(true);
+    }
     
-    // Check every 30 seconds
+    // Check every interval
     setInterval(() => {
       this.checkForUpdates();
     }, this.checkInterval);
 
-    // Check when page becomes visible again
+    // Check when page becomes visible again (but less aggressive on localhost)
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden) {
-        console.log('🔍 Page became visible, checking for updates...');
-        this.checkForUpdates(true);
+        if (this.isLocalhost()) {
+          console.log('🔍 Page became visible (localhost)');
+        } else {
+          console.log('🔍 Page became visible, checking for updates...');
+          this.checkForUpdates(true);
+        }
       }
     });
 
-    // Check when window gains focus
-    window.addEventListener('focus', () => {
-      console.log('🔍 Window gained focus, checking for updates...');
-      this.checkForUpdates(true);
-    });
+    // Check when window gains focus (production only)
+    if (!this.isLocalhost()) {
+      window.addEventListener('focus', () => {
+        console.log('🔍 Window gained focus, checking for updates...');
+        this.checkForUpdates(true);
+      });
+    }
 
-    // Check on page load/reload
+    // Check on page load/reload (but delay on localhost)
     window.addEventListener('load', () => {
-      console.log('🔍 Page loaded, checking for updates...');
-      setTimeout(() => this.checkForUpdates(true), 1000);
+      if (this.isLocalhost()) {
+        console.log('🏠 Page loaded (localhost) - delayed update check');
+        setTimeout(() => this.checkForUpdates(), 10000); // 10 second delay on localhost
+      } else {
+        console.log('🔍 Page loaded, checking for updates...');
+        setTimeout(() => this.checkForUpdates(true), 1000);
+      }
     });
   }
 
