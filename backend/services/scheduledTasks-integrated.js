@@ -21,8 +21,8 @@ class ScheduledTasks {
 
     console.log('⏰ Initializing scheduled email tasks...');
 
-    // Process email queue every 5 minutes
-    this.addTask('processEmailQueue', '*/5 * * * *', async () => {
+    // Process email queue every 1 minute for faster delivery
+    this.addTask('processEmailQueue', '*/1 * * * *', async () => {
       try {
         const result = await emailService.processEmailQueue();
         if (result.processed > 0) {
