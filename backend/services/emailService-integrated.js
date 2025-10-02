@@ -1,28 +1,89 @@
 /**
  * Email Service for Indians in Ghana Membership
  * Integrate  async initialize() {
-    // Initialize email transporter with fallback support
-    const smtpConfig = {
-      host: process.env.SMTP_HOST || 'smtp.gmail.com',
-      port: process.env.SMTP_PORT || 587,
-      secure: false, // true for 465, false for other ports
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
+    // Try multiple SMTP configurations for better compatibility
+    const smtpConfigs = [
+      // Primary Gmail configuration (current)
+      {
+        name: 'Gmail SMTP 587',
+        host: process.env.SMTP_HOST || 'smtp.gmail.com',
+        port: parseInt(process.env.SMTP_PORT) || 587,
+        secure: false,
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS
+        },
+        tls: { rejectUnauthorized: false }
       },
-      tls: {
-        rejectUnauthorized: false
+      // Gmail SSL configuration (port 465)
+      {
+        name: 'Gmail SMTP 465 (SSL)',
+        host: process.env.SMTP_HOST || 'smtp.gmail.com',
+        port: 465,
+        secure: true,
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS
+        },
+        tls: { rejectUnauthorized: false }
       },
-      // Add connection timeout and retry settings
-      connectionTimeout: 60000, // 60 seconds
-      greetingTimeout: 30000, // 30 seconds
-      socketTimeout: 60000, // 60 seconds
-    };
+      // Gmail port 25 (if available)
+      {
+        name: 'Gmail SMTP 25',
+        host: process.env.SMTP_HOST || 'smtp.gmail.com',
+        port: 25,
+        secure: false,
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS
+        },
+        tls: { rejectUnauthorized: false }
+      }
+    ];
 
-    this.transporter = nodemailer.createTransporter(smtpConfig);
-    
-    // Log SMTP configuration (without password)
-    console.log(`📧 SMTP Configuration: ${smtpConfig.host}:${smtpConfig.port} with user: ${smtpConfig.auth.user}`);
+    // Try each configuration until one works
+    for (const config of smtpConfigs) {
+      try {
+        console.log(`📧 Trying ${config.name}...`);
+        
+        const testTransporter = nodemailer.createTransporter({
+          ...config,
+          connectionTimeout: 15000, // 15 seconds
+          greetingTimeout: 10000,   // 10 seconds  
+          socketTimeout: 15000,     // 15 seconds
+        });
+
+        // Test connection with short timeout
+        await new Promise((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            reject(new Error('Connection test timeout'));
+          }, 15000);
+          
+          testTransporter.verify((error, success) => {
+            clearTimeout(timeout);
+            if (error) reject(error);
+            else resolve(success);
+          });
+        });
+
+        // If we get here, this configuration works
+        this.transporter = testTransporter;
+        this.workingConfig = config;
+        console.log(`✅ Successfully connected using ${config.name}`);
+        break;
+        
+      } catch (error) {
+        console.log(`❌ ${config.name} failed: ${error.message}`);
+        continue;
+      }
+    }
+
+    // If no configuration worked, use the first one anyway (for queue fallback)
+    if (!this.transporter) {
+      console.log('⚠️ All SMTP configurations failed, using default for queue processing');
+      this.transporter = nodemailer.createTransporter(smtpConfigs[0]);
+      this.workingConfig = null;
+    }
 
     // Skip SMTP verification entirely if disabled or in developmentdatabase structure
  */
@@ -238,7 +299,7 @@ class EmailService {
       .trim();
   }
 
-  // Send email with retry logic for timeout errors
+  // Send email with automatic SMTP configuration switching
   async sendWithRetry(mailOptions, recipient, maxRetries = 3) {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
@@ -246,8 +307,8 @@ class EmailService {
         
         // Add timeout wrapper to prevent hanging
         const sendWithTimeout = new Promise((resolve, reject) => {
-          // Use longer timeout for production environments
-          const timeoutMs = process.env.NODE_ENV === 'production' ? 45000 : 30000;
+          // Use shorter timeout for faster fallback
+          const timeoutMs = 20000; // 20 seconds
           const timeout = setTimeout(() => {
             reject(new Error(`Email send timeout - SMTP server did not respond within ${timeoutMs/1000} seconds`));
           }, timeoutMs);
@@ -264,7 +325,8 @@ class EmailService {
           success: true,
           messageId: info.messageId,
           sent: true,
-          attempts: attempt
+          attempts: attempt,
+          config: this.workingConfig?.name || 'Default'
         };
         
       } catch (sendError) {
@@ -281,18 +343,16 @@ class EmailService {
                               sendError.code === 'ECONNRESET' ||
                               sendError.code === 'ECONNREFUSED';
 
-        // For connection errors, don't retry immediately - queue for later
-        if (isConnectionError) {
-          console.log(`🔌 SMTP connection failure detected - skipping retries and queueing immediately`);
-          return {
-            success: true,
-            error: sendError.message,
-            sent: false,
-            mode: 'queued_due_to_connection_failure',
-            attempts: attempt
-          };
+        // For connection errors on first attempt, try reinitializing with different config
+        if (isConnectionError && attempt === 1) {
+          console.log(`� Connection failed, trying alternative SMTP configuration...`);
+          try {
+            await this.tryAlternativeConfig();
+          } catch (reinitError) {
+            console.log(`⚠️ Alternative config failed: ${reinitError.message}`);
+          }
         }
-        
+
         // If it's the last attempt or not a timeout error, don't retry
         if (attempt === maxRetries || !isTimeoutError) {
           // In production, queue failed emails for later processing
@@ -322,15 +382,73 @@ class EmailService {
           };
         }
         
-        // Wait before retrying (exponential backoff: 2s, 4s, 8s...)
-        const delayMs = Math.pow(2, attempt) * 1000;
+        // Wait before retrying (shorter delays for faster fallback)
+        const delayMs = Math.min(Math.pow(2, attempt) * 1000, 5000); // Max 5 seconds
         console.log(`⏳ Waiting ${delayMs}ms before retry...`);
         await new Promise(resolve => setTimeout(resolve, delayMs));
       }
     }
   }
 
-  async sendEmail({ to, templateType, type, data, priority = 'normal', scheduledFor = null }) {
+  // Try alternative SMTP configuration
+  async tryAlternativeConfig() {
+    console.log('🔄 Attempting to switch to alternative SMTP configuration...');
+    
+    // Try different ports for the same host
+    const alternativeConfigs = [
+      {
+        name: 'Gmail SMTP 465 (SSL)',
+        host: process.env.SMTP_HOST || 'smtp.gmail.com',
+        port: 465,
+        secure: true,
+        auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+        tls: { rejectUnauthorized: false }
+      },
+      {
+        name: 'Gmail SMTP 25',
+        host: process.env.SMTP_HOST || 'smtp.gmail.com', 
+        port: 25,
+        secure: false,
+        auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+        tls: { rejectUnauthorized: false }
+      }
+    ];
+
+    for (const config of alternativeConfigs) {
+      try {
+        console.log(`📧 Testing ${config.name}...`);
+        
+        const testTransporter = nodemailer.createTransporter({
+          ...config,
+          connectionTimeout: 10000,
+          greetingTimeout: 5000,
+          socketTimeout: 10000,
+        });
+
+        // Quick connection test
+        await new Promise((resolve, reject) => {
+          const timeout = setTimeout(() => reject(new Error('Quick test timeout')), 10000);
+          testTransporter.verify((error, success) => {
+            clearTimeout(timeout);
+            if (error) reject(error);
+            else resolve(success);
+          });
+        });
+
+        // Switch to this configuration
+        this.transporter = testTransporter;
+        this.workingConfig = config;
+        console.log(`✅ Switched to ${config.name}`);
+        return;
+        
+      } catch (error) {
+        console.log(`❌ ${config.name} also failed: ${error.message}`);
+        continue;
+      }
+    }
+    
+    throw new Error('No alternative SMTP configuration works');
+  }  async sendEmail({ to, templateType, type, data, priority = 'normal', scheduledFor = null }) {
     try {
       // Support both 'type' and 'templateType' for backward compatibility
       const emailType = templateType || type;
