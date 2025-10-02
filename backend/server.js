@@ -38,13 +38,48 @@ app.options('*', cors(corsOptions));
 // Add aggressive cache control for API responses
 app.use('/api', (req, res, next) => {
   // Force cache invalidation for all API responses
-  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, proxy-revalidate');
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, proxy-revalidate, max-age=0');
   res.setHeader('Pragma', 'no-cache');
   res.setHeader('Expires', '0');
   res.setHeader('Surrogate-Control', 'no-store');
   res.setHeader('X-Cache-Version', cacheBustingManager.getBuildVersion());
   res.setHeader('Last-Modified', new Date().toUTCString());
   res.setHeader('ETag', `"${cacheBustingManager.getBuildVersion()}-${Date.now()}"`);
+  res.setHeader('Vary', 'Accept-Encoding, Cache-Control');
+  
+  // Additional aggressive headers
+  res.setHeader('X-Accel-Expires', '0');
+  res.setHeader('X-Cache-Status', 'BYPASS');
+  res.setHeader('Clear-Site-Data', '"cache", "storage"');
+  
+  next();
+});
+
+// Also add cache control for static files serving
+app.use((req, res, next) => {
+  // For HTML files, prevent all caching
+  if (req.path.endsWith('.html') || req.path === '/' || req.path.endsWith('/')) {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, proxy-revalidate, max-age=0');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    res.setHeader('X-Cache-Version', cacheBustingManager.getBuildVersion());
+    res.setHeader('Clear-Site-Data', '"cache"');
+  }
+  
+  // For JS/CSS files, use version-based caching
+  if (req.path.endsWith('.js') || req.path.endsWith('.css')) {
+    if (req.query.cache_bust || req.query.v) {
+      // Cache busted files can be cached longer
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    } else {
+      // Non-cache-busted files should not be cached
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    }
+    res.setHeader('X-Cache-Version', cacheBustingManager.getBuildVersion());
+  }
+  
   next();
 });
 
