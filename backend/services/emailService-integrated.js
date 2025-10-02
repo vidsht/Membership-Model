@@ -205,6 +205,60 @@ class EmailService {
       .trim();
   }
 
+  // Send email with retry logic for timeout errors
+  async sendWithRetry(mailOptions, recipient, maxRetries = 3) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`📧 Attempt ${attempt}/${maxRetries} to send email to ${recipient}`);
+        
+        // Add timeout wrapper to prevent hanging
+        const sendWithTimeout = new Promise((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            reject(new Error('Email send timeout - SMTP server did not respond within 30 seconds'));
+          }, 30000); // 30 second timeout
+          
+          this.transporter.sendMail(mailOptions)
+            .then(resolve)
+            .catch(reject)
+            .finally(() => clearTimeout(timeout));
+        });
+        
+        const info = await sendWithTimeout;
+        
+        return {
+          success: true,
+          messageId: info.messageId,
+          sent: true,
+          attempts: attempt
+        };
+        
+      } catch (sendError) {
+        console.error(`❌ Attempt ${attempt} failed for ${recipient}:`, sendError.message);
+        
+        const isTimeoutError = sendError.message.includes('timeout') || 
+                              sendError.message.includes('ETIMEDOUT') ||
+                              sendError.message.includes('ECONNRESET') ||
+                              sendError.code === 'ETIMEDOUT';
+        
+        // If it's the last attempt or not a timeout error, don't retry
+        if (attempt === maxRetries || !isTimeoutError) {
+          return {
+            success: true, // Don't break application flow
+            error: sendError.message,
+            sent: false,
+            mode: 'logged_only',
+            attempts: attempt
+          };
+        }
+        
+        // Wait before retrying (exponential backoff: 2s, 4s, 8s...)
+        const delayMs = Math.pow(2, attempt) * 1000;
+        console.log(`⏳ Waiting ${delayMs}ms before retry...`);
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      }
+    }
+  }
+
   async sendEmail({ to, templateType, type, data, priority = 'normal', scheduledFor = null }) {
     try {
       // Support both 'type' and 'templateType' for backward compatibility
@@ -245,28 +299,18 @@ class EmailService {
           data: JSON.stringify(data)
         });
       } else {
-        // Send immediately
+        // Send immediately with retry logic
         try {
           if (process.env.SMTP_USER && process.env.SMTP_PASS && this.transporter) {
             console.log(`📧 Attempting to send email to ${to} with subject: ${subject}`);
-            // Try sending directly (avoid verify which can sometimes fail even when sendMail works)
-            try {
-              const info = await this.transporter.sendMail(mailOptions);
-              result = {
-                success: true,
-                messageId: info.messageId,
-                sent: true
-              };
+            
+            // Try sending with retry logic for timeout errors
+            result = await this.sendWithRetry(mailOptions, to, 3);
+            
+            if (result.sent) {
               console.log(`✅ Email sent successfully to ${to}`);
-            } catch (sendError) {
-              console.error(`❌ Failed to send email to ${to}:`, sendError.message);
-              console.log('📧 Email logged instead of sent due to SMTP error');
-              result = {
-                success: true,
-                error: sendError.message,
-                sent: false,
-                mode: 'logged_only'
-              };
+            } else {
+              console.log(`📧 Email logged instead of sent: ${result.error || 'Unknown error'}`);
             }
           } else {
             // Development/fallback mode - log to console
@@ -301,7 +345,7 @@ class EmailService {
         recipient: to,
         type: emailType,
         subject: subject,
-        status: result.sent ? 'sent' : 'logged',
+        status: result.sent ? 'sent' : (result.error ? 'failed' : 'logged'),
         message_id: result.messageId,
         error: result.error || null,
         data: JSON.stringify(data)
