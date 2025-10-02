@@ -56,6 +56,15 @@ class EmailService {
     });
   }
 
+  // Reinitialize email service with current environment variables
+  async reinitialize() {
+    console.log('🔄 Reinitializing email service with current environment variables...');
+    await this.initialize();
+    this.clearTemplateCache();
+    console.log(`✅ Email service reinitialized with SMTP_USER: ${process.env.SMTP_USER}`);
+    console.log(`✅ Email service FROM_EMAIL: ${process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER}`);
+  }
+
   async initialize() {
     // Initialize email transporter
     this.transporter = nodemailer.createTransport({
@@ -451,14 +460,19 @@ class EmailService {
             [email.id]
           );
 
-          // Send email
+          // Send email with current environment settings
+          const fromEmail = process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER || 'cards@indiansinghana.com';
+          const fromName = process.env.SMTP_FROM_NAME || 'Indians in Ghana';
+          
           const mailOptions = {
-            from: `${process.env.SMTP_FROM_NAME || 'Indians in Ghana'} <${process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER || 'cards@indiansinghana.com'}>`,
+            from: `${fromName} <${fromEmail}>`,
             to: email.recipient,
             subject: email.subject,
             html: email.html_content,
             text: email.text_content
           };
+
+          console.log(`📧 Queue processing: Sending from ${fromEmail} to ${email.recipient}`);
 
           if (process.env.SMTP_USER && process.env.SMTP_PASS) {
             const info = await this.transporter.sendMail(mailOptions);
