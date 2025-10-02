@@ -5,7 +5,7 @@
 
 const cron = require('node-cron');
 const emailService = require('./emailService-integrated');
-const NotificationHooks = require('./notificationHooks-integrated');
+const notificationService = require('./unifiedNotificationService');
 
 class ScheduledTasks {
   constructor() {
@@ -37,8 +37,8 @@ class ScheduledTasks {
     this.addTask('checkExpiringDeals', '0 9 * * *', async () => {
       try {
         console.log('🔍 Daily check for expiring deals...');
-        const result = await NotificationHooks.checkExpiringDeals();
-        console.log(`✅ Processed ${result.processed} expiring deals`);
+        const result = await notificationService.onPlanExpiryCheck();
+        console.log(`✅ Processed plan expiry check: ${result.expiringCount} plans expiring`);
       } catch (error) {
         console.error('Error checking expiring deals:', error);
       }
@@ -48,8 +48,8 @@ class ScheduledTasks {
     this.addTask('checkExpiringMemberships', '0 10 * * *', async () => {
       try {
         console.log('🔍 Daily check for expiring memberships...');
-        const result = await NotificationHooks.checkExpiringMemberships();
-        console.log(`✅ Processed ${result.processed} expiring memberships`);
+        const result = await notificationService.onPlanExpiryCheck();
+        console.log(`✅ Processed plan expiry check: ${result.expiringCount} plans expiring`);
       } catch (error) {
         console.error('Error checking expiring memberships:', error);
       }
@@ -263,10 +263,10 @@ class ScheduledTasks {
           await emailService.processEmailQueue();
           break;
         case 'checkExpiringDeals':
-          await NotificationHooks.checkExpiringDeals();
+          await notificationService.onPlanExpiryCheck();
           break;
         case 'checkExpiringMemberships':
-          await NotificationHooks.checkExpiringMemberships();
+          await notificationService.onPlanExpiryCheck();
           break;
         default:
           console.warn(`⚠️ Manual trigger not implemented for task: ${name}`);
