@@ -78,8 +78,7 @@ class FrontendCacheManager {
       const response = await fetch('/api/cache-version', {
         method: 'GET',
         headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
+          'Cache-Control': 'no-cache'
         }
       });
 

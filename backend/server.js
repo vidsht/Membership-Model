@@ -30,12 +30,29 @@ const corsOptions = {
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'], 
-  allowedHeaders: ['Content-Type', 'Authorization'] 
+  allowedHeaders: [
+    'Content-Type', 
+    'Authorization',
+    'Cache-Control',
+    'Pragma',
+    'Expires',
+    'X-Cache-Version',
+    'Last-Modified',
+    'ETag',
+    'If-None-Match',
+    'If-Modified-Since'
+  ],
+  exposedHeaders: [
+    'X-Cache-Version',
+    'Cache-Control',
+    'ETag',
+    'Last-Modified'
+  ]
 };
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 
-// Add aggressive cache control for API responses
+// Add cache control for API responses (CORS-friendly)
 app.use('/api', (req, res, next) => {
   // Check if this is localhost/development
   const isLocalhost = req.hostname === 'localhost' || 
@@ -43,20 +60,12 @@ app.use('/api', (req, res, next) => {
                      process.env.NODE_ENV === 'development';
   
   if (!isLocalhost) {
-    // Force cache invalidation for all API responses (production only)
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, proxy-revalidate, max-age=0');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
-    res.setHeader('Surrogate-Control', 'no-store');
+    // Production - CORS-friendly cache control (removed Pragma and Clear-Site-Data)
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.setHeader('X-Cache-Version', cacheBustingManager.getBuildVersion());
     res.setHeader('Last-Modified', new Date().toUTCString());
     res.setHeader('ETag', `"${cacheBustingManager.getBuildVersion()}-${Date.now()}"`);
-    res.setHeader('Vary', 'Accept-Encoding, Cache-Control');
-    
-    // Additional aggressive headers
-    res.setHeader('X-Accel-Expires', '0');
-    res.setHeader('X-Cache-Status', 'BYPASS');
-    res.setHeader('Clear-Site-Data', '"cache", "storage"');
+    res.setHeader('Vary', 'Accept-Encoding');
   } else {
     // Development mode - normal caching
     res.setHeader('Cache-Control', 'no-cache');
@@ -67,7 +76,7 @@ app.use('/api', (req, res, next) => {
   next();
 });
 
-// Also add cache control for static files serving
+// Cache control for static files serving (CORS-friendly)
 app.use((req, res, next) => {
   // Check if this is localhost/development
   const isLocalhost = req.hostname === 'localhost' || 
@@ -75,25 +84,18 @@ app.use((req, res, next) => {
                      process.env.NODE_ENV === 'development';
   
   if (!isLocalhost) {
-    // For HTML files, prevent all caching (production only)
+    // For HTML files, prevent caching (production)
     if (req.path.endsWith('.html') || req.path === '/' || req.path.endsWith('/')) {
-      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, proxy-revalidate, max-age=0');
-      res.setHeader('Pragma', 'no-cache');
-      res.setHeader('Expires', '0');
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.setHeader('X-Cache-Version', cacheBustingManager.getBuildVersion());
-      res.setHeader('Clear-Site-Data', '"cache"');
     }
     
-    // For JS/CSS files, use version-based caching (production only)
+    // For JS/CSS files, use version-based caching (production)
     if (req.path.endsWith('.js') || req.path.endsWith('.css')) {
       if (req.query.cache_bust || req.query.v) {
-        // Cache busted files can be cached longer
         res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
       } else {
-        // Non-cache-busted files should not be cached
         res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-        res.setHeader('Pragma', 'no-cache');
-        res.setHeader('Expires', '0');
       }
       res.setHeader('X-Cache-Version', cacheBustingManager.getBuildVersion());
     }
@@ -347,6 +349,18 @@ app.get('/api/cache-version', (req, res) => {
   res.json({ 
     version: cacheBustingManager.getBuildVersion(),
     timestamp: new Date().toISOString()
+  });
+});
+
+// CORS Debug endpoint
+app.get('/api/cors-debug', (req, res) => {
+  res.json({
+    success: true,
+    message: 'CORS is working correctly',
+    headers: req.headers,
+    origin: req.get('Origin'),
+    timestamp: new Date().toISOString(),
+    version: cacheBustingManager.getBuildVersion()
   });
 });
 
