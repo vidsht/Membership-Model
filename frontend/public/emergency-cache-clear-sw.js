@@ -3,7 +3,7 @@
  * This immediately clears all caches when loaded
  */
 
-const CACHE_VERSION = '1759421427139';
+const CACHE_VERSION = '1759422496557';
 const CACHE_NAME = `membership-cache-${CACHE_VERSION}`;
 
 console.log('🧹 Emergency cache clearing service worker activated');
@@ -48,24 +48,27 @@ self.addEventListener('activate', function(event) {
   );
 });
 
-// Intercept all requests and force cache bypass
+// Intercept only problematic requests, let normal API calls through
 self.addEventListener('fetch', function(event) {
-  // For critical resources, always fetch from network
-  if (event.request.url.includes('/src/') || 
-      event.request.url.includes('/api/') ||
-      event.request.url.includes('.js') ||
-      event.request.url.includes('.css')) {
+  // Only intercept specific problematic resources, not all API calls
+  const url = event.request.url;
+  
+  // Don't intercept API calls - let them go through normally
+  if (url.includes('/api/')) {
+    return; // Let the request proceed normally
+  }
+  
+  // Only intercept static assets that might be cached incorrectly
+  if (url.includes('/src/') || 
+      (url.includes('.js') && !url.includes('/api/')) ||
+      (url.includes('.css') && !url.includes('/api/'))) {
     
     event.respondWith(
       fetch(event.request, {
-        cache: 'no-cache',
-        headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
-        }
+        cache: 'no-cache'
       }).catch(function() {
-        // If fetch fails, don't serve from cache
-        return new Response('Resource not available', { status: 503 });
+        // Don't return 503, just let it fail naturally
+        return fetch(event.request);
       })
     );
   }

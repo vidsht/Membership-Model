@@ -5,50 +5,58 @@
 
 console.log('🔧 Global refresh detector initialized');
 
-// Auto-initialize the global refresh detection
+// Auto-initialize the global refresh detection (non-interfering)
 (function initGlobalRefreshDetector() {
-  // Check for force refresh on every fetch request
+  // Only intercept responses, don't override fetch completely
   const originalFetch = window.fetch;
   
   window.fetch = async function(...args) {
-    const response = await originalFetch.apply(this, args);
-    
-    // Check if server is requesting force refresh
-    const forceRefresh = response.headers.get('X-Force-Refresh');
-    const refreshVersion = response.headers.get('X-Force-Refresh-Version');
-    
-    if (forceRefresh === 'true') {
-      console.log('🚨 FORCE REFRESH DETECTED FROM SERVER');
-      console.log(`📦 New version: ${refreshVersion}`);
+    try {
+      const response = await originalFetch.apply(this, args);
       
-      // Show user notification
-      showForceRefreshNotification(refreshVersion);
-      
-      // Auto-refresh after 3 seconds
-      setTimeout(() => {
-        console.log('🔄 Executing forced global refresh...');
+      // Only check for force refresh headers, don't interfere with normal operation
+      if (response && response.headers) {
+        const forceRefresh = response.headers.get('X-Force-Refresh');
+        const refreshVersion = response.headers.get('X-Force-Refresh-Version');
         
-        // Clear all caches
-        localStorage.clear();
-        sessionStorage.clear();
-        
-        // Clear service worker caches if available
-        if ('caches' in window) {
-          caches.keys().then(cacheNames => {
-            return Promise.all(
-              cacheNames.map(cacheName => caches.delete(cacheName))
-            );
-          }).then(() => {
-            console.log('✅ All caches cleared');
-          });
+        if (forceRefresh === 'true') {
+          console.log('🚨 FORCE REFRESH DETECTED FROM SERVER');
+          console.log(`📦 New version: ${refreshVersion}`);
+          
+          // Show user notification
+          showForceRefreshNotification(refreshVersion);
+          
+          // Auto-refresh after 3 seconds
+          setTimeout(() => {
+            console.log('🔄 Executing forced global refresh...');
+            
+            // Clear all caches
+            localStorage.clear();
+            sessionStorage.clear();
+            
+            // Clear service worker caches if available
+            if ('caches' in window) {
+              caches.keys().then(cacheNames => {
+                return Promise.all(
+                  cacheNames.map(cacheName => caches.delete(cacheName))
+                );
+              }).then(() => {
+                console.log('✅ All caches cleared');
+              });
+            }
+            
+            // Force hard refresh
+            window.location.reload(true);
+          }, 3000);
         }
-        
-        // Force hard refresh
-        window.location.reload(true);
-      }, 3000);
+      }
+      
+      return response;
+    } catch (error) {
+      // Don't interfere with error handling, just log
+      console.warn('Fetch interceptor error:', error);
+      throw error;
     }
-    
-    return response;
   };
 })();
 

@@ -36,7 +36,7 @@
         // Check if we've recently done a cache clear to prevent loops
         var lastCacheClear = localStorage.getItem('last_cache_clear');
         var timeSinceLastClear = timestamp - (parseInt(lastCacheClear) || 0);
-        var recentlyClearedCache = timeSinceLastClear < 10000; // 10 seconds
+        var recentlyClearedCache = timeSinceLastClear < 30000; // 30 seconds (increased)
         
         if (recentlyClearedCache) {
           console.log('⏸️ Skipping cache clear (recent clear detected)');
@@ -100,20 +100,25 @@
         
         // Register emergency cache clearing service worker (only in production)
         if ('serviceWorker' in navigator && !isLocalhost) {
-          navigator.serviceWorker.register('/emergency-cache-clear-sw.js')
-            .then(function(registration) {
-              console.log('🔧 Emergency cache clear SW registered');
-              
-              // Listen for messages from service worker
-              navigator.serviceWorker.addEventListener('message', function(event) {
-                if (event.data.type === 'CACHE_CLEARED') {
-                  console.log('✅ Service worker cleared caches, version:', event.data.version);
-                }
-              });
-            })
-            .catch(function(error) {
-              console.warn('⚠️ Emergency SW registration failed:', error);
+          // First, unregister any existing service workers to prevent conflicts
+          navigator.serviceWorker.getRegistrations().then(function(registrations) {
+            registrations.forEach(function(registration) {
+              registration.unregister();
             });
+          }).then(function() {
+            // Only register if we really need cache clearing
+            var needsCacheClearing = localStorage.getItem('needs_cache_clearing');
+            if (needsCacheClearing === 'true') {
+              navigator.serviceWorker.register('/emergency-cache-clear-sw.js')
+                .then(function(registration) {
+                  console.log('🔧 Emergency cache clear SW registered');
+                  localStorage.removeItem('needs_cache_clearing');
+                })
+                .catch(function(error) {
+                  console.warn('⚠️ Emergency SW registration failed:', error);
+                });
+            }
+          });
         } else if (isLocalhost) {
           console.log('🏠 Skipping service worker registration on localhost');
         }
