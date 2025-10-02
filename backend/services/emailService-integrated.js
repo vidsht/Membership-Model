@@ -354,15 +354,7 @@ class EmailService {
                               sendError.code === 'ECONNRESET' ||
                               sendError.code === 'ECONNREFUSED';
 
-        // For connection errors on first attempt, try reinitializing with different config
-        if (isConnectionError && attempt === 1) {
-          console.log(`� Connection failed, trying alternative SMTP configuration...`);
-          try {
-            await this.tryAlternativeConfig();
-          } catch (reinitError) {
-            console.log(`⚠️ Alternative config failed: ${reinitError.message}`);
-          }
-        }
+        // Skip alternative config logic - go directly to queue fallback
 
         // If it's the last attempt or not a timeout error, don't retry
         if (attempt === maxRetries || !isTimeoutError) {
