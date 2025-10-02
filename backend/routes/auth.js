@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 const db = require('../db');
 const { auth } = require('../middleware/auth');
 const { generateMembershipNumber } = require('../utils/membershipGenerator');
-const NotificationHooks = require('../services/notificationHooks-integrated');
+const notificationService = require('../services/unifiedNotificationService');
 const { validatePassword } = require('../utils/passwordValidator');
 
 const router = express.Router();
@@ -225,7 +225,7 @@ router.post('/register', async (req, res) => {
               }
               
               // Send welcome email and admin notification
-              NotificationHooks.onUserRegistration(user.id, {
+              notificationService.onUserRegistration(user.id, {
                 fullName: user.fullName,
                 firstName: user.firstName,
                 email: user.email,
@@ -605,8 +605,7 @@ router.post('/merchant/register', async (req, res) => {
                 }
                 
                 // Send merchant welcome email and admin notification
-                NotificationHooks.onMerchantRegistration({
-                  userId: user.id,
+                notificationService.onMerchantRegistration(user.id, {
                   fullName: user.fullName,
                   email: user.email,
                   businessName: user.businessName,
@@ -767,7 +766,6 @@ router.post('/forgot-password', async (req, res) => {
 
                     // Continue to send email (snake_case path)
                     try {
-                      const emailService = require('../services/emailService-integrated');
                       const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password/${resetToken}`;
                       const resetData = {
                         fullName: user.fullName || 'Member',
@@ -789,7 +787,6 @@ router.post('/forgot-password', async (req, res) => {
 
               // Successfully stored token using camelCase columns - send email
               try {
-                const emailService = require('../services/emailService-integrated');
                 const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password/${resetToken}`;
                 const resetData = {
                   fullName: user.fullName || 'Member',

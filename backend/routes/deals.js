@@ -6,6 +6,7 @@ const path = require('path');
 const fs = require('fs');
 const { logDealView, logRedemptionRequest, logDealStatusChange } = require('../utils/activityLogger');
 const { dealsCache, invalidateDealsCache } = require('../middleware/cacheMiddleware');
+const notificationService = require('../services/unifiedNotificationService');
 
 const router = express.Router();
 
@@ -818,8 +819,7 @@ router.post('/:id/redeem', checkDealAccess, (req, res) => {
                 const merchantId = merchantResults[0].userId;
                 
                 // Send notification to merchant about the redemption request
-                const NotificationHooks = require('../services/notificationHooks-integrated');
-                NotificationHooks.onRedemptionRequested(redemptionId, {
+                notificationService.onRedemptionRequested(redemptionId, {
                   merchantId: merchantId,
                   customerName: user.fullName,
                   dealTitle: deal.title,

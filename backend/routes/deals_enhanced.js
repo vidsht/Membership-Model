@@ -4,6 +4,7 @@ const { auth } = require('../middleware/auth');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const notificationService = require('../services/unifiedNotificationService');
 
 const router = express.Router();
 
@@ -277,10 +278,55 @@ router.post('/:id/redeem', checkDealAccess, (req, res) => {
           // Insert redemption request with PENDING status - merchant approval required
           const insertQuery = 'INSERT INTO deal_redemptions (deal_id, user_id, redeemed_at, redemptionCode, status) VALUES (?, ?, NOW(), ?, "pending")';
           
-          db.query(insertQuery, [dealId, userId, redemptionCode], (err5) => {
+          db.query(insertQuery, [dealId, userId, redemptionCode], (err5, result) => {
             if (err5) {
               console.error('Redemption request insert error:', err5);
               return res.status(500).json({ message: 'Server error processing redemption request' });
+            }
+
+            // Send notification to merchant about the redemption request
+            const redemptionId = result.insertId;
+            
+            // Comprehensive error handling for email operations
+            try {
+              const notificationPromise = notificationService.onRedemptionRequested(redemptionId, {
+                dealTitle: deal.title,
+                userName: user.fullName,
+                userEmail: user.email,
+                redemptionCode: redemptionCode
+              });
+              
+              notificationPromise.then(result => {
+                console.log('📧 Redemption notification sent successfully:', {
+                  redemptionId: redemptionId,
+                  dealTitle: deal.title,
+                  userName: user.fullName,
+                  result: result
+                });
+              }).catch(emailError => {
+                console.error('📧 Failed to send redemption notification:', {
+                  redemptionId: redemptionId,
+                  dealTitle: deal.title,
+                  userName: user.fullName,
+                  userEmail: user.email,
+                  error: emailError.message,
+                  stack: emailError.stack
+                });
+                
+                // Log the email failure but don't fail the redemption
+                // Optional: Store failed notification for retry later
+                console.warn('⚠️ Redemption successful but notification failed - user may not receive confirmation email');
+              });
+            } catch (notificationError) {
+              console.error('💥 Critical error in notification service setup:', {
+                redemptionId: redemptionId,
+                dealTitle: deal.title,
+                error: notificationError.message,
+                stack: notificationError.stack
+              });
+              
+              // Log critical notification service error
+              console.warn('⚠️ Notification service error - redemption successful but no email sent');
             }
 
             // Don't update deal redemption count yet - wait for merchant approval
