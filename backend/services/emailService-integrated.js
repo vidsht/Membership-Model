@@ -213,9 +213,11 @@ class EmailService {
         
         // Add timeout wrapper to prevent hanging
         const sendWithTimeout = new Promise((resolve, reject) => {
+          // Use longer timeout for production environments
+          const timeoutMs = process.env.NODE_ENV === 'production' ? 45000 : 30000;
           const timeout = setTimeout(() => {
-            reject(new Error('Email send timeout - SMTP server did not respond within 30 seconds'));
-          }, 30000); // 30 second timeout
+            reject(new Error(`Email send timeout - SMTP server did not respond within ${timeoutMs/1000} seconds`));
+          }, timeoutMs);
           
           this.transporter.sendMail(mailOptions)
             .then(resolve)
@@ -238,15 +240,38 @@ class EmailService {
         const isTimeoutError = sendError.message.includes('timeout') || 
                               sendError.message.includes('ETIMEDOUT') ||
                               sendError.message.includes('ECONNRESET') ||
-                              sendError.code === 'ETIMEDOUT';
+                              sendError.message.includes('ECONNREFUSED') ||
+                              sendError.message.includes('ENOTFOUND') ||
+                              sendError.message.includes('Connection timeout') ||
+                              sendError.code === 'ETIMEDOUT' ||
+                              sendError.code === 'ECONNRESET' ||
+                              sendError.code === 'ECONNREFUSED';
         
         // If it's the last attempt or not a timeout error, don't retry
         if (attempt === maxRetries || !isTimeoutError) {
+          // In production, queue failed emails for later processing
+          if (process.env.NODE_ENV === 'production' && isTimeoutError) {
+            console.log(`📤 Queueing email for later delivery due to persistent timeout`);
+            try {
+              await this.queueEmail({
+                recipient: recipient,
+                type: mailOptions.templateType || 'unknown',
+                subject: mailOptions.subject,
+                html_content: mailOptions.html,
+                text_content: mailOptions.text,
+                priority: 'normal',
+                data: JSON.stringify({ retryAfterTimeout: true })
+              });
+            } catch (queueError) {
+              console.error('Failed to queue email:', queueError.message);
+            }
+          }
+          
           return {
             success: true, // Don't break application flow
             error: sendError.message,
             sent: false,
-            mode: 'logged_only',
+            mode: isTimeoutError ? 'queued_for_retry' : 'logged_only',
             attempts: attempt
           };
         }
@@ -300,42 +325,29 @@ class EmailService {
         });
       } else {
         // Send immediately with retry logic
-        try {
-          if (process.env.SMTP_USER && process.env.SMTP_PASS && this.transporter) {
-            console.log(`📧 Attempting to send email to ${to} with subject: ${subject}`);
-            
-            // Try sending with retry logic for timeout errors
-            result = await this.sendWithRetry(mailOptions, to, 3);
-            
-            if (result.sent) {
-              console.log(`✅ Email sent successfully to ${to}`);
-            } else {
-              console.log(`📧 Email logged instead of sent: ${result.error || 'Unknown error'}`);
-            }
-          } else {
-            // Development/fallback mode - log to console
-            console.log('📧 Email would be sent (no SMTP configured):');
-            console.log(`To: ${to}`);
-            console.log(`Subject: ${subject}`);
-            console.log('Template Type:', emailType);
-            console.log('---');
-            result = {
-              success: true,
-              messageId: 'fallback-' + Date.now(),
-              sent: false,
-              mode: 'fallback'
-            };
-          }
-        } catch (emailError) {
-          console.error(`❌ Failed to send email to ${to}:`, emailError.message);
+        if (process.env.SMTP_USER && process.env.SMTP_PASS && this.transporter) {
+          console.log(`📧 Attempting to send email to ${to} with subject: ${subject}`);
           
-          // Fallback - still consider it successful for application flow
-          console.log('📧 Email logged instead of sent due to SMTP error');
+          // Try sending with retry logic for timeout errors
+          result = await this.sendWithRetry(mailOptions, to, 3);
+          
+          if (result.sent) {
+            console.log(`✅ Email sent successfully to ${to} (${result.attempts} attempts)`);
+          } else {
+            console.log(`📧 Email failed after ${result.attempts} attempts: ${result.error || 'Unknown error'}`);
+          }
+        } else {
+          // Development/fallback mode - log to console
+          console.log('📧 Email would be sent (no SMTP configured):');
+          console.log(`To: ${to}`);
+          console.log(`Subject: ${subject}`);
+          console.log('Template Type:', emailType);
+          console.log('---');
           result = {
-            success: true, // Don't break application flow
-            error: emailError.message,
+            success: true,
+            messageId: 'fallback-' + Date.now(),
             sent: false,
-            mode: 'logged_only'
+            mode: 'fallback'
           };
         }
       }
