@@ -39,7 +39,7 @@ const UnifiedRegistration = () => {
     dob: '',
     userCategory: '', // "I'm a *" field
     community: '',
-    country: 'Ghana',
+    country: '',
     state: '',
     city: '',
     plan: '',

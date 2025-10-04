@@ -22,6 +22,7 @@ app.use(cacheBustingManager.middleware());
 const corsOptions = {
   origin: [
     'https://membership.indiansinghana.com',
+    'https://www.membership.indiansinghana.com/',
     'http://localhost:3000',
     'http://localhost:3001',
     'http://localhost:3002',
